@@ -47,9 +47,9 @@ defmodule Mix.Tasks.Potok.SrCyrl do
     \b(?:Amnesty\ International|Amnesty|APNs|App\ API|App\ Store|API|Apple|Auth|AVIF|BEAM|Böll|CSS|CSV|daisyUI|Deutrix|Ecto|Elixir|
     Endpoint|English|EPSG|ETS|EXIF|ExUnit|FCM|FeedCreator|Fly\.io|Fly|GPX|KML|KMZ|LineString|MultiLineString|Firebase\ Cloud\ Messaging|Firebase|GeoJSON|Gmail|
     Google\ Forms|Google\ Play|Google\ Sheets|Google|GPS|HEIC|Heinrich-Böll-Stiftung|Heroicons|Hook|hook|HTML|HTTPS|
-    index\.html|iOS|iPhone|IPv4|IPv6|JavaScript|JPEG|LiveView|localhost|Managed\ Postgres|Markdown|MultiPolygon|NoviSpy|Oban|OpenStreetMap|Outlook|P256DH|Peep|pg_trgm|Phoenix|PNG|
+    index\.html|iOS|iPhone|IPv4|IPv6|JavaScript|JPEG|LiveView|localhost|Managed\ Postgres|Markdown|MOV|MP4|MultiPolygon|NoviSpy|Oban|OpenStreetMap|Outlook|P256DH|Peep|pg_trgm|Phoenix|PNG|
     Polygon|PostGIS|PostgreSQL|Postgres|Presence|Prometheus|PubSub|QGIS|QR|SDK|service\ worker|SHA-256|Sheets|SQL|Tailwind|Tigris|URL|USD|
-    User\ Agent|UTF-8|WebP|WebSocket|WGS|XMP|ZIP)\b
+    User\ Agent|UTF-8|WebM|WebP|WebSocket|WGS|XMP|ZIP)\b
   /ux
 
   # The overview also keeps the handles of accounts (`@studenti\_u\_blokadi`).

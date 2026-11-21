@@ -1030,7 +1030,7 @@ msgid "Could not update access request."
 msgstr "Could not update value."
 
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:467
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:2003
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:2005
 #, elixir-autogen, elixir-format
 msgid "Could not update group description."
 msgstr "Could not update value."
@@ -1264,7 +1264,7 @@ msgstr ""
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:388
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:418
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:753
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1493
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1495
 #, elixir-autogen, elixir-format
 msgid "You must be a group member to access group data values."
 msgstr ""
@@ -1732,10 +1732,10 @@ msgstr ""
 msgid "Show password"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1505
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1605
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1863
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:2096
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1507
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1607
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1865
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:2098
 #, elixir-autogen, elixir-format
 msgid "Too many changes in a short time. Try again shortly."
 msgstr ""
@@ -2322,15 +2322,15 @@ msgstr ""
 #: lib/potok_ide_web/live/group_live/show.ex:6486
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:446
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:485
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:910
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1083
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1173
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1366
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1490
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1581
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1594
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1715
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1995
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:912
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1085
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1175
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1368
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1492
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1583
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1596
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1717
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1997
 #, elixir-autogen, elixir-format
 msgid "Your roles in this group do not allow that."
 msgstr ""
@@ -4538,7 +4538,7 @@ msgid "Copy"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:407
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1551
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1553
 #, elixir-autogen, elixir-format
 msgid "Could not save the data value."
 msgstr ""
@@ -4623,13 +4623,13 @@ msgstr ""
 msgid "Apps"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1080
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1626
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1745
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1786
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1816
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1851
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1991
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1082
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1628
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1747
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1788
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1818
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1853
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1993
 #, elixir-autogen, elixir-format
 msgid "Could not save the group."
 msgstr ""
@@ -4950,7 +4950,7 @@ msgstr ""
 msgid "You cannot send pictures in this group."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1523
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1525
 #, elixir-autogen, elixir-format
 msgid "A file is missing or does not fit."
 msgstr ""
@@ -4970,32 +4970,32 @@ msgstr ""
 msgid "Private files"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1508
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1510
 #, elixir-autogen, elixir-format
 msgid "That is too much to save."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1529
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1531
 #, elixir-autogen, elixir-format
 msgid "The group for private files is no longer closed."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1526
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1528
 #, elixir-autogen, elixir-format
 msgid "The group that keeps the files is gone."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1502
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1504
 #, elixir-autogen, elixir-format
 msgid "The scores are out, so the answer can no longer change."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1496
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1498
 #, elixir-autogen, elixir-format
 msgid "This no longer takes answers."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1499
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1501
 #, elixir-autogen, elixir-format
 msgid "You have already answered."
 msgstr ""
@@ -5037,14 +5037,14 @@ msgstr ""
 msgid "Too many requests in a short time. Try again in %{minutes} min."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1548
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1550
 #, elixir-autogen, elixir-format
 msgid "Counting took too long. Try narrowing it down."
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/guest_app.ex:180
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1973
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:2109
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1975
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:2111
 #, elixir-autogen, elixir-format
 msgid "Too many requests in a short time. Try again shortly."
 msgstr ""
@@ -6353,17 +6353,17 @@ msgid_plural "reached %{count} followers"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1811
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1813
 #, elixir-autogen, elixir-format
 msgid "From 1 to %{count} groups at a time."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1169
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1171
 #, elixir-autogen, elixir-format
 msgid "Some of these groups were saved in between. Send them again."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1978
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1980
 #, elixir-autogen, elixir-format
 msgid "The map took too long. Zoom in and try again."
 msgstr ""
@@ -9137,11 +9137,6 @@ msgstr ""
 msgid "The process this step calls is gone, or no longer public. Pick one that starts when another calls it."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html.ex:248
-#, elixir-autogen, elixir-format
-msgid "A group's description doesn't have to be just text. It can also be a small app, say a form, a poll or a task list. A form, or another app, can also run a process: when a request comes in, it posts it in the chat, opens a sub-group for it and waits for whoever decides, with a reminder when they are late. You can also draw such a process yourself, right in Potok, even in a group without an app: it can start on a message with a word you pick, on a new sub-group, at a set time, or when someone starts it. One process can also call another and wait to see how it ends, send a signal others wait for, or keep a count the others read. You can describe the data it works with yourself, say a fault with its floor, keep what it needs in variables, and let it go through a list one item at a time. It can also ask you something on the way: a form opens, and what you fill in goes on with it. A form can also ask for lists, say the items of an order, and a process another one calls can hand back what it worked out, even to a group above or below. An app in the group sees what waits for you and opens the form for you. Or pick a template, say news or an event, and fill in the fields. You can open the description of a public group, app and all, to people without an account too."
-msgstr ""
-
 #: lib/potok_ide_web/live/group_live/show/process_editor.ex:1135
 #, elixir-autogen, elixir-format
 msgid "It asks for %{entity}."
@@ -9492,7 +9487,7 @@ msgstr ""
 msgid "Only the group's members start its processes."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:2043
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:2045
 #, elixir-autogen, elixir-format
 msgid "Open the group's page to do that."
 msgstr ""
@@ -10710,12 +10705,17 @@ msgstr ""
 msgid "with **bold**, *italics* and links"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1316
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1318
 #, elixir-autogen, elixir-format
 msgid "The fields must be an object."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1299
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1301
 #, elixir-autogen, elixir-format
 msgid "This group has no such template."
+msgstr ""
+
+#: lib/potok_ide_web/controllers/page_html.ex:248
+#, elixir-autogen, elixir-format
+msgid "A group's description doesn't have to be just text. It can also be a small app, say a form, a poll or a task list. A form, or another app, can also run a process: when a request comes in, it posts it in the chat, opens a sub-group for it and waits for whoever decides, with a reminder when they are late. You can also draw such a process yourself, right in Potok, even in a group without an app: it can start on a message with a word you pick, on a new sub-group, at a set time, or when someone starts it. One process can also call another and wait to see how it ends, send a signal others wait for, or keep a count the others read. You can describe the data it works with yourself, say a fault with its floor, keep what it needs in variables, and let it go through a list one item at a time. It can also ask you something on the way: a form opens, and what you fill in goes on with it. A form can also ask for lists, say the items of an order, and a process another one calls can hand back what it worked out, even to a group above or below. An app in the group sees what waits for you and opens the form for you. Or pick a template, say news or an event, and fill in the fields, or make your own, with your own fields and HTML, which the groups below can use too. You can open the description of a public group, app and all, to people without an account too."
 msgstr ""

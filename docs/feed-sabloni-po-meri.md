@@ -1,86 +1,59 @@
-# Šabloni po meri za FeedCreator (predlog)
+# Šabloni grupe (šabloni po meri)
 
-Predlog, ništa od ovoga nije napravljeno. Ideja: urednici sami prave šablone za feed. Šablon ima **definiciju forme** koju vide oni koji pišu objave i **HTML šablon** koji od upisanog (tekstova, linkova, slika) pravi opis objave.
+Grupa može da ima svoje šablone za opise, pored deset ugrađenih. Šablon ima **polja forme** koju vidi onaj ko piše opis i **HTML** koji od upisanog (tekstova, linkova, slika i videa) pravi opis. Koriste ih Uredi grupu, za opis bilo koje grupe, i FeedCreator, za objave.
 
-## Šta postoji i može da se iskoristi
+Odluke (2026-11-21): šablone pravi ko sme da uređuje grupu (u `.feed` to su njegovi urednici), važe za opis bilo koje grupe, a od fajlova uzimaju samo slike i video. Deljenje je izabrano kao „praktičnije“: šablon važi u svojoj grupi i u svim grupama ispod nje.
 
-- **Format objave.** Opis počinje komentarom `<!--potok-post {...}-->` sa šablonom, poljima i otiskom (`hash`), a ispod je gotov HTML ([feed-i-feedcreator.md](feed-i-feedcreator.md#format-opisa)). Feed i strana grupe prikazuju taj HTML i ništa ne znaju o šablonima. Šablon po meri ne traži nikakvu promenu u Feed-u.
-- **Vrste polja.** Ugrađeni šabloni već imaju `text`, `textarea`, `url`, `image`, `date`, `time`, `level`, `items`, a galerija dodaje `choice` i `pictures` (slike sa potpisima).
-- **Sanitizer** proverava svaki opis kad se prikazuje, pa šablon ne može da ubaci skriptu ni tuđe klase.
-- **Podaci aplikacije.** FeedCreator može da čuva šablone kao vrednosti u svojoj kolekciji, sa pravilom ko piše i ko čita (do 64 KB po vrednosti, do 20 kolekcija).
-- **Slike.** `uploadImage` daje adresu `/pictures/...` koja ne traži prijavu.
-- **`previewDescription`** već vraća HTML onakav kakav će gledalac videti.
+## Gde stoje i ko ih pravi
 
-## Predlog
+- Tabela `group_templates` (`PotokIde.Social.GroupTemplate`): `name` (do 60 znakova, jedinstveno u grupi bez obzira na velika slova), `purpose` (do 160), `fields`, `html` (do 32 KB), `rev` (raste sa svakim čuvanjem), `position`. Najviše 30 šablona u grupi i 30 polja u šablonu.
+- `PotokIde.Social.GroupTemplates`: `catalog/2` daje šablone same grupe pa svake grupe iznad nje, prvo najbliže, sa imenom grupe iz koje dolaze kad je gledalac vidi. Menja ih ko ima `edit_group` u toj grupi; direktni razgovori i niti nemaju šablone. Svaka izmena javlja `{:group_templates_updated, id}` na temi grupe.
+- Prave se na kartici **Šabloni** u Uredi grupu (`TemplatesCard`, `TemplatesState`): lista sopstvenih (uredi, pomeri, obriši), lista onih iz grupa iznad (samo za čitanje), i forma sa poljima, HTML-om, dugmetom „Napravi HTML od polja“ (`Custom.starter_html/1`) i pregledom sa primerima vrednosti koji kaže šta sanitizer izostavlja (`Custom.dropped/1`).
 
-### Definicija šablona
+## Polja
 
-Jedna vrednost u kolekciji `templates` aplikacije FeedCreator u `.feed`:
+Polje je `%{"key", "label", "kind", "required", "hint", "options"}`. Ključ je `^[a-z][a-z0-9_]{0,29}$`; bez njega nastaje od naziva (`Naslov vesti` daje `naslov_vesti`). Vrste: `text`, `textarea`, `url`, `date`, `time`, `choice` (do 20 opcija), `items` (lista teksta, do 30 redova), `image`, `pictures` (slike sa potpisima, potpisi pod `<ključ>_captions`, do 20) i `video`.
 
-```json
-{
-  "v": 1,
-  "name": "Utakmica",
-  "purpose": "Rezultat i strelci.",
-  "fields": [
-    {"key": "home", "label": "Domaćin", "kind": "text", "required": true},
-    {"key": "score", "label": "Rezultat", "kind": "text"},
-    {"key": "photos", "label": "Slike", "kind": "pictures", "max": 10}
-  ],
-  "html": "<h2>{{home}} {{score}}</h2>{{#photos}}<figure><img src=\"{{photos|image}}\"></figure>{{/photos}}",
-  "sample": {"home": "Potok", "score": "2:1"},
-  "rev": 3
-}
-```
+- Prvo obavezno `text` polje daje ime objave u FeedCreatoru (do 120 znakova), inače ime šablona.
+- Prvo `textarea` polje je tekst kartice deljenog linka.
 
-- Pravilo kolekcije: pišu i čitaju urednici (`edit_group` u `.feed`), isti krug koji danas piše objave.
-- Granice: do 30 polja, ceo šablon do 64 KB.
+## Jezik šablona
 
-### Jezik šablona
+Mali Mustache bez logike (`GroupTemplate.Syntax`):
 
-Mali Mustache bez logike:
+- `{{ključ}}` je tekst, uvek escape-ovan; lista se spaja zarezima.
+- Filteri: `|inline` (`**jako**`, `*malo*`, linkovi), `|paragraphs`, `|date`, `|url`, `|image`, `|video`. U `href` i `src` se stiže samo kroz poslednja tri, koja prolaze kroz `Markup.safe_href`, `safe_image` i `safe_video`.
+- `{{#ključ}}…{{/ključ}}`: kad polje nije prazno, a za listu jednom za svaki red: `{{.}}` za `items`, `{{picture}}` i `{{caption}}` za `pictures`.
+- `{{^ključ}}…{{/ključ}}`: kad je prazno.
+- Nema sirovog HTML-a iz polja ni izraza, a sekcije idu najviše tri u dubinu. Šablon koji pominje polje koje nema, nepoznat filter ili nezatvorenu sekciju ne može da se sačuva.
 
-- `{{polje}}` je tekst, uvek escape-ovan.
-- Filteri: `|inline` (`**jako**`, `*malo*`, linkovi), `|paragraphs`, `|date`, `|url`, `|image`. U `href` i `src` se stiže samo kroz `|url` i `|image`, koji prolaze kroz `safe_href` i `safe_image`.
-- `{{#polje}}…{{/polje}}`: ako nije prazno, a za listu jednom za svaki red (`{{.}}`, a kod slika i `{{caption}}`).
-- `{{^polje}}…{{/polje}}`: ako je prazno.
-- Nema sirovog HTML-a iz polja i nema izraza. Sanitizer pri prikazu ostaje druga brana.
+## Jedan renderer, na serveru
 
-### Jedan renderer, na serveru
+`PotokIdeWeb.PostTemplates.Custom` je jedino mesto gde šablon grupe postaje HTML. Uredi grupu ga zove direktno, FeedCreator preko App API-ja:
 
-Danas su ugrađeni šabloni napisani dva puta (TypeScript u FeedCreatoru i Elixir u Potoku) i test ih poredi bajt po bajt. Za šablone po meri to ne treba ponavljati:
+- `listTemplates()` daje katalog za grupu aplikacije, sa sličicom svakog šablona (njegov HTML sa primerima, posle sanitizera).
+- `renderTemplate(id, polja)` daje `description` (komentar i HTML, za čuvanje), `name`, `html` (kako se prikazuje) i `missing`.
+- `uploadMedia(fajl)` šalje sliku ili video aplikacije u njenu javnu grupu fajlova.
+- `openGroup(id, {tab: "templates"})` vodi na karticu Šabloni, i u samoj grupi aplikacije.
 
-- `PotokIdeWeb.PostTemplates.Custom` u Potoku pravi HTML od definicije i polja.
-- Dva nova poziva App API-ja: `renderTemplate(definicija, polja)` vraća HTML, a `checkTemplate(definicija)` vraća greške (nepoznato polje, nezatvoren blok, stil koji sanitizer briše, isto kao test „keeps every template's look“).
-- FeedCreator nikad sam ne pravi HTML šablona po meri, pa nema dve verzije koje se razilaze. Kasnije i deset ugrađenih šablona mogu da pređu u isti format, i dupli kod nestaje.
+Sva tri poziva traže `edit_group`, a `renderTemplate` se broji kao upis. Ugrađeni šabloni ostaju napisani dva puta, kao i pre ([feed-i-feedcreator.md](feed-i-feedcreator.md)).
 
-### Objave
+## Objave
 
-- Komentar objave nosi `"template": "custom:<id vrednosti>"` i `"rev"`.
-- Objava zadržava svoj HTML kad se šablon promeni. Pri otvaranju forma popuni polja koja još postoje, a ostala čuva sa strane dok se objava ne sačuva.
-- Uredi grupu može da menja i takve objave: server čita šablon iz kolekcije roditelja `.feed`.
+- Komentar opisa nosi `"template": "custom:<id>"` i `"rev"`, ispred polja i otiska (`PostTemplates.Post`). `Post.decode/1` prepoznaje takav id po obliku, bez čitanja baze.
+- Opis zadržava svoj HTML kad se šablon promeni; nova verzija ulazi tek kad se opis ponovo sačuva.
+- Opis čiji je šablon obrisan, ili ga ova grupa ne vidi, otvara se kao tekst, uz napomenu, i čuva se kakav jeste. FeedCreator ga otvara kao slobodan tekst, bez komentara.
 
-### Uređivač u FeedCreatoru
+## Slike i video
 
-Ekran **Šabloni**: lista, „novi od“ ugrađenog šablona (kopija kao početak), uređivanje polja po uzoru na pitanja u Formi, polje za HTML sa pregledom na uzornim vrednostima i ispod njega šta `checkTemplate` kaže.
+Slika ili video sa uređaja u Uredi grupu ide u chat grupe kao poruka sa fajlom, a u FeedCreatoru u podgrupu Fajlovi aplikacije. Obe adrese su potpisane i otvaraju se bez prijave, i u privatnoj grupi. Video ide kakav jeste, do veličine bilo kog fajla; sanitizer pušta `<video>` sa `controls`, `playsinline`, `preload` (`none`, `metadata`) i `src`/`poster` samo preko `http` i `https`.
 
-### Deljenje
+## Bezbednost
 
-1. Prvo samo u jednom feed-u.
-2. Zatim izvoz i uvoz kao JSON fajl, kao ZIP opisa aplikacije.
-3. Zajednička biblioteka samo ako zatreba. Aplikacija danas ne čita podatke druge grupe (`list_scope`), pa bi to tražilo novo pravilo na serveru, recimo čitanje kolekcije imenovane grupe iznad.
+Urednici već mogu da napišu bilo kakav HTML koji sanitizer pušta, u slobodnom tekstu. Šabloni im ne daju ništa novo: svaka vrednost je escape-ovana, adresa ulazi samo kroz proveru, a sanitizer i dalje prolazi preko svakog opisa pri prikazu. Sličica šablona grupe, za razliku od ugrađenih, uvek ide kroz sanitizer.
 
-### Bezbednost
+## Šta nije urađeno
 
-Urednici već mogu da napišu bilo kakav HTML koji sanitizer pušta, u slobodnom tekstu. Šabloni im ne daju ništa novo, samo im štede posao.
-
-## Otvorena pitanja
-
-- Ko pravi šablone: svi urednici `.feed` ili samo admini?
-- Da li šablon treba da važi u više feed-ova odjednom?
-- Fajl koji nije slika (PDF i slično) nema trajnu javnu adresu: `/app_files` važi 10 minuta. Polje za takve fajlove traži novu potpisanu adresu, a to je odluka i za politiku privatnosti.
-- Da li Uredi grupu treba da nudi šablone po meri za opis bilo koje grupe? Onda biblioteka ne stoji u `.feed`, nego više.
-
-## Veličina
-
-Srednje do veliko: renderer i provera na serveru, dva poziva API-ja sa testovima, ekran za šablone u FeedCreatoru. Otprilike koliko uređivač pitanja u Formi.
+- Izvoz i uvoz šablona kao fajla, i biblioteka zajednička grupama koje nisu jedna ispod druge.
+- Fajlovi koji nisu slika ni video (PDF i slično): `/app_files` važi 10 minuta, pa bi trajna adresa tražila odluku i u politici privatnosti.
+- Deset ugrađenih šablona još nije prešlo u isti format.

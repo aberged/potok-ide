@@ -326,6 +326,16 @@
     ]
   },
   {
+    "name": "sabloni-grupe",
+    "as": "ana",
+    "url": "/groups/{groups.mz}/edit_group?section=templates",
+    "steps": [
+      { "click": "#group-template-list [id$='-edit']" },
+      { "show": "#group-template-html" },
+      { "pause": 800 }
+    ]
+  },
+  {
     "name": "mz-nova-grupa",
     "as": "ana",
     "url": "/groups/{groups.root}",

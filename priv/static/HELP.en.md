@@ -226,7 +226,7 @@ A shortcut has an arrow and the word Shortcut, and it shows the group itself: it
 
 ![A shortcut on the home page leads to the assembly inside the local community](precica) ![Shortcut: the groups you are in, and a search by name](precica-izbor)
 
-Edit group has everything else: name, picture and kind, access and membership (public group, description open to guests, chat open to non-members, inheritance and the roles it goes by), what opens first, the description, alternative descriptions, the location and the danger zone for deleting. For a public group, you also see there how a link to it looks when it is shared outside Potok.
+Edit group has everything else: name, picture and kind, access and membership (public group, description open to guests, chat open to non-members, inheritance and the roles it goes by), what opens first, the description, alternative descriptions, [templates](#svoji-sabloni), the location and the danger zone for deleting. For a public group, you also see there how a link to it looks when it is shared outside Potok.
 
 You change the group's kind in Edit group → Basics, with Change. The new kind brings its description, the page the group opens on, and its picture if the group still has the old kind's. If that would overwrite an app, or an app would take the place of a text, Potok warns you first: the old description, with all the data of its app, goes among the alternative descriptions, which only those who edit the group see, and you bring it back from there with "Make default". A feed that becomes something else keeps the sub-group with its posts.
 
@@ -367,6 +367,14 @@ You can write any group's description from a template: news, photo, quote, event
 Whoever writes HTML can turn a description into an app of their own (Edit group, Description, "The description is an app (API)"). You then don't type the app into a field: you upload it as a ZIP with one HTML file, or as the HTML file itself, and download the current one as a ZIP. The file doesn't go to the server, only its HTML goes into the description. The same goes for alternative descriptions. Such an app can also run a process: when an answer comes in, it posts it in the chat, opens a sub-group for it and waits for someone with the role to decide, reminding them when they are late. Such a description can also hold a site from another address, in a frame: a site made for it follows the theme and the language you pick in Potok, opens where the reading stopped, and the group's address leads to that chapter. An app and a site can remember something for you alone, such as the last page you read; not even the editors see it, and you see and delete it in the account settings, under "What apps remember for you". What an app may do, and what it may not, is described in the [domain map](/domain#domain-apps). How an app is built and where each of its calls goes is drawn on the page [The architecture of a Potok app](/pomoc/arhitektura-aplikacije).
 
 ![Templates for a group's description](opis-sablon)
+
+### Templates of your own {:#svoji-sabloni}
+
+If the built-in templates are not enough, make your own: Edit group, the Templates card, "New template". A template has fields (short and longer text, link, date, time, choice, list, picture, pictures with captions, video) and the HTML they go into: `{{naslov}}` puts in the field's text, and `{{#prilozi}}…{{/prilozi}}` a part shown only when the field is filled, once for each row of a list. "Make HTML from the fields" gives a plain layout to start from, and the preview shows at once how the template looks and what a description leaves out: scripts never get through, and neither do some attributes and styles.
+
+A template serves its group and every group below it, so an organization makes it once, at the top. It is on the list of templates, after the built-in ones, both in Edit group and in FeedCreator, whose "Šabloni grupe" button leads to the Templates card. When you change a template, the descriptions made with it stay as they are until you save them again, and when you delete it, they open as text. A description from a template can take a video too, from an address or from the device: like a picture, it goes to the chat as a message with the file.
+
+![Templates of a group in its settings](sabloni-grupe)
 
 ### Draw a process {:#nacrtaj-proces}
 

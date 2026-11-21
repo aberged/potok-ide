@@ -232,7 +232,7 @@ Prečica ima strelicu i natpis Prečica, a pokazuje samu grupu: njenu poslednju 
 
 ![Prečica na početnoj strani vodi do zbora u mesnoj zajednici](precica) ![Prečica: grupe u kojima si član, i pretraga po nazivu](precica-izbor)
 
-Uredi grupu ima sve ostalo: naziv, sliku i vrstu, pristup i članstvo (javna grupa, opis vidljiv i bez prijave, razgovor otvoren nečlanovima, nasleđivanje i uloge po kojima se nasleđuje), šta se otvara prvo, opis, alternativne opise, lokaciju i opasnu zonu za brisanje. Za javnu grupu tu vidiš i kako link ka njoj izgleda kad se podeli van Potoka.
+Uredi grupu ima sve ostalo: naziv, sliku i vrstu, pristup i članstvo (javna grupa, opis vidljiv i bez prijave, razgovor otvoren nečlanovima, nasleđivanje i uloge po kojima se nasleđuje), šta se otvara prvo, opis, alternativne opise, [šablone](#svoji-sabloni), lokaciju i opasnu zonu za brisanje. Za javnu grupu tu vidiš i kako link ka njoj izgleda kad se podeli van Potoka.
 
 Vrstu grupe menjaš u Uredi grupu → Osnovno, dugmetom Promeni. Nova vrsta donosi svoj opis, stranicu na kojoj se grupa otvara i svoju sliku, ako grupa još ima sliku stare vrste. Ako bi time bila pregažena aplikacija, ili bi aplikacija zauzela mesto teksta, Potok te prvo upozori: stari opis, sa svim podacima svoje aplikacije, prelazi među alternativne opise, koje vide samo oni koji uređuju grupu, i odatle ga vraćaš sa „Postavi kao podrazumevani“. Feed koji postane nešto drugo zadržava podgrupu sa objavama.
 
@@ -373,6 +373,14 @@ Opis bilo koje grupe možeš da napišeš iz šablona: vest, slika, citat, doga�
 Ko piše HTML, može od opisa da napravi svoju aplikaciju (Uredi grupu, Opis, „Opis je aplikacija (API)“). Aplikaciju tada ne pišeš u polje, nego je otpremaš kao ZIP sa jednim HTML fajlom, ili kao sam HTML fajl, a postojeću preuzimaš kao ZIP. Fajl ne ide na server, u opis ide samo njen HTML. Isto važi i za alternativne opise. Takva aplikacija može da vodi i proces: kad stigne odgovor, objavi ga u razgovoru, otvori podgrupu za njega i čeka da neko sa ulogom odluči, a podseti ga kad kasni. U takav opis može da stane i sajt sa druge adrese, u okviru: sajt koji je za to napravljen prati temu i jezik koje biraš u Potoku, otvara se tamo gde je čitanje stalo, a adresa grupe vodi na to poglavlje. Aplikacija i sajt mogu da pamte nešto samo za tebe, recimo poslednju pročitanu stranicu; to ne vide ni urednici, a vidiš i brišeš u Podešavanjima naloga, u delu „Šta aplikacije pamte za tebe“. Šta aplikacija sme, a šta ne, opisano je u [mapi domena](/domain#domain-apps). Kako je aplikacija građena i kuda ide svaki njen poziv, crta strana [Arhitektura Potok aplikacije](/pomoc/arhitektura-aplikacije).
 
 ![Šabloni za opis grupe](opis-sablon)
+
+### Svoji šabloni {:#svoji-sabloni}
+
+Ako ti ugrađeni šabloni nisu dovoljni, napravi svoj: Uredi grupu, kartica Šabloni, „Novi šablon“. Šablon ima polja (kratak i duži tekst, link, datum, vreme, izbor, lista, slika, slike sa opisima, video) i HTML u koji ona idu: `{{naslov}}` stavlja tekst polja, a `{{#prilozi}}…{{/prilozi}}` deo koji se vidi samo kad je polje popunjeno, jednom za svaki red liste. „Napravi HTML od polja“ daje jednostavan raspored od koga možeš da kreneš, a pregled odmah pokazuje kako šablon izgleda i šta opis izostavlja: skripte nikad ne prolaze, a ni neki atributi i stilovi.
+
+Šablon važi u svojoj grupi i u svim grupama ispod nje, pa ga organizacija napravi jednom, na vrhu. Stoji na listi šablona, posle ugrađenih, i u Uredi grupu i u FeedCreatoru, koji vodi do kartice Šabloni dugmetom „Šabloni grupe“. Kad šablon izmeniš, opisi napravljeni njime ostaju kakvi su dok ih ponovo ne sačuvaš, a kad ga obrišeš, otvaraju se kao tekst. U opis iz šablona može da ide i video, sa adrese ili sa uređaja: kao slika, ide u chat kao poruka sa fajlom.
+
+![Šabloni grupe u podešavanjima](sabloni-grupe)
 
 ### Nacrtaj proces {:#nacrtaj-proces}
 

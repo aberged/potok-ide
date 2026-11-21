@@ -155,7 +155,8 @@ Sanitizer određuje kako šablon sme da izgleda:
 
 | Prolazi | Ne prolazi |
 |---|---|
-| `h1`-`h6`, `p`, `div`, `section`, `article`, `blockquote`, `figure`, `table`, `ul`, `ol`, `details` | `class`, `id`, `data-*` (osim jednog, ispod), `<style>`, `<script>`, `<iframe>`, `<video>` |
+| `h1`-`h6`, `p`, `div`, `section`, `article`, `blockquote`, `figure`, `table`, `ul`, `ol`, `details` | `class`, `id`, `data-*` (osim jednog, ispod), `<style>`, `<script>`, `<iframe>`, `<audio>` |
+| `<video>` sa `controls`, `playsinline`, `preload` (`none`, `metadata`), `src` i `poster` preko `http` i `https` | `autoplay`, `loop`, `muted` i `style` na `video` |
 | `data-potok-gallery` na `div`, sa `slides`, `cards`, `cinema` ili `polaroid` | `data-potok-gallery` na drugom tagu ili sa drugom vrednošću |
 | `style` na tim tagovima | `style` na `img` i `a` |
 | `color`, `background-color`, `border`, `border-radius`, `padding`, `margin`, `font-size`, `font-weight`, `line-height`, `text-align`, `width`, `height` | `flex`, `grid`, `max-width`, `gap`, `box-shadow`, `opacity`, `transform`, `position`, `overflow: hidden` |
@@ -169,6 +170,8 @@ Iz toga slede tri pravila za šablone:
 - Boja linka dolazi iz teme, pa na površini u boji nema linkova.
 
 `src/sanitizer.test.ts` u projektu FeedCreator drži kopiju ovih pravila i proverava svaki šablon. Potok iste šablone proverava kroz pravi sanitizer.
+
+Šabloni koje grupa napravi sama ne pišu se ovde dva puta: Potok ih ispisuje na serveru, a FeedCreator ih dobija preko `listTemplates` i `renderTemplate` ([feed-sabloni-po-meri.md](feed-sabloni-po-meri.md)).
 
 ### Galerija
 

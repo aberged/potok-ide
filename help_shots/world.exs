@@ -204,6 +204,27 @@ defmodule HelpShots.World do
       {:ok, _} = Social.assign_group_member_role(ana, mz, p.(name).id, council.key)
     end
 
+    # A template of the community's own, which every group below it uses too.
+    {:ok, _template} =
+      PotokIde.Social.GroupTemplates.create(ana, mz, %{
+        "name" => "Saopštenje saveta",
+        "purpose" => "Naslov, datum, tekst i prilozi, u boji MZ.",
+        "fields" => [
+          %{"label" => "Naslov", "kind" => "text", "required" => "true"},
+          %{"label" => "Datum", "kind" => "date"},
+          %{"label" => "Tekst", "kind" => "textarea"},
+          %{"label" => "Prilozi", "kind" => "items"}
+        ],
+        "html" => """
+        <section style="border-left: 6px solid #2563eb; padding: 4px 0 4px 16px;">
+        <p style="font-size: 13px; font-weight: bold; margin: 0;">Savet MZ Topolik{{#datum}} · {{datum|date}}{{/datum}}</p>
+        <h2 style="margin: 4px 0 0;">{{naslov}}</h2>
+        {{tekst|paragraphs}}
+        {{#prilozi}}<p style="margin: 4px 0 0;"><strong>Prilog:</strong> {{.}}</p>{{/prilozi}}
+        </section>
+        """
+      })
+
     zbor = preset(ana, mz, "chat", "Zbor građana")
     map = preset(ana, mz, "map", "Mapa kraja")
 

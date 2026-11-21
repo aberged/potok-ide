@@ -29,12 +29,12 @@ msgstr "%{field}, bez obzira na veličinu slova"
 msgid "<Account>The account</Account> is the identity: an email and a password. Everything in groups is done by a <Profile>profile</Profile>. One account can have several profiles, say a business, a private and a club one. The code does not tell them apart by purpose, only unique from shared. A shared profile is used by every account that accepts a <ProfileInvitation>profile invitation</ProfileInvitation>."
 msgstr "<Account>Nalog</Account> je identitet: imejl i lozinka. Sve u grupama radi <Profile>profil</Profile>. Jedan nalog može da ima više profila, recimo poslovni, privatni i klupski. Kod ih ne razlikuje po nameni, nego samo jedinstvene od deljenih. Deljeni profil koriste svi nalozi koji prihvate <ProfileInvitation>pozivnicu za profil</ProfileInvitation>."
 
-#: lib/potok_ide_web/domain_copy.ex:1844
+#: lib/potok_ide_web/domain_copy.ex:1852
 #, elixir-autogen, elixir-format
 msgid "<Tagging>Tagging</Tagging> joins a <Tag>tag</Tag> with exactly one group, profile, event, value or file, and the database checks that. A tag without an owner is public. A tag with an owner is seen only by that profile."
 msgstr "<Tagging>Tagovanje</Tagging> spaja <Tag>tag</Tag> sa tačno jednom grupom, profilom, događajem, vrednošću ili fajlom, i to proverava baza. Tag bez vlasnika je javan. Tag sa vlasnikom vidi samo taj profil."
 
-#: lib/potok_ide_web/domain_copy.ex:1852
+#: lib/potok_ide_web/domain_copy.ex:1860
 #, elixir-autogen, elixir-format
 msgid "A <GroupInvitation>group invitation</GroupInvitation> goes from profile to profile. If the invited account has no profile yet, an <GroupAccountInvitation>account invitation</GroupAccountInvitation> is kept, which becomes an ordinary invitation as soon as the account gets its first profile. A <GroupJoinRequest>join request</GroupJoinRequest> goes the other way. When accepted it is deleted, and an <GroupJoinRequestApproval>approved request</GroupJoinRequestApproval> stays with the name of whoever admitted the member."
 msgstr "<GroupInvitation>Pozivnica u grupu</GroupInvitation> ide od profila do profila. Ako pozvani nalog još nema profil, čuva se <GroupAccountInvitation>pozivnica za nalog</GroupAccountInvitation>, koja postaje obična pozivnica čim nalog dobije prvi profil. <GroupJoinRequest>Zahtev za ulazak</GroupJoinRequest> ide u drugom smeru. Kad se prihvati, briše se, a ostaje <GroupJoinRequestApproval>odobren zahtev</GroupJoinRequestApproval> sa imenom onoga ko je primio člana."
@@ -189,7 +189,7 @@ msgstr "Sve tabele domena po celinama, sa spoljnim ključevima i mekim vezama."
 msgid "Alt. description"
 msgstr "Alternativni opis"
 
-#: lib/potok_ide_web/domain_copy.ex:1860
+#: lib/potok_ide_web/domain_copy.ex:1868
 #, elixir-autogen, elixir-format
 msgid "An <Event>event</Event> keeps the repeat rule. A single occurrence is named by its local start date, so an <Response>event response</Response> carries that date, and cancelled occurrences are listed on the event."
 msgstr "<Event>Događaj</Event> čuva pravilo ponavljanja. Pojedinačno pojavljivanje se imenuje lokalnim datumom početka, pa <Response>odgovor na događaj</Response> nosi taj datum, a otkazana pojavljivanja su zapisana na događaju."
@@ -234,7 +234,7 @@ msgstr "Reakcija jednog profila na vrednost. Isti profil ne može dvaput istim e
 msgid "An event in a group's calendar, once or repeating. The start and the end are those of the first occurrence, and repeats keep the local time of the event's time zone. A value can announce an event. Its place is words, and on a map the place of a group or a point, an area or a route of its own."
 msgstr "Događaj u kalendaru grupe, jednom ili sa ponavljanjem. Početak i kraj važe za prvo pojavljivanje, a ponavljanja čuvaju lokalno vreme vremenske zone događaja. Događaj može da najavi vrednost. Mesto su mu reči, a na mapi mesto neke grupe ili njegova sopstvena tačka, područje ili ruta."
 
-#: lib/potok_ide_web/domain_copy.ex:1858
+#: lib/potok_ide_web/domain_copy.ex:1866
 #, elixir-autogen, elixir-format
 msgid "An event's occurrence has no row of its own"
 msgstr "Pojavljivanje događaja nema svoj red"
@@ -364,7 +364,7 @@ msgstr "Dokle je profil pročitao grupu. Nepročitano je sve novije od poslednje
 msgid "How permissions come about"
 msgstr "Kako nastaju dozvole"
 
-#: lib/potok_ide_web/domain_copy.ex:1850
+#: lib/potok_ide_web/domain_copy.ex:1858
 #, elixir-autogen, elixir-format
 msgid "How to get into a group"
 msgstr "Kako se ulazi u grupu"
@@ -454,7 +454,7 @@ msgstr "Jedan uređaj ili pregledač koji prima obaveštenja, preko veb pusha il
 msgid "One tag on one item. Exactly one of the five target columns is set, and the database checks that."
 msgstr "Jedan tag na jednoj stavci. Popunjena je tačno jedna od pet kolona sa metom, što proverava baza."
 
-#: lib/potok_ide_web/domain_copy.ex:1842
+#: lib/potok_ide_web/domain_copy.ex:1850
 #, elixir-autogen, elixir-format
 msgid "One tag, five kinds of items"
 msgstr "Jedan tag, pet vrsta stavki"
@@ -1614,11 +1614,6 @@ msgstr "Skuplja reakcije i komentare"
 msgid "Group reaction"
 msgstr "Reakcija na grupu"
 
-#: lib/potok_ide_web/domain_copy.ex:1836
-#, elixir-autogen, elixir-format
-msgid "A picture a description's template takes from the device is a <Value>value</Value> in the group's chat with its <ValueAttachment>file</ValueAttachment>, so it stays among the group's files; pictures picked together for a gallery are one value with up to ten files. More people see a description than a chat, so the picture's address is signed and needs no login. Deleting that value also removes the picture from the description. A gallery says in its HTML only which pictures and in which of four looks, the one attribute of its kind the sanitizer keeps; Potok draws the look, its buttons and its counter wherever the description shows, in an app's frame too."
-msgstr "Sliku koju šablon opisa uzme sa uređaja čuva <Value>vrednost</Value> u chatu grupe, sa svojim <ValueAttachment>fajlom</ValueAttachment>, pa slika ostaje među fajlovima grupe; slike koje se za galeriju izaberu zajedno su jedna vrednost sa najviše deset fajlova. Opis vidi više ljudi nego chat, zato je adresa slike potpisana i ne traži prijavu. Brisanje te vrednosti uklanja sliku i iz opisa. Galerija u svom HTML-u kaže samo koje slike i u kom od četiri izgleda, jedinim atributom te vrste koji sanitizer pušta; izgled, dugmad i brojač crta Potok gde god se opis prikaže, i u okviru aplikacije."
-
 #: lib/potok_ide_web/domain_copy.ex:1834
 #, elixir-autogen, elixir-format
 msgid "A picture in a description is a file in the chat"
@@ -2118,12 +2113,12 @@ msgstr "zapadna ivica rute"
 msgid "width of the route on a map"
 msgstr "širina rute na mapi"
 
-#: lib/potok_ide_web/domain_copy.ex:1868
+#: lib/potok_ide_web/domain_copy.ex:1876
 #, elixir-autogen, elixir-format
 msgid "An <Event>event</Event>'s place is words, and it can also stand on the map: at the place of a <Group>group</Group> or at a place of its own, never both. A place of its own is a point, an area or a route, as a group's is, drawn the same way, and an area or a route keeps its pin. Only a group with a place that the author sees can be picked, and the event then stands where the group stands, even after the group moves. Whoever does not see that group sees only the words, and deleting the group leaves the words as well. A link from a group or from an event opens the root's map on its place, which stands out whatever the filters, and an event shows a card of its own there."
 msgstr "Mesto <Event>događaja</Event> su reči, a može da stoji i na mapi: na mestu neke <Group>grupe</Group> ili na svom mestu, nikad oboje. Svoje mesto je tačka, područje ili ruta, kao kod grupe, i crta se na isti način, a područje ili ruta zadržava svoj pin. Može da se izabere samo grupa sa mestom koju autor vidi, i događaj onda stoji gde i grupa, i kad se ona pomeri. Ko tu grupu ne vidi, vidi samo reči, a i brisanje grupe ostavlja reči. Link sa grupe ili sa događaja otvara mapu korena na tom mestu, koje se ističe kakvi god da su filteri, a događaj tamo pokazuje i svoju karticu."
 
-#: lib/potok_ide_web/domain_copy.ex:1866
+#: lib/potok_ide_web/domain_copy.ex:1874
 #, elixir-autogen, elixir-format
 msgid "An event can take place at a group"
 msgstr "Događaj može da se održava u grupi"
@@ -2363,7 +2358,7 @@ msgstr "Račun"
 msgid "Neither the cost nor the amount is negative."
 msgstr "Ni trošak ni količina nisu negativni."
 
-#: lib/potok_ide_web/domain_copy.ex:1874
+#: lib/potok_ide_web/domain_copy.ex:1882
 #, elixir-autogen, elixir-format
 msgid "Potok estimates what it costs"
 msgstr "Potok procenjuje koliko košta"
@@ -2378,7 +2373,7 @@ msgstr "Iznos nije negativan, a napomena ima najviše 500 znakova."
 msgid "What `Fly.io` actually billed for one month, copied from the invoice, so the estimate of that month stands next to the real sum."
 msgstr "Koliko je `Fly.io` zaista naplatio za jedan mesec, prepisano sa računa, da procena tog meseca stoji pored pravog iznosa."
 
-#: lib/potok_ide_web/domain_copy.ex:1876
+#: lib/potok_ide_web/domain_copy.ex:1884
 #, elixir-autogen, elixir-format
 msgid "`Fly.io` gives no way to read its bills, so Potok estimates them itself. Every quarter of an hour it reads which machines run and how big they are, how big the database and the stored files are and how much data went out, and writes what each <CostHour>hour</CostHour> cost by the price list. The hours it missed, back to the start of the month, are filled in from `Fly.io`'s own metrics of those hours, which go back about ten days, and the rest from what runs now. Once a month is billed, one of the people who run Potok copies the sum from the <Invoice>invoice</Invoice>, and only they may. Anyone sees both on the costs page, even without an account."
 msgstr "`Fly.io` ne daje način da se pročitaju njegovi računi, pa ih Potok sam procenjuje. Na svakih petnaest minuta pročita koje mašine rade i koliko su velike, koliko su veliki baza i sačuvani fajlovi i koliko je podataka poslato, pa upiše koliko je svaki <CostHour>sat</CostHour> koštao po cenovniku. Sate koje je propustio, sve do početka meseca, popuni iz metrika samog `Fly.io` za te sate, koje sežu desetak dana unazad, a ostalo iz onoga što radi sada. Kad mesec bude naplaćen, neko od onih koji vode Potok prepiše iznos sa <Invoice>računa</Invoice>, i to smeju samo oni. Oboje svako vidi na strani sa troškovima, i bez naloga."
@@ -3128,3 +3123,18 @@ msgstr "Piše šablonima grupe"
 #, elixir-autogen, elixir-format
 msgid "its group and those below"
 msgstr "njena grupa i one ispod"
+
+#: lib/potok_ide_web/domain_copy.ex:1842
+#, elixir-autogen, elixir-format
+msgid "A group's templates serve the groups below it"
+msgstr "Šabloni grupe važe i za grupe ispod nje"
+
+#: lib/potok_ide_web/domain_copy.ex:1836
+#, elixir-autogen, elixir-format
+msgid "A picture a description's template takes from the device is a <Value>value</Value> in the group's chat with its <ValueAttachment>file</ValueAttachment>, so it stays among the group's files; pictures picked together for a gallery are one value with up to ten files. A video goes the same way, as it is, and plays in the description. More people see a description than a chat, so the address of the picture or video is signed and needs no login. Deleting that value also removes it from the description. A gallery says in its HTML only which pictures and in which of four looks, the one attribute of its kind the sanitizer keeps; Potok draws the look, its buttons and its counter wherever the description shows, in an app's frame too."
+msgstr "Sliku koju šablon opisa uzme sa uređaja čuva <Value>vrednost</Value> u chatu grupe, sa svojim <ValueAttachment>fajlom</ValueAttachment>, pa slika ostaje među fajlovima grupe; slike koje se za galeriju izaberu zajedno su jedna vrednost sa najviše deset fajlova. Video ide istim putem, kakav jeste, i pušta se u opisu. Opis vidi više ljudi nego chat, zato je adresa slike ili videa potpisana i ne traži prijavu. Brisanje te vrednosti uklanja ih i iz opisa. Galerija u svom HTML-u kaže samo koje slike i u kom od četiri izgleda, jedinim atributom te vrste koji sanitizer pušta; izgled, dugmad i brojač crta Potok gde god se opis prikaže, i u okviru aplikacije."
+
+#: lib/potok_ide_web/domain_copy.ex:1844
+#, elixir-autogen, elixir-format
+msgid "Whoever may edit a <Group>group</Group> makes its <GroupTemplate>templates</GroupTemplate>: the fields of a form and the HTML they go into, with tags that take them and nothing that runs. They serve that group and every group below it, next to Potok's own, in the description of a group and in FeedCreator, so an organization writes them once at its top. Only Potok turns them into HTML, and the sanitizer still runs over it. A description keeps the HTML and the version it was made with: a changed template reaches it only when it is saved again, and a deleted one leaves it as it is, to be edited as text."
+msgstr "Ko sme da uređuje <Group>grupu</Group> pravi njene <GroupTemplate>šablone</GroupTemplate>: polja forme i HTML u koji ona idu, sa oznakama koje ih uzimaju i bez ičega što se izvršava. Važe u toj grupi i u svakoj grupi ispod nje, pored Potokovih, u opisu grupe i u FeedCreatoru, pa ih organizacija napiše jednom, na svom vrhu. Samo ih Potok pretvara u HTML, a sanitizer i dalje prolazi preko njega. Opis pamti HTML i verziju kojom je napravljen: izmenjen šablon do njega stiže tek kad se ponovo sačuva, a obrisan ga ostavlja kakav je, da se uređuje kao tekst."

@@ -1835,7 +1835,15 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "A picture a description's template takes from the device is a <Value>value</Value> in the group's chat with its <ValueAttachment>file</ValueAttachment>, so it stays among the group's files; pictures picked together for a gallery are one value with up to ten files. More people see a description than a chat, so the picture's address is signed and needs no login. Deleting that value also removes the picture from the description. A gallery says in its HTML only which pictures and in which of four looks, the one attribute of its kind the sanitizer keeps; Potok draws the look, its buttons and its counter wherever the description shows, in an app's frame too."
+            "A picture a description's template takes from the device is a <Value>value</Value> in the group's chat with its <ValueAttachment>file</ValueAttachment>, so it stays among the group's files; pictures picked together for a gallery are one value with up to ten files. A video goes the same way, as it is, and plays in the description. More people see a description than a chat, so the address of the picture or video is signed and needs no login. Deleting that value also removes it from the description. A gallery says in its HTML only which pictures and in which of four looks, the one attribute of its kind the sanitizer keeps; Potok draws the look, its buttons and its counter wherever the description shows, in an app's frame too."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "A group's templates serve the groups below it"),
+        text:
+          dgettext(
+            "domain_map",
+            "Whoever may edit a <Group>group</Group> makes its <GroupTemplate>templates</GroupTemplate>: the fields of a form and the HTML they go into, with tags that take them and nothing that runs. They serve that group and every group below it, next to Potok's own, in the description of a group and in FeedCreator, so an organization writes them once at its top. Only Potok turns them into HTML, and the sanitizer still runs over it. A description keeps the HTML and the version it was made with: a changed template reaches it only when it is saved again, and a deleted one leaves it as it is, to be edited as text."
           )
       },
       %{
