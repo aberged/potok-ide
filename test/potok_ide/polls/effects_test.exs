@@ -336,6 +336,29 @@ defmodule PotokIde.Polls.EffectsTest do
       assert %{effect_status: :role_gone} = past_deadline!(gone)
     end
 
+    test "gives nothing a member holds through the parent, and says so", %{
+      owner: owner,
+      owner_account: owner_account,
+      member: member,
+      member_account: account,
+      group: group
+    } do
+      {:ok, _role} = Social.assign_group_member_role(owner, group, member.id, "admin")
+
+      child =
+        group_with_members!(owner, [], %{"inherits_members" => true, parent: group})
+
+      assert %{member?: true, admin?: true} = Access.for_profile(member, child)
+
+      poll = create_poll!(owner, child, grant_attrs(member))
+      vote!(member, account, poll, 0)
+      vote!(owner, owner_account, poll, 0)
+
+      assert %{effect_status: :inherited_role} = past_deadline!(poll)
+      assert admin?(member, child)
+      assert role_row(member, child).inherited
+    end
+
     test "never takes the last admin", %{
       owner: owner,
       owner_account: owner_account,

@@ -257,7 +257,8 @@ defmodule PotokIde.Polls.Effects do
     manifest = Access.load_effective_manifest(group)
 
     with :ok <- member(target, group),
-         {:ok, role} <- role_there(manifest, poll.effect_role_key) do
+         {:ok, role} <- role_there(manifest, poll.effect_role_key),
+         :ok <- not_held_through_parent(group, target, role.key) do
       {:ok, _member_role, announce} =
         Social.put_member_role(Repo, group, target, role.key, poll.id)
 
@@ -288,7 +289,8 @@ defmodule PotokIde.Polls.Effects do
     manifest = Access.load_effective_manifest(group)
 
     with :ok <- member(elected, group),
-         {:ok, role} <- role_there(manifest, poll.effect_role_key) do
+         {:ok, role} <- role_there(manifest, poll.effect_role_key),
+         :ok <- not_held_through_parent(group, elected, role.key) do
       others = if poll.effect_replace, do: holders(group, role.key) -- [elected], else: []
       {:ok, _member_role, put} = Social.put_member_role(Repo, group, elected, role.key, poll.id)
 
@@ -430,6 +432,21 @@ defmodule PotokIde.Polls.Effects do
     if key in Map.get(Access.inherited_by_profile(group, [profile_id]), profile_id, []),
       do: {:error, :inherited_role},
       else: :ok
+  end
+
+  # A role the member already holds through the parent is the parent's to
+  # give: the group's own row cannot take its place.
+  defp not_held_through_parent(%Group{id: group_id}, profile_id, key) do
+    inherited? =
+      Repo.exists?(
+        from(r in GroupMemberRole,
+          where:
+            r.group_id == ^group_id and r.profile_id == ^profile_id and r.role_key == ^key and
+              r.inherited
+        )
+      )
+
+    if inherited?, do: {:error, :inherited_role}, else: :ok
   end
 
   defp not_last_admin(group, profile_id, key) do

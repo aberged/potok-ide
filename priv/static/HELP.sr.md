@@ -323,6 +323,8 @@ Glasanje može i da odluči ko ima koju ulogu. U formi, pod **Šta odluka menja*
 
 Glasači na kartici glasanja, pre nego što glasaju, vide šta će se desiti, recimo „Ako prođe: @marko dobija ulogu Administrator“. Kad se glasanje završi na roku, ono što odluka kaže se odmah sprovede, a na kartici piše šta je od toga bilo: sprovedeno, nije prošlo, član više nije u grupi ili bi grupa ostala bez administratora. Ko dobije ili izgubi ulogu, dobija i obaveštenje.
 
+![Glasanje koje članu dodeljuje ulogu](glasanje-odluka)
+
 Takvo glasanje drži ista pravila za sve:
 
 - glasa cela grupa, a odlučuje većina uz kvorum, pa se rok i kvorum moraju zadati;

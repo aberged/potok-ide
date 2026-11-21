@@ -317,6 +317,8 @@ A poll can also decide who holds which role. In the form, under **What the decis
 
 Voters see on the poll's card, before they vote, what will happen, say "If it passes: @marko gets the role Admin". When the poll ends at its deadline, what the decision says is done at once, and the card says what came of it: done, did not pass, the member is no longer in the group, or the group would be left without an admin. Whoever gets or loses the role is also notified.
 
+![A poll that gives a member a role](glasanje-odluka)
+
 Such a poll keeps the same rules for everyone:
 
 - the whole group votes, and a majority decides with a quorum, so the deadline and the quorum must be set;

@@ -241,6 +241,26 @@
     ]
   },
   {
+    "name": "glasanje-odluka",
+    "as": "ana",
+    "url": "/groups/{groups.mz_zbor}",
+    "steps": [
+      { "click": "#group-value-add-toggle" },
+      { "click": "#group-value-poll" },
+      { "wait": "#poll-form-dialog" },
+      { "type": ["#poll-form-dialog input[type=text]", "Da li Marko ulazi u savet?"] },
+      { "select": ["#poll-form-effect-kind", "grant"] },
+      { "wait": "#poll-form-effect-role" },
+      { "select": ["#poll-form-effect-role", "savet"] },
+      { "type": ["#poll-form-effect-query", "mar"] },
+      { "wait": "#poll-form-effect-suggest-{people.marko.profile_id}" },
+      { "click": "#poll-form-effect-suggest-{people.marko.profile_id}" },
+      { "wait": "#poll-form-effect-picked-{people.marko.profile_id}" },
+      { "scroll": "#poll-form-effect" },
+      { "pause": 600 }
+    ]
+  },
+  {
     "name": "glasanje-kartica",
     "as": "jelena",
     "url": "/groups/{groups.mz_zbor}",
