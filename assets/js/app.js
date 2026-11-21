@@ -834,6 +834,8 @@ const APP_FRAME_METHODS = new Set([
   "update_child",
   "withdraw_child",
   "preview_description",
+  "list_templates",
+  "render_template",
   "toggle_group_reaction",
   "share_group",
   "pick_emoji",

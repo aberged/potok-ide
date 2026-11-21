@@ -388,7 +388,7 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("AppProfileEntry", "value"), do: dgettext("domain_map", "what the app keeps")
 
   defp own_field("GroupTemplate", "group_id"),
-    do: dgettext("domain_map", "group it serves, with those below it")
+    do: dgettext("domain_map", "its group and those below")
 
   defp own_field("GroupTemplate", "creator_id"), do: dgettext("domain_map", "who made it")
 
@@ -1434,6 +1434,15 @@ defmodule PotokIdeWeb.DomainCopy do
             dgettext(
               "domain_map",
               "For a viewer who may edit its group, an app can make <Group>groups</Group> right under it, change them and take them back, and put them on a map with a pin. A new one opens its chat if the app's group has. It can inherit the members of the app's group, all of them or only those with the roles the app picks. It can also make up to a hundred at once, all or none, each with a key of its own, so that the same list brought in again makes no duplicates: that is how the rows of an open dataset become groups on a map. That is how one app writes what another shows, and a feed gets its editors' desk."
+            )
+        },
+        %{
+          icon: "hero-rectangle-group",
+          title: dgettext("domain_map", "Writes with the group's templates"),
+          text:
+            dgettext(
+              "domain_map",
+              "For a viewer who may edit its group, an app gets the <GroupTemplate>templates</GroupTemplate> of that group and of the groups above it, each with a picture of how it looks, and has Potok turn what its form holds into a description: the same HTML the group's own page writes with them. It can send pictures and videos for those descriptions too. That is how FeedCreator writes posts with an organization's own templates."
             )
         },
         %{

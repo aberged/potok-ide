@@ -13,7 +13,8 @@ defmodule PotokIdeWeb.GroupLive.AppChildrenTest do
 
   alias PotokIde.Repo
   alias PotokIde.Social
-  alias PotokIde.Social.{Access, AppData, AppFiles, Group}
+  alias PotokIde.Social.{Access, AppData, AppFiles, Group, GroupTemplates}
+  alias PotokIdeWeb.PostTemplates.Post
 
   @picture "data:image/png;base64,iVBORw0KGgo="
 
@@ -205,7 +206,9 @@ defmodule PotokIdeWeb.GroupLive.AppChildrenTest do
         {"create_child", %{"name" => "written by the app"}},
         {"update_child", %{"id" => ctx.story.id, "name" => "renamed by the app"}},
         {"withdraw_child", %{"id" => ctx.story.id}},
-        {"preview_description", %{"description" => "text"}}
+        {"preview_description", %{"description" => "text"}},
+        {"list_templates", %{}},
+        {"render_template", %{"id" => "custom:1", "fields" => %{}}}
       ]
 
       for account <- [ctx.member_account, ctx.visitor_account],
@@ -721,6 +724,110 @@ defmodule PotokIdeWeb.GroupLive.AppChildrenTest do
 
       call(view, "update_child", %{"id" => story.id, "inherits_members" => true})
       assert_reply(view, %{ok: true, group: %{member_count: 2}})
+    end
+  end
+
+  describe "templates of a group's own" do
+    setup ctx do
+      {:ok, above} =
+        GroupTemplates.create(ctx.owner, ctx.parent, %{
+          "name" => "Utakmica",
+          "purpose" => "Rezultat.",
+          "fields" => [
+            %{"label" => "Domaćin", "kind" => "text", "required" => "true"},
+            %{"label" => "Strelci", "kind" => "items"},
+            %{"label" => "Galerija", "kind" => "pictures"}
+          ],
+          "html" =>
+            ~s(<h2>{{domacin}}</h2>{{#strelci}}<p>{{.}}</p>{{/strelci}}) <>
+              ~s({{#galerija}}<img src="{{picture|image}}" alt="{{caption}}">{{/galerija}})
+        })
+
+      {:ok, own} =
+        GroupTemplates.create(ctx.owner, ctx.feed, %{
+          "name" => "Kratko",
+          "fields" => [%{"label" => "Tekst", "kind" => "textarea"}],
+          "html" => "{{tekst|paragraphs}}"
+        })
+
+      %{above: above, own: own}
+    end
+
+    test "lists the group's own first, then those from above, with thumbnails", ctx do
+      view = open_app(ctx.conn, ctx.owner_account, ctx.feed)
+
+      call(view, "list_templates")
+
+      assert_reply(view, %{ok: true, templates: [own, above]})
+      assert own.id == "custom:#{ctx.own.id}"
+      assert own.own and own.owner == nil
+      assert above.id == "custom:#{ctx.above.id}"
+      refute above.own
+      assert above.owner == "app-kids-parent"
+      assert above.rev == 1
+
+      assert [%{"key" => "domacin", "required" => true}, %{"kind" => "items"}, pictures] =
+               above.fields
+
+      assert pictures["captions"] == "galerija_captions"
+      assert above.thumbnail =~ "<h2>Domaćin</h2>"
+    end
+
+    test "renders a description on the server, its fields only", ctx do
+      view = open_app(ctx.conn, ctx.owner_account, ctx.feed)
+      id = "custom:#{ctx.above.id}"
+
+      call(view, "render_template", %{
+        "id" => id,
+        "fields" => %{
+          "domacin" => "<b>Zvezda</b>",
+          "strelci" => ["Pera", 7, "Mika"],
+          "galerija" => ["https://potok.rs/a.jpg"],
+          "galerija_captions" => ["Gol"],
+          "tuđe" => "x"
+        }
+      })
+
+      assert_reply(view, %{ok: true, description: description, name: name, html: html} = reply)
+      assert name == "<b>Zvezda</b>"
+      assert reply.missing == []
+      assert reply.rev == 1
+
+      assert {:post, %{template: ^id, fields: fields}} = Post.decode(description)
+      assert fields["strelci"] == ["Pera", "Mika"]
+      refute Map.has_key?(fields, "tuđe")
+      assert description =~ "<h2>&lt;b&gt;Zvezda&lt;/b&gt;</h2>"
+      assert html =~ ~s(<img src="https://potok.rs/a.jpg" alt="Gol")
+      refute html =~ "potok-post"
+
+      call(view, "render_template", %{"id" => id, "fields" => %{}})
+      assert_reply(view, %{ok: true, name: "Utakmica", missing: ["Domaćin"]})
+    end
+
+    test "knows no template of a group elsewhere", ctx do
+      {:ok, elsewhere} =
+        GroupTemplates.create(ctx.owner, ctx.feed, %{
+          "name" => "Ovde",
+          "html" => ""
+        })
+
+      other =
+        child!(ctx.owner, Social.get_root_group!(), "app-kids-other", %{
+          "description" => "<p>app</p>",
+          "description_format" => :html,
+          "uses_api" => true
+        })
+
+      view = open_app(ctx.conn, ctx.owner_account, other)
+
+      call(view, "render_template", %{"id" => "custom:#{elsewhere.id}", "fields" => %{}})
+      assert_reply(view, %{ok: false, error: "not_found"})
+
+      call(view, "render_template", %{"id" => "article", "fields" => %{}})
+      assert_reply(view, %{ok: false, error: "not_found"})
+
+      call(view, "list_templates")
+      assert_reply(view, %{ok: true, templates: []})
     end
   end
 

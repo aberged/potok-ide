@@ -262,6 +262,8 @@ defmodule PotokIdeWeb.HelpGuides do
       {"updateChild", "update_child"},
       {"withdrawChild", "withdraw_child"},
       {"previewDescription", "preview_description"},
+      {"listTemplates", "list_templates"},
+      {"renderTemplate", "render_template"},
       {"openGroup", "open_group"},
       {"showGroup", "show_group"},
       {"onGroupSheetClose", nil},

@@ -892,6 +892,20 @@ const potok = {
       description_format: options.descriptionFormat || options.description_format || null,
     }),
 
+  // The templates of the group's own and of every group above it, for its
+  // editors: `{ok: true, templates: [{id, name, purpose, rev, fields, own,
+  // owner, thumbnail}]}`. The built-in ones an app keeps itself.
+  listTemplates: () => call("list_templates", {}),
+
+  // A description from one of those templates, rendered on the server:
+  // `{ok: true, description, name, html, missing, rev}`. `description` is the
+  // text to save with `descriptionFormat: "html"`; `html` is how it shows.
+  renderTemplate: (id, fields) =>
+    call("render_template", {
+      id: typeof id === "string" ? id : "",
+      fields: fields && typeof fields === "object" && !Array.isArray(fields) ? fields : {},
+    }),
+
   // The polls of this group, the newest first, 30 per call; page with `beforeId`.
   // `status` is "open" (the default), "closed" or "waiting", those the viewer can
   // still vote in. A poll holds only what its rules show this viewer, so

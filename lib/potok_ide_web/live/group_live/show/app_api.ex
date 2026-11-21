@@ -47,6 +47,11 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   scan every value the app keeps and hold the page for up to five seconds, so
   they are limited per viewer (`PotokIde.RateLimit`, `:app_heavy_read`).
 
+  The templates of a group's own (`list_templates`, `render_template`) are
+  the group's and those of every group above it (`GroupTemplates`). Only the
+  server renders them, so FeedCreator and Uredi grupu write the same HTML; a
+  built-in template the app renders itself.
+
   A guest, a visitor without an account at a group that opened its
   description to guests (`PotokIdeWeb.GroupLive.GuestApp`), has no profile.
   It gets the calls that only read (`@guest_methods`), with the sight of a
@@ -77,6 +82,8 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     GroupAreas,
     GroupPins,
     GroupPresets,
+    GroupTemplate,
+    GroupTemplates,
     ValueAttachment,
     ValueRules
   }
@@ -98,6 +105,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   }
 
   alias PotokIdeWeb.PinIcons
+  alias PotokIdeWeb.PostTemplates.{Custom, Post}
   alias PotokIdeWeb.PublicPreview
 
   # Token bucket for writes: bursts of up to @write_burst, refilled over @write_window_ms.
@@ -113,6 +121,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   @signed_in_methods ~w(
     list_subgroups open_group open_map get_group list_children get_child
     create_child create_children update_child withdraw_child preview_description
+    list_templates render_template
     toggle_group_reaction share_group list_polls get_poll open_poll open_poll_form
     save_config update_value delete_value delete_values grade_value list_roles
     set_notifications ensure_file_groups file_url prepare_upload
@@ -1211,9 +1220,110 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     end
   end
 
+  # The templates a description here may be written with besides the
+  # built-in ones: the group's own, then those of each group above it, each
+  # with its thumbnail drawn through the sanitizer.
+  defp run("list_templates", _params, socket) do
+    %{group: group, current_profile: profile} = socket.assigns
+
+    case require_child_manager(socket) do
+      :ok ->
+        templates = for entry <- GroupTemplates.catalog(group, profile), do: template_json(entry)
+        {%{ok: true, templates: templates}, socket}
+
+      {:error, reply} ->
+        {reply, socket}
+    end
+  end
+
+  # A description from one of those templates: the text to save (its marker
+  # and HTML), what its post is called, the HTML as it will be shown, and the
+  # labels of required fields still empty.
+  defp run("render_template", params, socket) do
+    group = socket.assigns.group
+
+    with :ok <- require_child_manager(socket),
+         {:ok, template} <- reachable_template(group, params["id"]),
+         {:ok, fields} <- template_fields(template, params["fields"]),
+         {:ok, socket} <- take_write_token(socket) do
+      description = Post.encode(Custom.id(template), fields, [Custom.form_template(template)])
+
+      html =
+        %Group{description: description, description_format: :html}
+        |> Components.description_html()
+        |> sign_child_pictures(group)
+
+      {%{
+         ok: true,
+         description: description,
+         name: Custom.name(template, fields),
+         html: html,
+         missing: Custom.missing_fields(template, fields),
+         rev: template.rev
+       }, socket}
+    else
+      {:error, reply} -> {reply, socket}
+    end
+  end
+
   defp run(_method, _params, socket) do
     {error("unknown_method", nil), socket}
   end
+
+  defp template_json(%{template: %GroupTemplate{} = template} = entry) do
+    %{
+      id: Custom.id(template),
+      name: template.name,
+      purpose: template.purpose,
+      rev: template.rev,
+      fields: Enum.map(template.fields, &template_field_json/1),
+      own: entry.own?,
+      owner: if(entry.own?, do: nil, else: entry.owner),
+      thumbnail: Custom.thumbnail(template)
+    }
+  end
+
+  defp template_field_json(field) do
+    base = Map.take(field, ~w(key label kind required hint options))
+
+    if field["kind"] == "pictures",
+      do: Map.put(base, "captions", GroupTemplate.captions_key(field["key"])),
+      else: base
+  end
+
+  defp reachable_template(group, id) do
+    with id when is_integer(id) <- Custom.template_id(id),
+         %GroupTemplate{} = template <- GroupTemplates.get_for(group, id) do
+      {:ok, template}
+    else
+      _none -> {:error, error("not_found", gettext("This group has no such template."))}
+    end
+  end
+
+  # Only the template's own fields, as text or lists of text.
+  defp template_fields(template, fields) when is_map(fields) or is_nil(fields) do
+    fields =
+      for {key, value} <- Map.take(fields || %{}, Custom.field_keys(template)),
+          value = template_value(value),
+          value != nil,
+          into: %{},
+          do: {key, value}
+
+    {:ok, fields}
+  end
+
+  defp template_fields(_template, _fields),
+    do: {:error, error("invalid_params", gettext("The fields must be an object."))}
+
+  defp template_value(value) when is_binary(value), do: String.slice(value, 0, 20_000)
+
+  defp template_value(values) when is_list(values) do
+    for value <- Enum.take(values, Custom.max_items()), is_binary(value) do
+      String.slice(value, 0, 2_000)
+    end
+  end
+
+  defp template_value(_value), do: nil
 
   # A story being edited shows its own picture, which its description holds
   # without a signature (`Avatars.sign_group_pictures/2`): those of the
