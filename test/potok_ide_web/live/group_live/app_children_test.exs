@@ -974,6 +974,14 @@ defmodule PotokIdeWeb.GroupLive.AppChildrenTest do
   end
 
   describe "open_group" do
+    test "goes to the templates of the app's own group", ctx do
+      view = open_app(ctx.conn, ctx.owner_account, ctx.feed)
+
+      call(view, "open_group", %{"id" => ctx.feed.id, "tab" => "templates"})
+
+      assert_redirect(view, ~p"/groups/#{ctx.feed.id}/edit_group?section=templates")
+    end
+
     test "goes to a sub-group of the app's group", ctx do
       story = child!(ctx.owner, ctx.feed, "story", %{"is_public" => true})
       view = open_app(ctx.conn, ctx.owner_account, ctx.feed)

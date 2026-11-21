@@ -867,12 +867,14 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   end
 
   # An app sends its viewer no further than its parent and the two levels below
-  # it, and only to what that viewer can see.
+  # it, and only to what that viewer can see; its own group too, for its
+  # settings or its templates.
   defp run("open_group", params, socket) do
     %{group: group, current_profile: profile} = socket.assigns
 
     with id when is_integer(id) <- non_negative_integer(params["id"]),
-         %Group{} = target <- reachable_group(group, profile, id) do
+         %Group{} = target <-
+           if(id == group.id, do: group, else: reachable_group(group, profile, id)) do
       {%{ok: true}, navigate(socket, group_tab_path(target, params["tab"]))}
     else
       _not_found -> {error("not_found", nil), socket}
@@ -2145,6 +2147,10 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   # A group that is an app runs on its description tab.
   defp group_tab_path(group, "description"), do: ~p"/groups/#{group.id}/group_home"
   defp group_tab_path(group, "settings"), do: ~p"/groups/#{group.id}/edit_group"
+
+  defp group_tab_path(group, "templates"),
+    do: ~p"/groups/#{group.id}/edit_group?section=templates"
+
   defp group_tab_path(group, _chat), do: ~p"/groups/#{group.id}/values"
 
   # What an app needs to know about the place it stands in. `parent` is nil for
