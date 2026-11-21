@@ -103,7 +103,7 @@ defmodule PotokIdeWeb.PageControllerTest do
     test "hands the diagram its data", %{conn: conn} do
       data = conn |> domain_page() |> map_data()
 
-      assert map_size(data["entities"]) == 43
+      assert map_size(data["entities"]) == 44
       assert data["counts"]["keys"] == Enum.count(data["edges"], &(&1["kind"] == "key"))
       assert data["counts"]["soft"] == 9
 

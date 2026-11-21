@@ -387,6 +387,26 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("AppProfileEntry", "key"), do: dgettext("domain_map", "name the app gives it")
   defp own_field("AppProfileEntry", "value"), do: dgettext("domain_map", "what the app keeps")
 
+  defp own_field("GroupTemplate", "group_id"),
+    do: dgettext("domain_map", "group it serves, with those below it")
+
+  defp own_field("GroupTemplate", "creator_id"), do: dgettext("domain_map", "who made it")
+
+  defp own_field("GroupTemplate", "name"),
+    do: dgettext("domain_map", "name in the list of templates")
+
+  defp own_field("GroupTemplate", "purpose"), do: dgettext("domain_map", "what it is for")
+  defp own_field("GroupTemplate", "fields"), do: dgettext("domain_map", "the fields of its form")
+
+  defp own_field("GroupTemplate", "html"),
+    do: dgettext("domain_map", "the HTML its fields go into")
+
+  defp own_field("GroupTemplate", "rev"),
+    do: dgettext("domain_map", "version, which a description keeps")
+
+  defp own_field("GroupTemplate", "position"),
+    do: dgettext("domain_map", "place in the group's list")
+
   defp own_field("ValueProcess", "depth"),
     do: dgettext("domain_map", "how many processes deep")
 
@@ -627,6 +647,7 @@ defmodule PotokIdeWeb.DomainCopy do
   def entity_name("GroupField"), do: dgettext("domain_map", "Group field")
   def entity_name("GroupEntity"), do: dgettext("domain_map", "Entity definition")
   def entity_name("AppProfileEntry"), do: dgettext("domain_map", "Personal app memory")
+  def entity_name("GroupTemplate"), do: dgettext("domain_map", "Template")
   def entity_name("Event"), do: dgettext("domain_map", "Event")
   def entity_name("Response"), do: dgettext("domain_map", "Event response")
   def entity_name("MemberSetting"), do: dgettext("domain_map", "Personal reminders")
@@ -809,6 +830,13 @@ defmodule PotokIdeWeb.DomainCopy do
     dgettext(
       "domain_map",
       "What the data of the processes drawn in a group looks like, as its editors define it: a name and up to 30 attributes, each with the type of what it holds. An attribute holds a text, a number, a yes or no, a date, a date and time, one of the choices it lists, or another entity of the group, and may be a list of them. Entities nest at most four deep and never in a circle. A group has at most 50, each name once in any letter case, and one that another holds, or that a process drawn in the group keeps a variable of, cannot be deleted. Deleting the group takes them along."
+    )
+  end
+
+  defp entity_description("GroupTemplate", _edges) do
+    dgettext(
+      "domain_map",
+      "A template of a group's own for descriptions: the fields of a form and the HTML they go into, with tags that take them and nothing that runs. It serves its group and every group below it, and whoever may edit the group makes it there, up to 30 in a group. A description made with it keeps its HTML when the template changes, and takes the new version when it is saved again; deleting the template leaves those descriptions as they are."
     )
   end
 

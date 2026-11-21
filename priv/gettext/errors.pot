@@ -193,3 +193,90 @@ msgstr ""
 
 msgid "is not a role of the parent group"
 msgstr ""
+
+#: lib/potok_ide/social/group_template/syntax.ex:115
+#, elixir-autogen, elixir-format
+msgid "closes {{/%{name}}} that was never opened"
+msgstr ""
+
+#: lib/potok_ide/social/group_template/syntax.ex:108
+#, elixir-autogen, elixir-format
+msgid "closes {{/%{name}}} where {{/%{other}}} belongs"
+msgstr ""
+
+#: lib/potok_ide/social/group_template.ex:196
+#, elixir-autogen, elixir-format
+msgid "has a choice with too many options"
+msgstr ""
+
+#: lib/potok_ide/social/group_template.ex:193
+#, elixir-autogen, elixir-format
+msgid "has a choice without options"
+msgstr ""
+
+#: lib/potok_ide/social/group_template.ex:158
+#, elixir-autogen, elixir-format
+msgid "has a field key that is not lowercase letters, digits and _ (%{key})"
+msgstr ""
+
+#: lib/potok_ide/social/group_template.ex:154
+#, elixir-autogen, elixir-format
+msgid "has a field of an unknown kind"
+msgstr ""
+
+#: lib/potok_ide/social/group_template.ex:151
+#, elixir-autogen, elixir-format
+msgid "has a field without a label"
+msgstr ""
+
+#: lib/potok_ide/social/group_template/syntax.ex:69
+#, elixir-autogen, elixir-format
+msgid "has a tag it does not know: %{tag}"
+msgstr ""
+
+#: lib/potok_ide/social/group_template.ex:117
+#, elixir-autogen, elixir-format
+msgid "has more than %{count} fields"
+msgstr ""
+
+#: lib/potok_ide/social/group_template/syntax.ex:79
+#: lib/potok_ide/social/group_template/syntax.ex:92
+#, elixir-autogen, elixir-format
+msgid "has no field %{name}"
+msgstr ""
+
+#: lib/potok_ide/social/group_template/syntax.ex:82
+#, elixir-autogen, elixir-format
+msgid "has no filter %{filter}"
+msgstr ""
+
+#: lib/potok_ide/social/group_template/syntax.ex:95
+#, elixir-autogen, elixir-format
+msgid "has sections more than %{count} deep"
+msgstr ""
+
+#: lib/potok_ide/social/group_template.ex:128
+#, elixir-autogen, elixir-format
+msgid "has two fields with the same key"
+msgstr ""
+
+#: lib/potok_ide/social/group_template.ex:69
+#, elixir-autogen, elixir-format
+msgid "is already used by another template"
+msgstr ""
+
+#: lib/potok_ide/social/group_template.ex:132
+#: lib/potok_ide/social/group_template.ex:179
+#, elixir-autogen, elixir-format
+msgid "is not a list of fields"
+msgstr ""
+
+#: lib/potok_ide/social/group_template/syntax.ex:47
+#, elixir-autogen, elixir-format
+msgid "leaves {{#%{name}}} without its {{/%{name}}}"
+msgstr ""
+
+#: lib/potok_ide/social/group_template/syntax.ex:66
+#, elixir-autogen, elixir-format
+msgid "puts a filter on a section: %{tag}"
+msgstr ""

@@ -411,3 +411,13 @@ msgstr "Полароид"
 #, elixir-autogen, elixir-format
 msgid "Slides"
 msgstr "Слајдови"
+
+#: lib/potok_ide_web/post_templates/custom.ex:325
+#, elixir-autogen, elixir-format
+msgid "%{month} %{day}, %{year}"
+msgstr "%{day}. %{month} %{year}."
+
+#: lib/potok_ide_web/post_templates/custom.ex:203
+#, elixir-autogen, elixir-format
+msgid "A few words about it."
+msgstr "Неколико речи о томе."

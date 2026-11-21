@@ -84,6 +84,7 @@ const TABLES = {
     GroupField: [COLUMN[3], 428],
     GroupEntity: [COLUMN[4], 428],
     AppProfileEntry: [COLUMN[3], 500],
+    GroupTemplate: [COLUMN[4], 500],
     Event: [COLUMN[3], 596],
     Response: [COLUMN[4], 596],
     MemberSetting: [COLUMN[4], 668],

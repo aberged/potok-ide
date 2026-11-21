@@ -52,7 +52,8 @@ defmodule PotokIde.DomainMap do
        PotokIde.Processes.ValueProcess,
        PotokIde.Processes.GroupField,
        PotokIde.Processes.GroupEntity,
-       PotokIde.Social.AppProfileEntry
+       PotokIde.Social.AppProfileEntry,
+       PotokIde.Social.GroupTemplate
      ]},
     {"calendar",
      [PotokIde.Events.Event, PotokIde.Events.Response, PotokIde.Events.MemberSetting]},

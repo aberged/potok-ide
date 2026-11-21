@@ -411,3 +411,13 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Slides"
 msgstr ""
+
+#: lib/potok_ide_web/post_templates/custom.ex:325
+#, elixir-autogen, elixir-format
+msgid "%{month} %{day}, %{year}"
+msgstr ""
+
+#: lib/potok_ide_web/post_templates/custom.ex:203
+#, elixir-autogen, elixir-format
+msgid "A few words about it."
+msgstr ""
