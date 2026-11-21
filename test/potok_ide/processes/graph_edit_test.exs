@@ -19,7 +19,9 @@ defmodule PotokIde.Processes.GraphEditTest do
     call_fields: %{"kvar" => ""},
     group_field: "polje",
     signal: "subota",
-    variable: "ukupno"
+    variable: "ukupno",
+    poll_question: "Slažemo li se?",
+    poll_answers: ["Da", "Ne"]
   }
 
   defp valid!(graph) do
@@ -61,9 +63,19 @@ defmodule PotokIde.Processes.GraphEditTest do
   test "every kind of step goes into a flow and leaves where it led" do
     for kind <- GraphEdit.kinds() do
       graph = insert!(GraphEdit.new(), "f1", kind)
-      # A loop comes with the first step of its body.
-      assert length(graph["nodes"]) == if(kind == "loop", do: 4, else: 3), kind
+      # A loop comes with the first step of its body, a poll with the
+      # condition that asks whether it passed.
+      assert length(graph["nodes"]) == if(kind in ["loop", "poll"], do: 4, else: 3), kind
     end
+  end
+
+  test "a poll goes on to a condition that asks whether it passed" do
+    graph = insert!(GraphEdit.new(), "f1", "poll")
+
+    assert [%{"to" => "gateway_1"}] = Graph.out(graph, "poll_1")
+
+    assert [%{"condition" => %{"expr" => "poll_1.passed"}}, %{"default" => true}] =
+             Graph.out(graph, "gateway_1")
   end
 
   test "a decision leaves by each outcome, a condition by one and by default" do

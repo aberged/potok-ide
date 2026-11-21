@@ -27,6 +27,7 @@ defmodule PotokIde.Processes.GraphEdit do
     "push" => "push",
     "task" => "task",
     "form" => "form",
+    "poll" => "poll",
     "timer" => "timer",
     "gateway" => "gateway",
     "call" => "call",
@@ -37,7 +38,7 @@ defmodule PotokIde.Processes.GraphEdit do
     "loop" => "loop",
     "end" => "end"
   }
-  @kinds ~w(message subgroup push task form timer gateway call set assign signal receive loop)
+  @kinds ~w(message subgroup push task form poll timer gateway call set assign signal receive loop)
 
   @doc "The kinds of step `insert/4` makes."
   def kinds, do: @kinds
@@ -136,6 +137,20 @@ defmodule PotokIde.Processes.GraphEdit do
   defp step("form", id, d),
     do: with_entity(%{"id" => id, "type" => "formTask", "by" => "starter"}, d[:form_entity])
 
+  # A poll that only asks, for a week, with the answers the editor sees
+  # first; what its decision changes is picked on its panel.
+  defp step("poll", id, d),
+    do: %{
+      "id" => id,
+      "type" => "pollTask",
+      "question" => d[:poll_question],
+      "answers" => d[:poll_answers],
+      "duration" => "P7D",
+      "majority" => "simple",
+      "secret" => false,
+      "effect" => "none"
+    }
+
   defp step("timer", id, _d), do: %{"id" => id, "type" => "timer", "duration" => "P1D"}
   defp step("gateway", id, _d), do: %{"id" => id, "type" => "exclusiveGateway"}
 
@@ -212,6 +227,21 @@ defmodule PotokIde.Processes.GraphEdit do
     graph
     |> add_flow(%{"from" => id, "to" => to, "condition" => condition(d)})
     |> add_flow(%{"from" => id, "to" => to, "default" => true})
+  end
+
+  # A poll goes on to a condition that asks whether it passed.
+  defp add_exits(graph, %{"type" => "pollTask", "id" => id}, to, _d) do
+    gateway = %{"id" => fresh_id(graph, "gateway"), "type" => "exclusiveGateway"}
+
+    graph
+    |> add_node(gateway)
+    |> add_flow(%{"from" => id, "to" => gateway["id"]})
+    |> add_flow(%{
+      "from" => gateway["id"],
+      "to" => to,
+      "condition" => %{"expr" => "#{id}.passed"}
+    })
+    |> add_flow(%{"from" => gateway["id"], "to" => to, "default" => true})
   end
 
   # A loop goes into a body of one step, which comes back to it, and on.
@@ -610,6 +640,10 @@ defmodule PotokIde.Processes.GraphEdit do
 
   defp editable_keys(%{"type" => "userTask"}), do: ~w(label role)
   defp editable_keys(%{"type" => "formTask"}), do: ~w(label by role entity intro values)
+
+  defp editable_keys(%{"type" => "pollTask"}),
+    do: ~w(label question description answers duration majority quorum secret effect role who)
+
   defp editable_keys(%{"type" => "timer"}), do: ~w(label duration)
   defp editable_keys(%{"type" => "callActivity"}), do: ~w(label process wait fields)
   defp editable_keys(%{"type" => "loop"}), do: ~w(label list item)

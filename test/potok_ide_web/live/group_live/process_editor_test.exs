@@ -54,6 +54,40 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
 
   defp drawn(group), do: DrawnProcesses.list(group)
 
+  test "a poll step puts a role to the vote and is followed by whether it passed", ctx do
+    {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes")
+    lv |> element("#processes-new") |> render_click()
+
+    insert(lv, "f1", "poll")
+    assert has_element?(lv, "#process-outline-poll_1")
+    assert has_element?(lv, "#process-outline-gateway_1")
+    assert has_element?(lv, "#process-poll-answers")
+
+    lv
+    |> form("#process-element-form", %{"element" => %{"effect" => "grant"}})
+    |> render_change()
+
+    refute has_element?(lv, "#process-poll-answers")
+    assert has_element?(lv, "#process-poll-role")
+
+    lv
+    |> form("#process-element-form", %{
+      "element" => %{"role" => "admin", "quorum" => "50", "majority" => "simple"}
+    })
+    |> render_change()
+
+    lv
+    |> form("#process-editor-meta", %{"meta" => %{"name" => "Admin glasanjem"}})
+    |> render_change()
+
+    lv |> element("#process-editor-save") |> render_click()
+
+    assert [row] = drawn(ctx.group)
+
+    assert %{"effect" => "grant", "role" => "admin", "quorum" => 50, "who" => "starter"} =
+             Enum.find(row.graph["nodes"], &(&1["type"] == "pollTask"))
+  end
+
   test "an editor draws a new process, saves it and switches it on", ctx do
     {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes")
 

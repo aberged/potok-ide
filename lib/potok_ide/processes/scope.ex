@@ -112,6 +112,23 @@ defmodule PotokIde.Processes.Scope do
     [{id, {:record, Map.put(fields, "author", :text), false}}]
   end
 
+  # A poll brings how it ended: whether it passed, the winning answer, how
+  # many voted and could, and whether its decision was carried out.
+  defp result(%{"type" => "pollTask", "id" => id}, _entry, _entities) do
+    [
+      {id,
+       {:record,
+        %{
+          "outcome" => :text,
+          "passed" => :boolean,
+          "winner" => :text,
+          "voters" => :number,
+          "eligible" => :number,
+          "applied" => :boolean
+        }, false}}
+    ]
+  end
+
   # A loop says where it stands, and names the item on hand.
   defp result(%{"type" => "loop", "id" => id, "item" => item} = loop, _entry, _entities) do
     [

@@ -832,6 +832,14 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
   defp failure_reason("too_much_data"), do: gettext("its variables grew too large")
   defp failure_reason("too_many_fields"), do: gettext("the group has 50 fields already")
   defp failure_reason("invalid_field"), do: gettext("the field's name is not right")
+  defp failure_reason("poll_gone"), do: gettext("its poll was deleted")
+  defp failure_reason("invalid_poll"), do: gettext("its poll could not be put to the vote")
+
+  defp failure_reason("effect_not_permitted"),
+    do: gettext("it may not hand a decision on roles to the group")
+
+  defp failure_reason("not_a_member"), do: gettext("the member it names is not in the group")
+  defp failure_reason("no_starter"), do: gettext("nobody started the run")
   defp failure_reason(_reason), do: gettext("an error")
 
   @doc "The permissions a process lacks, in words."

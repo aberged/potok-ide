@@ -71,7 +71,7 @@ msgstr "Тајно гласање не може поново да се отво�
 msgid "A vote cannot be changed."
 msgstr "Глас не може да се промени."
 
-#: lib/potok_ide/polls/effects.ex:342
+#: lib/potok_ide/polls/effects.ex:354
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:344
 #, elixir-autogen, elixir-format
 msgid "Abstain"
@@ -89,7 +89,7 @@ msgstr "Додај одговор"
 msgid "After voting, and everyone at the end"
 msgstr "После гласања, а сви на крају"
 
-#: lib/potok_ide/polls/effects.ex:341
+#: lib/potok_ide/polls/effects.ex:353
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:344
 #, elixir-autogen, elixir-format
 msgid "Against"
@@ -275,7 +275,7 @@ msgstr "Сваки члан види ко је за шта гласао."
 msgid "Finished"
 msgstr "Завршена"
 
-#: lib/potok_ide/polls/effects.ex:340
+#: lib/potok_ide/polls/effects.ex:352
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:344
 #, elixir-autogen, elixir-format
 msgid "For"
@@ -359,13 +359,13 @@ msgid "More settings"
 msgstr "Више подешавања"
 
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:789
-#: lib/potok_ide_web/live/group_live/show/poll_form.ex:998
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:1001
 #, elixir-autogen, elixir-format
 msgid "More than half of the votes"
 msgstr "Више од половине гласова"
 
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:791
-#: lib/potok_ide_web/live/group_live/show/poll_form.ex:1000
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:1003
 #, elixir-autogen, elixir-format
 msgid "More than half of those who may vote"
 msgstr "Више од половине оних који имају право гласа"
@@ -654,7 +654,7 @@ msgid "That is not a valid choice."
 msgstr "Тај избор није исправан."
 
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:788
-#: lib/potok_ide_web/live/group_live/show/poll_form.ex:997
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:1000
 #, elixir-autogen, elixir-format
 msgid "The most votes"
 msgstr "Највише гласова"
@@ -726,13 +726,13 @@ msgstr "Превише гласова одједном. Покушај за ми
 msgid "Turnout"
 msgstr "Одзив"
 
-#: lib/potok_ide_web/live/group_live/show/poll_form.ex:1006
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:1009
 #, elixir-autogen, elixir-format
 msgid "Turnout and who took part. The organizer always sees them."
 msgstr "Одзив и ко је учествовао. Организатор их увек види."
 
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:790
-#: lib/potok_ide_web/live/group_live/show/poll_form.ex:999
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:1002
 #, elixir-autogen, elixir-format
 msgid "Two thirds of the votes"
 msgstr "Две трећине гласова"
@@ -827,7 +827,7 @@ msgstr "Ко је учествовао"
 msgid "Who voted for what"
 msgstr "Ко је за шта гласао"
 
-#: lib/potok_ide_web/live/group_live/show/poll_form.ex:1010
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:1013
 #, elixir-autogen, elixir-format
 msgid "Who voted for what, with statistics. The organizer always sees them."
 msgstr "Ко је за шта гласао, са статистиком. Организатор их увек види."
@@ -995,17 +995,17 @@ msgstr "Спроводи се чим се гласање заврши на ро�
 msgid "Done."
 msgstr "Спроведено."
 
-#: lib/potok_ide_web/live/group_live/show/poll_form.ex:992
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:995
 #, elixir-autogen, elixir-format
 msgid "Elects someone to a role"
 msgstr "Бира неког за улогу"
 
-#: lib/potok_ide_web/live/group_live/show/poll_form.ex:993
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:996
 #, elixir-autogen, elixir-format
 msgid "Ends the election of admins"
 msgstr "Гаси избор администратора"
 
-#: lib/potok_ide_web/live/group_live/show/poll_form.ex:990
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:993
 #, elixir-autogen, elixir-format
 msgid "Gives a member a role"
 msgstr "Додељује улогу члану"
@@ -1060,7 +1060,7 @@ msgstr "Није спроведено: улога је наслеђена из �
 msgid "Not done: the role no longer exists."
 msgstr "Није спроведено: улога више не постоји."
 
-#: lib/potok_ide_web/live/group_live/show/poll_form.ex:986
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:989
 #, elixir-autogen, elixir-format
 msgid "Nothing, it only asks"
 msgstr "Ништа, само пита"
@@ -1101,7 +1101,7 @@ msgstr "Да ли група престаје да бира администра
 msgid "Stand in the election"
 msgstr "Кандидуј се"
 
-#: lib/potok_ide_web/live/group_live/show/poll_form.ex:991
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:994
 #, elixir-autogen, elixir-format
 msgid "Takes a role from a member"
 msgstr "Одузима улогу члану"

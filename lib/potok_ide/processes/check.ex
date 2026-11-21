@@ -418,6 +418,14 @@ defmodule PotokIde.Processes.Check do
     end
   end
 
+  # A poll names whoever started the run only where someone does: nobody
+  # starts a scheduled one.
+  defp step(%{"type" => "pollTask"} = poll, path, context) do
+    if poll["who"] == "starter" and context.trigger == "schedule",
+      do: {:error, {path <> ".who", :no_starter}},
+      else: texts(own_texts(poll), path, context.scope)
+  end
+
   # A field of the group a step keeps: one the group declares, added to only
   # when it holds a number, and a value written out of its type.
   defp step(%{"action" => "set", "field" => field} = step, path, %{fields: fields} = context)
@@ -490,6 +498,12 @@ defmodule PotokIde.Processes.Check do
   defp own_texts(%{"action" => "subgroup", "name" => name}), do: [{"name", name}]
   defp own_texts(%{"action" => "push", "text" => text}), do: [{"text", text}]
   defp own_texts(%{"action" => "set", "value" => value}), do: [{"value", value}]
+
+  defp own_texts(%{"type" => "pollTask"} = poll) do
+    [{"question", poll["question"] || ""}, {"description", poll["description"] || ""}] ++
+      if poll["who"] in [nil, "starter"], do: [], else: [{"who", poll["who"]}]
+  end
+
   defp own_texts(_step), do: []
 
   defp texts(texts, path, scope) do

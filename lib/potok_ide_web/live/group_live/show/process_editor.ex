@@ -835,6 +835,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
       {"form", "hero-clipboard-document-list", gettext("Form"),
        gettext("Waits for someone to fill in an entity, an attribute at a time."),
        "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"},
+      {"poll", "hero-scale", gettext("Poll"),
+       gettext(
+         "Puts a question to the group's vote and goes on once it ends. Its decision may give or take a role."
+       ), "bg-yellow-500/10 text-yellow-700 dark:text-yellow-300"},
       {"push", "hero-bell-alert", gettext("Push"),
        gettext("Lets the people of a role know on their phones."),
        "bg-rose-500/10 text-rose-600 dark:text-rose-300"},
@@ -1213,6 +1217,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                     )
                 )}
               </p>
+            <% "poll" -> %>
+              <.poll_fields form={@form} node={@node} editor={@editor} role_options={@role_options} />
             <% "timer" -> %>
               <p class="label mb-1">{gettext("Wait for")}</p>
               <div class="flex gap-2">
@@ -2275,6 +2281,140 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
           do: {elem(ProcessEditorState.describe(node, graph, roles), 2), node["id"]}
 
     steps ++ [{gettext("A new end"), "__new_end"}]
+  end
+
+  attr :form, :any, required: true
+  attr :node, :map, required: true
+  attr :editor, :map, required: true
+  attr :role_options, :list, required: true
+
+  # A poll the process puts to the group: its question, how long it runs,
+  # what its decision changes, and how it is decided.
+  defp poll_fields(assigns) do
+    assigns = assign(assigns, :effect?, assigns.node["effect"] in ["grant", "revoke"])
+
+    ~H"""
+    <div id="process-poll-fields" class="space-y-3">
+      <.input
+        field={@form[:question]}
+        type="text"
+        maxlength="300"
+        label={gettext("Question")}
+        phx-debounce="300"
+      />
+      <.fields editor={@editor} target="question" />
+      <.input
+        field={@form[:description]}
+        type="textarea"
+        rows="2"
+        maxlength="1000"
+        label={gettext("More about it (optional)")}
+        phx-debounce="300"
+      />
+      <p class="label mb-1">{gettext("The voting lasts")}</p>
+      <div class="flex gap-2">
+        <.input field={@form[:duration_amount]} type="number" min="1" phx-debounce="400" />
+        <.input field={@form[:duration_unit]} type="select" options={unit_options()} />
+      </div>
+      <.input
+        id="process-poll-effect"
+        field={@form[:effect]}
+        type="select"
+        label={gettext("What the decision changes")}
+        options={[
+          {gettext("Nothing, it only asks"), "none"},
+          {gettext("Gives a member a role"), "grant"},
+          {gettext("Takes a role from a member"), "revoke"}
+        ]}
+      />
+      <%= if @effect? do %>
+        <.input
+          id="process-poll-role"
+          field={@form[:role]}
+          type="select"
+          label={gettext("Role")}
+          options={inherit_role_options(@role_options)}
+        />
+        <.input
+          id="process-poll-who-mode"
+          field={@form[:poll_who_mode]}
+          type="select"
+          label={gettext("Member")}
+          options={[
+            {gettext("Whoever started the run"), "starter"},
+            {gettext("The username a text gives"), "named"}
+          ]}
+        />
+        <%= if @form[:poll_who_mode].value == "named" do %>
+          <.input
+            id="process-poll-who"
+            field={@form[:poll_who]}
+            type="text"
+            maxlength="1000"
+            placeholder="{{forma.author}}"
+            label={gettext("Username")}
+            phx-debounce="300"
+          />
+          <.fields editor={@editor} target="poll_who" />
+        <% end %>
+      <% else %>
+        <.input
+          id="process-poll-answers"
+          field={@form[:answers]}
+          type="textarea"
+          rows="3"
+          label={gettext("Answers, one a line")}
+          phx-debounce="300"
+        />
+      <% end %>
+      <.input
+        id="process-poll-majority"
+        field={@form[:majority]}
+        type="select"
+        label={gettext("Decision")}
+        options={poll_majorities(@effect?)}
+      />
+      <.input
+        id="process-poll-quorum"
+        field={@form[:quorum]}
+        type="number"
+        min="1"
+        max="100"
+        label={
+          if(@effect?,
+            do: gettext("Quorum: percent of those who may vote"),
+            else: gettext("Quorum: percent of those who may vote (optional)")
+          )
+        }
+        phx-debounce="400"
+      />
+      <.input field={@form[:secret]} type="checkbox" label={gettext("Secret poll")} />
+      <p id="process-poll-note" class="text-xs text-base-content/60">
+        {if(@effect?,
+          do:
+            gettext(
+              "The whole group votes, and the decision gives or takes the role as the poll ends. The process holds no more than everyone does: the power is the vote's."
+            ),
+          else:
+            gettext(
+              "The run waits for the end of the poll. The condition after it asks %{name}: whether it passed.",
+              name: "#{@node["id"]}.passed"
+            )
+        )}
+      </p>
+    </div>
+    """
+  end
+
+  defp poll_majorities(effect?) do
+    [
+      !effect? && {gettext("None, just the results"), "none"},
+      !effect? && {gettext("The most votes"), "plurality"},
+      {gettext("More than half of the votes"), "simple"},
+      {gettext("Two thirds of the votes"), "two_thirds"},
+      {gettext("More than half of those who may vote"), "absolute"}
+    ]
+    |> Enum.filter(& &1)
   end
 
   defp role_options(access) do

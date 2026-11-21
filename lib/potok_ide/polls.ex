@@ -23,6 +23,8 @@ defmodule PotokIde.Polls do
   alias PotokIde.Accounts.Account
   alias PotokIde.PlainText
   alias PotokIde.Polls.{Effects, Notifications, Outcome, Poll, PollBallot, PollOption, Rules}
+  alias PotokIde.Processes
+  alias PotokIde.Processes.ValueProcess
   alias PotokIde.Repo
   alias PotokIde.Social
   alias PotokIde.Social.{Access, AccountProfile, Group, Identity, Profile, Value}
@@ -378,6 +380,41 @@ defmodule PotokIde.Polls do
 
       error ->
         error
+    end
+  end
+
+  @doc """
+  Starts a poll for the run of a drawn process (`PotokIde.Processes.Engine`),
+  in the caller's transaction, by the process's profile: `process_instance_id`
+  names the run that waits for it, and `proposers` who may put its decision
+  to a vote. Returns `{:ok, poll, announce}`: its message goes out, and pages
+  hear of it, once the caller commits and calls `announce`.
+  """
+  def create_poll_for_process(%Profile{} = process, %Group{} = group, attrs, time_zone, opts) do
+    access = Access.for_profile(process, group)
+
+    if Rules.can_create?(access, group) do
+      poll = %Poll{
+        group_id: group.id,
+        creator_id: process.id,
+        process_instance_id: Keyword.fetch!(opts, :process_instance_id)
+      }
+
+      with {:ok, changeset} <-
+             effect_changeset(poll, attrs, time_zone, access, group, opts[:proposers]),
+           {:ok, poll} <- Repo.insert(changeset) do
+        {:ok, poll,
+         fn ->
+           poll =
+             if Access.can?(access, :post_values),
+               do: announce(process, group, poll),
+               else: poll
+
+           broadcast(poll, {:changed, poll.id})
+         end}
+      end
+    else
+      {:error, :not_permitted}
     end
   end
 
@@ -761,6 +798,7 @@ defmodule PotokIde.Polls do
     {outcome, winner_id} = Outcome.decide(poll, options, poll.voters_count, eligible || 0)
     winner = Enum.find(options, &(&1.id == winner_id))
     {effect_status, announcements} = Effects.apply_locked(poll, group, outcome, winner)
+    announcements = announcements ++ wake_process(poll, closed_at)
 
     closed =
       poll
@@ -775,6 +813,17 @@ defmodule PotokIde.Polls do
       |> Repo.update!()
 
     {closed, announcements}
+  end
+
+  # The run of a process that waits for the poll goes on.
+  defp wake_process(%Poll{process_instance_id: nil}, _closed_at), do: []
+
+  defp wake_process(%Poll{process_instance_id: id}, closed_at) do
+    {count, _rows} =
+      from(i in ValueProcess, where: i.id == ^id and i.status == :waiting)
+      |> Repo.update_all(set: [wake_at: closed_at])
+
+    if count > 0, do: [&Processes.Scheduler.nudge/0], else: []
   end
 
   @doc """

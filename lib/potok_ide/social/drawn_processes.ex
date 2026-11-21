@@ -54,6 +54,7 @@ defmodule PotokIde.Social.DrawnProcesses do
     Types
   }
 
+  alias PotokIde.Polls.Effects
   alias PotokIde.Repo
 
   alias PotokIde.Social.{
@@ -204,6 +205,7 @@ defmodule PotokIde.Social.DrawnProcesses do
         AppData.lock_app(group, alt_id)
         access = editor_access!(editor, group)
         known_roles!(graph, access)
+        allowed_effects!(graph, access, group)
         known_trigger_roles!(trigger, config, access)
         known_processes!(graph, group)
 
@@ -490,6 +492,7 @@ defmodule PotokIde.Social.DrawnProcesses do
       changing(editor, group, id, fn row, access ->
         if row.lock_version != revision, do: Repo.rollback({:conflict, row})
         known_roles!(graph, access)
+        allowed_effects!(graph, access, group)
         known_processes!(graph, group)
 
         config =
@@ -568,6 +571,7 @@ defmodule PotokIde.Social.DrawnProcesses do
   def activate(%Profile{} = editor, %Group{} = group, id) do
     changing(editor, group, id, fn row, access ->
       known_roles!(row.graph, access)
+      allowed_effects!(row.graph, access, group)
       known_trigger_roles!(row.trigger, row.trigger_config, access)
       known_processes!(row.graph, group)
 
@@ -891,6 +895,23 @@ defmodule PotokIde.Social.DrawnProcesses do
   defp editor_access!(editor, group) do
     access = Access.for_profile(editor, Repo.get!(Group, group.id))
     if ValueRules.manage?(access), do: access, else: Repo.rollback(:not_permitted)
+  end
+
+  # A poll whose decision gives or takes a role goes only into a drawing
+  # whose editor may hand such a decision to the group (`Polls.Effects`).
+  defp allowed_effects!(graph, %Access{} = access, %Group{} = group) do
+    group = Repo.get!(Group, group.id)
+
+    graph["nodes"]
+    |> Enum.with_index()
+    |> Enum.find_value(:ok, fn
+      {%{"type" => "pollTask", "effect" => effect}, i} when effect in ~w(grant revoke) ->
+        unless Effects.may_propose?(access, group, String.to_existing_atom(effect)),
+          do: Repo.rollback({:invalid_graph, "nodes.#{i}.effect", :effect_not_permitted})
+
+      _other ->
+        nil
+    end)
   end
 
   defp known_roles!(graph, %Access{manifest: manifest}) do

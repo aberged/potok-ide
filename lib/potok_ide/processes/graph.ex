@@ -91,6 +91,14 @@ defmodule PotokIde.Processes.Graph do
     anything else), which the person may change. What was filled in is read
     under its id, an attribute at a time (`prijava.sprat`), with who filled
     it in (`prijava.author`).
+  - `pollTask` puts a `question` to the vote of the group, for a
+    `duration`, decided by a `majority` with a `quorum` (`secret` keeps who
+    voted for what), and waits for it to end. Its `effect` says what the
+    decision changes: `none` (with its `answers`), or `grant` and `revoke`
+    of the `role` of the member `who` names, `starter` for whoever started
+    the run or a text that gives a username (`PotokIde.Polls.Effects`).
+    What came of it is read under its id: `outcome`, `passed`, `winner`,
+    `voters`, `eligible` and `applied`. It goes on by one plain flow.
   - An `endEvent` of a process that hands an entity back to its caller
     says what each attribute is (`values`, as a `formTask` starts with
     them); the graph keeps that entity's id as `returns`, and a
@@ -142,6 +150,13 @@ defmodule PotokIde.Processes.Graph do
     "subgroup" => :create_subgroups,
     "push" => :mention_roles
   }
+
+  # A poll a process puts to the vote.
+  @poll_effects ~w(none grant revoke)
+  @poll_majorities ~w(none plurality simple two_thirds absolute)
+  @effect_majorities ~w(simple two_thirds absolute)
+  @max_poll_question 300
+  @max_poll_answers 10
 
   @doc """
   The graph as Potok keeps it: known keys only, defaults filled in, and every
@@ -213,7 +228,7 @@ defmodule PotokIde.Processes.Graph do
     nodes
     |> Enum.with_index()
     |> Enum.find_value(:ok, fn
-      {%{"type" => type}, i} when type in ~w(loop formTask) ->
+      {%{"type" => type}, i} when type in ~w(loop formTask pollTask) ->
         {:error, {"nodes.#{i}.type", :invalid}}
 
       {%{"action" => "assign"}, i} ->
@@ -435,8 +450,17 @@ defmodule PotokIde.Processes.Graph do
   def permissions(nil), do: []
 
   def permissions(%{"nodes" => nodes}) do
-    actions = for %{"type" => "serviceTask", "action" => action} <- nodes, do: action
+    actions =
+      for %{"type" => "serviceTask", "action" => action} <- nodes, do: action
 
+    polls = for %{"type" => "pollTask"} <- nodes, do: :create_polls
+
+    (permissions_of(actions) ++ Enum.uniq(polls))
+    |> Enum.sort()
+    |> Enum.uniq()
+  end
+
+  defp permissions_of(actions) do
     for {action, permission} <- Enum.sort_by(@action_permissions, &elem(&1, 1)),
         action in actions,
         do: permission
@@ -455,6 +479,9 @@ defmodule PotokIde.Processes.Graph do
         [{"nodes.#{i}.role", role}]
 
       {%{"type" => "formTask", "by" => "role", "role" => role}, i} ->
+        [{"nodes.#{i}.role", role}]
+
+      {%{"type" => "pollTask", "role" => role}, i} when is_binary(role) ->
         [{"nodes.#{i}.role", role}]
 
       {%{"action" => "push", "role" => role}, i} ->
@@ -717,6 +744,41 @@ defmodule PotokIde.Processes.Graph do
     end
   end
 
+  # A poll put to the group: its question, how long it runs, how it is
+  # decided, and what its decision changes. A decision that changes a role
+  # is decided by a majority with a quorum, as `PotokIde.Polls.Poll` holds
+  # it, and has its own answers.
+  defp typed("pollTask", node, path, base, true) do
+    effect = Map.get(node, "effect", "none")
+    majority = Map.get(node, "majority") || if(effect == "none", do: "none", else: "simple")
+
+    with true <- effect in @poll_effects || {:error, {path <> ".effect", :invalid}},
+         {:ok, question} <- text(node["question"], @max_poll_question, path <> ".question"),
+         {:ok, description} <- optional_template(node["description"], path <> ".description"),
+         {:ok, duration} <- duration(node["duration"], path <> ".duration"),
+         {:ok, majority} <- poll_majority(majority, effect, path <> ".majority"),
+         {:ok, quorum} <- poll_quorum(node["quorum"], majority, effect, path <> ".quorum"),
+         {:ok, secret} <- flag(Map.get(node, "secret", false), path <> ".secret"),
+         {:ok, answers} <- poll_answers(effect, node["answers"], path <> ".answers"),
+         {:ok, role} <- poll_role(effect, node["role"], path <> ".role"),
+         {:ok, who} <- poll_who(effect, Map.get(node, "who") || "starter", path <> ".who") do
+      {:ok,
+       base
+       |> Map.merge(%{
+         "question" => question,
+         "duration" => duration,
+         "majority" => majority,
+         "secret" => secret,
+         "effect" => effect
+       })
+       |> put_some("description", description)
+       |> put_some("quorum", quorum)
+       |> put_some("answers", answers)
+       |> put_some("role", role)
+       |> put_some("who", who)}
+    end
+  end
+
   defp typed("serviceTask", node, path, base, _drawn?),
     do: action(node["action"], node, path, base)
 
@@ -777,6 +839,73 @@ defmodule PotokIde.Processes.Graph do
   end
 
   defp typed(_type, _node, path, _base, _drawn?), do: {:error, {path <> ".type", :invalid}}
+
+  defp poll_majority(majority, "none", path),
+    do: if(majority in @poll_majorities, do: {:ok, majority}, else: {:error, {path, :invalid}})
+
+  defp poll_majority(majority, _effect, path) do
+    if majority in @effect_majorities,
+      do: {:ok, majority},
+      else: {:error, {path, :effect_majority}}
+  end
+
+  # A quorum goes with a decision, and a decision that changes a role has one.
+  defp poll_quorum(quorum, majority, effect, path) do
+    case parse_quorum(quorum) do
+      nil when effect != "none" -> {:error, {path, :effect_quorum}}
+      nil -> {:ok, nil}
+      _quorum when majority == "none" -> {:ok, nil}
+      quorum when quorum in 1..100 -> {:ok, quorum}
+      _out_of_range -> {:error, {path, :invalid}}
+    end
+  end
+
+  defp parse_quorum(quorum) when is_integer(quorum), do: quorum
+
+  defp parse_quorum(quorum) when is_binary(quorum) do
+    case Integer.parse(String.trim(quorum)) do
+      {quorum, ""} -> quorum
+      _blank_or_not -> nil
+    end
+  end
+
+  defp parse_quorum(_quorum), do: nil
+
+  defp flag(value, _path) when is_boolean(value), do: {:ok, value}
+  defp flag("true", _path), do: {:ok, true}
+  defp flag("false", _path), do: {:ok, false}
+  defp flag(_value, path), do: {:error, {path, :invalid}}
+
+  # A plain poll's answers, two to ten and none twice; a decision fixes its own.
+  defp poll_answers("none", answers, path)
+       when is_list(answers) and length(answers) in 2..@max_poll_answers do
+    with {:ok, answers} <- each(answers, path, &text(&1, @max_option, &2)) do
+      if length(Enum.uniq_by(answers, &String.downcase/1)) == length(answers),
+        do: {:ok, answers},
+        else: {:error, {path, :duplicate}}
+    end
+  end
+
+  defp poll_answers("none", _answers, path), do: {:error, {path, :invalid}}
+  defp poll_answers(_effect, _answers, _path), do: {:ok, nil}
+
+  defp poll_role("none", _role, _path), do: {:ok, nil}
+  defp poll_role(_effect, role, path), do: key(role, path)
+
+  # Whom a decision names: whoever started the run, or a text that gives a
+  # username, as `Check` reads it.
+  defp poll_who("none", _who, _path), do: {:ok, nil}
+  defp poll_who(_effect, "starter", _path), do: {:ok, "starter"}
+
+  defp poll_who(_effect, who, path) when is_binary(who) do
+    case String.trim(who) do
+      "" -> {:error, {path, :invalid}}
+      who when byte_size(who) <= @max_template -> {:ok, who}
+      _too_long -> {:error, {path, :invalid}}
+    end
+  end
+
+  defp poll_who(_effect, _who, path), do: {:error, {path, :invalid}}
 
   # A text that may be left out: blank is none.
   defp optional_template(nil, _path), do: {:ok, nil}
@@ -1207,7 +1336,7 @@ defmodule PotokIde.Processes.Graph do
   # A call, a wait or a form goes on by one plain flow, and by a second when
   # its deadline passes.
   defp leaves({%{"type" => type} = element, i}, out, _into)
-       when type in ~w(callActivity receiveTask formTask) do
+       when type in ~w(callActivity receiveTask formTask pollTask) do
     {deadlines, plain} = Enum.split_with(out, &Map.has_key?(&1, "deadline"))
 
     cond do

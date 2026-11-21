@@ -82,6 +82,16 @@ defmodule PotokIde.Processes.Engine do
   run comes to again asks anew. One that asks whoever started a run nobody
   started fails (`no_starter`).
 
+  A `pollTask` puts a poll to the group as the process
+  (`Polls.create_poll_for_process/5`) and stops the run until it ends at
+  its deadline: closing it wakes the run (`Polls.close_locked/3`), which
+  reads how it went into its element (`results`) and goes on. A decision
+  that changes a role is put to the vote only as far as the group lets
+  someone of the process do so (`PotokIde.Polls.Effects`): its owner, an
+  admin, in a group of its founders, or the process itself where the group
+  elects its admins (`effect_not_permitted` otherwise). The process holds
+  no more than "everyone" does: the decision carries the role over.
+
   While a run waits on a step a person finishes it keeps whom it asks
   (`asks_role`, `asks_profile_id`), and says so when it tells that it
   moved (`asks`), also once more as it leaves that wait. So a page counts
@@ -92,7 +102,8 @@ defmodule PotokIde.Processes.Engine do
 
   require Logger
 
-  alias PotokIde.{RateLimit, Repo}
+  alias PotokIde.{Polls, RateLimit, Repo}
+  alias PotokIde.Polls.{Effects, Poll}
 
   alias PotokIde.Processes.{
     Expr,
@@ -562,6 +573,7 @@ defmodule PotokIde.Processes.Engine do
 
   defp writes?(%{"type" => "serviceTask", "action" => action}), do: action != "assign"
   defp writes?(%{"type" => "callActivity"}), do: true
+  defp writes?(%{"type" => "pollTask"}), do: true
   defp writes?(_element), do: false
 
   defp execute(%ValueProcess{} = instance) do
@@ -641,6 +653,28 @@ defmodule PotokIde.Processes.Engine do
          wake_at: form["deadline"] && later(form["deadline"]),
          results: Map.delete(instance.results, id)
        }, []}
+    end
+  end
+
+  # A poll goes to the group, and the run waits for its end, which wakes it.
+  defp act(%{"type" => "pollTask", "id" => id} = task, instance) do
+    process = AppProcess |> Repo.get!(instance.app_process_id) |> Repo.preload(:profile)
+    group = Repo.get!(Group, process.group_id)
+    zone = instance.graph["zone"] || "Etc/UTC"
+    proposers = proposers(process, group)
+
+    with :ok <- if(process.active, do: :ok, else: {:error, :process_inactive}),
+         {:ok, attrs} <- poll_attrs(task, instance, group, zone),
+         :ok <- effect_allowed(task, group, proposers),
+         {:ok, _poll, announce} <-
+           Polls.create_poll_for_process(process.profile, group, attrs, zone,
+             process_instance_id: instance.id,
+             proposers: proposers
+           ) do
+      {:wait, %{wake_at: nil, results: Map.delete(instance.results, id)}, [announce]}
+    else
+      {:error, %Ecto.Changeset{}} -> {:error, :invalid_poll}
+      {:error, _reason} = error -> error
     end
   end
 
@@ -1317,6 +1351,10 @@ defmodule PotokIde.Processes.Engine do
           do: {:continue, move(instance, plain(out)["to"], %{}), []},
           else: call_deadline(instance, Enum.find(out, & &1["deadline"]))
 
+      # Its poll ended, set off by no one person.
+      %{"type" => "pollTask", "id" => id} ->
+        poll_ended(instance, id, plain(out))
+
       # A signal came, set off by no one person.
       %{"type" => "receiveTask", "id" => id} ->
         if Map.has_key?(instance.results, id),
@@ -1332,6 +1370,129 @@ defmodule PotokIde.Processes.Engine do
 
   defp deadline(instance, flow),
     do: {:continue, move(instance, flow["to"], %{triggered_by_id: nil}), left(instance)}
+
+  # How the run's newest poll went, under the poll's element; still open, it
+  # waits on. A poll deleted before its end leaves the run nothing to wait
+  # for, which only a decision without votes can be.
+  defp poll_ended(instance, id, flow) do
+    case Repo.one(
+           from(p in Poll,
+             where: p.process_instance_id == ^instance.id,
+             order_by: [desc: p.id],
+             limit: 1
+           )
+         ) do
+      nil ->
+        Repo.rollback({:failed, instance.element, :poll_gone})
+
+      %Poll{closed_at: nil} ->
+        {:stop, update!(instance, %{wake_at: nil}), []}
+
+      %Poll{} = poll ->
+        results = Map.put(instance.results, id, poll_result(poll))
+        {:continue, move(instance, flow["to"], %{results: results, triggered_by_id: nil}), []}
+    end
+  end
+
+  defp poll_result(%Poll{} = poll) do
+    winner = poll.winner_option_id && Repo.get(Polls.PollOption, poll.winner_option_id)
+
+    %{
+      "outcome" => to_string(poll.outcome || "none"),
+      "passed" => poll.outcome == :passed and poll.effect_status != :rejected,
+      "winner" => (winner && winner.text) || "",
+      "voters" => poll.voters_count,
+      "eligible" => poll.eligible_count || 0,
+      "applied" => poll.effect_status == :applied
+    }
+  end
+
+  # Who of the process may put a decision to a vote: the process itself, and
+  # its owner, whose rights it borrows for that alone.
+  defp proposers(%AppProcess{} = process, %Group{} = group) do
+    owner = process.owner_profile_id && %Profile{id: process.owner_profile_id}
+
+    [
+      Access.for_profile(process.profile, group)
+      | List.wrap(owner && Access.for_profile(owner, group))
+    ]
+  end
+
+  defp effect_allowed(%{"effect" => effect}, group, proposers) when effect in ~w(grant revoke) do
+    kind = String.to_existing_atom(effect)
+
+    if Enum.any?(proposers, &Effects.may_propose?(&1, group, kind)),
+      do: :ok,
+      else: {:error, :effect_not_permitted}
+  end
+
+  defp effect_allowed(_task, _group, _proposers), do: :ok
+
+  # The poll's form, from the step: its texts as the run reads them, its
+  # deadline in the drawing's zone, and whom its decision names.
+  defp poll_attrs(task, instance, group, zone) do
+    data = value_data(instance)
+
+    closes_local =
+      task["duration"]
+      |> later()
+      |> DateTime.shift_zone!(zone)
+      |> DateTime.to_naive()
+      |> NaiveDateTime.to_iso8601()
+
+    base = %{
+      "question" => task["question"] |> render(data) |> String.slice(0, 300),
+      "description" => render(task["description"] || "", data),
+      "majority" => task["majority"],
+      "quorum_percent" => task["quorum"] && to_string(task["quorum"]),
+      "secret" => to_string(task["secret"] == true),
+      "closes_local" => closes_local
+    }
+
+    case task["effect"] do
+      effect when effect in ~w(grant revoke) ->
+        with {:ok, profile_id} <- named(task["who"], instance, group, data) do
+          {:ok,
+           Map.merge(base, %{
+             "effect" => effect,
+             "effect_role_key" => task["role"],
+             "effect_profile_id" => profile_id
+           })}
+        end
+
+      _none ->
+        options =
+          (task["answers"] || [])
+          |> Enum.with_index()
+          |> Map.new(fn {text, i} -> {Integer.to_string(i), %{"text" => text}} end)
+
+        {:ok, Map.put(base, "options", options)}
+    end
+  end
+
+  # The member a decision names: whoever started the run, or the username a
+  # text gives.
+  defp named("starter", instance, group, _data) do
+    case instance.started_by_id do
+      nil -> {:error, :no_starter}
+      id -> member_id(id, group)
+    end
+  end
+
+  defp named(who, _instance, group, data) do
+    username = who |> render(data) |> String.trim() |> String.trim_leading("@")
+
+    case username != "" && PotokIde.Social.get_profile_by_username(username) do
+      %Profile{id: id} -> member_id(id, group)
+      _nobody -> {:error, :not_a_member}
+    end
+  end
+
+  defp member_id(id, group) do
+    if PotokIde.Social.member_of_group?(%Profile{id: id}, group),
+      do: {:ok, id},
+      else: {:error, :not_a_member}
+  end
 
   # The call's deadline cancels the run it waits for, unless that run is in a
   # step of its own just now, which may end it: the next pass sees.

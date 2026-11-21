@@ -1076,7 +1076,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
     attrs =
       params
-      |> Map.take(~w(label text in name role field op value target list item))
+      |> Map.take(
+        ~w(label text in name role field op value target list item question description majority quorum effect)
+      )
       |> maybe_put("admins", admins(params))
       |> maybe_put("inherits", inherits(params))
       |> maybe_put("inherit_roles", admins(%{"admins" => params["inherit_roles"]}))
@@ -1086,6 +1088,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       |> Map.merge(assign_attrs(node, params, socket.assigns.process_editor))
       |> Map.merge(form_attrs(node, params, socket.assigns.process_editor))
       |> Map.merge(end_attrs(node, params, socket.assigns.process_editor))
+      |> Map.merge(poll_attrs(node, params))
 
     with {:ok, graph} <- GraphEdit.update_node(graph, id, attrs) do
       deadline(graph, Graph.node(graph, id), params, socket)
@@ -1127,6 +1130,37 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   end
 
   defp form_attrs(_node, _params, _editor), do: %{}
+
+  # A poll's answers come a line each, whom its decision names as whoever
+  # started the run or as a text, and the secret as a checkbox says it.
+  defp poll_attrs(%{"type" => "pollTask"} = node, params) do
+    answers =
+      if is_binary(params["answers"]) do
+        params["answers"]
+        |> String.split("\n")
+        |> Enum.map(&String.trim/1)
+        |> Enum.reject(&(&1 == ""))
+      end
+
+    who =
+      case params["poll_who_mode"] do
+        "starter" -> "starter"
+        "named" -> if(node["who"] in [nil, "starter"], do: "", else: node["who"])
+        _as_it_is -> nil
+      end
+
+    who =
+      if params["poll_who_mode"] == "named" and is_binary(params["poll_who"]),
+        do: params["poll_who"],
+        else: who
+
+    %{}
+    |> maybe_put("answers", answers)
+    |> maybe_put("who", who)
+    |> maybe_put("secret", if(is_binary(params["secret"]), do: params["secret"] == "true"))
+  end
+
+  defp poll_attrs(_node, _params), do: %{}
 
   # What an end hands back, attribute by attribute of the entity the process
   # hands back: only those it has.
@@ -1459,6 +1493,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       name: gettext("New value"),
       role: "admin",
       outcomes: [gettext("Approve"), gettext("Decline")],
+      poll_question: gettext("Do we agree?"),
+      poll_answers: [gettext("Yes"), gettext("No")],
       outcome: gettext("Outcome"),
       variable: variables |> List.first() |> then(&(&1 && &1["name"])),
       group_field: gettext("field"),
@@ -2162,6 +2198,17 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
         {"form", "hero-clipboard-document-list", label || gettext("Form"), detail}
 
+      %{"type" => "pollTask"} ->
+        detail =
+          case node["effect"] do
+            "grant" -> gettext("gives %{role}", role: role_name(roles, node["role"]))
+            "revoke" -> gettext("takes %{role}", role: role_name(roles, node["role"]))
+            _asks -> node["question"]
+          end
+
+        {"poll", "hero-scale", label || gettext("Poll"),
+         Enum.join(Enum.reject([detail, duration_text(node["duration"])], &is_nil/1), " · ")}
+
       %{"type" => "timer"} ->
         {"timer", "hero-clock", label || gettext("Wait"), duration_text(node["duration"])}
 
@@ -2295,8 +2342,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
         node
         |> Map.take(
-          ~w(label text in name role admins fields field op value target list item intro)
+          ~w(label text in name role admins fields field op value target list item intro question description majority quorum effect)
         )
+        |> Map.merge(poll_form_values(node))
         |> Map.merge(%{
           "duration_amount" => duration_amount,
           "duration_unit" => duration_unit,
@@ -2336,6 +2384,19 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   end
 
   defp element_form(_editor, _access), do: nil
+
+  defp poll_form_values(%{"type" => "pollTask"} = node) do
+    named? = node["who"] not in [nil, "starter"]
+
+    %{
+      "answers" => Enum.join(node["answers"] || [], "\n"),
+      "secret" => node["secret"] in [true, "true"],
+      "poll_who_mode" => if(named?, do: "named", else: "starter"),
+      "poll_who" => if(named?, do: node["who"])
+    }
+  end
+
+  defp poll_form_values(_node), do: %{}
 
   ## Words
 
@@ -2405,6 +2466,18 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
     do: gettext("The group no longer has that entity, or one it holds.")
 
   defp reason_text(:no_entity, _path), do: gettext("Pick the entity the form asks for.")
+
+  defp reason_text(:effect_majority, _path),
+    do: gettext("A decision that changes a role is taken by a majority, not by the most votes.")
+
+  defp reason_text(:effect_quorum, _path),
+    do: gettext("A decision that changes a role needs a quorum.")
+
+  defp reason_text(:effect_not_permitted, _path),
+    do:
+      gettext(
+        "Only an admin may hand a decision on roles to the group, unless the group elects its admins."
+      )
 
   defp reason_text(:no_starter, _path),
     do: gettext("Nobody starts a process on a schedule, so its form asks the people of a role.")
