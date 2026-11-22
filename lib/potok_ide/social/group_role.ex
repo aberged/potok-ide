@@ -3,15 +3,25 @@ defmodule PotokIde.Social.GroupRole do
   A role of a group manifest. For each permission a role either allows it,
   denies it or says nothing; a denial wins over any allowance. The built-in
   "admin" role holds every permission and "everyone" is held by every member.
+
+  The role also says how it is had (`request_mode`), which a profile reads
+  before it asks for the role: it cannot be asked for (`closed`), whoever
+  manages requests gives or refuses it (`approve`), or may put it to a vote
+  instead (`choose`), or every request raises a vote (`vote`). A vote goes as
+  `request_poll` says (`PotokIde.Social.RequestPoll`). See
+  `PotokIde.Social.GroupRequests`.
   """
 
   use Ecto.Schema
 
   import Ecto.Changeset
 
+  alias PotokIde.Social.RequestPoll
+
   @admin_key "admin"
   @everyone_key "everyone"
   @builtin_keys [@admin_key, @everyone_key]
+  @request_modes [:closed, :approve, :choose, :vote]
 
   # Order is the order shown in the roles tab.
   @permissions [
@@ -61,6 +71,10 @@ defmodule PotokIde.Social.GroupRole do
     field :allowed, {:array, Ecto.Enum}, values: @permissions, default: []
     field :denied, {:array, Ecto.Enum}, values: @permissions, default: []
     field :position, :integer, default: 0
+    # How the role is had: see the moduledoc.
+    field :request_mode, Ecto.Enum, values: @request_modes, default: :closed
+    # How a vote on a request for it goes; set with `choose` and `vote`.
+    embeds_one :request_poll, RequestPoll, on_replace: :update
 
     belongs_to :manifest, PotokIde.Social.GroupManifest
 
@@ -71,6 +85,10 @@ defmodule PotokIde.Social.GroupRole do
   def everyone_key, do: @everyone_key
   def permissions, do: @permissions
   def default_everyone_permissions, do: @default_everyone_permissions
+  def request_modes, do: @request_modes
+
+  @doc "Whether a request for the role can end in a vote."
+  def votes?(%__MODULE__{request_mode: mode}), do: mode in [:choose, :vote]
 
   def builtin?(%__MODULE__{key: key}), do: key in @builtin_keys
   def builtin?(key) when is_binary(key), do: key in @builtin_keys
@@ -98,6 +116,29 @@ defmodule PotokIde.Social.GroupRole do
 
   def permissions_changeset(role, allowed, denied) do
     change(role, allowed: allowed, denied: denied)
+  end
+
+  @doc """
+  How the role is had: `mode` and, for a mode that votes, the vote's rules.
+  "everyone", which every member holds, is never asked for.
+  """
+  def request_changeset(%__MODULE__{} = role, attrs) do
+    role
+    |> cast(attrs, [:request_mode])
+    |> validate_required([:request_mode])
+    |> validate_change(:request_mode, fn :request_mode, mode ->
+      if role.key == @everyone_key and mode != :closed,
+        do: [request_mode: "is held by every member"],
+        else: []
+    end)
+    |> request_poll()
+    |> check_constraint(:request_poll, name: :group_roles_request_poll_check)
+  end
+
+  defp request_poll(changeset) do
+    if get_field(changeset, :request_mode) in [:choose, :vote],
+      do: cast_embed(changeset, :request_poll, with: &RequestPoll.changeset/2, required: true),
+      else: put_embed(changeset, :request_poll, nil)
   end
 
   defp validate_name_not_reserved(changeset) do

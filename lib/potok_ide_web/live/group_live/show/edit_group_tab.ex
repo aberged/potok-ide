@@ -5,7 +5,15 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   alias PotokIde.Social.{Group, GroupAreas, GroupPins, GroupPresets, GroupRole, GroupRoutes}
   alias PotokIdeWeb.Avatars
   alias PotokIdeWeb.Distance
-  alias PotokIdeWeb.GroupLive.Show.{Components, KindMenu, LocationEditor, TemplatesCard}
+
+  alias PotokIdeWeb.GroupLive.Show.{
+    Components,
+    KindMenu,
+    LocationEditor,
+    RequestRules,
+    TemplatesCard
+  }
+
   alias PotokIdeWeb.PinIcons
 
   attr :card, :map, required: true
@@ -167,6 +175,10 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   attr :elections, :map,
     default: nil,
     doc: "whether the group elects its admins and what the viewer may do about it, or nil"
+
+  attr :join_rule, :map,
+    default: nil,
+    doc: "how a request to join is decided, for a public group: `%{editable?:}`, or nil"
 
   attr :everyone_can_post, :boolean,
     default: true,
@@ -374,6 +386,8 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                 </.button>
               </div>
             </div>
+
+            <.join_rule :if={@join_rule} group={@group} join_rule={@join_rule} />
           </Components.settings_card>
 
           <Components.settings_card
@@ -637,6 +651,16 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
               <% end %>
             </fieldset>
           </Components.settings_card>
+        </.form>
+        <%!-- The rule of admission stands inside the group's form on screen,
+               but saves on its own: its fields name this form. --%>
+        <.form
+          :if={@join_rule && @join_rule.editable?}
+          for={to_form(%{}, as: :rule)}
+          id="group-join-rule-form"
+          phx-submit="set_join_rule"
+          class="hidden"
+        >
         </.form>
 
         <section
@@ -1382,5 +1406,56 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
 
   defp role_label(%{key: key} = role) do
     if key == GroupRole.everyone_key(), do: gettext("All members"), else: role.name
+  end
+
+  attr :group, :map, required: true
+  attr :join_rule, :map, required: true
+
+  # How a request to join is decided (`Group.join_mode`). Its fields keep what
+  # an admin picks while the page redraws and come back fresh once it is
+  # saved, as their wrapper's id follows the stored rule.
+  defp join_rule(assigns) do
+    assigns =
+      assign(assigns, :stored, :erlang.phash2({assigns.group.join_mode, assigns.group.join_poll}))
+
+    ~H"""
+    <div id="group-edit-join-rule" class="mt-3 rounded-2xl border border-base-300/70 px-3 py-3">
+      <p class="flex items-center gap-1.5 text-sm font-semibold">
+        <.icon name="hero-user-plus" class="size-4 text-primary" />
+        {gettext("Admission to the group")}
+      </p>
+      <%= if @join_rule.editable? do %>
+        <p class="mt-1 mb-2 text-xs text-base-content/65">
+          {gettext(
+            "Who asks to join picks the roles they want and may say why. An invitation still brings someone in at once, so a group that admits only by a vote gives nobody the right to invite."
+          )}
+        </p>
+        <div id={"group-join-rule-#{@stored}"} phx-update="ignore">
+          <RequestRules.rule_fields
+            id="group-join-rule-fields"
+            kind={:join}
+            mode={@group.join_mode}
+            poll={@group.join_poll}
+            form="group-join-rule-form"
+          />
+        </div>
+        <div class="mt-3 flex justify-end">
+          <.button
+            id="group-join-rule-save"
+            type="submit"
+            form="group-join-rule-form"
+            variant="primary"
+            size="sm"
+          >
+            {gettext("Save the rule")}
+          </.button>
+        </div>
+      <% else %>
+        <p id="group-join-rule-summary" class="mt-1 text-xs text-base-content/65">
+          {RequestRules.rule_text(:join, @group.join_mode, @group.join_poll)}
+        </p>
+      <% end %>
+    </div>
+    """
   end
 end

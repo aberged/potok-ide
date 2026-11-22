@@ -57,6 +57,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     ProcessForm,
     ProcessesState,
     ProcessesTab,
+    RequestRules,
     RolesTab,
     RootMapState,
     RootMapTab,
@@ -914,6 +915,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 }
                 everyone_can_post={Access.everyone_can?(@access, :post_values)}
                 elections={elections_option(@group, @access)}
+                join_rule={join_rule_option(@group, @access)}
               />
               <InviteProfileTab.panel
                 :if={Access.can?(@access, :invite_members) and @active_tab == "invite_profile"}
@@ -2939,6 +2941,49 @@ defmodule PotokIdeWeb.GroupLive.Show do
     else
       {:error, reason} -> {:noreply, put_flash(socket, :error, access_error_message(reason))}
       _ -> {:noreply, put_flash(socket, :error, access_error_message(:invalid_permission))}
+    end
+  end
+
+  # How a role is had, as an admin writes it in the statute.
+  def handle_event("set_role_request_rule", %{"rule" => %{"key" => key} = rule}, socket) do
+    case Social.set_role_request_rule(
+           socket.assigns.current_profile,
+           socket.assigns.group,
+           key,
+           RequestRules.params(:role, rule)
+         ) do
+      {:ok, _role} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, gettext("Saved how the role is had."))
+         |> reload_access()}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, put_flash(socket, :error, rule_error_message(changeset))}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, access_error_message(reason))}
+    end
+  end
+
+  # How a request to join is decided: the group's rule, set by an admin.
+  def handle_event("set_join_rule", %{"rule" => rule}, socket) do
+    case Social.set_join_rule(
+           socket.assigns.current_profile,
+           socket.assigns.group,
+           RequestRules.params(:join, rule)
+         ) do
+      {:ok, group} ->
+        {:noreply,
+         socket
+         |> assign(:group, group)
+         |> put_flash(:info, gettext("Saved how a request to join is decided."))}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, put_flash(socket, :error, rule_error_message(changeset))}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, access_error_message(reason))}
     end
   end
 
@@ -6520,6 +6565,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
+  # How a request to join is decided, for a public group, where one can ask:
+  # an admin may change it.
+  defp join_rule_option(group, access) do
+    if Effects.group_allowed?(group) and group.is_public do
+      %{editable?: access.admin?}
+    end
+  end
+
   defp too_many_values_message, do: gettext("Too many messages at once. Try again in a moment.")
 
   defp access_error_message(:not_permitted),
@@ -6572,6 +6625,19 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   defp changeset_error_message(_changeset), do: gettext("Could not update roles.")
+
+  # The first thing wrong with a rule, its vote's fields included.
+  defp rule_error_message(%Ecto.Changeset{} = changeset) do
+    changeset
+    |> Ecto.Changeset.traverse_errors(&translate_error/1)
+    |> first_error() || gettext("Could not save the rule.")
+  end
+
+  defp first_error(errors) when is_map(errors),
+    do: Enum.find_value(errors, fn {_field, inner} -> first_error(inner) end)
+
+  defp first_error([message | _rest]) when is_binary(message), do: message
+  defp first_error(_errors), do: nil
 
   # The value a thread group was started from, shown above its chat.
   defp maybe_load_thread_origin(socket, group, active_tab) do

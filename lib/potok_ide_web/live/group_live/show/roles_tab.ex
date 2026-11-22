@@ -2,7 +2,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
   use PotokIdeWeb, :html
 
   alias PotokIde.Social.{Access, GroupRole}
-  alias PotokIdeWeb.GroupLive.Show.Components
+  alias PotokIdeWeb.GroupLive.Show.{Components, RequestRules}
 
   attr :group, :map, required: true
   attr :access, Access, required: true
@@ -212,6 +212,13 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
               <.button variant="primary">{gettext("Save")}</.button>
             </.form>
 
+            <.request_rule
+              :if={role.key != GroupRole.everyone_key()}
+              role={role}
+              group={@group}
+              editable={@editable?}
+            />
+
             <div
               :if={role.key != GroupRole.admin_key()}
               id={"role-#{role.key}-permissions"}
@@ -240,6 +247,73 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
     </div>
     """
   end
+
+  attr :role, GroupRole, required: true
+  attr :group, :map, required: true
+  attr :editable, :boolean, required: true
+
+  # How the role is had (`GroupRole.request_mode`). The form keeps what the
+  # admin picks while the page redraws, and comes back fresh once it is
+  # saved, as its id follows the stored rule.
+  defp request_rule(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :stored,
+        :erlang.phash2({assigns.role.request_mode, assigns.role.request_poll})
+      )
+
+    ~H"""
+    <div
+      id={"role-#{@role.key}-request"}
+      class="mt-4 rounded-2xl border border-base-300/60 bg-base-100/60 px-3 py-3"
+    >
+      <p class="flex items-center gap-1.5 text-sm font-medium">
+        <.icon name="hero-hand-raised" class="size-4 text-primary" />
+        {gettext("How the role is had")}
+      </p>
+      <%= if @editable do %>
+        <.form
+          for={to_form(%{}, as: :rule)}
+          id={"role-#{@role.key}-request-form-#{@stored}"}
+          phx-submit="set_role_request_rule"
+          phx-update="ignore"
+          class="mt-2"
+        >
+          <input type="hidden" name="rule[key]" value={@role.key} />
+          <RequestRules.rule_fields
+            id={"role-#{@role.key}-rule"}
+            kind={:role}
+            mode={@role.request_mode}
+            poll={@role.request_poll}
+            modes={request_modes(@role, @group)}
+          />
+          <p
+            :if={@role.key == GroupRole.admin_key()}
+            class="mt-2 text-xs text-base-content/65"
+          >
+            {gettext(
+              "Admin is given on request only by an admin. Where the group elects its admins, a request for it always goes to a vote."
+            )}
+          </p>
+          <div class="mt-3 flex justify-end">
+            <.button id={"role-#{@role.key}-request-save"} variant="primary" size="sm">
+              {gettext("Save")}
+            </.button>
+          </div>
+        </.form>
+      <% else %>
+        <p id={"role-#{@role.key}-request-summary"} class="mt-1 text-xs text-base-content/65">
+          {RequestRules.rule_text(:role, @role.request_mode, @role.request_poll)}
+        </p>
+      <% end %>
+    </div>
+    """
+  end
+
+  # Where the group elects its admins, Admin is had only by a vote, if at all.
+  defp request_modes(%GroupRole{key: "admin"}, %{elects_admins: true}), do: [:closed, :vote]
+  defp request_modes(%GroupRole{}, _group), do: RequestRules.modes(:role)
 
   attr :role, GroupRole, required: true
   attr :permission, :atom, required: true
@@ -341,7 +415,12 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
     do: gettext("Has every permission, manages roles and assigns them to members.")
 
   defp role_summary(%GroupRole{key: "everyone"}), do: gettext("Every member of the group.")
-  defp role_summary(%GroupRole{}), do: gettext("Assigned to members by an admin.")
+
+  defp role_summary(%GroupRole{request_mode: :closed}),
+    do: gettext("Assigned to members by an admin.")
+
+  defp role_summary(%GroupRole{}),
+    do: gettext("Assigned to members by an admin, or on request as said below.")
 
   defp role_badge_class(%GroupRole{key: "admin"}),
     do: "bg-amber-500/15 text-amber-800 dark:text-amber-200"
@@ -366,7 +445,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
   def permission_label(:create_subgroups), do: gettext("Create sub-groups")
   def permission_label(:invite_members), do: gettext("Invite members")
   def permission_label(:mention_roles), do: gettext("Mention roles")
-  def permission_label(:manage_join_requests), do: gettext("Manage access requests")
+  def permission_label(:manage_join_requests), do: gettext("Manage requests")
   def permission_label(:remove_members), do: gettext("Remove members")
   def permission_label(:delete_values), do: gettext("Delete messages")
   def permission_label(:create_events), do: gettext("Add events")
@@ -401,8 +480,11 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
   defp permission_description(:mention_roles),
     do: gettext("Mention roles and @everyone to notify their members.")
 
-  defp permission_description(:manage_join_requests),
-    do: gettext("Accept or reject requests to join.")
+  defp permission_description(:manage_join_requests) do
+    gettext(
+      "Accept or reject requests to join, and decide requests for roles as each role says how it is had."
+    )
+  end
 
   defp permission_description(:remove_members), do: gettext("Remove members who are not admins.")
   defp permission_description(:delete_values), do: gettext("Delete messages written by others.")

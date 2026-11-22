@@ -198,6 +198,8 @@ defmodule PotokIde.DomainMap do
 
   # Embedded rows (`GroupEntity.attributes`) are a list of maps in one column.
   defp type_name({:parameterized, {Ecto.Embedded, %{cardinality: :many}}}), do: "map[]"
+  # One embedded row (`Group.join_poll`) is a map in one column.
+  defp type_name({:parameterized, {Ecto.Embedded, %{cardinality: :one}}}), do: "map"
   defp type_name({:array, type}), do: type_name(type) <> "[]"
   # A PostGIS column (`Group.area`), by the database's name for it.
   defp type_name(Geo.PostGIS.Geometry), do: "geometry"

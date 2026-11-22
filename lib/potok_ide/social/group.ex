@@ -3,6 +3,8 @@ defmodule PotokIde.Social.Group do
 
   import Ecto.Changeset
 
+  alias PotokIde.Social.RequestPoll
+
   @max_group_picture_url_length 1_000_000
 
   @description_formats [:markdown, :html]
@@ -12,6 +14,7 @@ defmodule PotokIde.Social.Group do
   @presets [:chat, :folder, :feed, :polls, :questionnaire, :map, :orders, :page]
 
   @location_fields [:latitude, :longitude, :pin_icon]
+  @join_modes [:approve, :choose, :vote]
 
   schema "groups" do
     field :name, :string
@@ -50,6 +53,13 @@ defmodule PotokIde.Social.Group do
     # Set by `Social.set_elects_admins/3` and cleared only by a decision,
     # never cast.
     field :elects_admins, :boolean, default: false
+    # How a request to join is decided (`PotokIde.Social.GroupRequests`):
+    # whoever manages requests admits or refuses (`approve`), or may put it
+    # to a vote instead (`choose`), or every request raises a vote (`vote`),
+    # which goes as `join_poll` says. Set by `Social.set_join_rule/3`, never
+    # cast by the group form.
+    field :join_mode, Ecto.Enum, values: @join_modes, default: :approve
+    embeds_one :join_poll, RequestPoll, on_replace: :update
     # When the newest chat value was posted; kept by Social, never cast.
     field :last_value_at, :utc_datetime
     # How many people belong to it, kept by Postgres from the memberships (a
@@ -272,6 +282,24 @@ defmodule PotokIde.Social.Group do
       do: true
 
   def open_chat?(%__MODULE__{}), do: false
+
+  @doc """
+  How a request to join is decided: `join_mode` and, for a mode that votes,
+  the vote's rules (`PotokIde.Social.RequestPoll`).
+  """
+  def join_changeset(%__MODULE__{} = group, attrs) do
+    group
+    |> cast(attrs, [:join_mode])
+    |> validate_required([:join_mode])
+    |> then(fn changeset ->
+      if get_field(changeset, :join_mode) in [:choose, :vote],
+        do: cast_embed(changeset, :join_poll, with: &RequestPoll.changeset/2, required: true),
+        else: put_embed(changeset, :join_poll, nil)
+    end)
+    |> check_constraint(:join_poll, name: :groups_join_poll_check)
+  end
+
+  def join_modes, do: @join_modes
 
   @doc "Whether only the members added to the group itself can see it."
   def closed?(%__MODULE__{is_public: false, inherits_members: false}), do: true

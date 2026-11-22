@@ -1067,6 +1067,35 @@ defmodule PotokIde.Social do
   def set_elects_admins(%Profile{}, %Group{}, false), do: {:error, :elected_mode}
 
   @doc """
+  Sets how a request to join `group` is decided (`Group.join_mode` and, for
+  a mode that votes, its `join_poll`). It is the group's rule, so only an
+  admin sets it, and never at the root, in a direct conversation or in a
+  thread.
+  """
+  def set_join_rule(%Profile{} = actor, %Group{} = group, attrs) do
+    cond do
+      group.is_root or group.is_direct or not is_nil(group.parent_value_id) ->
+        {:error, :not_allowed}
+
+      not Access.admin?(actor, group) ->
+        {:error, :not_permitted}
+
+      true ->
+        group
+        |> Group.join_changeset(attrs)
+        |> Repo.update()
+        |> case do
+          {:ok, updated} ->
+            broadcast_group_updated(updated)
+            {:ok, updated}
+
+          error ->
+            error
+        end
+    end
+  end
+
+  @doc """
   Gives `group` back to the founders' rule, in the caller's transaction, as a
   decision of a poll does it (`PotokIde.Polls.Effects`). The admins it has
   stay. Returns `{:ok, announce}`.
@@ -4001,6 +4030,33 @@ defmodule PotokIde.Social do
     end
   end
 
+  @doc """
+  Sets how a role of the group's own manifest is had (`GroupRole.request_mode`
+  and, for a mode that votes, its `request_poll`), as an admin writes the
+  statute. In a group that elects its admins, Admin is had only by a vote,
+  if at all.
+  """
+  def set_role_request_rule(%Profile{} = actor, %Group{} = group, role_key, attrs) do
+    with {:ok, manifest} <- editable_manifest(actor, group),
+         {:ok, role} <- fetch_role(manifest, role_key) do
+      changeset = GroupRole.request_changeset(role, attrs)
+
+      if role.key == GroupRole.admin_key() and elects_admins?(group) and
+           Ecto.Changeset.get_field(changeset, :request_mode) in [:approve, :choose] do
+        {:error, :elected_role}
+      else
+        case Repo.update(changeset) do
+          {:ok, role} ->
+            broadcast_manifest_updated(manifest)
+            {:ok, role}
+
+          error ->
+            error
+        end
+      end
+    end
+  end
+
   defp validate_permission_change(%GroupRole{key: key}, permission, state) do
     cond do
       permission not in GroupRole.permissions() -> {:error, :invalid_permission}
@@ -4070,7 +4126,7 @@ defmodule PotokIde.Social do
         |> Multi.insert_all(:roles, GroupRole, fn %{manifest: manifest} ->
           Enum.map(access.manifest.roles, fn role ->
             role
-            |> Map.take([:key, :name, :allowed, :denied, :position])
+            |> Map.take([:key, :name, :allowed, :denied, :position, :request_mode, :request_poll])
             |> Map.merge(%{manifest_id: manifest.id, inserted_at: now, updated_at: now})
           end)
         end)

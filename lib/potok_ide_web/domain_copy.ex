@@ -200,6 +200,9 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("Group", "inherit_role_keys"),
     do: dgettext("domain_map", "roles it inherits by")
 
+  defp own_field("Group", "join_mode"), do: dgettext("domain_map", "how admission is decided")
+  defp own_field("Group", "join_poll"), do: dgettext("domain_map", "rules of a vote on admission")
+
   defp own_field("Group", "elects_admins"),
     do: dgettext("domain_map", "admins come by election")
 
@@ -274,6 +277,8 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("GroupRole", "allowed"), do: dgettext("domain_map", "allowed permissions")
   defp own_field("GroupRole", "denied"), do: dgettext("domain_map", "denied permissions")
   defp own_field("GroupRole", "manifest_id"), do: dgettext("domain_map", "manifest")
+  defp own_field("GroupRole", "request_mode"), do: dgettext("domain_map", "how the role is had")
+  defp own_field("GroupRole", "request_poll"), do: dgettext("domain_map", "rules of a vote on it")
 
   defp own_field("GroupValueRead", "last_read_value_id") do
     dgettext("domain_map", "last read value")
@@ -1146,6 +1151,20 @@ defmodule PotokIdeWeb.DomainCopy do
 
   def check_text("poll_options_effect_check") do
     dgettext("domain_map", "An answer either stands for a candidate or carries a decision out.")
+  end
+
+  def check_text("groups_join_poll_check") do
+    dgettext(
+      "domain_map",
+      "Admission that may go to a vote has the rules of that vote, and only then."
+    )
+  end
+
+  def check_text("group_roles_request_poll_check") do
+    dgettext(
+      "domain_map",
+      "A role that may go to a vote has the rules of that vote, and only then; everyone is never asked for."
+    )
   end
 
   def check_text("groups_elects_admins_check") do

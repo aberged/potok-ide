@@ -45,7 +45,7 @@ msgstr ""
 msgid "Actions"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2841
+#: lib/potok_ide_web/live/group_live/show.ex:2843
 #, elixir-autogen, elixir-format
 msgid "An invitation is already pending."
 msgstr ""
@@ -82,18 +82,18 @@ msgstr ""
 msgid "Could not accept invitation."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2087
+#: lib/potok_ide_web/live/group_live/show.ex:2089
 #: lib/potok_ide_web/live/group_live/show/create_menu.ex:158
 #, elixir-autogen, elixir-format
 msgid "Could not create group."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1305
+#: lib/potok_ide_web/live/group_live/show.ex:1307
 #, elixir-autogen, elixir-format
 msgid "Could not create message."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2844
+#: lib/potok_ide_web/live/group_live/show.ex:2846
 #, elixir-autogen, elixir-format
 msgid "Could not send invitation."
 msgstr ""
@@ -129,15 +129,15 @@ msgstr ""
 msgid "Current profile:"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2704
-#: lib/potok_ide_web/live/group_live/show.ex:6873
+#: lib/potok_ide_web/live/group_live/show.ex:2706
+#: lib/potok_ide_web/live/group_live/show.ex:6939
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1251
 #: lib/potok_ide_web/live/group_live/show/components.ex:1548
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:125
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:195
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:407
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:413
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1258
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:419
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1274
 #: lib/potok_ide_web/live/profile_live/components.ex:73
 #: lib/potok_ide_web/live/profile_live/components.ex:87
 #: lib/potok_ide_web/live/profile_live/components.ex:361
@@ -175,7 +175,7 @@ msgstr ""
 msgid "Enter your email and we'll send you a sign-in link."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2071
+#: lib/potok_ide_web/live/group_live/show.ex:2073
 #: lib/potok_ide_web/live/group_live/show/create_menu.ex:220
 #, elixir-autogen, elixir-format
 msgid "Group created."
@@ -184,17 +184,17 @@ msgstr ""
 #: lib/potok_ide_web/components/layouts.ex:103
 #: lib/potok_ide_web/components/layouts.ex:104
 #: lib/potok_ide_web/components/layouts.ex:345
-#: lib/potok_ide_web/live/group_live/show.ex:344
-#: lib/potok_ide_web/live/group_live/show.ex:6964
-#: lib/potok_ide_web/live/group_live/show.ex:6969
+#: lib/potok_ide_web/live/group_live/show.ex:345
+#: lib/potok_ide_web/live/group_live/show.ex:7030
+#: lib/potok_ide_web/live/group_live/show.ex:7035
 #: lib/potok_ide_web/live/group_live/show/components.ex:717
 #: lib/potok_ide_web/live/profile_live/index.ex:146
 #, elixir-autogen, elixir-format
 msgid "Groups"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1080
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1354
+#: lib/potok_ide_web/live/group_live/show.ex:1082
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1370
 #: lib/potok_ide_web/live/profile_live/components.ex:378
 #, elixir-autogen, elixir-format
 msgid "HTML"
@@ -230,9 +230,9 @@ msgstr ""
 msgid "Invitation not found."
 msgstr "Invitation not found."
 
-#: lib/potok_ide_web/live/group_live/show.ex:5643
-#: lib/potok_ide_web/live/group_live/show.ex:5674
 #: lib/potok_ide_web/live/group_live/show.ex:5688
+#: lib/potok_ide_web/live/group_live/show.ex:5719
+#: lib/potok_ide_web/live/group_live/show.ex:5733
 #, elixir-autogen, elixir-format
 msgid "Invitation sent."
 msgstr ""
@@ -370,14 +370,14 @@ msgstr ""
 msgid "Manage your account email address and password settings"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1080
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1355
+#: lib/potok_ide_web/live/group_live/show.ex:1082
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1371
 #: lib/potok_ide_web/live/profile_live/components.ex:377
 #, elixir-autogen, elixir-format
 msgid "Markdown"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:464
+#: lib/potok_ide_web/live/group_live/show.ex:465
 #: lib/potok_ide_web/live/group_live/show/group_menu.ex:73
 #: lib/potok_ide_web/live/group_live/show/members_tab.ex:54
 #, elixir-autogen, elixir-format
@@ -386,8 +386,8 @@ msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:57
 #: lib/potok_ide_web/live/group_live/show/create_menu.ex:496
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:228
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:978
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:232
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:994
 #: lib/potok_ide_web/live/group_live/show/process_entities.ex:139
 #: lib/potok_ide_web/live/group_live/show/templates_card.ex:212
 #, elixir-autogen, elixir-format
@@ -424,7 +424,7 @@ msgstr ""
 msgid "No sent invitations match your search."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2823
+#: lib/potok_ide_web/live/group_live/show.ex:2825
 #, elixir-autogen, elixir-format
 msgid "No profile found with that username."
 msgstr ""
@@ -482,8 +482,8 @@ msgid "Save Password"
 msgstr ""
 
 #: lib/potok_ide_web/live/account_live/settings.ex:110
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:926
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1074
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:942
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1090
 #: lib/potok_ide_web/live/group_live/show/templates_card.ex:421
 #: lib/potok_ide_web/live/profile_live/edit.ex:153
 #, elixir-autogen, elixir-format
@@ -507,8 +507,8 @@ msgstr ""
 msgid "Sharing"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:624
-#: lib/potok_ide_web/live/group_live/show.ex:6875
+#: lib/potok_ide_web/live/group_live/show.ex:625
+#: lib/potok_ide_web/live/group_live/show.ex:6941
 #: lib/potok_ide_web/live/group_live/show/group_menu.ex:66
 #, elixir-autogen, elixir-format
 msgid "Sub-groups"
@@ -567,31 +567,31 @@ msgstr "Welcome!"
 msgid "You are running the local mail adapter."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2829
+#: lib/potok_ide_web/live/group_live/show.ex:2831
 #, elixir-autogen, elixir-format
 msgid "You cannot invite yourself."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1120
-#: lib/potok_ide_web/live/group_live/show.ex:3370
-#: lib/potok_ide_web/live/group_live/show.ex:3741
+#: lib/potok_ide_web/live/group_live/show.ex:1122
+#: lib/potok_ide_web/live/group_live/show.ex:3415
+#: lib/potok_ide_web/live/group_live/show.ex:3786
 #, elixir-autogen, elixir-format
 msgid "You do not have access to that group."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2060
+#: lib/potok_ide_web/live/group_live/show.ex:2062
 #, elixir-autogen, elixir-format
 msgid "You must be a group member to create sub-groups."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1263
-#: lib/potok_ide_web/live/group_live/show.ex:1537
+#: lib/potok_ide_web/live/group_live/show.ex:1265
+#: lib/potok_ide_web/live/group_live/show.ex:1539
 #, elixir-autogen, elixir-format
 msgid "You must be a group member to post messages."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2793
-#: lib/potok_ide_web/live/group_live/show.ex:2826
+#: lib/potok_ide_web/live/group_live/show.ex:2795
+#: lib/potok_ide_web/live/group_live/show.ex:2828
 #, elixir-autogen, elixir-format
 msgid "You must be a member to invite."
 msgstr ""
@@ -634,7 +634,7 @@ msgstr ""
 #: lib/potok_ide_web/live/account_live/settings.ex:500
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1327
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:171
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1070
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1086
 #: lib/potok_ide_web/live/group_live/show/process_entities.ex:185
 #: lib/potok_ide_web/live/group_live/show/processes_tab.ex:601
 #: lib/potok_ide_web/live/group_live/show/processes_tab.ex:747
@@ -662,7 +662,7 @@ msgstr ""
 msgid "Profile updated."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:929
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:945
 #: lib/potok_ide_web/live/group_live/show/values_tab.ex:286
 #: lib/potok_ide_web/live/profile_live/edit.ex:156
 #, elixir-autogen, elixir-format
@@ -718,7 +718,7 @@ msgstr ""
 msgid "Are you sure you want to delete this message?"
 msgstr "Are you sure you want to delete this message?"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1603
+#: lib/potok_ide_web/live/group_live/show.ex:1605
 #, elixir-autogen, elixir-format
 msgid "Could not delete message."
 msgstr "Could not delete message."
@@ -728,28 +728,28 @@ msgstr "Could not delete message."
 msgid "Delete message"
 msgstr "Delete message"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1587
+#: lib/potok_ide_web/live/group_live/show.ex:1589
 #, elixir-autogen, elixir-format
 msgid "Message deleted."
 msgstr "Message deleted."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1461
-#: lib/potok_ide_web/live/group_live/show.ex:1498
-#: lib/potok_ide_web/live/group_live/show.ex:1550
-#: lib/potok_ide_web/live/group_live/show.ex:1580
-#: lib/potok_ide_web/live/group_live/show.ex:1615
-#: lib/potok_ide_web/live/group_live/show.ex:1651
-#: lib/potok_ide_web/live/group_live/show.ex:1897
+#: lib/potok_ide_web/live/group_live/show.ex:1463
+#: lib/potok_ide_web/live/group_live/show.ex:1500
+#: lib/potok_ide_web/live/group_live/show.ex:1552
+#: lib/potok_ide_web/live/group_live/show.ex:1582
+#: lib/potok_ide_web/live/group_live/show.ex:1617
+#: lib/potok_ide_web/live/group_live/show.ex:1653
+#: lib/potok_ide_web/live/group_live/show.ex:1899
 #, elixir-autogen, elixir-format
 msgid "Message not found."
 msgstr "Message not found."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1592
+#: lib/potok_ide_web/live/group_live/show.ex:1594
 #, elixir-autogen, elixir-format
 msgid "You can only delete your own messages."
 msgstr "You can only delete your own messages."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1521
+#: lib/potok_ide_web/live/group_live/show.ex:1523
 #, elixir-autogen, elixir-format
 msgid "Could not update message."
 msgstr "Could not update message."
@@ -759,18 +759,18 @@ msgstr "Could not update message."
 msgid "Edit message"
 msgstr "Edit message"
 
-#: lib/potok_ide_web/live/group_live/show.ex:431
+#: lib/potok_ide_web/live/group_live/show.ex:432
 #, elixir-autogen, elixir-format
 msgid "Open sub-groups tab"
 msgstr "Open sub-groups tab"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1505
+#: lib/potok_ide_web/live/group_live/show.ex:1507
 #, elixir-autogen, elixir-format
 msgid "Message updated."
 msgstr "Message updated."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1464
-#: lib/potok_ide_web/live/group_live/show.ex:1511
+#: lib/potok_ide_web/live/group_live/show.ex:1466
+#: lib/potok_ide_web/live/group_live/show.ex:1513
 #, elixir-autogen, elixir-format
 msgid "You can only edit your own messages."
 msgstr "You can only edit your own messages."
@@ -956,19 +956,19 @@ msgstr ""
 msgid "You cannot invite your own profile."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1979
+#: lib/potok_ide_web/live/group_live/show.ex:1981
 #: lib/potok_ide_web/live/request_live/index.ex:563
 #, elixir-autogen, elixir-format
 msgid "Access request accepted."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1884
+#: lib/potok_ide_web/live/group_live/show.ex:1886
 #, elixir-autogen, elixir-format
 msgid "Access request already pending."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:7133
-#: lib/potok_ide_web/live/group_live/show.ex:7143
+#: lib/potok_ide_web/live/group_live/show.ex:7199
+#: lib/potok_ide_web/live/group_live/show.ex:7209
 #: lib/potok_ide_web/live/request_live/index.ex:856
 #: lib/potok_ide_web/live/request_live/index.ex:867
 #: lib/potok_ide_web/live/request_live/index.ex:883
@@ -976,19 +976,19 @@ msgstr ""
 msgid "Access request not found."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:375
-#: lib/potok_ide_web/live/group_live/show.ex:379
+#: lib/potok_ide_web/live/group_live/show.ex:376
+#: lib/potok_ide_web/live/group_live/show.ex:380
 #, elixir-autogen, elixir-format
 msgid "Access request pending"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1988
+#: lib/potok_ide_web/live/group_live/show.ex:1990
 #: lib/potok_ide_web/live/request_live/index.ex:572
 #, elixir-autogen, elixir-format
 msgid "Access request rejected."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1862
+#: lib/potok_ide_web/live/group_live/show.ex:1864
 #, elixir-autogen, elixir-format
 msgid "Access request sent."
 msgstr ""
@@ -998,7 +998,7 @@ msgstr ""
 msgid "Access requests"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:891
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:907
 #, elixir-autogen, elixir-format
 msgid "Are you sure you want to delete this group?"
 msgstr "Are you sure you want to delete this value?"
@@ -1008,23 +1008,23 @@ msgstr "Are you sure you want to delete this value?"
 msgid "Choose another profile to open a direct group."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2592
+#: lib/potok_ide_web/live/group_live/show.ex:2594
 #, elixir-autogen, elixir-format
 msgid "Could not delete group."
 msgstr "Could not delete value."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1966
+#: lib/potok_ide_web/live/group_live/show.ex:1968
 #, elixir-autogen, elixir-format
 msgid "Could not remove member."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1887
+#: lib/potok_ide_web/live/group_live/show.ex:1889
 #, elixir-autogen, elixir-format
 msgid "Could not send access request."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:7136
-#: lib/potok_ide_web/live/group_live/show.ex:7139
+#: lib/potok_ide_web/live/group_live/show.ex:7202
+#: lib/potok_ide_web/live/group_live/show.ex:7205
 #: lib/potok_ide_web/live/request_live/index.ex:878
 #, elixir-autogen, elixir-format
 msgid "Could not update access request."
@@ -1036,7 +1036,7 @@ msgstr "Could not update value."
 msgid "Could not update group description."
 msgstr "Could not update value."
 
-#: lib/potok_ide_web/live/group_live/show.ex:5484
+#: lib/potok_ide_web/live/group_live/show.ex:5529
 #, elixir-autogen, elixir-format
 msgid "Could not update group."
 msgstr "Could not update value."
@@ -1056,18 +1056,18 @@ msgstr ""
 msgid "Default profile:"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:896
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:912
 #, elixir-autogen, elixir-format
 msgid "Delete group"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2588
+#: lib/potok_ide_web/live/group_live/show.ex:2590
 #, elixir-autogen, elixir-format
 msgid "Delete this group's sub-groups before deleting the group."
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/group_menu.ex:189
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:381
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:454
 #, elixir-autogen, elixir-format
 msgid "Edit group"
 msgstr ""
@@ -1077,13 +1077,13 @@ msgstr ""
 msgid "Editor"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2570
-#: lib/potok_ide_web/live/group_live/show.ex:3232
+#: lib/potok_ide_web/live/group_live/show.ex:2572
+#: lib/potok_ide_web/live/group_live/show.ex:3277
 #, elixir-autogen, elixir-format
 msgid "Group deleted."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5468
+#: lib/potok_ide_web/live/group_live/show.ex:5513
 #, elixir-autogen, elixir-format
 msgid "Group updated."
 msgstr ""
@@ -1093,7 +1093,7 @@ msgstr ""
 msgid "Live preview"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1941
+#: lib/potok_ide_web/live/group_live/show.ex:1943
 #, elixir-autogen, elixir-format
 msgid "Member removed."
 msgstr ""
@@ -1108,12 +1108,12 @@ msgstr ""
 msgid "No pending approval requests."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1867
+#: lib/potok_ide_web/live/group_live/show.ex:1869
 #, elixir-autogen, elixir-format
 msgid "Only public groups accept access requests."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:448
+#: lib/potok_ide_web/live/group_live/show.ex:449
 #, elixir-autogen, elixir-format
 msgid "Open invite account tab"
 msgstr ""
@@ -1140,9 +1140,9 @@ msgstr ""
 msgid "Preview"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1959
-#: lib/potok_ide_web/live/group_live/show.ex:1970
-#: lib/potok_ide_web/live/group_live/show.ex:2984
+#: lib/potok_ide_web/live/group_live/show.ex:1961
+#: lib/potok_ide_web/live/group_live/show.ex:1972
+#: lib/potok_ide_web/live/group_live/show.ex:3029
 #: lib/potok_ide_web/live/profile_live/direct.ex:35
 #, elixir-autogen, elixir-format
 msgid "Profile not found."
@@ -1157,7 +1157,7 @@ msgstr ""
 #: lib/potok_ide_web/live/group_live/show/components.ex:1132
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:74
 #: lib/potok_ide_web/live/group_live/show/create_menu.ex:502
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:250
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:254
 #, elixir-autogen, elixir-format
 msgid "Public group"
 msgstr ""
@@ -1184,7 +1184,7 @@ msgstr ""
 msgid "Remove %{username} from this group?"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:370
+#: lib/potok_ide_web/live/group_live/show.ex:371
 #, elixir-autogen, elixir-format
 msgid "Request access"
 msgstr ""
@@ -1214,7 +1214,7 @@ msgstr ""
 msgid "Review this access request for the selected group."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1963
+#: lib/potok_ide_web/live/group_live/show.ex:1965
 #, elixir-autogen, elixir-format
 msgid "Root group members cannot be removed."
 msgstr ""
@@ -1229,13 +1229,13 @@ msgstr ""
 msgid "Start typing to preview the description."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1956
-#: lib/potok_ide_web/live/group_live/show.ex:6566
+#: lib/potok_ide_web/live/group_live/show.ex:1958
+#: lib/potok_ide_web/live/group_live/show.ex:6619
 #, elixir-autogen, elixir-format
 msgid "That profile is not a group member."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2574
+#: lib/potok_ide_web/live/group_live/show.ex:2576
 #, elixir-autogen, elixir-format
 msgid "The root group cannot be deleted."
 msgstr ""
@@ -1250,12 +1250,12 @@ msgstr ""
 msgid "Unable to open a direct group right now."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1877
+#: lib/potok_ide_web/live/group_live/show.ex:1879
 #, elixir-autogen, elixir-format
 msgid "You already have a pending invitation to this group."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1870
+#: lib/potok_ide_web/live/group_live/show.ex:1872
 #, elixir-autogen, elixir-format
 msgid "You are already a group member."
 msgstr ""
@@ -1270,13 +1270,13 @@ msgstr ""
 msgid "You must be a group member to access group data values."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2564
-#: lib/potok_ide_web/live/group_live/show.ex:2578
+#: lib/potok_ide_web/live/group_live/show.ex:2566
+#: lib/potok_ide_web/live/group_live/show.ex:2580
 #, elixir-autogen, elixir-format
 msgid "You must be a group member to delete this group."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5671
+#: lib/potok_ide_web/live/group_live/show.ex:5716
 #, elixir-autogen, elixir-format
 msgid "Account invitation email sent."
 msgstr ""
@@ -1308,7 +1308,7 @@ msgstr ""
 msgid "Approved requests"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:860
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:876
 #, elixir-autogen, elixir-format
 msgid "Are you sure you want to delete all data values in this group?"
 msgstr "Are you sure you want to delete this value?"
@@ -1330,7 +1330,7 @@ msgstr ""
 msgid "Chat"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1337
+#: lib/potok_ide_web/live/group_live/show.ex:1339
 #: lib/potok_ide_web/live/group_live/show/components.ex:308
 #: lib/potok_ide_web/live/profile_live/components.ex:135
 #, elixir-autogen, elixir-format
@@ -1363,7 +1363,7 @@ msgstr ""
 msgid "Clear search"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2553
+#: lib/potok_ide_web/live/group_live/show.ex:2555
 #, elixir-autogen, elixir-format
 msgid "Could not delete data values."
 msgstr "Could not delete value."
@@ -1374,14 +1374,14 @@ msgstr "Could not delete value."
 msgid "Could not process that image."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:871
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1061
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:887
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1077
 #, elixir-autogen, elixir-format
 msgid "Delete Data Values"
 msgstr "Delete Data Values"
 
-#: lib/potok_ide_web/live/group_live/show.ex:2541
-#: lib/potok_ide_web/live/group_live/show.ex:2737
+#: lib/potok_ide_web/live/group_live/show.ex:2543
+#: lib/potok_ide_web/live/group_live/show.ex:2739
 #, elixir-autogen, elixir-format
 msgid "Deleted 1 data value."
 msgid_plural "Deleted %{count} data values."
@@ -1408,7 +1408,7 @@ msgstr ""
 msgid "Enter a username to invite an existing profile, or an email to invite an account."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2820
+#: lib/potok_ide_web/live/group_live/show.ex:2822
 #, elixir-autogen, elixir-format
 msgid "Enter a valid email address."
 msgstr ""
@@ -1439,7 +1439,7 @@ msgid "History of access requests your current profile created and that were app
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:114
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:389
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:395
 #, elixir-autogen, elixir-format
 msgid "Home page"
 msgstr ""
@@ -1460,7 +1460,7 @@ msgstr ""
 msgid "Inserted"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5691
+#: lib/potok_ide_web/live/group_live/show.ex:5736
 #, elixir-autogen, elixir-format
 msgid "Invitation will be sent when they create their first profile."
 msgstr ""
@@ -1515,8 +1515,8 @@ msgstr ""
 msgid "No approved requests yet."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2533
-#: lib/potok_ide_web/live/group_live/show.ex:2731
+#: lib/potok_ide_web/live/group_live/show.ex:2535
+#: lib/potok_ide_web/live/group_live/show.ex:2733
 #, elixir-autogen, elixir-format
 msgid "No data values to delete."
 msgstr ""
@@ -1549,7 +1549,7 @@ msgstr ""
 
 #: lib/potok_ide_web/live/account_live/settings.ex:766
 #: lib/potok_ide_web/live/account_live/settings.ex:771
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:332
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:402
 #, elixir-autogen, elixir-format
 msgid "Not set"
 msgstr ""
@@ -1649,7 +1649,7 @@ msgstr ""
 msgid "User Agent"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2817
+#: lib/potok_ide_web/live/group_live/show.ex:2819
 #, elixir-autogen, elixir-format
 msgid "Username or email is required."
 msgstr ""
@@ -1750,13 +1750,13 @@ msgid "Add reaction"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/sheet.ex:214
-#: lib/potok_ide_web/live/group_live/show.ex:1629
-#: lib/potok_ide_web/live/group_live/show.ex:1644
+#: lib/potok_ide_web/live/group_live/show.ex:1631
+#: lib/potok_ide_web/live/group_live/show.ex:1646
 #, elixir-autogen, elixir-format
 msgid "Could not update reaction."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1611
+#: lib/potok_ide_web/live/group_live/show.ex:1613
 #, elixir-autogen, elixir-format
 msgid "You must be a group member to react."
 msgstr ""
@@ -1934,7 +1934,7 @@ msgstr ""
 msgid "Cancel reply"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1571
+#: lib/potok_ide_web/live/group_live/show.ex:1573
 #, elixir-autogen, elixir-format
 msgid "Could not open thread."
 msgstr ""
@@ -1960,7 +1960,7 @@ msgstr ""
 msgid "Show original message"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1567
+#: lib/potok_ide_web/live/group_live/show.ex:1569
 #: lib/potok_ide_web/live/group_live/show/components.ex:1200
 #: lib/potok_ide_web/live/group_live/show/components.ex:1204
 #: lib/potok_ide_web/live/group_live/show/components.ex:2509
@@ -1989,17 +1989,12 @@ msgstr ""
 msgid "Threads"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:6531
+#: lib/potok_ide_web/live/group_live/show.ex:6584
 #, elixir-autogen, elixir-format
 msgid "A group must keep at least one admin."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:405
-#, elixir-autogen, elixir-format
-msgid "Accept or reject requests to join."
-msgstr ""
-
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:392
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:465
 #, elixir-autogen, elixir-format
 msgid "Add emoji reactions to messages and to the group. Held by the Everyone role, it also lets signed-in visitors of a public group react to the group, and to messages in an open chat."
 msgstr ""
@@ -2009,33 +2004,33 @@ msgstr ""
 msgid "Add role"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:358
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:431
 #, elixir-autogen, elixir-format
 msgid "Admin"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:330
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:400
 #, elixir-autogen, elixir-format
 msgid "Allow"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:344
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:414
 #, elixir-autogen, elixir-format
 msgid "Assigned to members by an admin."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:446
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:522
 #, elixir-autogen, elixir-format
 msgid "Change the group's settings, description and app data."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:6568
-#: lib/potok_ide_web/live/group_live/show.ex:6574
+#: lib/potok_ide_web/live/group_live/show.ex:6621
+#: lib/potok_ide_web/live/group_live/show.ex:6627
 #, elixir-autogen, elixir-format
 msgid "Could not update roles."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:398
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:471
 #, elixir-autogen, elixir-format
 msgid "Create groups inside this group."
 msgstr ""
@@ -2045,7 +2040,7 @@ msgstr ""
 msgid "Create own manifest"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:366
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:439
 #, elixir-autogen, elixir-format
 msgid "Create sub-groups"
 msgstr ""
@@ -2065,32 +2060,32 @@ msgstr ""
 msgid "Delete the role %{name}? Members lose it in every group using this manifest."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:371
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:444
 #, elixir-autogen, elixir-format
 msgid "Delete messages"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:408
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:484
 #, elixir-autogen, elixir-format
 msgid "Delete messages written by others."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:331
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:401
 #, elixir-autogen, elixir-format
 msgid "Deny"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:6540
+#: lib/potok_ide_web/live/group_live/show.ex:6593
 #, elixir-autogen, elixir-format
 msgid "Direct conversations do not have roles or invitations."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:343
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:413
 #, elixir-autogen, elixir-format
 msgid "Every member of the group."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:359
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:432
 #, elixir-autogen, elixir-format
 msgid "Everyone"
 msgstr ""
@@ -2100,7 +2095,7 @@ msgstr ""
 msgid "Groups without their own manifest use these roles. They cannot be changed."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:341
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:411
 #, elixir-autogen, elixir-format
 msgid "Has every permission, manages roles and assigns them to members."
 msgstr ""
@@ -2120,27 +2115,22 @@ msgstr ""
 msgid "Inherited from"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:367
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:440
 #, elixir-autogen, elixir-format
 msgid "Invite members"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:399
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:472
 #, elixir-autogen, elixir-format
 msgid "Invite profiles to this group."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:369
-#, elixir-autogen, elixir-format
-msgid "Manage access requests"
-msgstr ""
-
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:368
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:441
 #, elixir-autogen, elixir-format
 msgid "Mention roles"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:402
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:475
 #, elixir-autogen, elixir-format
 msgid "Mention roles and @everyone to notify their members."
 msgstr ""
@@ -2160,27 +2150,27 @@ msgstr ""
 msgid "New role, e.g. moderators"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:365
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:438
 #, elixir-autogen, elixir-format
 msgid "Open threads"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:362
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:435
 #, elixir-autogen, elixir-format
 msgid "Post messages"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:364
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:437
 #, elixir-autogen, elixir-format
 msgid "React"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:370
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:443
 #, elixir-autogen, elixir-format
 msgid "Remove members"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:407
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:483
 #, elixir-autogen, elixir-format
 msgid "Remove members who are not admins."
 msgstr ""
@@ -2190,12 +2180,12 @@ msgstr ""
 msgid "Rename role"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2881
+#: lib/potok_ide_web/live/group_live/show.ex:2883
 #, elixir-autogen, elixir-format
 msgid "Role %{name} added."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2915
+#: lib/potok_ide_web/live/group_live/show.ex:2917
 #, elixir-autogen, elixir-format
 msgid "Role %{name} deleted."
 msgstr ""
@@ -2206,17 +2196,17 @@ msgstr ""
 msgid "Role name"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:6554
+#: lib/potok_ide_web/live/group_live/show.ex:6607
 #, elixir-autogen, elixir-format
 msgid "Role not found."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2900
+#: lib/potok_ide_web/live/group_live/show.ex:2902
 #, elixir-autogen, elixir-format
 msgid "Role renamed."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:6487
+#: lib/potok_ide_web/live/group_live/show.ex:6532
 #, elixir-autogen, elixir-format
 msgid "Role · %{count} member"
 msgid_plural "Role · %{count} members"
@@ -2250,12 +2240,13 @@ msgstr ""
 #: lib/potok_ide_web/live/group_live/show/process_editor.ex:97
 #: lib/potok_ide_web/live/group_live/show/process_entities.ex:188
 #: lib/potok_ide_web/live/group_live/show/roles_tab.ex:212
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:297
 #: lib/potok_ide_web/live/tag_live/index.ex:303
 #, elixir-autogen, elixir-format
 msgid "Save"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:397
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:470
 #, elixir-autogen, elixir-format
 msgid "Start a thread from a message."
 msgstr ""
@@ -2265,17 +2256,17 @@ msgstr ""
 msgid "Sub-groups without their own manifest use these roles too."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:6552
+#: lib/potok_ide_web/live/group_live/show.ex:6605
 #, elixir-autogen, elixir-format
 msgid "The admin and everyone roles cannot be renamed or deleted."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:6546
+#: lib/potok_ide_web/live/group_live/show.ex:6599
 #, elixir-autogen, elixir-format
 msgid "The default manifest cannot be changed."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:6549
+#: lib/potok_ide_web/live/group_live/show.ex:6602
 #, elixir-autogen, elixir-format
 msgid "This group already has its own manifest."
 msgstr ""
@@ -2285,17 +2276,17 @@ msgstr ""
 msgid "This group has its own manifest"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:6543
+#: lib/potok_ide_web/live/group_live/show.ex:6596
 #, elixir-autogen, elixir-format
 msgid "This group inherits its roles. Create its own manifest to change them."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2950
+#: lib/potok_ide_web/live/group_live/show.ex:2995
 #, elixir-autogen, elixir-format
 msgid "This group now has its own manifest."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2966
+#: lib/potok_ide_web/live/group_live/show.ex:3011
 #, elixir-autogen, elixir-format
 msgid "This group uses its parent's roles again."
 msgstr ""
@@ -2305,7 +2296,7 @@ msgstr ""
 msgid "Use the parent group's roles again? Roles that only exist in this manifest are removed from members."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:384
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:457
 #, elixir-autogen, elixir-format
 msgid "Write messages and replies. Held by the Everyone role, it also lets signed-in visitors write in an open chat."
 msgstr ""
@@ -2320,7 +2311,7 @@ msgstr ""
 msgid "Your roles in this group do not allow posting messages."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:6526
+#: lib/potok_ide_web/live/group_live/show.ex:6579
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:446
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:485
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:912
@@ -2336,7 +2327,7 @@ msgstr ""
 msgid "Your roles in this group do not allow that."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:337
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:407
 #, elixir-autogen, elixir-format
 msgid "the default manifest"
 msgstr ""
@@ -2348,18 +2339,18 @@ msgid_plural "%{count} files"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1295
+#: lib/potok_ide_web/live/group_live/show.ex:1297
 #: lib/potok_ide_web/live/group_live/show/values_tab.ex:1443
 #, elixir-autogen, elixir-format
 msgid "Attach at most %{count} files."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:363
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:436
 #, elixir-autogen, elixir-format
 msgid "Attach files"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:389
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:462
 #, elixir-autogen, elixir-format
 msgid "Attach files to messages."
 msgstr ""
@@ -2434,7 +2425,7 @@ msgstr ""
 msgid "Remove file"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:4809
+#: lib/potok_ide_web/live/group_live/show.ex:4854
 #, elixir-autogen, elixir-format
 msgid "Remove the files that cannot be attached."
 msgstr ""
@@ -2444,7 +2435,7 @@ msgstr ""
 msgid "Show files as"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:4835
+#: lib/potok_ide_web/live/group_live/show.ex:4880
 #, elixir-autogen, elixir-format
 msgid "Some files could not be uploaded. Please try again."
 msgstr ""
@@ -2469,7 +2460,7 @@ msgstr ""
 msgid "Upload progress"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:4812
+#: lib/potok_ide_web/live/group_live/show.ex:4857
 #, elixir-autogen, elixir-format
 msgid "Wait until the files finish uploading."
 msgstr ""
@@ -2499,7 +2490,7 @@ msgstr[1] ""
 msgid "Show sub-groups as"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:649
+#: lib/potok_ide_web/live/group_live/show.ex:650
 #, elixir-autogen, elixir-format
 msgid "Loading…"
 msgstr ""
@@ -2509,7 +2500,7 @@ msgstr ""
 msgid "Only part of the results is shown. Narrow the search, or open a sub-group to search inside it."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:6976
+#: lib/potok_ide_web/live/group_live/show.ex:7042
 #: lib/potok_ide_web/live/group_live/show/group_sidebar.ex:836
 #: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:674
 #, elixir-autogen, elixir-format
@@ -2591,43 +2582,43 @@ msgstr ""
 msgid "This file cannot be previewed in the browser."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5572
+#: lib/potok_ide_web/live/group_live/show.ex:5617
 #, elixir-autogen, elixir-format
 msgid "A group can have at most %{count} alternative descriptions."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1384
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1400
 #, elixir-autogen, elixir-format
 msgid "All members"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:654
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1259
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:670
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1275
 #, elixir-autogen, elixir-format
 msgid "Alternative descriptions"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5584
+#: lib/potok_ide_web/live/group_live/show.ex:5629
 #, elixir-autogen, elixir-format
 msgid "Another description already uses the name of the current default."
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/choice_menus.ex:44
 #: lib/potok_ide_web/live/group_live/show/components.ex:1234
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1353
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1369
 #: lib/potok_ide_web/live/group_live/show/process_editor.ex:126
 #: lib/potok_ide_web/pin_icons.ex:159
 #, elixir-autogen, elixir-format
 msgid "App"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5585
-#: lib/potok_ide_web/live/group_live/show.ex:5588
+#: lib/potok_ide_web/live/group_live/show.ex:5630
+#: lib/potok_ide_web/live/group_live/show.ex:5633
 #, elixir-autogen, elixir-format
 msgid "Could not save the description."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:768
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:784
 #: lib/potok_ide_web/live/group_live/show/process_entities.ex:181
 #: lib/potok_ide_web/live/group_live/show/templates_card.ex:128
 #: lib/potok_ide_web/live/invitation_live/index.ex:154
@@ -2635,22 +2626,22 @@ msgstr ""
 msgid "Delete"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1057
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1073
 #, elixir-autogen, elixir-format
 msgid "Delete every data value of this description's app?"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:771
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:787
 #, elixir-autogen, elixir-format
 msgid "Delete this description? The data values of its app are deleted too."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2675
+#: lib/potok_ide_web/live/group_live/show.ex:2677
 #, elixir-autogen, elixir-format
 msgid "Description deleted."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5510
+#: lib/potok_ide_web/live/group_live/show.ex:5555
 #, elixir-autogen, elixir-format
 msgid "Description saved."
 msgstr ""
@@ -2662,7 +2653,7 @@ msgid "Descriptions"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:792
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:751
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:767
 #: lib/potok_ide_web/live/group_live/show/processes_tab.ex:516
 #: lib/potok_ide_web/live/group_live/show/templates_card.ex:120
 #: lib/potok_ide_web/live/profile_live/index.ex:135
@@ -2670,93 +2661,93 @@ msgstr ""
 msgid "Edit"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:974
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:990
 #, elixir-autogen, elixir-format
 msgid "Edit description"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:656
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:672
 #, elixir-autogen, elixir-format
 msgid "Extra descriptions or apps, shown as tabs next to the default description. Each app keeps its own data."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:396
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:402
 #, elixir-autogen, elixir-format
 msgid "Home description"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:759
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:775
 #: lib/potok_ide_web/live/profile_live/index.ex:126
 #, elixir-autogen, elixir-format
 msgid "Make default"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1366
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1382
 #, elixir-autogen, elixir-format
 msgid "Make this the default description? The current default takes its place in the list."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:743
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:759
 #: lib/potok_ide_web/live/group_live/show/templates_card.ex:112
 #: lib/potok_ide_web/live/group_live/show/templates_card.ex:306
 #, elixir-autogen, elixir-format
 msgid "Move down"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:733
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:749
 #: lib/potok_ide_web/live/group_live/show/templates_card.ex:102
 #: lib/potok_ide_web/live/group_live/show/templates_card.ex:296
 #, elixir-autogen, elixir-format
 msgid "Move up"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:412
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:418
 #, elixir-autogen, elixir-format
 msgid "Name next to the alternative descriptions"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:671
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:973
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:687
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:989
 #, elixir-autogen, elixir-format
 msgid "New description"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5577
+#: lib/potok_ide_web/live/group_live/show.ex:5622
 #, elixir-autogen, elixir-format
 msgid "Remove the role limit to make it the default."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1077
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1093
 #, elixir-autogen, elixir-format
 msgid "Save description"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5580
+#: lib/potok_ide_web/live/group_live/show.ex:5625
 #, elixir-autogen, elixir-format
 msgid "That description no longer exists."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2715
+#: lib/potok_ide_web/live/group_live/show.ex:2717
 #, elixir-autogen, elixir-format
 msgid "The description is now the default."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:986
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1002
 #, elixir-autogen, elixir-format
 msgid "Visible to"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:988
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1004
 #, elixir-autogen, elixir-format
 msgid "Without a role it is visible to everyone who sees the group's description. Editors always see it."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:862
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:878
 #, elixir-autogen, elixir-format
 msgid "Delete every data value of the default description's app? The other apps keep theirs."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1659
+#: lib/potok_ide_web/live/group_live/show.ex:1661
 #: lib/potok_ide_web/live/group_live/show/notices_state.ex:201
 #, elixir-autogen, elixir-format
 msgid "Could not remove the preview."
@@ -2768,7 +2759,7 @@ msgstr ""
 msgid "Remove preview"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:304
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:308
 #, elixir-autogen, elixir-format
 msgid "Every member of the parent group is also a member here, with the same roles."
 msgstr ""
@@ -2782,7 +2773,7 @@ msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:88
 #: lib/potok_ide_web/live/group_live/show/create_menu.ex:514
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:296
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:300
 #: lib/potok_ide_web/live/group_live/show/process_editor.ex:1013
 #, elixir-autogen, elixir-format
 msgid "Inherit members"
@@ -2803,17 +2794,17 @@ msgstr ""
 msgid "Member of the parent group"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:6560
+#: lib/potok_ide_web/live/group_live/show.ex:6613
 #, elixir-autogen, elixir-format
 msgid "This member comes from the parent group. Remove them there."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:6563
+#: lib/potok_ide_web/live/group_live/show.ex:6616
 #, elixir-autogen, elixir-format
 msgid "This role comes from the parent group. Change it there."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:302
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:306
 #, elixir-autogen, elixir-format
 msgid "Threads always inherit the members of their group."
 msgstr ""
@@ -2829,7 +2820,7 @@ msgstr ""
 msgid "Load newer messages"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2016
+#: lib/potok_ide_web/live/group_live/show.ex:2018
 #, elixir-autogen, elixir-format
 msgid "The original message is no longer available."
 msgstr ""
@@ -2839,12 +2830,12 @@ msgstr ""
 msgid "+%{count} more"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:372
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:445
 #, elixir-autogen, elixir-format
 msgid "Add events"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:410
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:486
 #, elixir-autogen, elixir-format
 msgid "Add events to the calendar."
 msgstr ""
@@ -2921,7 +2912,7 @@ msgstr ""
 msgid "Cancel this occurrence"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:413
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:489
 #, elixir-autogen, elixir-format
 msgid "Change and cancel events added by others."
 msgstr ""
@@ -3009,7 +3000,7 @@ msgstr ""
 msgid "Location"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:373
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:446
 #, elixir-autogen, elixir-format
 msgid "Manage events"
 msgstr ""
@@ -3034,7 +3025,7 @@ msgstr ""
 msgid "Monthly"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:584
+#: lib/potok_ide_web/live/group_live/show.ex:585
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:71
 #, elixir-autogen, elixir-format
 msgid "My calendar"
@@ -3070,7 +3061,7 @@ msgstr ""
 msgid "Not going"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:407
+#: lib/potok_ide_web/live/group_live/show.ex:408
 #, elixir-autogen, elixir-format
 msgid "Open calendar tab"
 msgstr ""
@@ -3335,7 +3326,7 @@ msgstr ""
 msgid "Load more"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:380
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:453
 #, elixir-autogen, elixir-format
 msgid "Manage tags"
 msgstr ""
@@ -3402,7 +3393,7 @@ msgstr ""
 msgid "Public tags"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:443
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:519
 #, elixir-autogen, elixir-format
 msgid "Put public tags on messages, files, events and this group."
 msgstr ""
@@ -3549,76 +3540,76 @@ msgstr ""
 msgid "Filters"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:200
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:204
 #, elixir-autogen, elixir-format
 msgid "Name, picture, visibility, description and apps of the group."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:198
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:202
 #, elixir-autogen, elixir-format
 msgctxt "page title"
 msgid "Edit group"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:193
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1256
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1272
 #, elixir-autogen, elixir-format
 msgid "Access"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:66
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:238
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:242
 #, elixir-autogen, elixir-format
 msgid "Access and members"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:54
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:192
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:225
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1255
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:229
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1271
 #: lib/potok_ide_web/live/profile_live/components.ex:52
 #: lib/potok_ide_web/live/profile_live/components.ex:360
 #, elixir-autogen, elixir-format
 msgid "Basics"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:452
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:458
 #, elixir-autogen, elixir-format
 msgid "Content"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:833
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1263
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:849
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1279
 #, elixir-autogen, elixir-format
 msgid "Danger zone"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:843
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:859
 #, elixir-autogen, elixir-format
 msgid "Delete the app's data"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:880
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:896
 #, elixir-autogen, elixir-format
 msgid "Delete the group"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:846
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:862
 #, elixir-autogen, elixir-format
 msgid "Deletes every data value the group's app saved."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:848
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:864
 #, elixir-autogen, elixir-format
 msgid "Deletes the data values of the default description's app. The other apps keep theirs."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:882
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:898
 #, elixir-autogen, elixir-format
 msgid "Deletes the group with its messages and files. A group with sub-groups cannot be deleted."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:920
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:936
 #: lib/potok_ide_web/live/profile_live/edit.ex:147
 #, elixir-autogen, elixir-format
 msgid "Discard"
@@ -3626,18 +3617,18 @@ msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:78
 #: lib/potok_ide_web/live/group_live/show/create_menu.ex:504
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:254
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:258
 #, elixir-autogen, elixir-format
 msgid "Everyone can see the group and ask to join it."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:835
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:851
 #, elixir-autogen, elixir-format
 msgid "None of this can be undone."
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:194
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1257
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1273
 #, elixir-autogen, elixir-format
 msgid "Opens first"
 msgstr ""
@@ -3648,14 +3639,14 @@ msgid "Sections"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:134
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:421
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:427
 #, elixir-autogen, elixir-format
 msgid "The app runs on the group's home page and can keep its own data."
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:130
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:417
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:981
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:423
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:997
 #, elixir-autogen, elixir-format
 msgid "The description is an app (API)"
 msgstr ""
@@ -3666,30 +3657,30 @@ msgid "The name and picture members see."
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:110
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:385
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:391
 #, elixir-autogen, elixir-format
 msgid "The panel and the description a member sees on opening the group."
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:126
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:408
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:414
 #, elixir-autogen, elixir-format
 msgid "The text or app on the group's home page."
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:109
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:384
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:390
 #, elixir-autogen, elixir-format
 msgid "What opens first"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:67
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:239
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:243
 #, elixir-autogen, elixir-format
 msgid "Who sees the group and who is a member."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:911
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:927
 #: lib/potok_ide_web/live/profile_live/edit.ex:143
 #, elixir-autogen, elixir-format
 msgid "You have unsaved changes."
@@ -3782,7 +3773,7 @@ msgstr ""
 msgid "Every user sees it in their calendar and can answer it."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:416
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:492
 #, elixir-autogen, elixir-format
 msgid "Make events public, so every user sees them in their calendar."
 msgstr ""
@@ -3814,7 +3805,7 @@ msgstr ""
 msgid "Public events of every group."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:374
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:447
 #, elixir-autogen, elixir-format
 msgid "Publish events"
 msgstr ""
@@ -3862,12 +3853,12 @@ msgstr ""
 msgid "Share"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:6342
+#: lib/potok_ide_web/live/group_live/show.ex:6387
 #, elixir-autogen, elixir-format
 msgid "%{names} and %{count} more"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1390
+#: lib/potok_ide_web/live/group_live/show.ex:1392
 #, elixir-autogen, elixir-format
 msgid "Could not read %{names}."
 msgstr ""
@@ -3887,7 +3878,7 @@ msgstr ""
 msgid "Go to groups"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1377
+#: lib/potok_ide_web/live/group_live/show.ex:1379
 #, elixir-autogen, elixir-format
 msgid "Larger than %{size}: %{names}."
 msgstr ""
@@ -3902,7 +3893,7 @@ msgstr ""
 msgid "Nothing to share"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1382
+#: lib/potok_ide_web/live/group_live/show.ex:1384
 #, elixir-autogen, elixir-format
 msgid "Only %{count} files fit in a message: %{names} left out."
 msgstr ""
@@ -3928,7 +3919,7 @@ msgstr ""
 msgid "Share to Potok"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1387
+#: lib/potok_ide_web/live/group_live/show.ex:1389
 #, elixir-autogen, elixir-format
 msgid "You cannot attach files in this group: %{names} left out."
 msgstr ""
@@ -4296,7 +4287,7 @@ msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:79
 #: lib/potok_ide_web/live/group_live/show/create_menu.ex:505
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:255
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:259
 #, elixir-autogen, elixir-format
 msgid "Its name, picture and a short part of its description also show outside Potok, to anyone with the link."
 msgstr ""
@@ -4307,7 +4298,7 @@ msgid "Its title, time, place and description also show outside Potok, to anyone
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:135
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:422
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:428
 #, elixir-autogen, elixir-format
 msgid "For shared links, it can describe itself in a <meta name=\"description\" content=\"...\"> tag."
 msgstr ""
@@ -4514,7 +4505,7 @@ msgstr ""
 msgid "About the group"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:237
+#: lib/potok_ide_web/live/group_live/show.ex:238
 #: lib/potok_ide_web/live/group_live/show/create_menu.ex:548
 #: lib/potok_ide_web/live/group_live/show/create_menu.ex:647
 #: lib/potok_ide_web/live/group_live/show/kind_menu.ex:282
@@ -4527,7 +4518,7 @@ msgstr ""
 msgid "Group sections"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:6874
+#: lib/potok_ide_web/live/group_live/show.ex:6940
 #: lib/potok_ide_web/live/group_live/show/group_menu.ex:45
 #, elixir-autogen, elixir-format
 msgid "Messages"
@@ -4549,7 +4540,7 @@ msgstr ""
 msgid "Add a description"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:328
+#: lib/potok_ide_web/live/group_live/show.ex:329
 #, elixir-autogen, elixir-format
 msgid "Conversations"
 msgstr ""
@@ -4697,7 +4688,7 @@ msgstr ""
 msgid "It goes to the chat as a message with the file. Deleting that message removes the picture from the description."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:4695
+#: lib/potok_ide_web/live/group_live/show.ex:4740
 #, elixir-autogen, elixir-format
 msgid "Picture for the group's description"
 msgid_plural "Pictures for the group's description"
@@ -4720,7 +4711,7 @@ msgstr ""
 msgid "Sending the picture..."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5529
+#: lib/potok_ide_web/live/group_live/show.ex:5574
 #: lib/potok_ide_web/live/group_live/show/description_template_form.ex:167
 #, elixir-autogen, elixir-format
 msgid "Still needed: %{fields}"
@@ -4731,9 +4722,9 @@ msgstr ""
 msgid "Template:"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:4596
-#: lib/potok_ide_web/live/group_live/show.ex:4710
-#: lib/potok_ide_web/live/group_live/show.ex:4781
+#: lib/potok_ide_web/live/group_live/show.ex:4641
+#: lib/potok_ide_web/live/group_live/show.ex:4755
+#: lib/potok_ide_web/live/group_live/show.ex:4826
 #: lib/potok_ide_web/live/group_live/show/description_template_form.ex:387
 #: lib/potok_ide_web/live/group_live/show/description_template_form.ex:523
 #, elixir-autogen, elixir-format
@@ -4850,7 +4841,7 @@ msgstr ""
 msgid "Block in this group"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1924
+#: lib/potok_ide_web/live/group_live/show.ex:1926
 #, elixir-autogen, elixir-format
 msgid "Block removed."
 msgstr ""
@@ -4860,17 +4851,17 @@ msgstr ""
 msgid "Blocked"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1904
+#: lib/potok_ide_web/live/group_live/show.ex:1906
 #, elixir-autogen, elixir-format
 msgid "Blocked in this group."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1912
+#: lib/potok_ide_web/live/group_live/show.ex:1914
 #, elixir-autogen, elixir-format
 msgid "Could not block."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1927
+#: lib/potok_ide_web/live/group_live/show.ex:1929
 #, elixir-autogen, elixir-format
 msgid "Could not remove the block."
 msgstr ""
@@ -4881,22 +4872,22 @@ msgstr ""
 msgid "Event for members only"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:280
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:284
 #, elixir-autogen, elixir-format
 msgid "Everyone signed in sees all messages and pictures in the chat, earlier ones too, and can write without joining. They send no files and open no threads."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:276
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:280
 #, elixir-autogen, elixir-format
 msgid "Non-members can write"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2832
+#: lib/potok_ide_web/live/group_live/show.ex:2834
 #, elixir-autogen, elixir-format
 msgid "That profile is blocked in this group."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:284
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:288
 #, elixir-autogen, elixir-format
 msgid "The everyone role cannot post here, so those outside the group only read."
 msgstr ""
@@ -4906,7 +4897,7 @@ msgstr ""
 msgid "They cannot write or react here, ask to join or be invited."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:6523
+#: lib/potok_ide_web/live/group_live/show.ex:6576
 #, elixir-autogen, elixir-format
 msgid "Too many messages at once. Try again in a moment."
 msgstr ""
@@ -4916,7 +4907,7 @@ msgstr ""
 msgid "Unblock"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1881
+#: lib/potok_ide_web/live/group_live/show.ex:1883
 #, elixir-autogen, elixir-format
 msgid "You are blocked in this group."
 msgstr ""
@@ -4936,7 +4927,7 @@ msgstr ""
 msgid "Replies with a quote, threads for longer conversations, reactions and @mentions of people or whole roles. Links get a preview, and you can edit a message too. A link to a form shows the form's title and subtitle to whoever may open it. You can open the chat of a public group, so that those who are not members write there too. You can start a poll right in the chat, and everyone votes from there. A line shows you where the unread messages begin, the list of groups shows each one's newest message, and a search finds messages, in threads too, even when you type without diacritics, in Latin or in Cyrillic. A message you start and leave waits for you as a draft, an edited one says so, and you can mute a group for a while or until you turn it back on, while mentions still reach you. On a computer, your groups stand in a column beside the chat."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1357
+#: lib/potok_ide_web/live/group_live/show.ex:1359
 #, elixir-autogen, elixir-format
 msgid "Pictures from the keyboard go out from the message field."
 msgstr ""
@@ -4946,7 +4937,7 @@ msgstr ""
 msgid "Up to 10 files per message, up to 100 MB each. Pictures, video and sound open right in the conversation, everything stays in the Files tab, where you search them by name and kind, and only members can download them, apart from the pictures you put in a group's description and the files of an open chat. In the Android app you send a GIF or a sticker straight from the keyboard."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1358
+#: lib/potok_ide_web/live/group_live/show.ex:1360
 #, elixir-autogen, elixir-format
 msgid "You cannot send pictures in this group."
 msgstr ""
@@ -5136,7 +5127,7 @@ msgstr ""
 msgid "Where I am a member"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:484
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:490
 #, elixir-autogen, elixir-format
 msgid "The map of groups shows this group as a pin to everyone who sees it, and so does a Map app in the group above. Tap the map to put it, or drag it."
 msgstr ""
@@ -5151,7 +5142,7 @@ msgstr ""
 msgid "Association"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1281
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1297
 #, elixir-autogen, elixir-format
 msgid "By kind: %{kind}"
 msgstr ""
@@ -5176,7 +5167,7 @@ msgstr ""
 msgid "Food and drink"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1288
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1304
 #: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:1009
 #, elixir-autogen, elixir-format
 msgid "Group picture"
@@ -5208,13 +5199,13 @@ msgid "Institution and culture"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1225
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:567
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:573
 #, elixir-autogen, elixir-format
 msgid "Latitude"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1235
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:577
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:583
 #, elixir-autogen, elixir-format
 msgid "Longitude"
 msgstr ""
@@ -5246,7 +5237,7 @@ msgid "Music"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1199
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:590
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:596
 #, elixir-autogen, elixir-format
 msgid "My location"
 msgstr ""
@@ -5261,7 +5252,7 @@ msgstr ""
 msgid "Nature and sights"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:600
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:606
 #, elixir-autogen, elixir-format
 msgid "Pin on the map"
 msgstr ""
@@ -5292,7 +5283,7 @@ msgid "Recommended"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1209
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:594
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:600
 #, elixir-autogen, elixir-format
 msgid "Remove location"
 msgstr ""
@@ -5338,12 +5329,12 @@ msgid "Sport"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1168
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:511
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:517
 #, elixir-autogen, elixir-format
 msgid "The map could not load. Type the coordinates instead."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1311
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1327
 #, elixir-autogen, elixir-format
 msgid "This group"
 msgstr ""
@@ -5358,7 +5349,7 @@ msgstr ""
 msgid "Transport and delivery"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:603
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:609
 #, elixir-autogen, elixir-format
 msgid "Unless you pick another, the pin shows the kind of group, like the mark on its picture. A pin you pick keeps the kind in its corner."
 msgstr ""
@@ -5369,13 +5360,13 @@ msgid "Waste and recycling"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1167
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:510
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:516
 #, elixir-autogen, elixir-format
 msgid "Your location is not available."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:476
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1262
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:482
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1278
 #, elixir-autogen, elixir-format
 msgctxt "map"
 msgid "Location"
@@ -5501,7 +5492,7 @@ msgstr ""
 msgid "Last message"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:592
+#: lib/potok_ide_web/live/group_live/show.ex:593
 #, elixir-autogen, elixir-format
 msgid "Map of groups"
 msgstr ""
@@ -5526,7 +5517,7 @@ msgstr ""
 msgid "None of your groups has a place on the map yet."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:419
+#: lib/potok_ide_web/live/group_live/show.ex:420
 #, elixir-autogen, elixir-format
 msgid "Open the map of groups"
 msgstr ""
@@ -5710,7 +5701,7 @@ msgstr[1] ""
 msgid "In %{name}"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:546
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:552
 #: lib/potok_ide_web/live/group_live/show/group_description_tab.ex:106
 #, elixir-autogen, elixir-format
 msgid "Lies in"
@@ -5914,7 +5905,7 @@ msgstr ""
 msgid "Lines of the routes long enough, over the areas"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:546
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:552
 #: lib/potok_ide_web/live/group_live/show/group_description_tab.ex:106
 #, elixir-autogen, elixir-format
 msgid "Passes through"
@@ -5984,7 +5975,7 @@ msgstr ""
 msgid "The route was simplified to %{to} of its %{from} points."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:478
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:484
 #, elixir-autogen, elixir-format
 msgid "Where the group stands on a map, a point, an area or a route, and the pin it shows there."
 msgstr ""
@@ -6084,7 +6075,7 @@ msgstr ""
 msgid "No messages with those words."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:567
+#: lib/potok_ide_web/live/group_live/show.ex:568
 #: lib/potok_ide_web/live/group_live/show/value_search.ex:186
 #: lib/potok_ide_web/live/group_live/show/value_search.ex:207
 #: lib/potok_ide_web/live/group_live/show/value_search.ex:208
@@ -6149,7 +6140,7 @@ msgstr ""
 msgid "Follow"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:511
+#: lib/potok_ide_web/live/group_live/show.ex:512
 #, elixir-autogen, elixir-format
 msgid "Follow the group"
 msgstr ""
@@ -6204,7 +6195,7 @@ msgstr ""
 #: lib/potok_ide_web/components/layouts.ex:119
 #: lib/potok_ide_web/components/layouts.ex:120
 #: lib/potok_ide_web/components/layouts.ex:354
-#: lib/potok_ide_web/live/group_live/show.ex:548
+#: lib/potok_ide_web/live/group_live/show.ex:549
 #: lib/potok_ide_web/live/group_live/show/group_menu.ex:59
 #: lib/potok_ide_web/live/group_live/show/group_menu.ex:151
 #: lib/potok_ide_web/live/group_live/show/notices_tab.ex:34
@@ -6228,7 +6219,7 @@ msgstr ""
 msgid "Push is off for every notice."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:534
+#: lib/potok_ide_web/live/group_live/show.ex:535
 #: lib/potok_ide_web/live/notice_live/index.ex:153
 #, elixir-autogen, elixir-format
 msgid "Push notifications"
@@ -6254,12 +6245,12 @@ msgstr ""
 msgid "Received notices"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:379
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:452
 #, elixir-autogen, elixir-format
 msgid "Send notices"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:439
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:515
 #, elixir-autogen, elixir-format
 msgid "Send notices to everyone who follows the group, members or not, and delete them."
 msgstr ""
@@ -6278,7 +6269,7 @@ msgid_plural "Send to %{count} followers"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:554
+#: lib/potok_ide_web/live/group_live/show.ex:555
 #: lib/potok_ide_web/live/group_live/show/notices_tab.ex:59
 #: lib/potok_ide_web/live/notice_live/index.ex:166
 #, elixir-autogen, elixir-format
@@ -6342,8 +6333,8 @@ msgstr ""
 msgid "You follow no group yet. Open a group and tap its bell."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:522
-#: lib/potok_ide_web/live/group_live/show.ex:528
+#: lib/potok_ide_web/live/group_live/show.ex:523
+#: lib/potok_ide_web/live/group_live/show.ex:529
 #, elixir-autogen, elixir-format
 msgid "You follow the group"
 msgstr ""
@@ -6431,38 +6422,38 @@ msgstr ""
 msgid "Step by step"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:267
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:271
 #, elixir-autogen, elixir-format
 msgid "Anyone with the link reads the description without an account, with the alternative descriptions marked for it. Apps only show them things: they cannot write, vote or react. Search engines do not list the page."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:263
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:267
 #, elixir-autogen, elixir-format
 msgid "Description open to guests"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:711
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:727
 #, elixir-autogen, elixir-format
 msgid "Guests"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:703
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:719
 #, elixir-autogen, elixir-format
 msgid "Guests read it once the group opens its description to them"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:702
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1012
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:718
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1028
 #, elixir-autogen, elixir-format
 msgid "Guests read it too"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1372
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1388
 #, elixir-autogen, elixir-format
 msgid "Guests will read it too, as the default is open to them."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1023
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1039
 #, elixir-autogen, elixir-format
 msgid "It counts once the group opens its description to guests."
 msgstr ""
@@ -6472,12 +6463,12 @@ msgstr ""
 msgid "Log in to see its chat and members, and to take part."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1030
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1046
 #, elixir-autogen, elixir-format
 msgid "Open Access"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1016
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1032
 #, elixir-autogen, elixir-format
 msgid "People without an account read it next to the default description."
 msgstr ""
@@ -6531,7 +6522,7 @@ msgstr ""
 msgid "Process"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:614
+#: lib/potok_ide_web/live/group_live/show.ex:615
 #: lib/potok_ide_web/live/group_live/show/members_tab.ex:324
 #: lib/potok_ide_web/live/group_live/show/processes_tab.ex:53
 #, elixir-autogen, elixir-format
@@ -6561,7 +6552,7 @@ msgstr ""
 msgid "started by %{username}"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:6557
+#: lib/potok_ide_web/live/group_live/show.ex:6610
 #, elixir-autogen, elixir-format
 msgid "An app's process leaves its app's group only when its rule is removed."
 msgstr ""
@@ -6739,7 +6730,7 @@ msgstr ""
 msgid "They act for the group's apps and are not counted among the members. An app's rules start and stop them, or its editors on the Processes tab."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:499
+#: lib/potok_ide_web/live/group_live/show.ex:500
 #: lib/potok_ide_web/live/group_live/show/processes_tab.ex:78
 #: lib/potok_ide_web/live/request_live/index.ex:183
 #, elixir-autogen, elixir-format
@@ -6783,6 +6774,7 @@ msgid "someone"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2287
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:220
 #, elixir-autogen, elixir-format
 msgid "%{count} day"
 msgid_plural "%{count} days"
@@ -7505,7 +7497,7 @@ msgstr ""
 msgid "not equal to"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:335
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:339
 #: lib/potok_ide_web/live/group_live/show/process_editor.ex:179
 #, elixir-autogen, elixir-format
 msgid "on"
@@ -8253,7 +8245,7 @@ msgstr ""
 msgid "Shortcut"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2370
+#: lib/potok_ide_web/live/group_live/show.ex:2372
 #, elixir-autogen, elixir-format
 msgid "The shortcut is gone; the group stays where it is."
 msgstr ""
@@ -8268,7 +8260,7 @@ msgstr ""
 msgid "This group already has that shortcut."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2377
+#: lib/potok_ide_web/live/group_live/show.ex:2379
 #, elixir-autogen, elixir-format
 msgid "This shortcut can't be removed."
 msgstr ""
@@ -9254,8 +9246,8 @@ msgstr ""
 msgid "form filled in"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:491
 #: lib/potok_ide_web/live/group_live/show.ex:492
+#: lib/potok_ide_web/live/group_live/show.ex:493
 #: lib/potok_ide_web/live/group_live/show/group_sidebar.ex:905
 #: lib/potok_ide_web/live/group_live/show/group_sidebar.ex:906
 #: lib/potok_ide_web/live/group_live/show/group_sidebar.ex:1004
@@ -9376,17 +9368,17 @@ msgstr ""
 msgid "Muted until you turn them on"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2474
+#: lib/potok_ide_web/live/group_live/show.ex:2476
 #, elixir-autogen, elixir-format
 msgid "Only the group's members can mute it."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2465
+#: lib/potok_ide_web/live/group_live/show.ex:2467
 #, elixir-autogen, elixir-format
 msgid "The group is muted."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2466
+#: lib/potok_ide_web/live/group_live/show.ex:2468
 #, elixir-autogen, elixir-format
 msgid "The group's notifications are on again."
 msgstr ""
@@ -9406,10 +9398,10 @@ msgstr ""
 msgid "Hide your groups"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:210
 #: lib/potok_ide_web/live/group_live/show.ex:211
-#: lib/potok_ide_web/live/group_live/show.ex:222
-#: lib/potok_ide_web/live/group_live/show.ex:224
+#: lib/potok_ide_web/live/group_live/show.ex:212
+#: lib/potok_ide_web/live/group_live/show.ex:223
+#: lib/potok_ide_web/live/group_live/show.ex:225
 #, elixir-autogen, elixir-format
 msgid "Show your groups"
 msgstr ""
@@ -9591,12 +9583,12 @@ msgstr ""
 msgid "Pinned"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2431
+#: lib/potok_ide_web/live/group_live/show.ex:2433
 #, elixir-autogen, elixir-format
 msgid "The group is pinned to your groups."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2446
+#: lib/potok_ide_web/live/group_live/show.ex:2448
 #, elixir-autogen, elixir-format
 msgid "The group is unpinned from your groups."
 msgstr ""
@@ -9616,7 +9608,7 @@ msgstr ""
 msgid "Unpin from your groups"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2438
+#: lib/potok_ide_web/live/group_live/show.ex:2440
 #, elixir-autogen, elixir-format
 msgid "You can pin up to %{count} groups."
 msgstr ""
@@ -9637,7 +9629,7 @@ msgstr ""
 msgid "Only members with one of these roles"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:315
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:319
 #, elixir-autogen, elixir-format
 msgid "Whoever no longer fits leaves when you save. Members added here stay, and so do you."
 msgstr ""
@@ -10174,7 +10166,7 @@ msgstr ""
 msgid "Ordering is ready. Fill in the producer and the products, then open the first round."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1370
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1386
 #, elixir-autogen, elixir-format
 msgid "Only some roles see it now; as the default, everyone who sees the group will."
 msgstr ""
@@ -10281,7 +10273,7 @@ msgstr ""
 msgid "The current app will be overwritten."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2514
+#: lib/potok_ide_web/live/group_live/show.ex:2516
 #, elixir-autogen, elixir-format
 msgid "The description changed in the meantime, perhaps with the kind of the group. Discard your changes and make them again."
 msgstr ""
@@ -10301,17 +10293,17 @@ msgstr ""
 msgid "The group no longer carries a kind. Its description, app and home page stay."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5419
+#: lib/potok_ide_web/live/group_live/show.ex:5464
 #, elixir-autogen, elixir-format
 msgid "The kind is changed."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5423
+#: lib/potok_ide_web/live/group_live/show.ex:5468
 #, elixir-autogen, elixir-format
 msgid "The kind is changed. The previous description is among the alternative descriptions, as “%{name}”."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:226
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:230
 #, elixir-autogen, elixir-format
 msgid "The name, picture and kind members see."
 msgstr ""
@@ -10396,7 +10388,7 @@ msgstr ""
 msgid "Sending the pictures..."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5385
+#: lib/potok_ide_web/live/group_live/show.ex:5430
 #, elixir-autogen, elixir-format
 msgid "Could not refresh the app."
 msgstr ""
@@ -10421,17 +10413,17 @@ msgstr ""
 msgid "Replace the app's code with the newest version? Its data stay. If someone changed its code by hand, download it first."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5344
+#: lib/potok_ide_web/live/group_live/show.ex:5389
 #, elixir-autogen, elixir-format
 msgid "Save or discard your changes first: refreshing the app sets the form anew."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5374
+#: lib/potok_ide_web/live/group_live/show.ex:5419
 #, elixir-autogen, elixir-format
 msgid "The %{name} app is the newest version now, and so is FeedCreator in %{feed}."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5371
+#: lib/potok_ide_web/live/group_live/show.ex:5416
 #, elixir-autogen, elixir-format
 msgid "The %{name} app is the newest version now."
 msgstr ""
@@ -10441,29 +10433,29 @@ msgstr ""
 msgid "The %{name} app, %{size}"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5380
+#: lib/potok_ide_web/live/group_live/show.ex:5425
 #, elixir-autogen, elixir-format
 msgid "The app is the newest version already."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5383
+#: lib/potok_ide_web/live/group_live/show.ex:5428
 #, elixir-autogen, elixir-format
 msgid "This app is not one of Potok's, so Potok does not change it."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1325
+#: lib/potok_ide_web/live/group_live/show.ex:1327
 #, elixir-autogen, elixir-format
 msgid "Choose an MP4, WebM or MOV video of up to %{size}."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:4668
-#: lib/potok_ide_web/live/group_live/show.ex:4682
+#: lib/potok_ide_web/live/group_live/show.ex:4713
+#: lib/potok_ide_web/live/group_live/show.ex:4727
 #: lib/potok_ide_web/live/group_live/show/description_template_form.ex:454
 #, elixir-autogen, elixir-format
 msgid "The video could not be sent."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:4656
+#: lib/potok_ide_web/live/group_live/show.ex:4701
 #, elixir-autogen, elixir-format
 msgid "Video for the group's description"
 msgstr ""
@@ -10624,7 +10616,7 @@ msgstr ""
 msgid "Template saved."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1261
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1277
 #: lib/potok_ide_web/live/group_live/show/templates_card.ex:45
 #, elixir-autogen, elixir-format
 msgid "Templates"
@@ -10725,22 +10717,22 @@ msgstr ""
 msgid "A group's description doesn't have to be just text. It can also be a small app, say a form, a poll or a task list. A form, or another app, can also run a process: when a request comes in, it posts it in the chat, opens a sub-group for it and waits for whoever decides, with a reminder when they are late. You can also draw such a process yourself, right in Potok, even in a group without an app: it can start on a message with a word you pick, on a new sub-group, at a set time, or when someone starts it. One process can also call another and wait to see how it ends, send a signal others wait for, or keep a count the others read. You can describe the data it works with yourself, say a fault with its floor, keep what it needs in variables, and let it go through a list one item at a time. It can also ask you something on the way: a form opens, and what you fill in goes on with it. A form can also ask for lists, say the items of an order, and a process another one calls can hand back what it worked out, even to a group above or below. An app in the group sees what waits for you and opens the form for you. Or pick a template, say news or an event, and fill in the fields, or make your own, with your own fields and HTML, which the groups below can use too. You can open the description of a public group, app and all, to people without an account too."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1599
+#: lib/potok_ide_web/live/group_live/show.ex:1601
 #, elixir-autogen, elixir-format
 msgid "A decision that changes roles stays once it has a vote."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:341
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:345
 #, elixir-autogen, elixir-format
 msgid "Admin comes and goes only by a decision of a poll, and an admin leaves the group only so. It is switched off by a decision too."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:345
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:349
 #, elixir-autogen, elixir-format
 msgid "Admin then comes and goes only by a decision of a poll. You and the other admins stay for the time being, until the first election. It is switched off only by a decision."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:329
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:333
 #, elixir-autogen, elixir-format
 msgid "Admins by election"
 msgstr ""
@@ -10755,12 +10747,12 @@ msgstr ""
 msgid "Elected: only a decision of a poll changes it"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:6529
+#: lib/potok_ide_web/live/group_live/show.ex:6582
 #, elixir-autogen, elixir-format
 msgid "Electing admins ends only by a decision of a poll."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:357
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:361
 #, elixir-autogen, elixir-format
 msgid "From now on only a decision of a poll gives and takes Admin, and only a decision switches this off. Go on?"
 msgstr ""
@@ -10770,17 +10762,17 @@ msgstr ""
 msgid "Given by a decision of a poll"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:363
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:367
 #, elixir-autogen, elixir-format
 msgid "Let the group elect its admins"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:373
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:377
 #, elixir-autogen, elixir-format
 msgid "Propose ending it"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2995
+#: lib/potok_ide_web/live/group_live/show.ex:3040
 #, elixir-autogen, elixir-format
 msgid "The group now elects its admins."
 msgstr ""
@@ -10790,12 +10782,12 @@ msgstr ""
 msgid "This group elects its admins. Admin comes and goes only by a decision of a poll, and the admins it had before the first election stay for the time being."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:6534
+#: lib/potok_ide_web/live/group_live/show.ex:6587
 #, elixir-autogen, elixir-format
 msgid "This group elects its admins: Admin comes and goes by a decision of a poll."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:6537
+#: lib/potok_ide_web/live/group_live/show.ex:6590
 #, elixir-autogen, elixir-format
 msgid "This group elects its admins: an admin leaves only by a decision of a poll."
 msgstr ""
@@ -11025,4 +11017,162 @@ msgstr ""
 #: lib/potok_ide_web/live/group_live/show/process_editor.ex:2399
 #, elixir-autogen, elixir-format
 msgid "Vote, one vote per account"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:478
+#, elixir-autogen, elixir-format
+msgid "Accept or reject requests to join, and decide requests for roles as each role says how it is had."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:291
+#, elixir-autogen, elixir-format
+msgid "Admin is given on request only by an admin. Where the group elects its admins, a request for it always goes to a vote."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1417
+#, elixir-autogen, elixir-format
+msgid "Admission to the group"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:173
+#, elixir-autogen, elixir-format
+msgid "Admitted on request"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:172
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:175
+#, elixir-autogen, elixir-format
+msgid "Always by a vote"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:417
+#, elixir-autogen, elixir-format
+msgid "Assigned to members by an admin, or on request as said below."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show.ex:6633
+#, elixir-autogen, elixir-format
+msgid "Could not save the rule."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:185
+#, elixir-autogen, elixir-format
+msgid "Every request for the role is put to a vote."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:193
+#, elixir-autogen, elixir-format
+msgid "Every request to join is put to a vote."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:170
+#, elixir-autogen, elixir-format
+msgid "Given on request"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:196
+#, elixir-autogen, elixir-format
+msgid "How a request to join is decided"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:94
+#, elixir-autogen, elixir-format
+msgid "How long it runs"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:195
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:269
+#, elixir-autogen, elixir-format
+msgid "How the role is had"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:63
+#, elixir-autogen, elixir-format
+msgid "How the vote goes"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:442
+#, elixir-autogen, elixir-format
+msgid "Manage requests"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:177
+#, elixir-autogen, elixir-format
+msgid "Nobody can ask for this role; an admin gives it."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:169
+#, elixir-autogen, elixir-format
+msgid "Not asked for"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:171
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:174
+#, elixir-autogen, elixir-format
+msgid "On request, or by a vote"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1442
+#, elixir-autogen, elixir-format
+msgid "Save the rule"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show.ex:2980
+#, elixir-autogen, elixir-format
+msgid "Saved how a request to join is decided."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show.ex:2958
+#, elixir-autogen, elixir-format
+msgid "Saved how the role is had."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:156
+#, elixir-autogen, elixir-format
+msgid "The vote: a quorum of %{quorum} %, %{majority}, over %{days}."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:123
+#, elixir-autogen, elixir-format
+msgid "The whole group votes, by these rules, on every request alike. Whoever asks reads them before sending."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1421
+#, elixir-autogen, elixir-format
+msgid "Who asks to join picks the roles they want and may say why. An invitation still brings someone in at once, so a group that admits only by a vote gives nobody the right to invite."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:188
+#, elixir-autogen, elixir-format
+msgid "Whoever manages requests admits the one who asks or refuses."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:191
+#, elixir-autogen, elixir-format
+msgid "Whoever manages requests admits, refuses or puts it to a vote."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:180
+#, elixir-autogen, elixir-format
+msgid "Whoever manages requests gives the role or refuses it."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:183
+#, elixir-autogen, elixir-format
+msgid "Whoever manages requests gives the role, refuses it or puts it to a vote."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:198
+#, elixir-autogen, elixir-format
+msgid "more than half of the votes"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:200
+#, elixir-autogen, elixir-format
+msgid "more than half of those who may vote"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:199
+#, elixir-autogen, elixir-format
+msgid "two thirds of the votes"
 msgstr ""

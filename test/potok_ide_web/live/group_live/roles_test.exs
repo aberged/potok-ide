@@ -68,6 +68,59 @@ defmodule PotokIdeWeb.GroupLive.RolesTest do
       refute has_element?(lv, "#role-everyone-post_values-allow")
     end
 
+    test "an admin writes how a role is had, with the rules of its vote", ctx do
+      {:ok, _manifest} = Social.create_own_group_manifest(ctx.owner, ctx.group)
+      {:ok, role} = Social.create_group_role(ctx.owner, ctx.group, %{"name" => "blagajnik"})
+      {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/roles")
+
+      assert has_element?(lv, "#role-#{role.key}-rule-mode-vote input[type=radio]")
+      refute has_element?(lv, "#role-everyone-request")
+
+      lv
+      |> form("[id^='role-#{role.key}-request-form-']",
+        rule: %{
+          mode: "vote",
+          poll: %{
+            quorum_percent: "40",
+            majority: "two_thirds",
+            hours: "168",
+            unique_votes: "yes",
+            shared_votes: "each_holder"
+          }
+        }
+      )
+      |> render_submit()
+
+      saved = role_named(ctx.group, "blagajnik")
+      assert saved.request_mode == :vote
+      assert saved.request_poll.quorum_percent == 40
+      assert saved.request_poll.shared_votes == :each_holder
+    end
+
+    test "members read how a role is had", ctx do
+      {:ok, _manifest} = Social.create_own_group_manifest(ctx.owner, ctx.group)
+      {:ok, role} = Social.create_group_role(ctx.owner, ctx.group, %{"name" => "blagajnik"})
+
+      {:ok, _role} =
+        Social.set_role_request_rule(ctx.owner, ctx.group, role.key, %{
+          "request_mode" => "approve"
+        })
+
+      {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.group.id}/roles")
+
+      assert has_element?(lv, "#role-#{role.key}-request-summary", "gives the role or refuses it")
+      refute has_element?(lv, "[id^='role-#{role.key}-request-form-']")
+    end
+
+    test "where the group elects its admins, Admin is offered only closed or by a vote", ctx do
+      {:ok, _manifest} = Social.create_own_group_manifest(ctx.owner, ctx.group)
+      {:ok, _group} = Social.set_elects_admins(ctx.owner, ctx.group, true)
+      {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/roles")
+
+      assert has_element?(lv, "#role-admin-rule-mode-vote")
+      refute has_element?(lv, "#role-admin-rule-mode-approve")
+    end
+
     test "direct groups have no roles tab", ctx do
       {:ok, direct} = Social.get_or_create_direct_group(ctx.owner, ctx.member)
       {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{direct.id}/roles")
