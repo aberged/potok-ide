@@ -210,7 +210,7 @@ defmodule PotokIdeWeb.PageHTML do
         title: gettext("Chat"),
         text:
           gettext(
-            "Replies with a quote, threads for longer conversations, reactions and @mentions of people or whole roles. Links get a preview, and you can edit a message too. A link to a form shows the form's title and subtitle to whoever may open it. You can open the chat of a public group, so that those who are not members write there too. You can start a poll right in the chat, and everyone votes from there. A line shows you where the unread messages begin, the list of groups shows each one's newest message, and a search finds messages, in threads too, even when you type without diacritics, in Latin or in Cyrillic. A message you start and leave waits for you as a draft, an edited one says so, and you can mute a group for a while or until you turn it back on, while mentions still reach you. On a computer, your groups stand in a column beside the chat."
+            "Replies with a quote, threads for longer conversations, reactions and @mentions of people or whole roles. Links get a preview, and you can edit a message too. A link to a form shows the form's title and subtitle to whoever may open it. You can open the chat of a public group, so that those who are not members write there too. You can start a poll right in the chat, and everyone votes from there. A poll says whether unique profiles vote, and whether a shared profile votes once for all who hold it or each of them does. A line shows you where the unread messages begin, the list of groups shows each one's newest message, and a search finds messages, in threads too, even when you type without diacritics, in Latin or in Cyrillic. A message you start and leave waits for you as a draft, an edited one says so, and you can mute a group for a while or until you turn it back on, while mentions still reach you. On a computer, your groups stand in a column beside the chat."
           )
       },
       %{
@@ -237,7 +237,7 @@ defmodule PotokIdeWeb.PageHTML do
         title: gettext("Roles and permissions"),
         text:
           gettext(
-            "Administrator, All members and roles you make yourself, with 20 permissions: from writing and sending files to creating events and editing the group. A sub-group takes over its parent's roles or has its own. A poll's decision can also give or take a role, a process can put that to the vote, and a group can elect its administrators instead of keeping its founders."
+            "Administrator, All members and roles you make yourself, with 20 permissions: from writing and sending files to creating events and editing the group. A sub-group takes over its parent's roles or has its own. A poll's decision can also give or take a role, a process can put that to the vote, and a group can elect its administrators instead of keeping its founders. You can also ask for a role, when you ask to join a group or as a member, and say why: each role says whether whoever manages requests gives it or a vote decides, and a group can let a vote decide who joins it too."
           )
       },
       %{

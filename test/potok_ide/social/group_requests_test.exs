@@ -340,6 +340,28 @@ defmodule PotokIde.Social.GroupRequestsTest do
       assert {:error, :asked_lately} = GroupRequests.request_access(ctx.asker, ctx.group, %{})
     end
 
+    test "a request sent before the group voted on every one goes to a vote, and only so", ctx do
+      {:ok, group} = Social.set_join_rule(ctx.owner, ctx.group, %{"join_mode" => "approve"})
+      {:ok, request} = GroupRequests.request_access(ctx.asker, group, %{})
+
+      {:ok, group} =
+        Social.set_join_rule(ctx.owner, group, %{"join_mode" => "vote", "join_poll" => @rule})
+
+      assert GroupRequests.admission_choices(group) == [:vote]
+
+      assert {:error, :not_permitted} =
+               GroupRequests.decide(ctx.owner, group, {:join, request.id}, %{
+                 "admission" => "admit"
+               })
+
+      assert {:ok, %{admission_vote: true}} =
+               GroupRequests.decide(ctx.owner, group, {:join, request.id}, %{
+                 "admission" => "vote"
+               })
+
+      assert Repo.get!(GroupJoinRequest, request.id).poll_id
+    end
+
     test "someone invited while the vote runs is in already", ctx do
       {:ok, request} = GroupRequests.request_access(ctx.asker, ctx.group, %{})
       poll = Repo.get!(Poll, request.poll_id)

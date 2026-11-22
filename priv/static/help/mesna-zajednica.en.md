@@ -48,7 +48,7 @@ The council has the other permissions like every member, through the role Everyo
 ## 4. Neighbours and the council {:#clanovi}
 
 1. In the group's menu, choose **Invite profile**. Type a neighbour's username, or their email if they have no account yet: then they get an invitation to Potok. Tap **Invite**.
-2. A public group also takes access requests. The number on the **Members** tab says how many are waiting, and in the Access requests part you tap **Accept**.
+2. A public group also takes access requests. The number on the **Members** tab says how many are waiting. Under **Requests** you see who asks, for which roles and why: **Accept** admits someone who asks for no role, and **Decide** opens a window where you decide on the roles too.
 3. On the **Members** tab, tap the shield next to a council member and turn on the council's role. Do the same for every council member.
 
 ![Inviting by username or email](pozovi) ![The shield next to a member: the council's role is on](mz-uloga-clana)

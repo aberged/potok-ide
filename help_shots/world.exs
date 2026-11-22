@@ -204,6 +204,23 @@ defmodule HelpShots.World do
       {:ok, _} = Social.assign_group_member_role(ana, mz, p.(name).id, council.key)
     end
 
+    # How the roles are had: the council by a vote of the whole local
+    # community, volunteers on request (the help's "Kako se dobija uloga").
+    {:ok, _} =
+      Social.set_role_request_rule(ana, mz, council.key, %{
+        "request_mode" => "vote",
+        "request_poll" => %{
+          "quorum_percent" => "30",
+          "majority" => "simple",
+          "hours" => "168",
+          "unique_votes" => "yes",
+          "shared_votes" => "as_one"
+        }
+      })
+
+    {:ok, volunteer} = Social.create_group_role(ana, mz, %{"name" => "volonter"})
+    {:ok, _} = Social.set_role_request_rule(ana, mz, volunteer.key, %{"request_mode" => "approve"})
+
     # A template of the community's own, which every group below it uses too.
     {:ok, _template} =
       PotokIde.Social.GroupTemplates.create(ana, mz, %{
@@ -1067,9 +1084,19 @@ defmodule HelpShots.World do
     profile
   end
 
+  # Petar asks plainly; Sara, the newest and so the first on the list, asks
+  # to volunteer too and says why.
   defp pending(p, mz) do
-    {:ok, _} = Social.request_group_access(p.("sara"), mz.root)
     {:ok, _} = Social.request_group_access(p.("petar"), mz.root)
+
+    volunteer =
+      Enum.find(PotokIde.Social.Access.effective_manifest(mz.root).roles, &(&1.name == "volonter"))
+
+    {:ok, _} =
+      PotokIde.Social.GroupRequests.request_access(p.("sara"), mz.root, %{
+        "role_keys" => [volunteer.key],
+        "note" => "Živim u Topoliku već deset godina i rado pomažem oko akcija u kraju."
+      })
   end
 
   # Helpers --------------------------------------------------------------------

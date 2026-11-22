@@ -35,6 +35,10 @@
     "h": 342,
     "w": 374
   },
+  "glasanje-ko-glasa": {
+    "h": 844,
+    "w": 390
+  },
   "glasanje-odluka": {
     "h": 844,
     "w": 390
@@ -272,6 +276,14 @@
     "w": 390
   },
   "zadruga-signal": {
+    "h": 844,
+    "w": 390
+  },
+  "zahtev-odluka": {
+    "h": 844,
+    "w": 390
+  },
+  "zahtev-pristup": {
     "h": 844,
     "w": 390
   },

@@ -1755,7 +1755,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "A <Poll>poll</Poll> names the <GroupRole>roles</GroupRole> that vote, that see the results and that see the details, and the organizer and those who manage polls always see them. Once a <PollBallot>ballot</PollBallot> is in, what voters saw no longer changes, except the deadline, and in a decision that changes roles not even that. One account gives one vote, whichever of its profiles it uses, and a profile several accounts share votes on its own. A secret poll keeps no answers on its ballots, only the count of each <PollOption>answer</PollOption> grows, so neither the group's admins nor an app can see who voted for what. No counts show before its end, and a finished one is not opened again. A public poll also takes the votes of signed-in non-members of a public group. Deleting the <Value>value</Value> that carries a poll deletes the poll."
+            "A <Poll>poll</Poll> names the <GroupRole>roles</GroupRole> that vote, that see the results and that see the details, and the organizer and those who manage polls always see them. Once a <PollBallot>ballot</PollBallot> is in, what voters saw no longer changes, except the deadline, and in a decision that changes roles not even that. One account gives one vote, whichever of its profiles it uses. The poll says whether unique profiles vote, and whether a profile several accounts share votes on its own, once for all of them, or each of its holders votes through it as themself, counted on their own account, or it does not vote; somebody always does. A secret poll keeps no answers on its ballots, only the count of each <PollOption>answer</PollOption> grows, so neither the group's admins nor an app can see who voted for what. No counts show before its end, and a finished one is not opened again. A public poll also takes the votes of signed-in non-members of a public group. Deleting the <Value>value</Value> that carries a poll deletes the poll."
           )
       },
       %{
@@ -1763,7 +1763,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "A <Poll>poll</Poll> may say what its decision changes: it gives a member a <GroupRole>role</GroupRole>, takes it, elects one of its candidates to it, or ends the election of admins. Voters read it before they vote. Such a poll is put to the whole group, takes one answer, is decided by a majority with a quorum and ends at its deadline, not before; it is not opened again, and once it has a vote neither it nor its <Value>value</Value> is deleted. As it closes the decision is carried out in the same step, and the poll keeps what came of it. A <GroupMemberRole>member role</GroupMemberRole> it gave keeps the poll. A role held through the parent is not taken, and a group never loses its last admin this way either. In a group run by its founders only an admin puts such a decision to a vote; in a group that elects its admins anyone who may start a poll does. A drawn process puts one to the vote with the step that raises a poll: the decision carries the role over, as the process holds no more than `everyone`, and where the founders run the group its owner must be an admin."
+            "A <Poll>poll</Poll> may say what its decision changes: it gives a member a <GroupRole>role</GroupRole>, takes it, elects one of its candidates to it, ends the election of admins, or admits someone who asked to join. Voters read it before they vote. Such a poll is put to the whole group, takes one answer, is decided by a majority with a quorum and ends at its deadline, not before; it is not opened again, and once it has a vote neither it nor its <Value>value</Value> is deleted. As it closes the decision is carried out in the same step, and the poll keeps what came of it. A <GroupMemberRole>member role</GroupMemberRole> it gave keeps the poll. A role held through the parent is not taken, and a group never loses its last admin this way either. In a group run by its founders only an admin puts such a decision to a vote; in a group that elects its admins anyone who may start a poll does. A drawn process puts one to the vote with the step that raises a poll: the decision carries the role over, as the process holds no more than `everyone`, and where the founders run the group its owner must be an admin. A request raises such a poll by the rule written down beforehand, in the name of whoever asked, and it is never deleted."
           )
       },
       %{
@@ -1772,6 +1772,14 @@ defmodule PotokIdeWeb.DomainCopy do
           dgettext(
             "domain_map",
             "A <Group>group</Group> that elects its admins gives and takes `admin` only by decisions of <Poll>polls</Poll>: nobody assigns it by hand, and an admin leaves the group only by a decision. An admin switches it on, and the admins it has stay for the time being, until the first election, which takes their place in the same step. Only a decision switches it off, or an elected admin could stay for good. An admin inherited from the parent stays an admin. The root, direct conversations and threads do not elect their admins."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "How a role is had"),
+        text:
+          dgettext(
+            "domain_map",
+            "Each <GroupRole>role</GroupRole> of a statute says how it is had: nobody asks for it, whoever manages requests gives or refuses it, the same or they put it to a vote, or every request goes to a vote, whose rules the role writes down beforehand. Whoever asks reads that before sending. A member asks with a <GroupRoleRequest>request for roles</GroupRoleRequest>, which holds only what still waits; one asking to join names the roles in the <GroupJoinRequest>join request</GroupJoinRequest>, and what is left of them on admission waits as the new member's request. A role that goes to a vote raises a poll that gives it, in the name of whoever asked. Admin is given on request only by an admin, and only by a vote where the group elects its admins. Each part decided stays as a <GroupRequestDecision>decision on a request</GroupRequestDecision>, with who decided and why, and after a refusal or a vote that did not carry, the same request waits seven days."
           )
       },
       %{
@@ -2007,7 +2015,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "A <GroupInvitation>group invitation</GroupInvitation> goes from profile to profile. If the invited account has no profile yet, an <GroupAccountInvitation>account invitation</GroupAccountInvitation> is kept, which becomes an ordinary invitation as soon as the account gets its first profile. A <GroupJoinRequest>join request</GroupJoinRequest> goes the other way. When accepted it is deleted, and an <GroupJoinRequestApproval>approved request</GroupJoinRequestApproval> stays with the name of whoever admitted the member."
+            "A <GroupInvitation>group invitation</GroupInvitation> goes from profile to profile. If the invited account has no profile yet, an <GroupAccountInvitation>account invitation</GroupAccountInvitation> is kept, which becomes an ordinary invitation as soon as the account gets its first profile. A <GroupJoinRequest>join request</GroupJoinRequest> goes the other way, with the roles one would like and, if one wants, why. The group's rule says who decides it: whoever manages requests, who may also put it to a vote, or always a vote. When accepted it is deleted, and an <GroupJoinRequestApproval>approved request</GroupJoinRequestApproval> stays with the name of whoever admitted the member, or the vote that did. An invitation still brings someone in at once."
           )
       },
       %{

@@ -390,9 +390,8 @@ defmodule PotokIdeWeb.GroupLive.Show.RequestDialogs do
                 :if={@state.note}
                 id="request-decision-note"
                 class="rounded-2xl border-l-4 border-primary/40 bg-base-200/50 px-3 py-2 text-sm whitespace-pre-line"
-              >
-                {@state.note}
-              </blockquote>
+                phx-no-format
+              >{@state.note}</blockquote>
               <p :if={!@state.note} class="text-xs text-base-content/60">
                 {gettext("They did not say why.")}
               </p>
@@ -412,7 +411,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RequestDialogs do
                     id={"request-decision-admission-#{choice}"}
                     name="decision[admission]"
                     value={choice}
-                    checked={choice == :admit}
+                    checked={choice == hd(@state.admission)}
                     label={admission_label(choice)}
                   />
                 </div>

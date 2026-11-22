@@ -30,7 +30,7 @@ Potok radi u pregledaču, na računaru i na telefonu, a postoji i aplikacija za 
 
 ### Snalaženje {:#snalazenje}
 
-Gornja traka je uvek ista. Kućica vodi na početnu stranu i broji nepročitane poruke. Zvono vodi na obaveštenja grupa koje pratiš, # na tagove, a dve ikone desno od njega na pozivnice i zahteve. Ruka broji zahteve za pristup koje možeš da odobriš i sve što te čeka u procesima tvojih grupa. Tvoja slika vodi na profile.
+Gornja traka je uvek ista. Kućica vodi na početnu stranu i broji nepročitane poruke. Zvono vodi na obaveštenja grupa koje pratiš, # na tagove, a dve ikone desno od njega na pozivnice i zahteve. Ruka broji zahteve za pristup i za uloge o kojima odlučuješ i sve što te čeka u procesima tvojih grupa. Tvoja slika vodi na profile.
 
 Dugme sa tri crte otvara meni: svi delovi aplikacije, podešavanja naloga, jezik (latinica, ćirilica ili engleski), svetla ili tamna tema, ova pomoć i koliko Potok košta. Na širokom ekranu meni stoji levo i ne treba ga otvarati. Dve strelice na njegovom vrhu ga sklanjaju kad ti treba više mesta, a tri crte ga vraćaju.
 
@@ -44,7 +44,7 @@ Potok je napravljen od nekoliko jednostavnih delova koji se slažu jedan u drugi
 
 Nalog si ti: imejl i lozinka kojima se prijavljuješ. U grupama te drugi vide kao profil, sa imenom i slikom. Jedan nalog može imati više profila, na primer lični i profil udruženja, i biraš kojim se trenutno služiš.
 
-Profil je jedinstven ili deljen. Deljeni profil koristi više naloga zajedno, pa kućni savet ili porodica govore jednim glasom, a svako se prijavljuje svojim nalogom.
+Profil je jedinstven ili deljen. Deljeni profil koristi više naloga zajedno, pa kućni savet ili porodica govore jednim glasom, a svako se prijavljuje svojim nalogom. U glasanju jedan nalog daje jedan glas, a glasanje kaže [kako glasaju deljeni profili](#ko-glasa).
 
 ### Grupe u stablu {:#grupe}
 
@@ -62,7 +62,7 @@ U grupi se pišu poruke, šalju fajlovi, zakazuju događaji i pokreću glasanja,
 
 ### Članstvo i nasleđivanje {:#clanstvo}
 
-U grupu se ulazi na poziv ili zahtevom koji neko odobri. Podgrupa može da nasleđuje članove: ko je član grupe iznad, član je i nje, sa istim ulogama. Tako zbor i mapa kraja odmah imaju sve članove mesne zajednice, a ko više nije član mesne zajednice, nije ni njihov.
+U grupu se ulazi na poziv ili [zahtevom](#zahtevi), o kome odlučuje onaj ko upravlja zahtevima ili glasanje, kako grupa kaže. Podgrupa može da nasleđuje članove: ko je član grupe iznad, član je i nje, sa istim ulogama. Tako zbor i mapa kraja odmah imaju sve članove mesne zajednice, a ko više nije član mesne zajednice, nije ni njihov.
 
 Nasleđivanje možeš da suziš na uloge: tada podgrupi dolaze samo članovi koji u grupi iznad imaju neku od izabranih uloga, sa svim svojim ulogama, a ko izgubi poslednju od njih, odlazi. Tako savet mesne zajednice dobija svoju grupu, a da nikoga ne pozivaš posebno.
 
@@ -72,7 +72,7 @@ Nasleđivanje možeš da suziš na uloge: tada podgrupi dolaze samo članovi koj
 
 Podgrupa preuzima uloge od grupe iznad. Ako joj trebaju drugačije, dobija sopstveni manifest, svoj spisak uloga i dozvola. Kako se iz uloga i manifesta računa šta smeš, sa primerom koji sam menjaš, pokazuje strana [Prava pristupa u Potoku](/pomoc/prava-pristupa).
 
-Uloge dodeljuje administrator, a može i [odluka glasanja](#odluka-o-ulogama): glasanje kaže kome daje ili oduzima koju ulogu, i to se desi čim se završi. Grupa može i da [bira administratore](#izbor-administratora): tada ulogu Administrator daju i oduzimaju samo odluke glasanja, a ne osnivanje grupe.
+Uloge dodeljuje administrator, a može i [odluka glasanja](#odluka-o-ulogama): glasanje kaže kome daje ili oduzima koju ulogu, i to se desi čim se završi. Ulogu možeš i da [zatražiš](#zahtevi): uz svaku ulogu piše [kako se dobija](#kako-se-dobija-uloga), da li je dodeljuje onaj ko upravlja zahtevima ili o njoj odlučuje glasanje. Grupa može i da [bira administratore](#izbor-administratora): tada ulogu Administrator daju i oduzimaju samo odluke glasanja, a ne osnivanje grupe.
 
 ### Javno, privatno i otvoreno {:#vidljivost}
 
@@ -242,13 +242,13 @@ Vrstu grupe menjaš u Uredi grupu → Osnovno, dugmetom Promeni. Nova vrsta dono
 
 ## Članovi i uloge {:#clanovi}
 
-Kartica Članovi pokazuje sve članove, njihove uloge i ko je na mreži. Odatle se odobravaju zahtevi za pristup, dodeljuju uloge, uklanjaju i blokiraju članovi. Nasleđeni članovi su označeni, a dodirom na člana otvaraš razgovor u četiri oka. Uloga koju je dala odluka glasanja ima oznaku **izabran**, koja vodi na to glasanje.
+Kartica Članovi pokazuje sve članove, njihove uloge i ko je na mreži. Odatle se odlučuje o [zahtevima za pristup i za uloge](#zahtevi), dodeljuju uloge, uklanjaju i blokiraju članovi. Nasleđeni članovi su označeni, a dodirom na člana otvaraš razgovor u četiri oka. Uloga koju je dala odluka glasanja ima oznaku **izabran**, koja vodi na to glasanje.
 
 Pozvati možeš profil po korisničkom imenu ili nekoga po imejlu: ako još nema nalog, dobija pozivnicu za Potok. Profili se predlažu od trećeg slova imena.
 
 ![Članovi i zahtevi za pristup](clanovi) ![Pozivanje u grupu](pozovi)
 
-U Ulogama vidiš da li grupa ima sopstveni manifest ili ga nasleđuje, dodaješ svoje uloge i za svaku dozvolu biraš „Dozvoli“, „Nije podešeno“ ili „Zabrani“. Uloga Svi može samo da dozvoli.
+U Ulogama vidiš da li grupa ima sopstveni manifest ili ga nasleđuje, dodaješ svoje uloge i za svaku dozvolu biraš „Dozvoli“, „Nije podešeno“ ili „Zabrani“. Uloga Svi može samo da dozvoli. Uz svaku ulogu piše i [kako se dobija](#kako-se-dobija-uloga).
 
 ![Uloge i njihove dozvole](uloge)
 
@@ -259,6 +259,35 @@ Kako procesima ide, vidiš na kartici Procesi, u meniju grupe: uz svaki proces p
 Na vrhu kartice, pod Čeka tebe, stoje odluke koje čekaju neku od tvojih uloga, iz procesa nacrtanih u Potoku: vidiš ko je poslao vrednost i kada, a i podgrupu koju je proces za nju otvorio. Izabereš ishod i, ako želiš, dodaš komentar. Tu su i forme koje neki proces traži od tebe ili od tvoje uloge: otvaraš ih sa **Popuni**. Koliko te toga čeka, piše i u zaglavlju grupe, sa svake druge kartice, i uz Procesi u meniju grupe. Van grupe to broji ruka u gornjoj traci: na stranici **Zahtevi**, pod karticom **Procesi**, stoje sve forme i odluke koje te čekaju, po grupama, i forma se odatle odmah otvara. U listama grupa ćilibarna tačka sa brojem pokazuje gde te nešto čeka, i u grupama ispod.
 
 ![Kartica Procesi: odluke koje čekaju i procesi grupe](procesi) ![Oznaka Čeka tebe u zaglavlju grupe](zgrada-ceka-tebe) ![Zahtevi: forme i odluke koje te čekaju, po grupama](zahtevi-procesi)
+
+### Zahtevi za pristup i uloge {:#zahtevi}
+
+Javnoj grupi pristup tražiš dugmetom **Zatraži pristup** u njenom zaglavlju. Otvara se prozor u kome biraš uloge koje bi želeo, od onih koje se mogu tražiti, i, ako hoćeš, napišeš zašto. Uz svaku ulogu piše kako se dobija, a gore i kako grupa prima. Ako tvoj zahtev može da ode na glasanje, prozor ti to kaže pre slanja: tada cela grupa čita zahtev i ono što si napisao, pod tvojim imenom.
+
+Član traži uloge dugmetom **Zatraži uloge** na kartici Članovi, na isti način. Uloge koje već imaš, svoje ili nasleđene, i one o kojima već teče glasanje, ne nude se.
+
+Ko sme da upravlja zahtevima (administrator i uloge sa tom dozvolom), na kartici Članovi, u delu **Zahtevi**, vidi ko traži, koje uloge i zašto. **Odluči** otvara prozor u kome prima, odbija ili, ako grupa to dopušta, stavlja prijem na glasanje, a za svaku traženu ulogu bira **Dodeli**, **Odbij**, **Na glasanje** ili **Kasnije**, kako pravilo uloge dopušta. Može i da napiše razlog, koji čita onaj ko je tražio. Ulogu Administrator na zahtev dodeljuje samo administrator. Uloga ostavljena za kasnije čeka kao zahtev novog člana. Isto se radi i na stranici **Zahtevi**, pod karticom **Za odobrenje**.
+
+![Zahtev za pristup: uloge i razlog](zahtev-pristup) ![Odluka o zahtevu: prijem, uloge i razlog](zahtev-odluka)
+
+Ono što je na glasanju ima oznaku **Na glasanju**: o tome odlučuje grupa, i niko ne stoji pred tim. Takvo glasanje raspisuje sam zahtev, u ime onoga ko traži, po pravilima zapisanim unapred, i ono se ne može obrisati.
+
+Na stranici **Zahtevi**, pod **Moji zahtevi**, vidiš šta još čeka i možeš da ga povučeš, dok o njemu ne teče glasanje, i šta je odlučeno o tvojim zahtevima, ko je odlučio i zašto. O svakoj odluci stiže i obaveštenje. Posle odbijanja, ili glasanja koje nije prošlo, isto se može tražiti tek posle sedam dana, a jedan nalog šalje najviše deset zahteva na sat.
+
+### Kako se dobija uloga {:#kako-se-dobija-uloga}
+
+U Ulogama, uz svaku ulogu grupe sa sopstvenim manifestom, administrator bira kako se ona dobija:
+
+- **Ne traži se**: dodeljuje je administrator, kao i dosad;
+- **Dodeljuje se na zahtev**: onaj ko upravlja zahtevima je dodeli ili odbije;
+- **Na zahtev ili glasanjem**: isto, ili je stavi na glasanje;
+- **Uvek glasanjem**: svaki zahtev odmah raspisuje glasanje.
+
+Za uloge o kojima se glasa zapisuje i kako teče glasanje: kvorum, pravilo odluke, koliko traje, da li je tajno i kako glasaju jedinstveni i deljeni profili. Ta pravila važe isto za svaki zahtev, i ko traži ih čita pre slanja. Podgrupa koja koristi isti manifest koristi i ova pravila. U grupi koja bira administratore zahtev za ulogu Administrator uvek ide na glasanje.
+
+### Prijem u grupu {:#prijem}
+
+U Uredi grupu → Pristup, javna grupa ima i **Prijem u grupu**: prijem na zahtev, koji odobrava onaj ko upravlja zahtevima, na zahtev ili glasanjem, ili uvek glasanjem, sa pravilima glasanja kao za uloge. Menja ga administrator. Zahtev poslat pre nego što je grupa prešla na glasanje onaj ko upravlja zahtevima stavlja na glasanje. Kad glasanje prođe, onaj ko je tražio postaje član u istom trenutku, uz uloge koje je tražio: one o kojima se glasa dobijaju svoja glasanja, a ostale čekaju odluku. Pozivnica i dalje odmah uvodi u grupu, pa grupa koja prima samo glasanjem nikome ne daje dozvolu Pozivanje članova.
 
 ### Sve dozvole {:#dozvole}
 
@@ -273,7 +302,7 @@ Grupa ima 20 dozvola. Uloga Svi na početku ima one označene u poslednjoj kolon
 | Kreiranje podgrupa | Nove grupe unutar ove | da |
 | Pozivanje članova | Pozivi profilima i imejlom | da |
 | Pominjanje uloga | Pominjanje uloga i @everyone | da |
-| Upravljanje zahtevima za pristup | Prihvatanje i odbijanje zahteva | |
+| Upravljanje zahtevima | Odluke o zahtevima za pristup i za uloge, kako kaže pravilo uloge | |
 | Uklanjanje članova | Uklanjanje članova; u otvorenom razgovoru i blokiranje | |
 | Brisanje poruka | Brisanje tuđih poruka | |
 | Dodavanje događaja | Novi događaji u kalendaru | da |
@@ -307,6 +336,7 @@ Pod „Više podešavanja“ su:
 - tajno glasanje, promena glasa i odgovori koje dodaju članovi;
 - javno glasanje, u kome glasaju i nečlanovi;
 - ko glasa, ko vidi rezultate i ko vidi ko je za šta glasao;
+- kako glasaju [jedinstveni i deljeni profili](#ko-glasa);
 - pravilo odluke (najviše glasova, više od polovine glasova, dve trećine glasova ili više od polovine onih koji imaju pravo glasa) i kvorum.
 
 ![Novo glasanje](glasanje-forma) ![Glasanje u razgovoru, posle glasanja](glasanje-kartica)
@@ -317,11 +347,17 @@ U tajnom glasanju niko, ni administrator ni aplikacija, ne vidi ko je za šta gl
 
 ![Detalji glasanja: odziv i ko je za šta glasao](glasanje-detalji)
 
+### Jedinstveni i deljeni profili {:#ko-glasa}
+
+U glasanju jedan nalog daje jedan glas, kojim god svojim profilom glasao. Pod „Više podešavanja“ biraš i kako glasaju profili po vrsti. Jedinstveni profili glasaju ili ne glasaju. Deljeni profil glasa jednim glasom za sve koji ga drže, kao kolektivni član; ili kroz njega svaki nosilac glasa posebno, računato na svoj nalog, pa ko je već glasao svojim profilom ne glasa ponovo; ili ne glasa. Bar neko uvek glasa. Deljeni profil koji drži samo jedan nalog glasa kao ta osoba. Kad to nije kao uvek, kartica glasanja kaže ko glasa, a broj onih koji imaju pravo glasa računa se po istom pravilu.
+
+![Ko glasa: jedinstveni i deljeni profili](glasanje-ko-glasa)
+
 ### Odluka koja menja uloge {:#odluka-o-ulogama}
 
-Glasanje može i da odluči ko ima koju ulogu. U formi, pod **Šta odluka menja**, biraš da li odluka članu dodeljuje ulogu, oduzima mu je, bira nekog za ulogu ili gasi izbor administratora. Zatim kažeš koju ulogu i kog člana, ili kandidate. Odgovore odluka postavlja sama: „Za“ i „Protiv“, po želji i „Uzdržan“, a na izborima po jedan za svakog kandidata.
+Glasanje može i da odluči ko ima koju ulogu. U formi, pod **Šta odluka menja**, biraš da li odluka članu dodeljuje ulogu, oduzima mu je, bira nekog za ulogu ili gasi izbor administratora. Glasanje koje prima u grupu ne raspisuje se iz forme: raspisuje ga samo [zahtev](#zahtevi), kao i glasanje o traženoj ulozi. Zatim kažeš koju ulogu i kog člana, ili kandidate. Odgovore odluka postavlja sama: „Za“ i „Protiv“, po želji i „Uzdržan“, a na izborima po jedan za svakog kandidata.
 
-Glasači na kartici glasanja, pre nego što glasaju, vide šta će se desiti, recimo „Ako prođe: @marko dobija ulogu Administrator“. Kad se glasanje završi na roku, ono što odluka kaže se odmah sprovede, a na kartici piše šta je od toga bilo: sprovedeno, nije prošlo, član više nije u grupi ili bi grupa ostala bez administratora. Ko dobije ili izgubi ulogu, dobija i obaveštenje.
+Glasači na kartici glasanja, pre nego što glasaju, vide šta će se desiti, recimo „Ako prođe: @marko dobija ulogu Administrator“. Kad se glasanje završi na roku, ono što odluka kaže se odmah sprovede, a na kartici piše šta je od toga bilo: sprovedeno, nije prošlo, član više nije u grupi, bi grupa ostala bez administratora ili zahteva više nema. Ko dobije ili izgubi ulogu, dobija i obaveštenje.
 
 ![Glasanje koje članu dodeljuje ulogu](glasanje-odluka)
 
@@ -378,7 +414,7 @@ Grupu možeš i da utišaš: u meniju grupe dodirni **Utišaj** i izaberi na kol
 
 ![Utišaj: na sat vremena, 8 sati, nedelju dana ili dok ne uključiš](grupa-utisaj)
 
-Push obaveštenja uključuješ u Podešavanjima naloga, posebno za svaki pregledač ili telefon. Stižu za nove poruke, pominjanja, odgovore i reakcije, pozive i odobrene zahteve, događaje i podsetnike, glasanja i odgovore na forme. Nove poruke jedne grupe ne stižu jedna za drugom: posle obaveštenja, sledeće iz te grupe stiže tek kad pročitaš poruke ili prođe pet minuta. Pominjanje i odgovor na tvoju poruku stižu uvek. Tu je i poseban prekidač za obaveštenja grupa koje pratiš.
+Push obaveštenja uključuješ u Podešavanjima naloga, posebno za svaki pregledač ili telefon. Stižu za nove poruke, pominjanja, odgovore i reakcije, pozive i odluke o tvojim zahtevima, događaje i podsetnike, glasanja i odgovore na forme. Nove poruke jedne grupe ne stižu jedna za drugom: posle obaveštenja, sledeće iz te grupe stiže tek kad pročitaš poruke ili prođe pet minuta. Pominjanje i odgovor na tvoju poruku stižu uvek. Tu je i poseban prekidač za obaveštenja grupa koje pratiš.
 
 ![Podešavanja: push obaveštenja](podesavanja-push)
 

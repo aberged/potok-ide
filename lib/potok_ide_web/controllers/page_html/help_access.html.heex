@@ -806,7 +806,7 @@
         <dd>
           {dgettext(
             "help_guides",
-            "The group's Admin, only to its members, and only roles of the manifest in force, or a decision of a poll that says so. Everyone is not assigned. The last Admin cannot be taken away, and a role inherited from the parent is taken away in the parent. Where the group elects its admins, Admin is given and taken only by a decision."
+            "The group's Admin, only to its members, and only roles of the manifest in force, or a decision of a poll that says so, or, on a request, whoever manages requests where the role's rule lets them. Everyone is not assigned. The last Admin cannot be taken away, and a role inherited from the parent is taken away in the parent. Where the group elects its admins, Admin is given and taken only by a decision."
           )}
         </dd>
       </div>
@@ -817,6 +817,28 @@
             dgettext(
               "help_guides",
               "The group's Admin turns it on (`elects_admins`). From then on Admin comes and goes only by a decision of a poll, an admin leaves the group only so, and the admins it had stay for the time being, until the first election. Only a decision turns it off."
+            )
+          } />
+        </dd>
+      </div>
+      <div>
+        <dt>{dgettext("help_guides", "Writes how a role is had, and how the group admits")}</dt>
+        <dd>
+          <.hg_text text={
+            dgettext(
+              "help_guides",
+              "The Admin of a group with a manifest of its own writes, for each role, whether one may ask for it and who decides (`request_mode`): whoever manages requests, they or a vote, or always a vote, whose rules it writes down beforehand. The group's Admin writes the same for a request to join (`join_mode`). Where the group elects its admins, Admin is had on request only by a vote."
+            )
+          } />
+        </dd>
+      </div>
+      <div>
+        <dt>{dgettext("help_guides", "Decides requests")}</dt>
+        <dd>
+          <.hg_text text={
+            dgettext(
+              "help_guides",
+              "Whoever may manage requests (`manage_join_requests`), as each role's rule says: admits or refuses, gives a role, refuses it, puts it to a vote or leaves it for later, with a reason the one who asked reads. Admin on request only by an Admin. What a vote decides is the group's, and nobody stands before it."
             )
           } />
         </dd>
@@ -928,6 +950,22 @@
             <.hg_text text={
               dgettext(
                 "help_guides",
+                "<b>A request</b> that goes to a vote raises a poll in the name of whoever asked, by the rule written down beforehand, and the poll's decision gives the role or, for admission, takes them in as it closes. An invitation still brings someone in at once, so a group that admits only by a vote gives nobody the right to invite."
+              )
+            } />
+          </li>
+          <li>
+            <.hg_text text={
+              dgettext(
+                "help_guides",
+                "<b>A shared profile</b> that one account holds votes as that person. Held by several, it votes as the poll says: once for all of them, each holder through it as themself, or not at all."
+              )
+            } />
+          </li>
+          <li>
+            <.hg_text text={
+              dgettext(
+                "help_guides",
                 "<b>A guest</b> has no profile, and so no permissions. They see a public group's name, picture and part of its description, and the whole description only if the group opened it to guests."
               )
             } />
@@ -972,7 +1010,7 @@
           <li>
             {dgettext(
               "help_guides",
-              "A poll says which roles vote, and which see the results and the details."
+              "A poll says which roles vote, which see the results and the details, and how unique and shared profiles vote."
             )}
           </li>
           <li>

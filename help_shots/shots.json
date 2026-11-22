@@ -199,6 +199,30 @@
     "url": "/groups/{groups.mz}/members"
   },
   {
+    "name": "zahtev-pristup",
+    "as": "luka",
+    "url": "/groups/{groups.mz}",
+    "steps": [
+      { "click": "#group-request-access" },
+      { "wait": "#request-dialog" },
+      { "click": "#request-dialog-roles label:has-text('volonter')" },
+      { "type": ["#request-dialog-note", "Imam kombi i mogu da prevezem stvari za akcije."] },
+      { "pause": 700 }
+    ]
+  },
+  {
+    "name": "zahtev-odluka",
+    "as": "ana",
+    "url": "/groups/{groups.mz}/members",
+    "steps": [
+      { "click": "#group-join-requests-list [id^='group-decide-join-request-']" },
+      { "wait": "#request-decision-dialog" },
+      { "click": "#request-decision-roles label:has-text('Dodeli')" },
+      { "type": ["#request-decision-reason", "Dobrodošla! Vidimo se na sledećoj akciji."] },
+      { "pause": 700 }
+    ]
+  },
+  {
     "name": "pozovi",
     "as": "ana",
     "url": "/groups/{groups.building}/invite_profile",
@@ -238,6 +262,20 @@
       { "click": "#group-value-poll" },
       { "type": ["#poll-form-dialog input[type=text]", "Kada da održimo sledeći zbor?"] },
       { "pause": 500 }
+    ]
+  },
+  {
+    "name": "glasanje-ko-glasa",
+    "as": "ana",
+    "url": "/groups/{groups.mz_zbor}",
+    "steps": [
+      { "click": "#group-value-add-toggle" },
+      { "click": "#group-value-poll" },
+      { "type": ["#poll-form-dialog input[type=text]", "Da li pravimo dečje igralište?"] },
+      { "click": "#poll-form-more summary" },
+      { "select": ["#poll-form-voter-kinds select[name='poll[shared_votes]']", "each_holder"] },
+      { "show": "#poll-form-voters" },
+      { "pause": 700 }
     ]
   },
   {

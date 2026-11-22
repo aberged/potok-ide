@@ -122,10 +122,14 @@ defmodule PotokIde.Social.GroupRequests do
     end
   end
 
-  @doc "What whoever decides may do with a request to join `group`: none while a vote decides every one."
+  @doc """
+  What whoever decides may do with a request to join `group`. Where every
+  request goes to a vote, one sent before the group said so is put to a vote
+  too, and nothing else.
+  """
   def admission_choices(%Group{join_mode: :approve}), do: [:admit, :refuse]
   def admission_choices(%Group{join_mode: :choose}), do: [:admit, :refuse, :vote]
-  def admission_choices(%Group{join_mode: :vote}), do: []
+  def admission_choices(%Group{join_mode: :vote}), do: [:vote]
 
   @doc """
   A request of `group`, `{:join, id}` or `{:roles, id}`, with who asked; nil
@@ -355,7 +359,7 @@ defmodule PotokIde.Social.GroupRequests do
     case {Map.get(decision, "admission"), mode} do
       {"admit", mode} when mode in [:approve, :choose] -> {:ok, :admit}
       {"refuse", mode} when mode in [:approve, :choose] -> {:ok, :refuse}
-      {"vote", :choose} -> {:ok, :vote}
+      {"vote", mode} when mode in [:choose, :vote] -> {:ok, :vote}
       _not_allowed -> {:error, :not_permitted}
     end
   end

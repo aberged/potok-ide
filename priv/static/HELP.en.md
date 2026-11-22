@@ -24,7 +24,7 @@ Potok runs in the browser, on a computer and on a phone, and there is an app for
 
 ### Finding your way {:#snalazenje}
 
-The top bar is always the same. The house leads to the home page and counts your unread messages. The bell leads to the notices of the groups you follow, # to tags, and the two icons right of it to invitations and requests. The hand counts the access requests you can approve and all that waits for you in your groups' processes. Your picture leads to your profiles.
+The top bar is always the same. The house leads to the home page and counts your unread messages. The bell leads to the notices of the groups you follow, # to tags, and the two icons right of it to invitations and requests. The hand counts the requests to join and for roles that you decide and all that waits for you in your groups' processes. Your picture leads to your profiles.
 
 The button with three lines opens the menu: every part of the app, your account settings, the language (Serbian in Latin or Cyrillic, or English), the light or dark theme, this help and what Potok costs. On a wide screen the menu stands on the left, with no need to open it. The two arrows at its top put it away when you need more room, and the three lines bring it back.
 
@@ -38,7 +38,7 @@ Potok is made of a few simple parts that fit inside one another. Once you know t
 
 Your account is you: the email and password you log in with. In groups, others see you as a profile, with a name and a picture. One account can have several profiles, say a personal one and one for an association, and you choose which one you are using.
 
-A profile is unique or shared. A shared profile is used by several accounts together, so a building's council or a family speaks with one voice, while everyone logs in with their own account.
+A profile is unique or shared. A shared profile is used by several accounts together, so a building's council or a family speaks with one voice, while everyone logs in with their own account. In a poll one account gives one vote, and the poll says [how shared profiles vote](#ko-glasa).
 
 ### Groups in a tree {:#grupe}
 
@@ -56,7 +56,7 @@ In a group, people write messages, send files, plan events and start polls, and 
 
 ### Membership and inheritance {:#clanstvo}
 
-You get into a group by invitation, or by a request that someone approves. A sub-group can inherit members: whoever is a member of the group above is a member of it too, with the same roles. So the assembly and the neighbourhood map have all the local community's members at once, and whoever is no longer a member of the community is no longer theirs.
+You get into a group by invitation, or by [a request](#zahtevi), which whoever manages requests or a vote decides, as the group says. A sub-group can inherit members: whoever is a member of the group above is a member of it too, with the same roles. So the assembly and the neighbourhood map have all the local community's members at once, and whoever is no longer a member of the community is no longer theirs.
 
 You can narrow inheriting down to roles: then only the members who hold one of the chosen roles in the group above come into the sub-group, with all their roles, and whoever loses the last of them leaves. That way the local community's council gets a group of its own without you inviting anyone separately.
 
@@ -66,7 +66,7 @@ What each person may do in a group is set by roles. Every group has the role Adm
 
 A sub-group takes its roles from the group above. If it needs different ones, it gets a manifest of its own, its own list of roles and permissions. How what you may do is worked out from roles and a manifest, with an example you change yourself, is on the page [Access rights in Potok](/pomoc/prava-pristupa).
 
-Roles are given by an admin, and also by [a decision of a poll](#odluka-o-ulogama): the poll says to whom it gives or from whom it takes which role, and that happens as soon as it ends. A group can also [elect its admins](#izbor-administratora): Admin is then given and taken only by decisions of polls, not by founding the group.
+Roles are given by an admin, and also by [a decision of a poll](#odluka-o-ulogama): the poll says to whom it gives or from whom it takes which role, and that happens as soon as it ends. You can also [ask for a role](#zahtevi): each role says [how it is had](#kako-se-dobija-uloga), whether whoever manages requests gives it or a vote decides. A group can also [elect its admins](#izbor-administratora): Admin is then given and taken only by decisions of polls, not by founding the group.
 
 ### Public, private and open {:#vidljivost}
 
@@ -236,13 +236,13 @@ You change the group's kind in Edit group → Basics, with Change. The new kind 
 
 ## Members and roles {:#clanovi}
 
-The Members tab shows all members, their roles and who is online. From there, access requests are approved, roles given, and members removed and blocked. Inherited members are marked, and tapping a member opens a one-to-one conversation. A role given by a decision of a poll is marked **elected**, which leads to that poll.
+The Members tab shows all members, their roles and who is online. From there, [requests to join and for roles](#zahtevi) are decided, roles given, and members removed and blocked. Inherited members are marked, and tapping a member opens a one-to-one conversation. A role given by a decision of a poll is marked **elected**, which leads to that poll.
 
 You can invite a profile by username, or someone by email: if they have no account yet, they get an invitation to Potok. Profiles are suggested from the third letter of the name on.
 
 ![Members and access requests](clanovi) ![Inviting into a group](pozovi)
 
-In Roles you see whether the group has a manifest of its own or inherits one, you add roles of your own and, for each permission, choose "Allow", "Not set" or "Deny". The role Everyone can only allow.
+In Roles you see whether the group has a manifest of its own or inherits one, you add roles of your own and, for each permission, choose "Allow", "Not set" or "Deny". The role Everyone can only allow. Each role also says [how it is had](#kako-se-dobija-uloga).
 
 ![Roles and their permissions](uloge)
 
@@ -253,6 +253,35 @@ How the processes are doing you see on the Processes tab, in the group's menu: n
 At the top of the tab, under Waiting for you, are the decisions that wait on one of your roles, from processes drawn in Potok: you see who sent the value and when, and the sub-group the process opened for it. You pick an outcome and, if you like, add a comment. The forms a process asks of you, or of your role, are there too: **Fill in** opens them. How much of this waits for you is also said in the group's header, from every other tab, and beside Processes in the group's menu. Outside the group the hand in the top bar counts it: on the **Requests** page, under the **Processes** tab, are all the forms and decisions that wait for you, by group, and a form opens from there at once. In the lists of groups an amber dot with a number shows where something waits for you, also in the groups below.
 
 ![The Processes tab: decisions that wait and the group's processes](procesi) ![The Waiting for you mark in a group's header](zgrada-ceka-tebe) ![Requests: the forms and decisions that wait for you, by group](zahtevi-procesi)
+
+### Requests to join and for roles {:#zahtevi}
+
+You ask to join a public group with **Request access** in its header. A window opens where you pick the roles you would like, of those that can be asked for, and, if you want, say why. Each role says how it is had, and the top says how the group admits. If your request may go to a vote, the window tells you before you send it: the whole group then reads the request and what you wrote, under your name.
+
+A member asks for roles with **Ask for roles** on the Members tab, the same way. Roles you hold already, your own or inherited, and those a vote is deciding, are not offered.
+
+Whoever may manage requests (the admin and roles with that permission) sees on the Members tab, under **Requests**, who asks, for which roles and why. **Decide** opens a window where they admit, refuse or, if the group allows it, put admission to a vote, and for each role asked for pick **Give**, **Refuse**, **Put to a vote** or **Later**, as the role's rule allows. They can also write a reason, which the one who asked reads. Admin is given on request only by an admin. A role left for later waits as the new member's request. The same is done on the **Requests** page, under **Requests to approve**.
+
+![A request to join: roles and why](zahtev-pristup) ![Deciding a request: admission, roles and a reason](zahtev-odluka)
+
+What is in a vote is marked **In a vote**: the group decides it, and nobody stands before that. The request itself raises such a poll, in the name of whoever asked, by rules written down beforehand, and it cannot be deleted.
+
+On the **Requests** page, under **My requests**, you see what still waits and can take it back while no vote is deciding it, and what was decided on your requests, who decided and why. Each decision also comes as a notification. After a refusal, or a vote that did not carry, the same can be asked again only after seven days, and one account sends at most ten requests an hour.
+
+### How a role is had {:#kako-se-dobija-uloga}
+
+In Roles, for each role of a group with a manifest of its own, the admin picks how it is had:
+
+- **Not asked for**: an admin gives it, as before;
+- **Given on request**: whoever manages requests gives it or refuses it;
+- **On request, or by a vote**: the same, or they put it to a vote;
+- **Always by a vote**: every request raises a vote at once.
+
+For the roles that go to a vote, they also write down how the vote goes: the quorum, the rule of the decision, how long it runs, whether it is secret and how unique and shared profiles vote. Those rules hold alike for every request, and whoever asks reads them before sending. A sub-group that uses the same manifest uses these rules too. Where the group elects its admins, a request for Admin always goes to a vote.
+
+### Admission to the group {:#prijem}
+
+In Edit group → Access, a public group also has **Admission to the group**: admitted on request by whoever manages requests, on request or by a vote, or always by a vote, with the rules of the vote as for roles. An admin changes it. A request sent before the group went over to a vote is put to a vote by whoever manages requests. When the vote carries, the one who asked becomes a member at that moment, with the roles they asked for: those voted on get their polls, and the others wait for a decision. An invitation still brings someone in at once, so a group that admits only by a vote gives nobody the permission Invite members.
 
 ### All permissions {:#dozvole}
 
@@ -267,7 +296,7 @@ A group has 20 permissions. At first, the role Everyone has the ones marked in t
 | Create sub-groups | New groups inside this one | yes |
 | Invite members | Invitations to profiles and by email | yes |
 | Mention roles | Mentioning roles and @everyone | yes |
-| Manage access requests | Accepting and rejecting requests | |
+| Manage requests | Deciding requests to join and for roles, as each role's rule says | |
 | Remove members | Removing members; in an open chat, blocking too | |
 | Delete messages | Deleting other people's messages | |
 | Add events | New events in the calendar | yes |
@@ -301,6 +330,7 @@ Under "More settings" are:
 - a secret poll, changing your vote and answers added by members;
 - a public poll, in which non-members vote too;
 - who votes, who sees the results and who sees who voted for what;
+- how [unique and shared profiles](#ko-glasa) vote;
 - the decision rule (the most votes, more than half of the votes, two thirds of the votes or more than half of those who may vote) and a quorum.
 
 ![A new poll](glasanje-forma) ![A poll in the chat, after voting](glasanje-kartica)
@@ -311,11 +341,17 @@ In a secret poll nobody, not an admin and not an app, sees who voted for what. T
 
 ![A poll's details: turnout and who voted for what](glasanje-detalji)
 
+### Unique and shared profiles {:#ko-glasa}
+
+In a poll one account gives one vote, whichever of its profiles it votes with. Under "More settings" you also pick how each kind of profile votes. Unique profiles vote or do not. A shared profile votes once for all who hold it, as a collective member; or each of its holders votes through it as themself, counted on their own account, so whoever voted with their own profile does not vote again; or it does not vote. Somebody always votes. A shared profile that only one account holds votes as that person. When it is not as always, the poll's card says who votes, and the number of those who may vote is counted by the same rule.
+
+![Who votes: unique and shared profiles](glasanje-ko-glasa)
+
 ### A decision that changes roles {:#odluka-o-ulogama}
 
-A poll can also decide who holds which role. In the form, under **What the decision changes**, you pick whether the decision gives a member a role, takes it from them, elects someone to a role or ends the election of admins. Then you say which role and which member, or the candidates. The decision sets its own answers: "For" and "Against", and "Abstain" if you like, and in an election one for each candidate.
+A poll can also decide who holds which role. In the form, under **What the decision changes**, you pick whether the decision gives a member a role, takes it from them, elects someone to a role or ends the election of admins. A poll that admits someone is not raised from the form: only [a request](#zahtevi) raises it, as it does a poll on a role asked for. Then you say which role and which member, or the candidates. The decision sets its own answers: "For" and "Against", and "Abstain" if you like, and in an election one for each candidate.
 
-Voters see on the poll's card, before they vote, what will happen, say "If it passes: @marko gets the role Admin". When the poll ends at its deadline, what the decision says is done at once, and the card says what came of it: done, did not pass, the member is no longer in the group, or the group would be left without an admin. Whoever gets or loses the role is also notified.
+Voters see on the poll's card, before they vote, what will happen, say "If it passes: @marko gets the role Admin". When the poll ends at its deadline, what the decision says is done at once, and the card says what came of it: done, did not pass, the member is no longer in the group, the group would be left without an admin, or the request is no longer there. Whoever gets or loses the role is also notified.
 
 ![A poll that gives a member a role](glasanje-odluka)
 
@@ -372,7 +408,7 @@ You can also mute a group: in the group's menu tap **Mute** and pick for how lon
 
 ![Mute: for an hour, 8 hours, a week or until you turn it on](grupa-utisaj)
 
-You turn on push notifications in your account settings, separately for each browser or phone. They come for new messages, mentions, replies and reactions, invitations and approved requests, events and reminders, polls and form responses. New messages of one group do not come one after another: after a notification, the next one from that group comes only once you have read the messages or five minutes have passed. A mention and a reply to your message always come. There is also a separate switch for the notices of the groups you follow.
+You turn on push notifications in your account settings, separately for each browser or phone. They come for new messages, mentions, replies and reactions, invitations and decisions on your requests, events and reminders, polls and form responses. New messages of one group do not come one after another: after a notification, the next one from that group comes only once you have read the messages or five minutes have passed. A mention and a reply to your message always come. There is also a separate switch for the notices of the groups you follow.
 
 ![Settings: push notifications](podesavanja-push)
 

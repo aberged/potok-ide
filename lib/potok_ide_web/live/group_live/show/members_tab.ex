@@ -150,50 +150,6 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
                       />
                     </div>
                   </div>
-
-                  <div class="flex shrink-0 flex-wrap items-center justify-end gap-2">
-                    <span
-                      :if={request.poll_id}
-                      id={"group-join-request-#{request.id}-voting"}
-                      class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary"
-                    >
-                      <.icon name="hero-scale" class="size-3.5" />
-                      {gettext("In a vote")}
-                    </span>
-                    <.button
-                      :if={is_nil(request.poll_id)}
-                      id={"group-decide-join-request-#{request.id}"}
-                      type="button"
-                      phx-click="request_decision_open"
-                      phx-value-kind="join"
-                      phx-value-id={request.id}
-                      variant="primary"
-                      size="sm"
-                    >
-                      {gettext("Decide")}
-                    </.button>
-                    <.button
-                      :if={is_nil(request.poll_id) and request.role_keys == []}
-                      id={"group-accept-join-request-#{request.id}"}
-                      type="button"
-                      phx-click="accept_join_request"
-                      phx-value-id={request.id}
-                      variant="success"
-                      size="sm"
-                    >
-                      {gettext("Accept")}
-                    </.button>
-                    <.button
-                      :if={is_nil(request.poll_id) and request.role_keys == []}
-                      id={"group-reject-join-request-#{request.id}"}
-                      type="button"
-                      phx-click="reject_join_request"
-                      phx-value-id={request.id}
-                      size="sm"
-                    >
-                      {gettext("Reject")}
-                    </.button>
-                  </div>
                 </div>
                 <.request_details
                   id={"group-join-request-#{request.id}"}
@@ -201,6 +157,49 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
                   keys={request.role_keys}
                   roles={@request_roles}
                 />
+                <div class="mt-3 flex flex-wrap items-center justify-end gap-2">
+                  <span
+                    :if={request.poll_id}
+                    id={"group-join-request-#{request.id}-voting"}
+                    class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary"
+                  >
+                    <.icon name="hero-scale" class="size-3.5" />
+                    {gettext("In a vote")}
+                  </span>
+                  <.button
+                    :if={is_nil(request.poll_id)}
+                    id={"group-decide-join-request-#{request.id}"}
+                    type="button"
+                    phx-click="request_decision_open"
+                    phx-value-kind="join"
+                    phx-value-id={request.id}
+                    variant="primary"
+                    size="sm"
+                  >
+                    {gettext("Decide")}
+                  </.button>
+                  <.button
+                    :if={is_nil(request.poll_id) and request.role_keys == []}
+                    id={"group-accept-join-request-#{request.id}"}
+                    type="button"
+                    phx-click="accept_join_request"
+                    phx-value-id={request.id}
+                    variant="success"
+                    size="sm"
+                  >
+                    {gettext("Accept")}
+                  </.button>
+                  <.button
+                    :if={is_nil(request.poll_id) and request.role_keys == []}
+                    id={"group-reject-join-request-#{request.id}"}
+                    type="button"
+                    phx-click="reject_join_request"
+                    phx-value-id={request.id}
+                    size="sm"
+                  >
+                    {gettext("Reject")}
+                  </.button>
+                </div>
               </div>
             </li>
           </ul>
@@ -679,9 +678,8 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
         :if={@note}
         id={"#{@id}-note"}
         class="line-clamp-4 rounded-xl bg-base-200/50 px-3 py-2 text-sm whitespace-pre-line"
-      >
-        {@note}
-      </p>
+        phx-no-format
+      >{@note}</p>
     </div>
     """
   end

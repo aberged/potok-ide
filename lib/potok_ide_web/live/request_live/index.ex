@@ -518,9 +518,8 @@ defmodule PotokIdeWeb.RequestLive.Index do
         :if={@note}
         id={"#{@id}-note"}
         class="line-clamp-4 rounded-xl bg-base-200/50 px-3 py-2 text-sm whitespace-pre-line"
-      >
-        {@note}
-      </p>
+        phx-no-format
+      >{@note}</p>
     </div>
     """
   end

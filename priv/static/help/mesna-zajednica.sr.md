@@ -49,7 +49,7 @@ Ostale dozvole savet ima kao i svaki član, kroz ulogu Svi, pa ih ovde ne diraš
 ## 4. Komšije i savet {:#clanovi}
 
 1. U meniju grupe izaberi **Pozovi profil**. Upiši korisničko ime komšije, ili imejl ako još nema nalog: tada mu stiže pozivnica za Potok. Dodirni **Pozovi**.
-2. Javna grupa prima i zahteve za pristup. Broj na kartici **Članovi** kaže koliko ih čeka, a u delu Zahtevi za pristup dodirni **Prihvati**.
+2. Javna grupa prima i zahteve za pristup. Broj na kartici **Članovi** kaže koliko ih čeka. U delu **Zahtevi** vidiš ko traži, koje uloge i zašto: **Prihvati** prima onoga ko ne traži uloge, a **Odluči** otvara prozor u kome odlučuješ i o ulogama.
 3. Na kartici **Članovi** dodirni štit pored člana saveta i uključi ulogu **savet**. Ponovi to za svakog člana saveta.
 
 ![Pozivanje po korisničkom imenu ili imejlu](pozovi) ![Štit pored člana: uloga savet je uključena](mz-uloga-clana)
