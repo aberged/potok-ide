@@ -26,6 +26,8 @@ defmodule PotokIde.Social.RequestPoll do
     field :hours, :integer, default: 72
     field :unique_votes, Ecto.Enum, values: @unique_votes, default: :yes
     field :shared_votes, Ecto.Enum, values: @shared_votes, default: :as_one
+    # Nothing keeps who voted for what (`PotokIde.Polls.Poll`).
+    field :secret, :boolean, default: false
   end
 
   def majorities, do: @majorities
@@ -33,7 +35,7 @@ defmodule PotokIde.Social.RequestPoll do
 
   def changeset(%__MODULE__{} = poll, attrs) do
     poll
-    |> cast(attrs, [:quorum_percent, :majority, :hours, :unique_votes, :shared_votes])
+    |> cast(attrs, [:quorum_percent, :majority, :hours, :unique_votes, :shared_votes, :secret])
     |> validate_required([:quorum_percent, :majority, :hours, :unique_votes, :shared_votes])
     |> validate_number(:quorum_percent, greater_than_or_equal_to: 1, less_than_or_equal_to: 100)
     |> validate_inclusion(:hours, @hours)

@@ -119,6 +119,16 @@ defmodule PotokIdeWeb.GroupLive.Show.RequestRules do
             {dgettext("polls", "Do not vote"), :no}
           ]}
         />
+        <div class="sm:col-span-2">
+          <.input
+            id={"#{@id}-secret"}
+            name="rule[poll][secret]"
+            value={@poll.secret}
+            type="checkbox"
+            form={@form}
+            label={dgettext("polls", "Secret poll")}
+          />
+        </div>
         <p class="mb-3 text-xs text-base-content/65 sm:col-span-2">
           {gettext(
             "The whole group votes, by these rules, on every request alike. Whoever asks reads them before sending."
@@ -163,6 +173,9 @@ defmodule PotokIdeWeb.GroupLive.Show.RequestRules do
         nil -> text
         voters -> text <> " " <> voters
       end
+    end)
+    |> then(fn text ->
+      if poll.secret, do: text <> " " <> gettext("Nobody sees who voted for what."), else: text
     end)
   end
 

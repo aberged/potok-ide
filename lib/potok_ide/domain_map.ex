@@ -18,7 +18,7 @@ defmodule PotokIde.DomainMap do
   alias PotokIde.Cache
   alias PotokIde.Repo
 
-  @domains ~w(account profiles group content calendar polls notices tags joining hosting)
+  @domains ~w(account profiles group content calendar polls notices tags joining requests hosting)
 
   @entities [
     {"account",
@@ -73,6 +73,7 @@ defmodule PotokIde.DomainMap do
        PotokIde.Social.GroupJoinRequest,
        PotokIde.Social.GroupJoinRequestApproval
      ]},
+    {"requests", [PotokIde.Social.GroupRoleRequest, PotokIde.Social.GroupRequestDecision]},
     {"hosting", [PotokIde.HostingCosts.CostHour, PotokIde.HostingCosts.Invoice]}
   ]
 
@@ -87,6 +88,9 @@ defmodule PotokIde.DomainMap do
     {"Poll", "voter_role_keys", "GroupRole", "key"},
     {"Poll", "results_role_keys", "GroupRole", "key"},
     {"Poll", "details_role_keys", "GroupRole", "key"},
+    {"GroupJoinRequest", "role_keys", "GroupRole", "key"},
+    {"GroupRoleRequest", "role_keys", "GroupRole", "key"},
+    {"GroupRequestDecision", "role_key", "GroupRole", "key"},
     {"PollBallot", "option_ids", "PollOption", "id"}
   ]
 

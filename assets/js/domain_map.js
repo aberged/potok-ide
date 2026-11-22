@@ -99,6 +99,8 @@ const TABLES = {
     Tagging: [COLUMN[2], 596],
     CostHour: [COLUMN[1], 692],
     Invoice: [COLUMN[2], 692],
+    GroupRoleRequest: [COLUMN[1], 788],
+    GroupRequestDecision: [COLUMN[2], 788],
   },
   clusters: {
     account: [16, 14, 192, 302],
@@ -111,6 +113,7 @@ const TABLES = {
     notices: [16, 446, 192, 230],
     tags: [218, 566, 394, 86],
     hosting: [218, 662, 394, 86],
+    requests: [218, 758, 394, 86],
   },
 }
 

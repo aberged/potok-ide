@@ -45,8 +45,10 @@ defmodule PotokIde.Social do
     GroupMutes,
     GroupPins,
     GroupPresets,
+    GroupRequests,
     GroupReaction,
     GroupRole,
+    GroupRoleRequest,
     GroupRoutes,
     GroupShortcut,
     GroupValueRead,
@@ -2452,35 +2454,36 @@ defmodule PotokIde.Social do
     |> Repo.all()
   end
 
-  def request_group_access(%Profile{} = requester, %Group{} = group) do
+  @doc """
+  `requester` asks to join `group`, with no roles and nothing said: see
+  `PotokIde.Social.GroupRequests.request_access/4` for both.
+  """
+  def request_group_access(%Profile{} = requester, %Group{} = group),
+    do: GroupRequests.request_access(requester, group, %{})
+
+  @doc """
+  Why `requester` may not ask to join `group` now, or `:ok`: the group is
+  not public, they are in already or invited, or blocked there.
+  """
+  def may_ask_to_join(%Profile{} = requester, %Group{} = group) do
     cond do
-      not group.is_public ->
-        {:error, :group_not_public}
-
-      member_of_group?(requester, group) ->
-        {:error, :already_a_member}
-
-      pending_group_invitation_for_profile?(group, requester) ->
-        {:error, :already_invited}
-
-      Access.blocked_in_group?(requester.id, group.id) ->
-        {:error, :blocked}
-
-      true ->
-        %GroupJoinRequest{}
-        |> GroupJoinRequest.changeset(%{group_id: group.id, requester_id: requester.id})
-        |> Repo.insert()
-        |> case do
-          {:ok, request} ->
-            broadcast_group_members_changed(group, [:requests], profile_id: requester.id)
-            broadcast_profile_group_join_requests_updated(requester)
-            broadcast_group_join_request_updates_for_group(group)
-            {:ok, request}
-
-          {:error, reason} ->
-            {:error, reason}
-        end
+      not group.is_public -> {:error, :group_not_public}
+      member_of_group?(requester, group) -> {:error, :already_a_member}
+      pending_group_invitation_for_profile?(group, requester) -> {:error, :already_invited}
+      Access.blocked_in_group?(requester.id, group.id) -> {:error, :blocked}
+      true -> :ok
     end
+  end
+
+  @doc """
+  Tells the pages that the requests of `group` changed, the requester's own
+  and those of everyone who manages them.
+  """
+  def broadcast_requests_changed(%Group{} = group, %Profile{} = requester) do
+    broadcast_group_members_changed(group, [:requests], profile_id: requester.id)
+    broadcast_profile_group_join_requests_updated(requester)
+    broadcast_group_join_request_updates_for_group(group)
+    :ok
   end
 
   def list_pending_group_join_requests(%Group{} = group) do
@@ -2492,12 +2495,25 @@ defmodule PotokIde.Social do
     |> Repo.all()
   end
 
+  @doc """
+  How many requests of `group` wait for whoever decides them: requests to
+  join not in a vote, and members' requests for roles.
+  """
   def count_pending_group_join_requests(%Group{} = group) do
-    from(r in GroupJoinRequest,
+    from(r in subquery(waiting_requests_query()),
       where: r.group_id == ^group.id,
-      select: count(r.id)
+      select: count()
     )
     |> Repo.one()
+  end
+
+  # The groups of the requests that wait for whoever decides, a row each: a
+  # request to join while no vote decides it, and a member's request for
+  # roles, which holds only what waits.
+  defp waiting_requests_query do
+    joins = from(r in GroupJoinRequest, where: is_nil(r.poll_id), select: %{group_id: r.group_id})
+    roles = from(r in GroupRoleRequest, select: %{group_id: r.group_id})
+    union_all(joins, ^roles)
   end
 
   def list_pending_group_join_requests_for_approver(%Profile{} = approver) do
@@ -2521,11 +2537,11 @@ defmodule PotokIde.Social do
   end
 
   def count_pending_group_join_requests_for_approver(%Profile{} = approver) do
-    from(r in GroupJoinRequest,
+    from(r in subquery(waiting_requests_query()),
       join: gm in GroupMembership,
       on: gm.group_id == r.group_id and gm.profile_id == ^approver.id,
       group_by: r.group_id,
-      select: {r.group_id, count(r.id)}
+      select: {r.group_id, count()}
     )
     |> Repo.all()
     |> approvable_join_request_total(approver)
@@ -2551,7 +2567,8 @@ defmodule PotokIde.Social do
 
   @doc """
   The header badges in one query: pending invitations, what waits for the
-  profile under Requests (join requests it may approve, and the tasks of
+  profile under Requests (requests to join and for roles it may decide,
+  `count_pending_group_join_requests/1`, and the tasks of
   drawn processes that wait for it, `PotokIde.Processes.waiting_sql/1`),
   unread values (the root group's count) and unread notices. The same
   numbers as `count_pending_invitations/1`,
@@ -2609,10 +2626,14 @@ defmodule PotokIde.Social do
       (
         SELECT COALESCE(array_agg(ARRAY[r.group_id, r.request_count]), '{}')
         FROM (
-          SELECT jr.group_id, COUNT(*) AS request_count
-          FROM group_join_requests jr
-          JOIN group_memberships gm ON gm.group_id = jr.group_id AND gm.profile_id = $1
-          GROUP BY jr.group_id
+          SELECT w.group_id, COUNT(*) AS request_count
+          FROM (
+            SELECT jr.group_id FROM group_join_requests jr WHERE jr.poll_id IS NULL
+            UNION ALL
+            SELECT rr.group_id FROM group_role_requests rr
+          ) w
+          JOIN group_memberships gm ON gm.group_id = w.group_id AND gm.profile_id = $1
+          GROUP BY w.group_id
         ) r
       ),
       (
@@ -2633,7 +2654,7 @@ defmodule PotokIde.Social do
       (SELECT COUNT(*) FROM (#{PotokIde.Processes.waiting_sql("$1")}) w)
     """
 
-    case Repo.query(sql, [profile_id], cache_statement: "social_nav_counts_v8_#{unread?}") do
+    case Repo.query(sql, [profile_id], cache_statement: "social_nav_counts_v9_#{unread?}") do
       {:ok,
        %{
          rows: [
@@ -2711,10 +2732,10 @@ defmodule PotokIde.Social do
         %{}
 
       _ ->
-        from(r in GroupJoinRequest,
+        from(r in subquery(waiting_requests_query()),
           where: r.group_id in ^group_ids,
           group_by: r.group_id,
-          select: {r.group_id, count(r.id)}
+          select: {r.group_id, count()}
         )
         |> Repo.all()
         |> Map.new()
@@ -2788,84 +2809,101 @@ defmodule PotokIde.Social do
     |> Repo.one()
   end
 
+  @doc """
+  Admits whoever asked to join `group` with `request_id`, as
+  `PotokIde.Social.GroupRequests.decide/4` does with no choice for the roles
+  asked for: they wait for later, or go to a vote where the rule says so.
+  Returns the new member.
+  """
   def accept_group_join_request(%Profile{} = actor, %Group{} = group, request_id)
       when is_integer(request_id) do
-    with :ok <- ensure_permission(actor, group, :manage_join_requests),
-         %GroupJoinRequest{} = request <- get_group_join_request(group, request_id) do
-      Multi.new()
-      |> Multi.insert(:membership, fn _changes ->
-        GroupMembership.changeset(%GroupMembership{}, %{
-          group_id: group.id,
-          profile_id: request.requester_id
-        })
-      end)
-      |> Multi.delete(:request, request)
-      |> Multi.run(:read_marker, fn repo, _changes ->
-        read_history_on_join(repo, request.requester_id, group.id)
-      end)
-      |> Multi.delete_all(
-        :invitations,
-        from(i in GroupInvitation,
-          where:
-            i.group_id == ^group.id and i.invitee_id == ^request.requester_id and
-              is_nil(i.accepted_at)
-        )
-      )
-      |> Multi.insert(:approval, fn _changes ->
-        GroupJoinRequestApproval.changeset(%GroupJoinRequestApproval{}, %{
-          group_id: group.id,
-          requester_id: request.requester_id,
-          approver_id: actor.id,
-          approved_at: DateTime.utc_now(:second)
-        })
-      end)
-      |> Multi.run(:inheritance, fn repo, _changes ->
-        {:ok, MemberInheritance.sync(repo, group.id, [request.requester_id])}
-      end)
-      |> Repo.transaction()
-      |> case do
-        {:ok, %{inheritance: changes}} ->
-          requester = Repo.get!(Profile, request.requester_id)
-          broadcast_group_members_changed(group, [:members, :requests], profile_id: requester.id)
-          broadcast_profile_invitations_updated(requester)
-          broadcast_profile_group_join_requests_updated(requester)
-          broadcast_group_join_request_updates_for_group(group)
-          broadcast_group_membership_changed(requester.id, group.id, :added)
-          broadcast_inheritance_changes(changes)
-          {:ok, requester}
-
-        {:error, :membership, reason, _changes} ->
-          {:error, reason}
-
-        {:error, _step, reason, _changes} ->
-          {:error, reason}
-      end
+    with %GroupJoinRequest{} = request <- get_group_join_request(group, request_id),
+         {:ok, _parts} <-
+           GroupRequests.decide(actor, group, {:join, request_id}, %{"admission" => "admit"}) do
+      {:ok, Repo.get!(Profile, request.requester_id)}
     else
-      {:error, reason} -> {:error, reason}
       nil -> {:error, :request_not_found}
+      {:error, reason} -> {:error, reason}
     end
   end
 
+  @doc """
+  Admits the requester of `request` to `group`, in the caller's transaction:
+  the membership, the chat's history read, their invitations and the request
+  gone, a record of who admitted them (`approval`: `%{approver_id:}`, or
+  `%{poll_id:}` for a vote) and the members of sub-groups it brings along.
+  Returns `{:ok, inheritance_changes}` for `announce_admission/3`, or
+  `{:error, reason}` before anything is written.
+  """
+  def admit_member(repo, %Group{} = group, %GroupJoinRequest{} = request, approval) do
+    profile_id = request.requester_id
+
+    %GroupMembership{}
+    |> GroupMembership.changeset(%{group_id: group.id, profile_id: profile_id})
+    |> repo.insert()
+    |> case do
+      {:ok, _membership} ->
+        repo.delete_all(from(r in GroupJoinRequest, where: r.id == ^request.id))
+        {:ok, _read} = read_history_on_join(repo, profile_id, group.id)
+
+        repo.delete_all(
+          from(i in GroupInvitation,
+            where:
+              i.group_id == ^group.id and i.invitee_id == ^profile_id and is_nil(i.accepted_at)
+          )
+        )
+
+        %GroupJoinRequestApproval{}
+        |> GroupJoinRequestApproval.changeset(
+          Map.merge(
+            %{
+              group_id: group.id,
+              requester_id: profile_id,
+              approved_at: DateTime.utc_now(:second)
+            },
+            approval
+          )
+        )
+        |> repo.insert!()
+
+        {:ok, MemberInheritance.sync(repo, group.id, [profile_id])}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc "Tells the pages that `admit_member/4` committed; returns the new member."
+  def announce_admission(%Group{} = group, profile_id, changes) do
+    requester = Repo.get!(Profile, profile_id)
+    broadcast_group_members_changed(group, [:members, :requests], profile_id: requester.id)
+    broadcast_profile_invitations_updated(requester)
+    broadcast_profile_group_join_requests_updated(requester)
+    broadcast_group_join_request_updates_for_group(group)
+    broadcast_group_membership_changed(requester.id, group.id, :added)
+    broadcast_inheritance_changes(changes)
+    requester
+  end
+
+  @doc "Sends `payload_for` (`Social.Notifications`) to the devices of `profile`'s accounts."
+  def notify_profile(%Profile{} = profile, payload_for, context) do
+    run_notification(fn ->
+      profile
+      |> recipient_accounts_for_profile_notification()
+      |> Enum.each(&deliver_profile_notification(&1, payload_for, context, profile.id))
+    end)
+  end
+
+  @doc "Refuses the request to join `group` with `request_id`, with nothing said."
   def reject_group_join_request(%Profile{} = actor, %Group{} = group, request_id)
       when is_integer(request_id) do
-    with :ok <- ensure_permission(actor, group, :manage_join_requests),
-         %GroupJoinRequest{} = request <- get_group_join_request(group, request_id) do
-      Repo.delete(request)
-      |> case do
-        {:ok, _request} ->
-          requester = Repo.get!(Profile, request.requester_id)
-
-          broadcast_group_members_changed(group, [:requests], profile_id: requester.id)
-          broadcast_profile_group_join_requests_updated(requester)
-          broadcast_group_join_request_updates_for_group(group)
-          {:ok, request}
-
-        {:error, reason} ->
-          {:error, reason}
-      end
+    with %GroupJoinRequest{} = request <- get_group_join_request(group, request_id),
+         {:ok, _parts} <-
+           GroupRequests.decide(actor, group, {:join, request_id}, %{"admission" => "refuse"}) do
+      {:ok, request}
     else
-      {:error, reason} -> {:error, reason}
       nil -> {:error, :request_not_found}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -3190,6 +3228,10 @@ defmodule PotokIde.Social do
   members get `payload_for`'s push (it gets a device's locale) instead of the
   generic one. `link` gets the repo and the value inside the transaction and
   points the event or poll at it. `push_context` names it in the logs.
+
+  With `by_rule: true` the group's rule posts it in the creator's name, as a
+  poll a request raises (`PotokIde.Social.GroupRequests`): the creator's
+  right to post does not count then.
   """
   def post_announcement(
         %Profile{} = creator,
@@ -3197,10 +3239,11 @@ defmodule PotokIde.Social do
         content,
         link,
         payload_for,
-        push_context
+        push_context,
+        opts \\ []
       )
       when is_function(link, 2) and is_map(payload_for) do
-    if Access.can?(creator, group, :post_values) do
+    if opts[:by_rule] == true or Access.can?(creator, group, :post_values) do
       changeset =
         %Value{link_preview_dismissed: true}
         |> Value.changeset(%{
@@ -4088,6 +4131,9 @@ defmodule PotokIde.Social do
       |> Multi.run(:inheritance, fn repo, _changes ->
         {:ok, MemberInheritance.forget_roles(repo, group_ids, [role.key])}
       end)
+      |> Multi.run(:requests, fn repo, _changes ->
+        {:ok, forget_requested_roles(repo, group_ids, [role.key])}
+      end)
       |> Repo.transaction()
       |> case do
         {:ok, %{role: role, inheritance: inheritance}} ->
@@ -4164,6 +4210,7 @@ defmodule PotokIde.Social do
         |> Repo.delete_all()
 
         gone_keys = Enum.map(manifest.roles, & &1.key) -- kept_keys
+        forget_requested_roles(Repo, group_ids, gone_keys)
         MemberInheritance.forget_roles(Repo, group_ids, gone_keys)
       end)
       |> case do
@@ -4176,6 +4223,31 @@ defmodule PotokIde.Social do
           {:error, reason}
       end
     end
+  end
+
+  # Roles gone from a statute are no longer asked for: the requests that wait
+  # forget them, and a member's request left with none goes.
+  defp forget_requested_roles(_repo, _group_ids, []), do: :ok
+
+  defp forget_requested_roles(repo, group_ids, keys) do
+    repo.delete_all(
+      from(r in GroupRoleRequest,
+        where: r.group_id in ^group_ids and fragment("?::text[] <@ ?::text[]", r.role_keys, ^keys)
+      )
+    )
+
+    for table <- ["group_join_requests", "group_role_requests"] do
+      repo.query!(
+        """
+        UPDATE #{table}
+           SET role_keys = ARRAY(SELECT k FROM unnest(role_keys) k WHERE k <> ALL($2::text[]))
+         WHERE group_id = ANY($1::bigint[]) AND role_keys::text[] && $2::text[]
+        """,
+        [group_ids, keys]
+      )
+    end
+
+    :ok
   end
 
   # The sub-groups whose roles to inherit by lost a role

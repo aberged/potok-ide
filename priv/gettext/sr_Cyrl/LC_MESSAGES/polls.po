@@ -71,7 +71,7 @@ msgstr "Тајно гласање не може поново да се отво�
 msgid "A vote cannot be changed."
 msgstr "Глас не може да се промени."
 
-#: lib/potok_ide/polls/effects.ex:379
+#: lib/potok_ide/polls/effects.ex:422
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:344
 #, elixir-autogen, elixir-format
 msgid "Abstain"
@@ -89,7 +89,7 @@ msgstr "Додај одговор"
 msgid "After voting, and everyone at the end"
 msgstr "После гласања, а сви на крају"
 
-#: lib/potok_ide/polls/effects.ex:378
+#: lib/potok_ide/polls/effects.ex:421
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:344
 #, elixir-autogen, elixir-format
 msgid "Against"
@@ -261,7 +261,7 @@ msgstr "Заврши гласање"
 msgid "End this poll now?"
 msgstr "Завршити ово гласање сада?"
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:504
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:510
 #, elixir-autogen, elixir-format
 msgid "End, change and delete polls started by others, and always see their results and details."
 msgstr "Завршава, мења и брише туђа гласања и увек види њихове резултате и детаље."
@@ -276,7 +276,7 @@ msgstr "Сваки члан види ко је за шта гласао."
 msgid "Finished"
 msgstr "Завршена"
 
-#: lib/potok_ide/polls/effects.ex:377
+#: lib/potok_ide/polls/effects.ex:420
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:344
 #, elixir-autogen, elixir-format
 msgid "For"
@@ -324,7 +324,7 @@ msgstr "У току"
 msgid "Include sub-groups"
 msgstr "Са подгрупама"
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:511
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:517
 #, elixir-autogen, elixir-format
 msgid "Let signed-in visitors of a public group vote too."
 msgstr "Дозвољава да гласају и пријављени посетиоци јавне групе."
@@ -334,7 +334,7 @@ msgstr "Дозвољава да гласају и пријављени посе�
 msgid "Load earlier polls"
 msgstr "Учитај ранија гласања"
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:450
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:456
 #, elixir-autogen, elixir-format
 msgid "Manage polls"
 msgstr "Управљање гласањима"
@@ -498,7 +498,7 @@ msgstr "Отвори поново"
 msgid "Open in %{group}"
 msgstr "Отвори у групи %{group}"
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:451
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:457
 #, elixir-autogen, elixir-format
 msgid "Open polls to non-members"
 msgstr "Отварање гласања нечлановима"
@@ -607,6 +607,7 @@ msgstr "Чување..."
 
 #: lib/potok_ide_web/live/group_live/show/poll_card.ex:201
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:698
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:129
 #, elixir-autogen, elixir-format
 msgid "Secret poll"
 msgstr "Тајно гласање"
@@ -626,12 +627,12 @@ msgstr "Прикажи све (%{count})"
 msgid "Show polls"
 msgstr "Прикажи гласања"
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:448
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:454
 #, elixir-autogen, elixir-format
 msgid "Start polls"
 msgstr "Покретање гласања"
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:494
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:500
 #, elixir-autogen, elixir-format
 msgid "Start polls in this group."
 msgstr "Покреће гласања у овој групи."
@@ -751,12 +752,12 @@ msgstr "До"
 msgid "Up to %{count} answers."
 msgstr "Највише одговора: %{count}."
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:449
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:455
 #, elixir-autogen, elixir-format
 msgid "Vote"
 msgstr "Гласање"
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:497
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:503
 #, elixir-autogen, elixir-format
 msgid "Vote where the poll's own rules allow it. Held by the Everyone role, it also lets signed-in visitors vote in a public poll."
 msgstr "Гласа тамо где то дозвољавају правила гласања. Ако је има улога Сви, на јавном гласању могу да гласају и пријављени посетиоци."
@@ -1176,7 +1177,7 @@ msgid "Do not vote"
 msgstr "Не гласају"
 
 #: lib/potok_ide_web/live/group_live/show/poll_card.ex:606
-#: lib/potok_ide_web/live/group_live/show/request_rules.ex:205
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:218
 #, elixir-autogen, elixir-format
 msgid "Each holder of a shared profile votes through it as themself."
 msgstr "Сваки носилац дељеног профила гласа кроз њега у своје име."
@@ -1199,19 +1200,19 @@ msgid "Only shared profiles vote in this poll."
 msgstr "У овој анкети гласају само дељени профили."
 
 #: lib/potok_ide_web/live/group_live/show/poll_card.ex:615
-#: lib/potok_ide_web/live/group_live/show/request_rules.ex:214
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:227
 #, elixir-autogen, elixir-format
 msgid "Only shared profiles vote, each of their holders separately."
 msgstr "Гласају само дељени профили, и то сваки њихов носилац посебно."
 
 #: lib/potok_ide_web/live/group_live/show/poll_card.ex:612
-#: lib/potok_ide_web/live/group_live/show/request_rules.ex:211
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:224
 #, elixir-autogen, elixir-format
 msgid "Only shared profiles vote, once for all who hold each."
 msgstr "Гласају само дељени профили, сваки једним гласом за све који га држе."
 
 #: lib/potok_ide_web/live/group_live/show/poll_card.ex:609
-#: lib/potok_ide_web/live/group_live/show/request_rules.ex:208
+#: lib/potok_ide_web/live/group_live/show/request_rules.ex:221
 #, elixir-autogen, elixir-format
 msgid "Only unique profiles vote; shared profiles do not."
 msgstr "Гласају само јединствени профили; дељени не гласају."

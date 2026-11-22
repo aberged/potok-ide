@@ -315,6 +315,8 @@ defmodule PotokIde.Accounts.Deletion do
           {"profile_invitations", :invitee_id},
           {"group_join_requests", :requester_id},
           {"group_join_request_approvals", :requester_id},
+          {"group_role_requests", :profile_id},
+          {"group_request_decisions", :profile_id},
           {"group_account_invitations", :inviter_id},
           {"group_blocks", :profile_id},
           {"app_profile_entries", :profile_id}

@@ -9,6 +9,10 @@ defmodule PotokIde.Polls.Effects do
   - `elect` gives the role to the member whose answer wins
     (`PollOption.profile_id`), and with `replace` takes it from the others
     who hold it of their own.
+  - `admit` takes into the group someone who asked to join it, when the
+    answer that approves wins. Only a request raises it, by the group's rule
+    (`PotokIde.Social.GroupRequests`), as do the `grant`s of roles a request
+    puts to a vote: the rule is their authority, not who raised them.
 
   The power comes from the decision: a role a decision gave keeps the poll
   (`GroupMemberRole.poll_id`), and the process that raises such a poll holds
@@ -33,7 +37,17 @@ defmodule PotokIde.Polls.Effects do
   alias PotokIde.Polls.{Notifications, Poll, PollOption}
   alias PotokIde.Repo
   alias PotokIde.Social
-  alias PotokIde.Social.{Access, Group, GroupMemberRole, GroupMembership, GroupRole, Profile}
+
+  alias PotokIde.Social.{
+    Access,
+    Group,
+    GroupJoinRequest,
+    GroupMemberRole,
+    GroupMembership,
+    GroupRequests,
+    GroupRole,
+    Profile
+  }
 
   # The form's keys, which a process gives as atoms.
   @keys %{
@@ -49,7 +63,8 @@ defmodule PotokIde.Polls.Effects do
     "grant" => :grant,
     "revoke" => :revoke,
     "elect" => :elect,
-    "end_elections" => :end_elections
+    "end_elections" => :end_elections,
+    "admit" => :admit
   }
 
   @doc "Whether a decision may change roles in the group at all."
@@ -122,6 +137,7 @@ defmodule PotokIde.Polls.Effects do
   answers that go with it, in order, as `%{text:, profile_id:, approves:}`.
   `{:error, :not_permitted}` when none of `proposers` (accesses, the
   creator's by default) may put it to a vote, or `{:error, {field, message}}`.
+  `proposers` is `:request` for a poll a request raises by the group's rule.
 
   The form's keys: `effect`, `effect_role_key`, `effect_profile_id`,
   `candidate_ids`, `effect_replace` and `abstain`.
@@ -225,10 +241,16 @@ defmodule PotokIde.Polls.Effects do
   def apply_locked(%Poll{} = poll, %Group{} = group, :passed, %PollOption{} = winner) do
     if carried?(poll, winner),
       do: guarded(poll, fn -> carry_out(poll, group, winner) end),
-      else: {:rejected, []}
+      else: not_carried(poll, group)
   end
 
-  def apply_locked(%Poll{}, _group, _outcome, _winner), do: {:rejected, []}
+  def apply_locked(%Poll{} = poll, group, _outcome, _winner), do: not_carried(poll, group)
+
+  # A request that a vote did not carry is over: whoever asked hears of it.
+  defp not_carried(%Poll{from_request: true} = poll, group),
+    do: guarded(poll, fn -> {:rejected, GroupRequests.not_carried(poll, group)} end)
+
+  defp not_carried(%Poll{}, _group), do: {:rejected, []}
 
   # Polls past their deadline close together in one transaction
   # (`PotokIde.Polls.Deadlines`), so a decision that fails in the database
@@ -310,6 +332,9 @@ defmodule PotokIde.Polls.Effects do
     end
   end
 
+  defp carry_out(%Poll{effect: :admit} = poll, group, _winner),
+    do: GroupRequests.admitted_by_vote(poll, group)
+
   defp carry_out(%Poll{effect: :end_elections}, group, _winner) do
     {:ok, announce} = Social.end_elections(Repo, group)
     {:applied, [announce]}
@@ -317,13 +342,20 @@ defmodule PotokIde.Polls.Effects do
 
   ## Checks
 
+  # A request raises a vote by the group's rule; admission is never put to
+  # a vote any other way.
+  defp proposable(:request, group, _effect),
+    do: if(group_allowed?(group), do: :ok, else: {:error, :not_permitted})
+
+  defp proposable(_proposers, _group, :admit), do: {:error, :not_permitted}
+
   defp proposable(proposers, group, effect) do
     if group_allowed?(group) and Enum.any?(proposers, &may_propose?(&1, group, effect)),
       do: :ok,
       else: {:error, :not_permitted}
   end
 
-  defp role(:end_elections, _key, _access), do: {:ok, nil}
+  defp role(effect, _key, _access) when effect in [:end_elections, :admit], do: {:ok, nil}
 
   defp role(_effect, key, access) do
     if is_binary(key) and Enum.any?(roles(access), &(&1.key == key)),
@@ -336,6 +368,18 @@ defmodule PotokIde.Polls.Effects do
          :ok <- holds_for_revoke(effect, group, profile_id, role_key) do
       {:ok, %{effect: effect, role_key: role_key, profile_id: profile_id},
        yes_no(truthy?(attr(attrs, "abstain")))}
+    end
+  end
+
+  defp named(:admit, nil, attrs, %Group{id: group_id}) do
+    with id when is_integer(id) <- to_id(attr(attrs, "effect_profile_id")),
+         true <-
+           Repo.exists?(
+             from(r in GroupJoinRequest, where: r.group_id == ^group_id and r.requester_id == ^id)
+           ) do
+      {:ok, %{effect: :admit, profile_id: id}, yes_no(false)}
+    else
+      _no_request -> {:error, {:effect_profile_id, "can only name someone who asks to join"}}
     end
   end
 

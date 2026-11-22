@@ -75,6 +75,9 @@ defmodule PotokIde.RateLimit do
     process_step: {60, :timer.minutes(1)},
     # Runs one person starts of one process by hand (`Social.DrawnProcesses`).
     process_manual_start: {10, :timer.hours(1)},
+    # Requests to join and for roles one account sends (`Social.GroupRequests`):
+    # a vote one raises is a message to the whole group.
+    group_request: {10, :timer.hours(1)},
     # Periodic jobs one machine of all does in a window (`once?/1`).
     app_file_sweep: {1, :timer.hours(1)},
     hosting_costs_sample: {1, :timer.minutes(15)}
@@ -93,6 +96,7 @@ defmodule PotokIde.RateLimit do
     :group_notice,
     :process_step,
     :process_manual_start,
+    :group_request,
     :app_create_place,
     :app_create_children,
     :tile_upstream,
@@ -121,6 +125,7 @@ defmodule PotokIde.RateLimit do
           | :tile_upstream
           | :process_step
           | :process_manual_start
+          | :group_request
           | :app_file_sweep
           | :hosting_costs_sample
 

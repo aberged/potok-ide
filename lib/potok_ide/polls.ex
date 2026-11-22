@@ -27,7 +27,7 @@ defmodule PotokIde.Polls do
   alias PotokIde.Processes.ValueProcess
   alias PotokIde.Repo
   alias PotokIde.Social
-  alias PotokIde.Social.{Access, AccountProfile, Group, Identity, Profile, Value}
+  alias PotokIde.Social.{Access, AccountProfile, Group, Identity, Profile, RequestPoll, Value}
 
   # What someone outside the group may do, enough to hold back a loop.
   @outsider_votes_per_minute 10
@@ -458,6 +458,54 @@ defmodule PotokIde.Polls do
     end
   end
 
+  @doc """
+  Starts the poll a request raises (`PotokIde.Social.GroupRequests`), in the
+  caller's transaction, in the name of `requester`, whose request it is: the
+  group's rule puts it to a vote, not the requester's rights. `attrs` name
+  the decision (`effect`, `:admit` or `:grant`, with `role_key` and
+  `profile_id`), its `question` and `description`, and `rule`, the
+  `PotokIde.Social.RequestPoll` it goes by. Returns `{:ok, poll, announce}`,
+  as `create_poll_for_process/5` does.
+  """
+  def create_poll_for_request(
+        %Profile{} = requester,
+        %Group{} = group,
+        %{effect: effect, rule: %RequestPoll{} = rule} = attrs
+      ) do
+    access = Access.for_profile(requester, group)
+
+    closes_local =
+      DateTime.utc_now(:second)
+      |> DateTime.add(rule.hours, :hour)
+      |> DateTime.to_naive()
+      |> NaiveDateTime.to_iso8601()
+
+    form = %{
+      "question" => String.slice(attrs.question, 0, Poll.max_question()),
+      "description" => Map.get(attrs, :description) || "",
+      "majority" => to_string(rule.majority),
+      "quorum_percent" => to_string(rule.quorum_percent),
+      "secret" => to_string(rule.secret),
+      "unique_votes" => to_string(rule.unique_votes),
+      "shared_votes" => to_string(rule.shared_votes),
+      "closes_local" => closes_local,
+      "effect" => to_string(effect),
+      "effect_role_key" => Map.get(attrs, :role_key),
+      "effect_profile_id" => attrs.profile_id
+    }
+
+    poll = %Poll{group_id: group.id, creator_id: requester.id, from_request: true}
+
+    with {:ok, changeset} <- effect_changeset(poll, form, "Etc/UTC", access, group, :request),
+         {:ok, poll} <- Repo.insert(changeset) do
+      {:ok, poll,
+       fn ->
+         poll = announce(requester, group, poll, by_rule: true)
+         broadcast(poll, {:changed, poll.id})
+       end}
+    end
+  end
+
   # Only `publish_polls` opens a poll to non-members. Without it the setting is
   # dropped before the changeset, as it takes other settings with it.
   defp only_if_published(attrs, access, group) do
@@ -466,7 +514,7 @@ defmodule PotokIde.Polls do
       else: Map.drop(attrs, [:is_public, "is_public"])
   end
 
-  defp announce(creator, group, poll) do
+  defp announce(creator, group, poll, opts \\ []) do
     link = fn repo, value ->
       {count, _} =
         repo.update_all(from(p in Poll, where: p.id == ^poll.id), set: [value_id: value.id])
@@ -480,7 +528,8 @@ defmodule PotokIde.Polls do
            announcement_content(poll),
            link,
            Notifications.created(creator, group, poll),
-           "group poll"
+           "group poll",
+           opts
          ) do
       {:ok, value} -> %{poll | value_id: value.id}
       {:error, _reason} -> poll
@@ -963,9 +1012,11 @@ defmodule PotokIde.Polls do
   end
 
   @doc """
-  Whether the poll is a decision that changes roles and has a vote, or ended:
-  neither it nor its message can be deleted then.
+  Whether the poll is a decision that changes roles and has a vote, or ended,
+  or one a request raised, which waits on it: neither it nor its message can
+  be deleted then.
   """
+  def decision?(%Poll{from_request: true}), do: true
   def decision?(%Poll{effect: nil}), do: false
   def decision?(%Poll{} = poll), do: poll.voters_count > 0 or not is_nil(poll.closed_at)
 

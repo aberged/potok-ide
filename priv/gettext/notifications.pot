@@ -115,3 +115,59 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "%{name} in %{group}"
 msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:302
+#, elixir-autogen, elixir-format
+msgid "Admin"
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:292
+#, elixir-autogen, elixir-format
+msgid "Given: %{roles}."
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:298
+#, elixir-autogen, elixir-format
+msgid "Put to a vote: %{roles}."
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:295
+#, elixir-autogen, elixir-format
+msgid "Refused: %{roles}."
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:268
+#, elixir-autogen, elixir-format
+msgid "The group admitted you by a vote."
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:242
+#, elixir-autogen, elixir-format
+msgid "The group votes on admitting you."
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:271
+#, elixir-autogen, elixir-format
+msgid "The vote did not admit you."
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:274
+#, elixir-autogen, elixir-format
+msgid "The vote did not give you the role %{role}."
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:239
+#, elixir-autogen, elixir-format
+msgid "You are a member now."
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:251
+#: lib/potok_ide/social/notifications.ex:281
+#, elixir-autogen, elixir-format
+msgid "Your request in %{group}"
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:240
+#, elixir-autogen, elixir-format
+msgid "Your request to join was refused."
+msgstr ""

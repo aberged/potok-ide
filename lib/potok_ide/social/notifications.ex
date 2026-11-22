@@ -224,4 +224,82 @@ defmodule PotokIde.Social.Notifications do
   # Notification badges and icons cannot be SVG, which the avatar URL serves
   # by default.
   defp avatar_url(%Profile{id: profile_id}), do: "/avatar/profile/#{profile_id}?format=png"
+
+  @doc """
+  What became of a request in `group`, for whoever asked, in one push:
+  `parts` holds `:admitted` (true, false when refused, or nil), whether
+  admission went to a vote (`:admission_vote`), the roles `:granted`,
+  `:declined` and put to a vote (`:voted`), and the `:url` it opens;
+  `reason` is what the one who decided said.
+  """
+  def request_decided(%Group{} = group, parts, reason) do
+    localized(fn ->
+      lines =
+        [
+          parts[:admitted] == true && dgettext("notifications", "You are a member now."),
+          parts[:admitted] == false &&
+            dgettext("notifications", "Your request to join was refused."),
+          parts[:admission_vote] &&
+            dgettext("notifications", "The group votes on admitting you."),
+          roles_line(:granted, parts[:granted]),
+          roles_line(:declined, parts[:declined]),
+          roles_line(:voted, parts[:voted]),
+          reason not in [nil, ""] && "„#{reason}“"
+        ]
+        |> Enum.filter(&is_binary/1)
+
+      %{
+        title: dgettext("notifications", "Your request in %{group}", group: group.name),
+        body: Enum.join(lines, " "),
+        tag: "group-#{group.id}-request",
+        url: parts[:url] || "/requests"
+      }
+    end)
+  end
+
+  @doc """
+  How a vote on a request in `group` ended, for whoever asked: `:admitted`,
+  `:not_admitted` or `{:not_granted, role}`.
+  """
+  def request_vote_ended(%Group{} = group, outcome) do
+    localized(fn ->
+      {body, url} =
+        case outcome do
+          :admitted ->
+            {dgettext("notifications", "The group admitted you by a vote."),
+             "/groups/#{group.id}"}
+
+          :not_admitted ->
+            {dgettext("notifications", "The vote did not admit you."), "/requests"}
+
+          {:not_granted, role} ->
+            {dgettext("notifications", "The vote did not give you the role %{role}.",
+               role: role_name(role)
+             ), "/groups/#{group.id}"}
+        end
+
+      %{
+        title: dgettext("notifications", "Your request in %{group}", group: group.name),
+        body: body,
+        tag: "group-#{group.id}-request",
+        url: url
+      }
+    end)
+  end
+
+  defp roles_line(_kind, empty) when empty in [nil, []], do: nil
+
+  defp roles_line(:granted, roles),
+    do: dgettext("notifications", "Given: %{roles}.", roles: role_names(roles))
+
+  defp roles_line(:declined, roles),
+    do: dgettext("notifications", "Refused: %{roles}.", roles: role_names(roles))
+
+  defp roles_line(:voted, roles),
+    do: dgettext("notifications", "Put to a vote: %{roles}.", roles: role_names(roles))
+
+  defp role_names(roles), do: Enum.map_join(roles, ", ", &role_name/1)
+
+  defp role_name(%{key: "admin"}), do: dgettext("notifications", "Admin")
+  defp role_name(%{name: name}), do: name
 end

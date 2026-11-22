@@ -267,6 +267,30 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("GroupJoinRequestApproval", "approver_id"),
     do: dgettext("domain_map", "who approved")
 
+  defp own_field("GroupJoinRequestApproval", "poll_id"),
+    do: dgettext("domain_map", "vote that admitted")
+
+  defp own_field("GroupJoinRequest", "note"), do: dgettext("domain_map", "why they ask")
+  defp own_field("GroupJoinRequest", "role_keys"), do: dgettext("domain_map", "roles asked for")
+  defp own_field("GroupJoinRequest", "poll_id"), do: dgettext("domain_map", "vote on admission")
+  defp own_field("GroupRoleRequest", "profile_id"), do: dgettext("domain_map", "member")
+
+  defp own_field("GroupRoleRequest", "role_keys"),
+    do: dgettext("domain_map", "roles still waiting")
+
+  defp own_field("GroupRoleRequest", "note"), do: dgettext("domain_map", "why they ask")
+  defp own_field("GroupRequestDecision", "profile_id"), do: dgettext("domain_map", "who asked")
+
+  defp own_field("GroupRequestDecision", "role_key"),
+    do: dgettext("domain_map", "role, none for admission")
+
+  defp own_field("GroupRequestDecision", "decision"),
+    do: dgettext("domain_map", "what was decided")
+
+  defp own_field("GroupRequestDecision", "decider_id"), do: dgettext("domain_map", "who decided")
+  defp own_field("GroupRequestDecision", "poll_id"), do: dgettext("domain_map", "vote it went to")
+  defp own_field("GroupRequestDecision", "reason"), do: dgettext("domain_map", "reason given")
+
   defp own_field("GroupMemberRole", "profile_id"), do: dgettext("domain_map", "member")
   defp own_field("GroupMemberRole", "role_key"), do: dgettext("domain_map", "role")
 
@@ -530,6 +554,8 @@ defmodule PotokIdeWeb.DomainCopy do
 
   defp own_field("Poll", "effect_status"), do: dgettext("domain_map", "what came of it")
 
+  defp own_field("Poll", "from_request"), do: dgettext("domain_map", "raised by a request")
+
   defp own_field("Poll", "process_instance_id"),
     do: dgettext("domain_map", "process run waiting for it")
 
@@ -651,6 +677,7 @@ defmodule PotokIdeWeb.DomainCopy do
   def domain_name("notices"), do: dgettext("domain_map", "Following and notices")
   def domain_name("tags"), do: dgettext("domain_map", "Tags")
   def domain_name("joining"), do: dgettext("domain_map", "Joining a group")
+  def domain_name("requests"), do: dgettext("domain_map", "Requests and decisions")
   def domain_name("hosting"), do: dgettext("domain_map", "Hosting costs")
 
   def entity_name("Account"), do: dgettext("domain_map", "Account")
@@ -695,6 +722,8 @@ defmodule PotokIdeWeb.DomainCopy do
   def entity_name("ProfileInvitation"), do: dgettext("domain_map", "Profile invitation")
   def entity_name("GroupJoinRequest"), do: dgettext("domain_map", "Join request")
   def entity_name("GroupJoinRequestApproval"), do: dgettext("domain_map", "Approved request")
+  def entity_name("GroupRoleRequest"), do: dgettext("domain_map", "Request for roles")
+  def entity_name("GroupRequestDecision"), do: dgettext("domain_map", "Decision on a request")
   def entity_name("CostHour"), do: dgettext("domain_map", "Hour of costs")
   def entity_name("Invoice"), do: dgettext("domain_map", "Invoice")
 
@@ -986,14 +1015,28 @@ defmodule PotokIdeWeb.DomainCopy do
   defp entity_description("GroupJoinRequest", _edges) do
     dgettext(
       "domain_map",
-      "A profile asks to join a group. An accepted request is deleted, and an approval stays in its place."
+      "A profile asks to join a public group, with the roles it would like there and, if it wants, why. While a vote decides it, it names that poll. An accepted request is deleted, and an approval stays in its place."
     )
   end
 
   defp entity_description("GroupJoinRequestApproval", _edges) do
     dgettext(
       "domain_map",
-      "A lasting record of who admitted whom to a group and when. It is created in the same transaction that deletes the request and creates the membership."
+      "A lasting record of who admitted whom to a group and when: a member who manages requests, or a vote. It is created in the same transaction that deletes the request and creates the membership."
+    )
+  end
+
+  defp entity_description("GroupRoleRequest", _edges) do
+    dgettext(
+      "domain_map",
+      "A member asks for roles, saying why if it wants. It holds only the roles still waiting for whoever manages requests, one row per member and group, and goes with the membership."
+    )
+  end
+
+  defp entity_description("GroupRequestDecision", _edges) do
+    dgettext(
+      "domain_map",
+      "What became of admission or of one role asked for: given, refused or put to a vote, by whom (nobody when the rule put it to a vote) and why. The one who asked reads it too."
     )
   end
 
@@ -1151,6 +1194,14 @@ defmodule PotokIdeWeb.DomainCopy do
 
   def check_text("poll_options_effect_check") do
     dgettext("domain_map", "An answer either stands for a candidate or carries a decision out.")
+  end
+
+  def check_text("group_join_request_approvals_by_check") do
+    dgettext("domain_map", "Someone admitted a member, or a vote did.")
+  end
+
+  def check_text("group_role_requests_role_keys_check") do
+    dgettext("domain_map", "A request for roles waits for at least one role.")
   end
 
   def check_text("groups_join_poll_check") do

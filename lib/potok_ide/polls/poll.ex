@@ -45,8 +45,17 @@ defmodule PotokIde.Polls.Poll do
   @majorities [:none, :plurality, :simple, :two_thirds, :absolute]
   @outcomes [:passed, :failed, :no_quorum, :tie]
   @reminder_choices [60, 1440]
-  @effects [:grant, :revoke, :elect, :end_elections]
-  @effect_statuses [:applied, :rejected, :not_a_member, :role_gone, :inherited_role, :last_admin]
+  @effects [:grant, :revoke, :elect, :end_elections, :admit]
+  @effect_statuses [
+    :applied,
+    :rejected,
+    :not_a_member,
+    :role_gone,
+    :inherited_role,
+    :last_admin,
+    :request_gone,
+    :already_member
+  ]
   @unique_votes [:yes, :no]
   @shared_votes [:as_one, :each_holder, :no]
 
@@ -136,6 +145,9 @@ defmodule PotokIde.Polls.Poll do
     field :effect_status, Ecto.Enum, values: @effect_statuses
     # The run of a drawn process that raised the poll and waits for it.
     belongs_to :process_instance, PotokIde.Processes.ValueProcess
+    # Raised by a request (`PotokIde.Social.GroupRequests`), which waits on
+    # it, so it is never deleted. Set by `PotokIde.Polls`, never cast.
+    field :from_request, :boolean, default: false
 
     # The form edits the deadline as local time in the viewer's zone.
     field :closes_local, :naive_datetime, virtual: true
