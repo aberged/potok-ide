@@ -31,7 +31,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
   alias PotokIde.Processes
   alias PotokIde.Processes.{Graph, GroupEntities, GroupEntity, GroupFields}
   alias PotokIde.Social.{Access, AppProcesses, DrawnProcesses, Group, ValueRules}
-  alias PotokIdeWeb.GroupLive.Show.{EntityFields, ProcessEditorState, ProcessForm}
+  alias PotokIdeWeb.GroupLive.Show.{EntityFields, PageRules, ProcessEditorState, ProcessForm}
 
   @debounce_ms Application.compile_env(:potok_ide, :live_refresh_debounce_ms, 100)
   @reloading_events [:config, :process, :drawn_process, :created, :entity]
@@ -98,13 +98,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
   Whether the group has the tab: for its members, in a group that is neither
   the root nor a conversation, with an app or a process.
   """
-  def available?(%Group{is_root: true}, _access), do: false
-  def available?(%Group{is_direct: true}, _access), do: false
-
-  def available?(%Group{} = group, %Access{member?: true} = access),
-    do: ValueRules.manage?(access) or AppProcesses.any_app_or_process?(group)
-
-  def available?(_group, _access), do: false
+  def available?(%Group{} = group, %Access{} = access),
+    do: PageRules.processes?(group, access, PageRules.lazy_facts(group))
 
   @doc "Sets `processes_tab?` for the group on screen."
   def assign_available(socket) do

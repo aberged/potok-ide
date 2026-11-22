@@ -3,7 +3,15 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
 
   alias PotokIde.Polls.Effects
   alias PotokIde.Social.{Access, GroupRequests, GroupRole}
-  alias PotokIdeWeb.GroupLive.Show.{Components, ProcessesTab, RequestDialogs, RolesTab}
+
+  alias PotokIdeWeb.GroupLive.Show.{
+    ChoiceMenus,
+    Components,
+    ProcessesTab,
+    RequestDialogs,
+    RolesTab
+  }
+
   alias PotokIdeWeb.TagComponents
 
   attr :members, :any, required: true, doc: "stream of `%{id, profile, role_keys}`"
@@ -13,6 +21,11 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
     doc: "the processes of the group's apps: `%{id, process, profile, role_keys, warning}`"
 
   attr :pagination, :map, required: true
+
+  attr :role_filter, :string,
+    default: nil,
+    doc: "the key of the role the list is narrowed to (`?role=`), nil for every member"
+
   attr :current_profile, :map, required: true
   attr :group, :map, required: true
   attr :access, Access, required: true
@@ -49,6 +62,8 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
           GroupRequests.requestable_roles(assigns.access, assigns.group) != []
       )
       |> assign(:request_roles, RequestDialogs.manifest_roles(assigns.access))
+      |> assign(:role_choices, role_choices(roles))
+      |> assign(:filter_role, Enum.find(roles, &(&1.key == assigns.role_filter)))
 
     ~H"""
     <div id="group-panel-members" class="card flex min-h-0 flex-1 flex-col px-2">
@@ -303,13 +318,42 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
           </ul>
         </div>
 
+        <div
+          :if={!@group.is_direct}
+          id="group-members-filters"
+          class="mb-3 flex items-center justify-between gap-2"
+        >
+          <p id="group-members-count" class="px-1 text-sm text-base-content/65">
+            <%= if @filter_role do %>
+              {ngettext(
+                "%{count} member holds the role %{role}",
+                "%{count} members hold the role %{role}",
+                @pagination.total_count,
+                role: RolesTab.role_label(@filter_role)
+              )}
+            <% else %>
+              {ngettext("%{count} member", "%{count} members", @pagination.total_count)}
+            <% end %>
+          </p>
+          <ChoiceMenus.choice_toggle
+            id="group-members-role"
+            choices={@role_choices}
+            selected={@role_filter}
+            idle_label={gettext("Role")}
+            title={gettext("Show the members who hold one role")}
+            label={gettext("Role of members")}
+          />
+        </div>
+
         <ul id="group-members-list" class="space-y-2" phx-update="stream">
           <li
             :if={@pagination.loaded_count == 0}
             id="group-members-empty"
             class="text-base-content/70"
           >
-            {gettext("No members.")}
+            {if @filter_role,
+              do: gettext("Nobody holds this role."),
+              else: gettext("No members.")}
           </li>
 
           <li
@@ -412,6 +456,16 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
           </.button>
         </div>
 
+        <ChoiceMenus.choice_menu
+          :if={!@group.is_direct}
+          id="group-members-role"
+          choices={@role_choices}
+          selected={@role_filter}
+          event="filter_members_role"
+          param="role"
+          label={gettext("Role of members")}
+        />
+
         <section :if={@processes != []} id="group-processes" class="mt-8">
           <div class="mb-3 flex items-start justify-between gap-3 px-1">
             <div>
@@ -507,6 +561,15 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
       </Components.tab_body>
     </div>
     """
+  end
+
+  # Every member first, then each role of the manifest in force but Everyone,
+  # which every member holds.
+  defp role_choices(roles) do
+    [%{key: "", icon: "hero-user-group", title: gettext("All members")}] ++
+      for role <- roles, role.key != GroupRole.everyone_key() do
+        %{key: role.key, icon: RolesTab.role_icon(role), title: RolesTab.role_label(role)}
+      end
   end
 
   attr :id, :string, required: true, doc: "the prefix of the ids, such as `member-12`"

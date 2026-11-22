@@ -27,7 +27,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   alias PotokIde.LinkPreviews
   alias PotokIde.Notices
-  alias PotokIde.Polls
   alias PotokIde.Polls.Effects
   alias PotokIde.Social.GroupRequests
   alias PotokIde.RateLimit
@@ -49,6 +48,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     MembersTab,
     NoticesState,
     NoticesTab,
+    PageRules,
     PinnedStrip,
     PollCard,
     PollForm,
@@ -704,6 +704,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 members={@streams.members}
                 processes={@group_processes}
                 pagination={@members_pagination}
+                role_filter={@members_role}
                 current_profile={@current_profile}
                 group={@group}
                 access={@access}
@@ -1002,6 +1003,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> stream_configure(:files, dom_id: &"file-#{&1.id}")
          |> assign(:children_pagination, default_pagination(@children_page_size))
          |> assign(:members_pagination, default_pagination(@members_page_size))
+         # Read here, as the tab's first load comes before `handle_params`.
+         |> assign(:members_role, members_role_param(params["role"], active_tab, access))
          |> assign(:values_has_more?, false)
          |> assign(:values_has_newer?, false)
          |> assign(:oldest_value_id, nil)
@@ -1149,6 +1152,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
     sub_groups_view = normalize_sub_groups_view(Map.get(params, "view"), sub_groups_kind)
     description_param = Map.get(params, "d")
+    members_role = members_role_param(Map.get(params, "role"), active_tab, socket.assigns.access)
     socket = assign(socket, :share_id, parse_share_id(Map.get(params, "share")))
 
     cond do
@@ -1165,6 +1169,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:sub_groups_kind, sub_groups_kind)
          |> assign(:sub_groups_view, sub_groups_view)
          |> assign(:children_pagination, default_pagination(@children_page_size))
+         |> put_members_role(members_role)
          |> maybe_reload_edit_group_form(active_tab)
          |> assign_tab_forms(active_tab)
          |> assign_new_tab_section(active_tab)
@@ -1186,6 +1191,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
       active_tab == "map" and RootMapState.params_changed?(socket, params) ->
         {:noreply, RootMapState.handle_params(socket, params)}
+
+      active_tab == "members" and members_role != socket.assigns.members_role ->
+        {:noreply,
+         socket
+         |> put_members_role(members_role)
+         |> maybe_load_members(socket.assigns.group, active_tab)}
 
       sub_groups_view != socket.assigns.sub_groups_view ->
         {:noreply,
@@ -1860,6 +1871,17 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_event("load_more_members", _params, socket) do
     {:noreply, load_more_members(socket)}
+  end
+
+  # The address carries the role, so the narrowed list can be shared and
+  # comes back with the browser's Back.
+  def handle_event("filter_members_role", %{"role" => key}, socket) do
+    path =
+      if key in [nil, ""],
+        do: ~p"/groups/#{socket.assigns.group.id}/members",
+        else: ~p"/groups/#{socket.assigns.group.id}/members?#{[role: key]}"
+
+    {:noreply, push_patch(socket, to: path)}
   end
 
   # Asking to join (`kind` "join") or, as a member, for roles ("roles").
@@ -4639,22 +4661,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
     if value && !Components.event_hidden?(value, !socket.assigns.is_member), do: value
   end
 
-  defp can_attach?(%Access{} = access),
-    do: Storage.enabled?() and access.member? and Access.can?(access, :attach_files)
+  defp can_attach?(access), do: PageRules.can_attach?(access)
 
-  # A picture from the device is a message with a file, in the group's chat, so
-  # it takes what such a message takes. It also takes editing the group, as the
-  # address it gives opens with no session. The root has no chat, though its
-  # settings can be reached by address.
-  defp can_post_description_picture?(%Group{} = group, %Access{} = access) do
-    not group.is_root and Access.can?(access, :edit_group) and can_attach?(access) and
-      Access.can?(access, :post_values)
-  end
+  defp can_post_description_picture?(group, access),
+    do: PageRules.can_post_description_picture?(group, access)
 
-  # What the keyboard sends is a file in a message of its own, so it takes what
-  # both of those take.
-  defp can_send_keyboard_media?(profile, %Group{} = group, %Access{} = access),
-    do: can_attach?(access) and Access.can_post_in_chat?(profile, access, group)
+  defp can_send_keyboard_media?(profile, group, access),
+    do: PageRules.can_send_keyboard_media?(profile, group, access)
 
   # Browsers upload through the LiveView channel, or straight to the bucket
   # when the storage hands out presigned URLs.
@@ -6047,7 +6060,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
     if pagination.has_more? and needs_members?(socket.assigns.group, socket.assigns.active_tab) do
       entries =
         socket.assigns.group
-        |> Social.list_group_members(limit: pagination.per_page, offset: pagination.loaded_count)
+        |> Social.list_group_members(
+          limit: pagination.per_page,
+          offset: pagination.loaded_count,
+          role: socket.assigns.members_role
+        )
         |> member_entries(socket.assigns.group, socket.assigns.current_profile)
 
       socket
@@ -6306,15 +6323,21 @@ defmodule PotokIdeWeb.GroupLive.Show do
     if needs_members?(group, active_tab) do
       pagination = socket.assigns.members_pagination
 
+      role = socket.assigns.members_role
+
       entries =
         group
-        |> Social.list_group_members(limit: reload_limit(pagination))
+        |> Social.list_group_members(limit: reload_limit(pagination), role: role)
         |> member_entries(group, socket.assigns.current_profile)
 
       socket
       |> assign(
         :members_pagination,
-        loaded_pagination(pagination, length(entries), Social.count_group_members(group))
+        loaded_pagination(
+          pagination,
+          length(entries),
+          Social.count_group_members(group, role: role)
+        )
       )
       |> stream(:members, entries, reset: true)
       |> watch_presence(Enum.map(entries, & &1.id))
@@ -6574,7 +6597,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
         profile ->
           [entry] = member_entries([profile], group, socket.assigns.current_profile)
-          stream_insert(socket, :members, entry)
+          role = socket.assigns.members_role
+
+          if is_nil(role) or role in entry.role_keys,
+            do: stream_insert(socket, :members, entry),
+            else: stream_delete(socket, :members, entry)
       end
     else
       socket
@@ -7016,6 +7043,24 @@ defmodule PotokIdeWeb.GroupLive.Show do
     group.parent_id != nil and active_tab == "members"
   end
 
+  # `?role=` narrows the Members tab to those who hold a role of the manifest
+  # in force. Everyone is every member, so it narrows nothing.
+  defp members_role_param(key, "members", %Access{manifest: %{roles: roles}})
+       when is_binary(key) and key != "everyone" do
+    if Enum.any?(roles, &(&1.key == key)), do: key
+  end
+
+  defp members_role_param(_key, _active_tab, _access), do: nil
+
+  # Another role starts the list again from its first page.
+  defp put_members_role(%{assigns: %{members_role: role}} = socket, role), do: socket
+
+  defp put_members_role(socket, role) do
+    socket
+    |> assign(:members_role, role)
+    |> assign(:members_pagination, default_pagination(@members_page_size))
+  end
+
   defp needs_values?(group, active_tab) do
     group.parent_id != nil and active_tab == "values"
   end
@@ -7054,12 +7099,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp child_group_direct_filter("direct"), do: true
   defp child_group_direct_filter("other"), do: false
   defp child_group_direct_filter(_), do: false
-
-  defp default_active_tab(%Group{is_root: true}), do: "sub_groups"
-  defp default_active_tab(%Group{is_direct: true}), do: "values"
-  defp default_active_tab(%Group{home_page: :chat}), do: "values"
-  defp default_active_tab(%Group{home_page: :subgroups}), do: "sub_groups"
-  defp default_active_tab(%Group{}), do: "group_home"
 
   # The count is only loaded for profiles that manage access requests.
   defp group_tab_path(%Group{} = group, tab, opts) do
@@ -7139,67 +7178,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp delete_group_redirect_path(nil), do: ~p"/groups"
   defp delete_group_redirect_path(parent_id), do: ~p"/groups/#{parent_id}"
 
-  defp normalize_active_tab(tab, _group, _access)
-       when tab in ["values", "sub_groups", "members", "group_home"],
-       do: tab
+  # The rules live in `PageRules`, where the access overview asks them too.
+  defp normalize_active_tab(tab, group, %Access{} = access),
+    do: PageRules.tab(tab, group, access, PageRules.lazy_facts(group))
 
-  defp normalize_active_tab("roles", %Group{is_direct: false}, %Access{member?: true}),
-    do: "roles"
+  defp calendar_tab?(group, access),
+    do: PageRules.calendar?(group, access, PageRules.lazy_facts(group))
 
-  # In the root group, the events of every group the profile is in.
-  defp normalize_active_tab("calendar", group, %Access{} = access) do
-    if calendar_tab?(group, access), do: "calendar", else: default_active_tab(group)
-  end
-
-  # In the root group, every group with a place the profile sees.
-  defp normalize_active_tab("map", %Group{is_root: true}, _access), do: "map"
-
-  defp normalize_active_tab("polls", group, %Access{} = access) do
-    if polls_tab?(group, access), do: "polls", else: default_active_tab(group)
-  end
-
-  defp normalize_active_tab("processes", group, %Access{} = access) do
-    if ProcessesState.available?(group, access), do: "processes", else: default_active_tab(group)
-  end
-
-  defp normalize_active_tab("files", %Group{parent_id: parent_id}, %Access{member?: true})
-       when not is_nil(parent_id),
-       do: "files"
-
-  defp normalize_active_tab(tab, group, %Access{} = access)
-       when tab in ["create_group", "invite_profile", "edit_group"] do
-    if Access.can?(access, tab_permission(tab)), do: tab, else: default_active_tab(group)
-  end
-
-  # Everyone who sees a group reads its notices; Show only mounts such groups.
-  defp normalize_active_tab("notices", group, _access) do
-    if Notices.followable?(group), do: "notices", else: default_active_tab(group)
-  end
-
-  defp normalize_active_tab(_, group, _access), do: default_active_tab(group)
-
-  # Members have the calendar; those who are not see the public events of a
-  # public group in it, when it has some.
-  defp calendar_tab?(_group, %Access{member?: true}), do: true
-
-  defp calendar_tab?(%Group{is_public: true, is_root: false} = group, _access),
-    do: Events.public_events?(group)
-
-  defp calendar_tab?(_group, _access), do: false
-
-  # Members have the overview, in the root of all their groups; those who are not
-  # see the public polls of a public group in it, when it has some. Direct
-  # conversations have no roles to give a poll its rules.
-  defp polls_tab?(%Group{is_direct: true}, _access), do: false
-  defp polls_tab?(_group, %Access{member?: true}), do: true
-  defp polls_tab?(%Group{} = group, _access), do: Polls.public_polls?(group)
-
-  # A sixth section does not fit every phone, so a group has it once it has a
-  # poll. Until then the group's menu leads there. The root has no bar.
-  defp polls_section?(%Group{is_root: true}, _access), do: false
-  defp polls_section?(%Group{is_direct: true}, _access), do: false
-  defp polls_section?(group, %Access{member?: true}), do: Polls.any?(group)
-  defp polls_section?(group, _access), do: Polls.public_polls?(group)
+  defp polls_section?(group, access),
+    do: PageRules.polls_section?(group, access, PageRules.lazy_facts(group))
 
   # A changed poll leaves a section that is there as it is; a new or deleted
   # one may make or take it, asked a moment later.
@@ -7210,10 +7197,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
     do: schedule_refresh(socket, :polls_section)
 
   defp refresh_polls_section(socket, _message), do: socket
-
-  defp tab_permission("create_group"), do: :create_subgroups
-  defp tab_permission("invite_profile"), do: :invite_members
-  defp tab_permission("edit_group"), do: :edit_group
 
   defp root_kind_class(active?) do
     [
@@ -7308,9 +7291,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
-  defp can_view_group?(group, is_member) do
-    group.is_public or is_member
-  end
+  defp can_view_group?(group, is_member),
+    do: PageRules.sees_group?(group, %Access{member?: is_member})
 
   # Links to a public event in its group's calendar (push notifications,
   # calendar files) open it in the root calendar for those who are no

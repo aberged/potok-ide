@@ -6039,16 +6039,43 @@ defmodule PotokIde.Social do
       where: gm.group_id == ^group.id and p.kind == :person,
       order_by: [asc: p.username]
     )
+    |> holding_role(opts[:role])
     |> maybe_paginate(opts)
     |> Repo.all()
+  end
+
+  # Members who hold the role in the group, through the parent too. Everyone
+  # is every member, as it is never stored.
+  defp holding_role(query, role_key) when role_key in [nil, "everyone"], do: query
+
+  defp holding_role(query, role_key) when is_binary(role_key) do
+    from([p, gm] in query,
+      join: r in GroupMemberRole,
+      on: r.group_id == gm.group_id and r.profile_id == gm.profile_id and r.role_key == ^role_key
+    )
   end
 
   @doc """
   How many people belong to the group: the column Postgres keeps
   (`Group.member_count`), read again, as a struct in hand may be older. The
-  root keeps 0 there, so its people are counted.
+  root keeps 0 there, so its people are counted. With `role:`, only those who
+  hold that role are counted.
   """
-  def count_group_members(%Group{is_root: true} = group) do
+  def count_group_members(group, opts \\ [])
+
+  def count_group_members(%Group{} = group, role: role_key)
+      when is_binary(role_key) and role_key != "everyone" do
+    from(p in Profile,
+      join: gm in GroupMembership,
+      on: gm.profile_id == p.id,
+      where: gm.group_id == ^group.id and p.kind == :person,
+      select: count(gm.profile_id)
+    )
+    |> holding_role(role_key)
+    |> Repo.one()
+  end
+
+  def count_group_members(%Group{is_root: true} = group, _opts) do
     from(gm in GroupMembership,
       join: p in Profile,
       on: p.id == gm.profile_id,
@@ -6058,7 +6085,7 @@ defmodule PotokIde.Social do
     |> Repo.one()
   end
 
-  def count_group_members(%Group{id: group_id}) do
+  def count_group_members(%Group{id: group_id}, _opts) do
     from(g in Group, where: g.id == ^group_id, select: g.member_count)
     |> Repo.one()
     |> Kernel.||(0)
