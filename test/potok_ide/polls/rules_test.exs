@@ -132,6 +132,32 @@ defmodule PotokIde.Polls.RulesTest do
       public = poll(is_public: true)
       assert Rules.vote_block(public, public_group(), outsider(), nil, @now) == :not_permitted
     end
+
+    test "only the kinds of profile the poll takes" do
+      no_unique = poll(unique_votes: :no)
+      assert Rules.vote_block(no_unique, group(), member(), profile(), @now) == :not_your_kind
+      assert Rules.vote_block(no_unique, group(), member(), profile(), @now, :shared) == nil
+
+      no_shared = poll(shared_votes: :no)
+
+      assert Rules.vote_block(no_shared, group(), member(), profile(), @now, :shared) ==
+               :not_your_kind
+
+      assert Rules.vote_block(no_shared, group(), member(), profile(), @now, :unique) == nil
+
+      public = poll(is_public: true, shared_votes: :no)
+
+      assert Rules.vote_block(public, public_group(), outsider(), profile(), @now, :shared) ==
+               :not_your_kind
+    end
+
+    test "a reason of roles or of the end comes before the kind of profile" do
+      poll = poll(unique_votes: :no, voter_role_keys: ["board"])
+      assert Rules.vote_block(poll, group(), member(), profile(), @now) == :role
+
+      assert Rules.vote_block(closed(unique_votes: :no), group(), member(), profile(), @now) ==
+               :closed
+    end
   end
 
   describe "who manages" do

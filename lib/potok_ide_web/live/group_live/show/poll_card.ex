@@ -549,7 +549,10 @@ defmodule PotokIdeWeb.GroupLive.Show.PollCard do
   attr :details_path, :string, default: nil
 
   defp notes(assigns) do
-    assigns = assign(assigns, :note, standing_note(assigns.view))
+    assigns =
+      assigns
+      |> assign(:note, standing_note(assigns.view))
+      |> assign(:kinds, voter_kinds(assigns.view))
 
     ~H"""
     <p :if={@note} class={["mt-2 text-xs", muted(@mine)]}>{@note}</p>
@@ -587,8 +590,31 @@ defmodule PotokIdeWeb.GroupLive.Show.PollCard do
       />
       <span class="min-w-0">{who_sees(@view)}</span>
     </p>
+    <p
+      :if={@kinds}
+      id={"#{@id}-voter-kinds"}
+      class={["mt-1 flex items-start gap-1.5 text-xs", muted(@mine)]}
+    >
+      <.icon name="hero-user-group" class="mt-px size-3.5 shrink-0" />
+      <span class="min-w-0">{@kinds}</span>
+    </p>
     """
   end
+
+  # Who votes by the kind of profile, when it is not as always.
+  defp voter_kinds(%View{unique_votes: :yes, shared_votes: :each_holder}),
+    do: dgettext("polls", "Each holder of a shared profile votes through it as themself.")
+
+  defp voter_kinds(%View{unique_votes: :yes, shared_votes: :no}),
+    do: dgettext("polls", "Only unique profiles vote; shared profiles do not.")
+
+  defp voter_kinds(%View{unique_votes: :no, shared_votes: :as_one}),
+    do: dgettext("polls", "Only shared profiles vote, once for all who hold each.")
+
+  defp voter_kinds(%View{unique_votes: :no, shared_votes: :each_holder}),
+    do: dgettext("polls", "Only shared profiles vote, each of their holders separately.")
+
+  defp voter_kinds(%View{}), do: nil
 
   # What stands between the viewer and a vote, or what has become of it.
   defp standing_note(%View{voted_with_other_profile?: true}),
@@ -605,6 +631,12 @@ defmodule PotokIdeWeb.GroupLive.Show.PollCard do
   defp standing_note(%View{vote_block: :role} = view) do
     dgettext("polls", "Only these vote: %{roles}.", roles: role_names(view.voter_roles))
   end
+
+  defp standing_note(%View{vote_block: :not_your_kind, unique_votes: :no}),
+    do: dgettext("polls", "Only shared profiles vote in this poll.")
+
+  defp standing_note(%View{vote_block: :not_your_kind}),
+    do: dgettext("polls", "Shared profiles do not vote in this poll.")
 
   defp standing_note(%View{vote_block: :not_permitted}),
     do: dgettext("polls", "Your roles do not allow voting.")

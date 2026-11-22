@@ -123,6 +123,12 @@ msgstr ""
 msgid "pick who votes"
 msgstr ""
 
+msgid "somebody has to vote"
+msgstr ""
+
+msgid "is held by several accounts"
+msgstr ""
+
 msgid "does not match the start date"
 msgstr ""
 

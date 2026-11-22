@@ -497,6 +497,8 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("Poll", "remind_at"), do: dgettext("domain_map", "reminder is due at")
   defp own_field("Poll", "last_nudged_at"), do: dgettext("domain_map", "last reminder by hand")
   defp own_field("Poll", "voter_role_keys"), do: dgettext("domain_map", "roles that vote")
+  defp own_field("Poll", "unique_votes"), do: dgettext("domain_map", "unique profiles vote")
+  defp own_field("Poll", "shared_votes"), do: dgettext("domain_map", "how shared profiles vote")
 
   defp own_field("Poll", "results_role_keys"),
     do: dgettext("domain_map", "roles that see results")
@@ -544,6 +546,9 @@ defmodule PotokIdeWeb.DomainCopy do
 
   defp own_field("PollBallot", "option_ids"), do: dgettext("domain_map", "chosen answers")
   defp own_field("PollBallot", "changed_at"), do: dgettext("domain_map", "vote changed at")
+
+  defp own_field("PollBallot", "by_holder"),
+    do: dgettext("domain_map", "one holder of a shared profile")
 
   defp own_field("MemberSetting", "reminder_minutes"), do: dgettext("domain_map", "own reminders")
 
@@ -1108,6 +1113,10 @@ defmodule PotokIdeWeb.DomainCopy do
       "domain_map",
       "A secret poll takes no change of a vote and no answers from members, and shows results only at the end."
     )
+  end
+
+  def check_text("polls_votes_check") do
+    dgettext("domain_map", "Somebody votes: unique profiles, shared ones, or both.")
   end
 
   def check_text("poll_options_votes_count_check") do

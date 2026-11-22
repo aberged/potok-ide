@@ -7,7 +7,8 @@ defmodule PotokIde.Polls.Stats do
   A secret poll has no answers on its ballots, so all of this stops at who took
   part. Lists go by profile: one that could not vote, as its account voted with
   another profile, stays among those who have not voted, as leaving it out would
-  tie the two profiles together.
+  tie the two profiles together. A shared profile whose holders each vote
+  shows once among those who voted, and once at each answer they chose.
   """
 
   import Ecto.Query
@@ -29,13 +30,14 @@ defmodule PotokIde.Polls.Stats do
   def details(%Poll{} = poll, %Group{} = group, time_zone) do
     ballots = ballots(poll)
     members = Access.for_members(group)
-    eligible_ids = Polls.eligible_profile_ids(poll, group)
+    eligible_ids = poll |> Polls.voting_profiles(group) |> Enum.map(&elem(&1, 0))
     voted_ids = MapSet.new(ballots, & &1.profile_id)
 
     %{
       voters: poll.voters_count,
       eligible: poll.eligible_count || Polls.eligible_count(poll, group),
-      voters_list: ballots |> Enum.map(& &1.profile) |> Enum.reject(&is_nil/1),
+      voters_list:
+        ballots |> Enum.map(& &1.profile) |> Enum.reject(&is_nil/1) |> Enum.uniq_by(& &1.id),
       not_voted: not_voted(eligible_ids, voted_ids),
       by_option: by_option(poll, ballots),
       by_role: by_role(poll, group, ballots, members),
@@ -67,6 +69,7 @@ defmodule PotokIde.Polls.Stats do
       voters =
         for %PollBallot{profile: %Profile{} = profile, option_ids: option_ids} <- ballots,
             option.id in option_ids,
+            uniq: true,
             do: profile
 
       {option.id, voters}

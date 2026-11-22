@@ -13,6 +13,10 @@ defmodule PotokIde.Polls.Rules do
 
   Those who see the details see the choices, so they see the results too, except
   in a secret poll, whose details hold no choices.
+
+  On top of that the poll may leave out unique or shared profiles
+  (`Poll.unique_votes`, `Poll.shared_votes`): `kind` is the voter's, from
+  `PotokIde.Social.Identity.kind/1`.
   """
 
   alias PotokIde.Polls.{Poll, PollBallot, View}
@@ -41,18 +45,32 @@ defmodule PotokIde.Polls.Rules do
   defp owner?(%Poll{creator_id: creator_id}, %Profile{id: id}), do: creator_id == id
   defp owner?(%Poll{}, nil), do: false
 
-  @doc "Why `profile` cannot vote in the poll at `now`, or nil when it can."
-  def vote_block(%Poll{} = poll, %Group{} = group, %Access{} = access, profile, %DateTime{} = now) do
+  @doc """
+  Why `profile`, a profile of `kind` (`:unique` or `:shared`), cannot vote in
+  the poll at `now`, or nil when it can.
+  """
+  def vote_block(
+        %Poll{} = poll,
+        %Group{} = group,
+        %Access{} = access,
+        profile,
+        %DateTime{} = now,
+        kind \\ :unique
+      ) do
     cond do
       is_nil(profile) -> :not_permitted
       not Poll.open?(poll, now) -> :closed
-      access.member? -> member_vote_block(poll, access)
+      access.member? -> member_vote_block(poll, access) || kind_vote_block(poll, kind)
       access.blocked? -> :blocked
       not public?(poll, group) -> :members_only
       not Access.everyone_can?(access, :vote_polls) -> :not_permitted
-      true -> nil
+      true -> kind_vote_block(poll, kind)
     end
   end
+
+  defp kind_vote_block(%Poll{unique_votes: :no}, :unique), do: :not_your_kind
+  defp kind_vote_block(%Poll{shared_votes: :no}, :shared), do: :not_your_kind
+  defp kind_vote_block(%Poll{}, _kind), do: nil
 
   defp member_vote_block(%Poll{} = poll, %Access{} = access) do
     cond do
@@ -108,8 +126,9 @@ defmodule PotokIde.Polls.Rules do
   defp on_list?(keys, %Access{role_keys: role_keys}), do: Enum.any?(keys, &(&1 in role_keys))
 
   @doc """
-  The poll as `profile` sees it at `now`. `ballot` is its own ballot, and
-  `other_ballot` the one its account gave with another of its profiles.
+  The poll as `profile`, a profile of `kind`, sees it at `now`. `ballot` is
+  its own ballot, and `other_ballot` the one its account gave with another of
+  its profiles.
   """
   def view(
         %Poll{} = poll,
@@ -118,10 +137,11 @@ defmodule PotokIde.Polls.Rules do
         profile,
         ballot,
         other_ballot,
-        now
+        now,
+        kind \\ :unique
       ) do
     voted? = match?(%PollBallot{}, ballot)
-    vote_block = vote_block(poll, group, access, profile, now)
+    vote_block = vote_block(poll, group, access, profile, now, kind)
     results? = results?(poll, group, access, profile, voted?, now)
     my_option_ids = if voted?, do: ballot.option_ids, else: []
 
@@ -158,6 +178,8 @@ defmodule PotokIde.Polls.Rules do
       eligible_count: if(results?, do: poll.eligible_count),
       quorum_percent: poll.quorum_percent,
       majority: poll.majority,
+      unique_votes: poll.unique_votes,
+      shared_votes: poll.shared_votes,
       form_key: form_key(poll, my_option_ids, can_vote?),
       options: Enum.map(poll.options, &option(&1, results?, my_option_ids)),
       removable_option_ids: removable_option_ids(poll, access, profile),

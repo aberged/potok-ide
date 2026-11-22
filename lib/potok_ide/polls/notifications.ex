@@ -123,12 +123,15 @@ defmodule PotokIde.Polls.Notifications do
     end)
   end
 
+  # Through the profiles that may vote, so that a kind of profile the poll
+  # leaves out reminds nobody. One holder's vote through a shared profile
+  # leaves its other holders to be reminded.
   defp not_voted_account_ids(%Poll{} = poll, %Group{} = group) do
-    profile_ids = Polls.eligible_profile_ids(poll, group)
+    profile_ids = poll |> Polls.voting_profiles(group) |> Enum.map(&elem(&1, 0))
 
     voted_profiles =
       from(b in PollBallot,
-        where: b.poll_id == ^poll.id and not is_nil(b.profile_id),
+        where: b.poll_id == ^poll.id and not is_nil(b.profile_id) and not b.by_holder,
         select: b.profile_id
       )
 

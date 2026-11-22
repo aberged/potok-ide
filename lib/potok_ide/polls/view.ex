@@ -38,6 +38,9 @@ defmodule PotokIde.Polls.View do
     :eligible_count,
     :quorum_percent,
     :majority,
+    # Who votes by the kind of profile (`PotokIde.Polls.Poll`).
+    :unique_votes,
+    :shared_votes,
     :form_key,
     # What the decision changes (`PotokIde.Polls.Effects`), or nil.
     :effect,

@@ -139,6 +139,32 @@ defmodule PotokIde.Processes.PollTaskTest do
                )
     end
 
+    test "says how each kind of profile votes, and keeps it only when not as always" do
+      assert {:ok, %{"nodes" => [_start, kept, _end]}} =
+               Graph.normalize(
+                 chain([poll("glas", %{"unique" => "no", "shared" => "each_holder"})]),
+                 drawn: true
+               )
+
+      assert {kept["unique"], kept["shared"]} == {"no", "each_holder"}
+
+      assert {:ok, %{"nodes" => [_start, plain, _end]}} =
+               Graph.normalize(chain([poll("glas", %{"unique" => "yes", "shared" => "as_one"})]),
+                 drawn: true
+               )
+
+      refute Map.has_key?(plain, "unique")
+      refute Map.has_key?(plain, "shared")
+
+      assert {:error, {"nodes.1.shared", :no_voters}} =
+               Graph.normalize(chain([poll("glas", %{"unique" => "no", "shared" => "no"})]),
+                 drawn: true
+               )
+
+      assert {:error, {"nodes.1.shared", :invalid}} =
+               Graph.normalize(chain([poll("glas", %{"shared" => "twice"})]), drawn: true)
+    end
+
     test "only a drawing of today puts a poll" do
       first = chain([poll("glas")]) |> Map.delete("v")
       assert {:error, {"nodes.1.type", :invalid}} = Graph.normalize(first, drawn: true)
@@ -181,6 +207,15 @@ defmodule PotokIde.Processes.PollTaskTest do
 
     assert %{"glas" => %{"passed" => true, "applied" => true}} =
              Repo.get!(ValueProcess, instance.id).results
+  end
+
+  test "the poll a process puts takes the kinds of profile its step says", ctx do
+    row = drawn!(ctx, chain([poll("glas", %{"shared" => "no"})]))
+
+    {:ok, instance} = DrawnProcesses.start(ctx.member, ctx.group, row.id, %{"title" => "Molba"})
+    Engine.run(instance.id)
+
+    assert %Poll{unique_votes: :yes, shared_votes: :no} = the_poll(instance)
   end
 
   test "a decision that does not pass gives nothing, and the run goes on", ctx do

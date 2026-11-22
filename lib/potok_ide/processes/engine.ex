@@ -1446,6 +1446,8 @@ defmodule PotokIde.Processes.Engine do
       "majority" => task["majority"],
       "quorum_percent" => task["quorum"] && to_string(task["quorum"]),
       "secret" => to_string(task["secret"] == true),
+      "unique_votes" => task["unique"] || "yes",
+      "shared_votes" => task["shared"] || "as_one",
       "closes_local" => closes_local
     }
 

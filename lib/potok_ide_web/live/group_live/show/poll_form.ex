@@ -739,6 +739,34 @@ defmodule PotokIdeWeb.GroupLive.Show.PollForm do
           legend={dgettext("polls", "Who votes")}
         />
 
+        <div id="poll-form-voter-kinds" class="grid gap-x-3 sm:grid-cols-2">
+          <.input
+            field={@form[:unique_votes]}
+            type="select"
+            label={dgettext("polls", "Unique profiles")}
+            options={[
+              {dgettext("polls", "Vote, one vote per account"), :yes},
+              {dgettext("polls", "Do not vote"), :no}
+            ]}
+          />
+          <.input
+            field={@form[:shared_votes]}
+            type="select"
+            label={dgettext("polls", "Shared profiles")}
+            options={[
+              {dgettext("polls", "One vote for all who hold it"), :as_one},
+              {dgettext("polls", "Each holder votes separately"), :each_holder},
+              {dgettext("polls", "Do not vote"), :no}
+            ]}
+          />
+          <p class="-mt-1 mb-2 text-xs text-base-content/65 sm:col-span-2">
+            {dgettext(
+              "polls",
+              "A shared profile is one that several accounts hold; held by one, it votes as that person. Whoever votes through a shared profile for themself does not vote again with another profile."
+            )}
+          </p>
+        </div>
+
         <.role_picker
           id="poll-form-results"
           field={@form[:results_role_keys]}

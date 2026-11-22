@@ -5,8 +5,10 @@ defmodule PotokIde.Polls.PollBallot do
   choice is the count in `PotokIde.Polls.PollOption`.
 
   `account_id` keeps one account to one vote, whichever of its profiles votes.
-  A profile several accounts share votes on its own and leaves it nil. Lists of
-  voters go by profile only, as the account is what ties two profiles together.
+  A profile several accounts share votes on its own and leaves it nil, unless
+  the poll lets each of its holders vote (`by_holder`): then every holder's
+  ballot names the profile and that holder's account. Lists of voters go by
+  profile only, as the account is what ties two profiles together.
   """
 
   use Ecto.Schema
@@ -15,6 +17,8 @@ defmodule PotokIde.Polls.PollBallot do
     field :option_ids, {:array, :integer}, default: []
     # When the voter last changed the vote.
     field :changed_at, :utc_datetime
+    # One holder's ballot through a shared profile (`Poll.shared_votes`).
+    field :by_holder, :boolean, default: false
 
     belongs_to :poll, PotokIde.Polls.Poll
     belongs_to :profile, PotokIde.Social.Profile

@@ -642,7 +642,8 @@ defmodule PotokIde.Processes.GraphEdit do
   defp editable_keys(%{"type" => "formTask"}), do: ~w(label by role entity intro values)
 
   defp editable_keys(%{"type" => "pollTask"}),
-    do: ~w(label question description answers duration majority quorum secret effect role who)
+    do:
+      ~w(label question description answers duration majority quorum secret unique shared effect role who)
 
   defp editable_keys(%{"type" => "timer"}), do: ~w(label duration)
   defp editable_keys(%{"type" => "callActivity"}), do: ~w(label process wait fields)

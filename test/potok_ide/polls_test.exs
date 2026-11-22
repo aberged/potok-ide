@@ -566,6 +566,247 @@ defmodule PotokIde.PollsTest do
     end
   end
 
+  describe "who votes by the kind of profile" do
+    # The member's second profile, shared with the owner's account: two
+    # people behind one mask, each with a profile of their own too.
+    setup %{member_account: account, owner_account: owner_account, owner: owner, group: group} do
+      {:ok, second} =
+        Social.create_profile_for_account(account, %{
+          username: "p#{System.unique_integer([:positive])}",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :shared
+        })
+
+      share_profile!(second, owner_account)
+      add_member!(owner, group, second)
+      %{shared: second}
+    end
+
+    test "a poll takes them as always unless told otherwise", %{owner: owner, group: group} do
+      poll = create_poll!(owner, group)
+
+      assert poll.unique_votes == :yes
+      assert poll.shared_votes == :as_one
+      assert Poll.default_voters?(poll)
+    end
+
+    test "each holder of a shared profile may vote through it as themself", context do
+      %{owner: owner, owner_account: owner_account, member: member, group: group} = context
+      %{member_account: account, shared: shared} = context
+
+      poll = create_poll!(owner, group, %{"shared_votes" => "each_holder"})
+
+      vote!(shared, account, poll, 0)
+      assert %{voters_count: 2} = vote!(shared, owner_account, poll, 1)
+
+      assert [first, second] = poll |> ballots() |> Enum.sort_by(& &1.id)
+
+      assert {first.profile_id, first.account_id, first.by_holder} ==
+               {shared.id, account.id, true}
+
+      assert {second.profile_id, second.account_id} == {shared.id, owner_account.id}
+
+      # Each of them has voted, whichever profile they would use now.
+      assert {:error, :voted_with_other_profile} =
+               Polls.vote(member, account, poll, [hd(option_ids(poll))])
+
+      assert {:error, :voted_with_other_profile} =
+               Polls.vote(owner, owner_account, poll, [hd(option_ids(poll))])
+    end
+
+    test "one holder changes their own vote, not the other holder's", context do
+      %{owner: owner, owner_account: owner_account, group: group} = context
+      %{member_account: account, shared: shared} = context
+
+      poll = create_poll!(owner, group, %{"shared_votes" => "each_holder"})
+
+      vote!(shared, account, poll, 0)
+      vote!(shared, owner_account, poll, 0)
+      vote!(shared, account, poll, 1)
+
+      assert counts(poll) == [1, 1]
+      assert %{voters_count: 2} = Polls.get_poll(poll.id)
+    end
+
+    test "a holder who voted with their own profile does not vote again through it", context do
+      %{owner: owner, member: member, member_account: account, group: group, shared: shared} =
+        context
+
+      poll = create_poll!(owner, group, %{"shared_votes" => "each_holder"})
+
+      vote!(member, account, poll, 0)
+
+      assert {:error, :voted_with_other_profile} =
+               Polls.vote(shared, account, poll, [hd(option_ids(poll))])
+    end
+
+    test "a poll may leave shared profiles out", context do
+      %{owner: owner, member: member, member_account: account, group: group, shared: shared} =
+        context
+
+      poll = create_poll!(owner, group, %{"shared_votes" => "no"})
+
+      assert {:error, :not_your_kind} = Polls.vote(shared, account, poll, [hd(option_ids(poll))])
+      assert %{voters_count: 1} = vote!(member, account, poll, 0)
+    end
+
+    test "a poll may be for shared profiles only", context do
+      %{owner: owner, member: member, member_account: account, group: group, shared: shared} =
+        context
+
+      poll = create_poll!(owner, group, %{"unique_votes" => "no"})
+
+      assert {:error, :not_your_kind} = Polls.vote(member, account, poll, [hd(option_ids(poll))])
+      assert %{voters_count: 1} = vote!(shared, account, poll, 0)
+    end
+
+    test "a shared profile one account holds votes as that person", context do
+      %{owner: owner, group: group, shared: shared} = context
+      %{member_account: account, owner_account: owner_account} = context
+
+      Repo.delete_all(
+        from(ap in PotokIde.Social.AccountProfile,
+          where: ap.profile_id == ^shared.id and ap.account_id == ^owner_account.id
+        )
+      )
+
+      poll = create_poll!(owner, group, %{"shared_votes" => "no"})
+
+      assert %{voters_count: 1} = vote!(shared, account, poll, 0)
+    end
+
+    test "somebody has to vote", %{owner: owner, group: group} do
+      assert {:error, changeset} =
+               Polls.create_poll(
+                 owner,
+                 group,
+                 poll_attrs(%{"unique_votes" => "no", "shared_votes" => "no"}),
+                 @zone
+               )
+
+      assert "somebody has to vote" in errors_on(changeset).shared_votes
+    end
+
+    test "the view tells a left-out profile why", context do
+      %{owner: owner, member: member, member_account: account, group: group} = context
+
+      poll = create_poll!(owner, group, %{"unique_votes" => "no"})
+      access = PotokIde.Social.Access.for_profile(member, group)
+
+      view = Polls.views([poll], member, account, %{group.id => {group, access}})[poll.id]
+
+      assert view.vote_block == :not_your_kind
+      refute view.can_vote?
+      assert view.unique_votes == :no
+    end
+
+    test "those who may vote are counted by the poll's rule", %{owner: owner, group: group} do
+      count = fn attrs -> owner |> create_poll!(group, attrs) |> Polls.eligible_count(group) end
+
+      # The owner, the member, and their shared profile once.
+      assert count.(%{}) == 3
+      # Two people, each voting once, through any of their profiles.
+      assert count.(%{"shared_votes" => "each_holder"}) == 2
+      assert count.(%{"shared_votes" => "no"}) == 2
+      assert count.(%{"unique_votes" => "no"}) == 1
+      assert count.(%{"unique_votes" => "no", "shared_votes" => "each_holder"}) == 2
+    end
+
+    test "each holder's ballot stays when their accounts are gone", context do
+      %{owner: owner, owner_account: owner_account, group: group} = context
+      %{member_account: account, shared: shared} = context
+
+      poll = create_poll!(owner, group, %{"shared_votes" => "each_holder"})
+      vote!(shared, account, poll, 0)
+      vote!(shared, owner_account, poll, 1)
+
+      # What deleting both accounts does to the ballots.
+      assert {2, nil} =
+               Repo.update_all(from(b in PollBallot, where: b.poll_id == ^poll.id),
+                 set: [account_id: nil]
+               )
+
+      assert counts(poll) == [1, 1]
+    end
+
+    test "a reminder goes to the holder who has not voted through the shared profile", context do
+      %{owner: owner, owner_account: owner_account, group: group} = context
+      %{member_account: account, shared: shared} = context
+      capture_push_requests!()
+
+      poll =
+        create_poll!(owner, group, %{
+          "closes_local" => local_in(5),
+          "reminder_minutes" => "60",
+          "unique_votes" => "no",
+          "shared_votes" => "each_holder"
+        })
+
+      vote!(shared, account, poll, 0)
+
+      _voter = push_device!(account)
+      late = push_device!(owner_account)
+
+      Deadlines.send_due_reminders(DateTime.add(DateTime.utc_now(:second), 5, :hour))
+
+      assert pushed_endpoints() == [late]
+    end
+
+    test "the other holder still finds the poll waiting for them", context do
+      %{owner: owner, owner_account: owner_account, group: group} = context
+      %{member_account: account, shared: shared} = context
+
+      poll = create_poll!(owner, group, %{"shared_votes" => "each_holder"})
+      vote!(shared, account, poll, 0)
+
+      waiting = fn account ->
+        %{rows: rows} = Polls.overview(shared, account, {:groups, [group.id]}, status: :waiting)
+        Enum.map(rows, & &1.id)
+      end
+
+      assert waiting.(owner_account) == [poll.id]
+      assert waiting.(account) == []
+    end
+
+    test "the details name a shared profile once, however many of its holders voted", context do
+      %{owner: owner, owner_account: owner_account, group: group, member: member} = context
+      %{member_account: account, shared: shared} = context
+
+      poll = create_poll!(owner, group, %{"shared_votes" => "each_holder"})
+      vote!(shared, account, poll, 0)
+      vote!(shared, owner_account, poll, 0)
+
+      details = PotokIde.Polls.Stats.details(Polls.get_poll(poll.id), group, @zone)
+
+      assert Enum.map(details.voters_list, & &1.id) == [shared.id]
+      assert Enum.map(details.by_option[hd(option_ids(poll))], & &1.id) == [shared.id]
+      assert details.voters == 2
+      # Their own profiles are left among those who have not voted, as ever.
+      assert member.id in Enum.map(details.not_voted, & &1.id)
+    end
+
+    test "the details leave out a kind of profile the poll does not take", context do
+      %{owner: owner, group: group, shared: shared} = context
+
+      poll = create_poll!(owner, group, %{"shared_votes" => "no"})
+      details = PotokIde.Polls.Stats.details(Polls.get_poll(poll.id), group, @zone)
+
+      refute shared.id in Enum.map(details.not_voted, & &1.id)
+    end
+
+    test "a profile several accounts hold stays shared", %{
+      member_account: account,
+      shared: shared
+    } do
+      assert {:error, changeset} =
+               Social.update_profile_for_account(account, shared.id, %{sharing: :unique})
+
+      assert "is held by several accounts" in errors_on(changeset).sharing
+    end
+  end
+
   describe "a secret poll" do
     test "keeps no link between a voter and an answer", %{
       member: member,

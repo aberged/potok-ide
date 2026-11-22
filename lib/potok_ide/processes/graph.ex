@@ -93,7 +93,9 @@ defmodule PotokIde.Processes.Graph do
     it in (`prijava.author`).
   - `pollTask` puts a `question` to the vote of the group, for a
     `duration`, decided by a `majority` with a `quorum` (`secret` keeps who
-    voted for what), and waits for it to end. Its `effect` says what the
+    voted for what; `unique` and `shared` say whether unique profiles vote
+    and how shared ones do, as `PotokIde.Polls.Poll` has them), and waits for
+    it to end. Its `effect` says what the
     decision changes: `none` (with its `answers`), or `grant` and `revoke`
     of the `role` of the member `who` names, `starter` for whoever started
     the run or a text that gives a username (`PotokIde.Polls.Effects`).
@@ -153,6 +155,8 @@ defmodule PotokIde.Processes.Graph do
 
   # A poll a process puts to the vote.
   @poll_effects ~w(none grant revoke)
+  @poll_unique ~w(yes no)
+  @poll_shared ~w(as_one each_holder no)
   @poll_majorities ~w(none plurality simple two_thirds absolute)
   @effect_majorities ~w(simple two_thirds absolute)
   @max_poll_question 300
@@ -759,6 +763,7 @@ defmodule PotokIde.Processes.Graph do
          {:ok, majority} <- poll_majority(majority, effect, path <> ".majority"),
          {:ok, quorum} <- poll_quorum(node["quorum"], majority, effect, path <> ".quorum"),
          {:ok, secret} <- flag(Map.get(node, "secret", false), path <> ".secret"),
+         {:ok, unique, shared} <- poll_voters(node, path),
          {:ok, answers} <- poll_answers(effect, node["answers"], path <> ".answers"),
          {:ok, role} <- poll_role(effect, node["role"], path <> ".role"),
          {:ok, who} <- poll_who(effect, Map.get(node, "who") || "starter", path <> ".who") do
@@ -773,6 +778,8 @@ defmodule PotokIde.Processes.Graph do
        })
        |> put_some("description", description)
        |> put_some("quorum", quorum)
+       |> put_some("unique", unique)
+       |> put_some("shared", shared)
        |> put_some("answers", answers)
        |> put_some("role", role)
        |> put_some("who", who)}
@@ -847,6 +854,20 @@ defmodule PotokIde.Processes.Graph do
     if majority in @effect_majorities,
       do: {:ok, majority},
       else: {:error, {path, :effect_majority}}
+  end
+
+  # Who votes by the kind of profile; kept only where it is not as always,
+  # and somebody has to vote.
+  defp poll_voters(node, path) do
+    unique = Map.get(node, "unique") || "yes"
+    shared = Map.get(node, "shared") || "as_one"
+
+    cond do
+      unique not in @poll_unique -> {:error, {path <> ".unique", :invalid}}
+      shared not in @poll_shared -> {:error, {path <> ".shared", :invalid}}
+      unique == "no" and shared == "no" -> {:error, {path <> ".shared", :no_voters}}
+      true -> {:ok, if(unique != "yes", do: unique), if(shared != "as_one", do: shared)}
+    end
   end
 
   # A quorum goes with a decision, and a decision that changes a role has one.

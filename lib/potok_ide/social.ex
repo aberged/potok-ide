@@ -377,6 +377,7 @@ defmodule PotokIde.Social do
         profile
         |> load_picture()
         |> Profile.changeset(attrs)
+        |> keep_shared_while_held()
         |> Repo.update()
         |> case do
           {:ok, updated_profile} = ok ->
@@ -387,6 +388,21 @@ defmodule PotokIde.Social do
           error ->
             error
         end
+    end
+  end
+
+  # A profile several accounts hold stays shared: as a unique one each of
+  # them would vote through it on their own account (`Identity`).
+  defp keep_shared_while_held(%Ecto.Changeset{} = changeset) do
+    with :unique <- Ecto.Changeset.get_change(changeset, :sharing),
+         holders when holders > 1 <-
+           Repo.aggregate(
+             from(ap in AccountProfile, where: ap.profile_id == ^changeset.data.id),
+             :count
+           ) do
+      Ecto.Changeset.add_error(changeset, :sharing, "is held by several accounts")
+    else
+      _ -> changeset
     end
   end
 

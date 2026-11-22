@@ -19,6 +19,12 @@ defmodule PotokIde.Polls.Poll do
   A public poll also takes the votes of signed-in non-members of a public group.
   They are not anyone's to count, so it has no quorum or decision.
 
+  Who votes goes by the kind of profile too (`PotokIde.Social.Identity`):
+  unique profiles give one vote per account (`unique_votes`), and a profile
+  that several accounts share votes once for all of them, or each of its
+  holders votes as themself, or it does not vote (`shared_votes`). Somebody
+  always does.
+
   A decision may change roles (`effect`, see `PotokIde.Polls.Effects`), which
   voters read on the card before they vote. Such a poll is put to the whole
   group, takes one answer, is decided by a majority with a quorum and ends at
@@ -41,6 +47,8 @@ defmodule PotokIde.Polls.Poll do
   @reminder_choices [60, 1440]
   @effects [:grant, :revoke, :elect, :end_elections]
   @effect_statuses [:applied, :rejected, :not_a_member, :role_gone, :inherited_role, :last_admin]
+  @unique_votes [:yes, :no]
+  @shared_votes [:as_one, :each_holder, :no]
 
   @max_question 300
   @max_description 2000
@@ -67,7 +75,9 @@ defmodule PotokIde.Polls.Poll do
     :details_when,
     :quorum_percent,
     :majority,
-    :is_public
+    :is_public,
+    :unique_votes,
+    :shared_votes
   ]
 
   schema "polls" do
@@ -93,6 +103,11 @@ defmodule PotokIde.Polls.Poll do
     field :last_nudged_at, :utc_datetime
 
     field :voter_role_keys, {:array, :string}, default: ["everyone"]
+    # Whether unique profiles vote, one vote per account.
+    field :unique_votes, Ecto.Enum, values: @unique_votes, default: :yes
+    # How a profile several accounts share votes: once for all of them, each
+    # holder as themself, or not at all.
+    field :shared_votes, Ecto.Enum, values: @shared_votes, default: :as_one
     field :results_role_keys, {:array, :string}, default: ["everyone"]
     field :details_role_keys, {:array, :string}, default: []
     field :results_when, Ecto.Enum, values: @results_when, default: :voted
@@ -149,6 +164,12 @@ defmodule PotokIde.Polls.Poll do
   def max_options_with_members, do: @max_options_with_members
   def effects, do: @effects
   def effect_statuses, do: @effect_statuses
+  def unique_votes_values, do: @unique_votes
+  def shared_votes_values, do: @shared_votes
+
+  @doc "Whether the poll takes votes as it always did: unique profiles, and shared ones once each."
+  def default_voters?(%__MODULE__{unique_votes: :yes, shared_votes: :as_one}), do: true
+  def default_voters?(%__MODULE__{}), do: false
 
   @doc "Whether votes are taken at `now`. A vote checks this itself, so a deadline holds to the second."
   def open?(%__MODULE__{closed_at: closed_at}, _now) when not is_nil(closed_at), do: false
@@ -191,8 +212,10 @@ defmodule PotokIde.Polls.Poll do
     |> validate_number(:quorum_percent, greater_than_or_equal_to: 1, less_than_or_equal_to: 100)
     |> validate_inclusion(:reminder_minutes, @reminder_choices)
     |> validate_voters()
+    |> validate_voter_kinds()
     |> put_deadline(time_zone)
     |> check_constraint(:secret, name: :polls_secret_check)
+    |> check_constraint(:shared_votes, name: :polls_votes_check)
     |> check_constraint(:max_choices, name: :polls_max_choices_check)
     |> check_constraint(:quorum_percent, name: :polls_quorum_percent_check)
   end
@@ -359,6 +382,12 @@ defmodule PotokIde.Polls.Poll do
     validate_change(changeset, :voter_role_keys, fn :voter_role_keys, keys ->
       if keys == [], do: [voter_role_keys: "pick who votes"], else: []
     end)
+  end
+
+  defp validate_voter_kinds(changeset) do
+    if get_field(changeset, :unique_votes) == :no and get_field(changeset, :shared_votes) == :no,
+      do: add_error(changeset, :shared_votes, "somebody has to vote"),
+      else: changeset
   end
 
   defp validate_unique_options(changeset) do

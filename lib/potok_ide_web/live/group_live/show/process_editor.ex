@@ -2389,6 +2389,29 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
         phx-debounce="400"
       />
       <.input field={@form[:secret]} type="checkbox" label={gettext("Secret poll")} />
+      <div id="process-poll-voter-kinds" class="grid gap-x-3 sm:grid-cols-2">
+        <.input
+          id="process-poll-unique"
+          field={@form[:unique]}
+          type="select"
+          label={gettext("Unique profiles")}
+          options={[
+            {gettext("Vote, one vote per account"), "yes"},
+            {gettext("Do not vote"), "no"}
+          ]}
+        />
+        <.input
+          id="process-poll-shared"
+          field={@form[:shared]}
+          type="select"
+          label={gettext("Shared profiles")}
+          options={[
+            {gettext("One vote for all who hold it"), "as_one"},
+            {gettext("Each holder votes separately"), "each_holder"},
+            {gettext("Do not vote"), "no"}
+          ]}
+        />
+      </div>
       <p id="process-poll-note" class="text-xs text-base-content/60">
         {if(@effect?,
           do:

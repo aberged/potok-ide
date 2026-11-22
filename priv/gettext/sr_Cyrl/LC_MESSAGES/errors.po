@@ -114,6 +114,12 @@ msgstr "има исти одговор два пута"
 msgid "pick who votes"
 msgstr "изабери ко гласа"
 
+msgid "somebody has to vote"
+msgstr "неко мора да гласа"
+
+msgid "is held by several accounts"
+msgstr "држи га више налога"
+
 msgid "does not match the start date"
 msgstr "не одговара датуму почетка"
 

@@ -162,17 +162,21 @@ defmodule PotokIde.Polls do
   defp before(query, nil), do: query
   defp before(query, id), do: where(query, [p], p.id < ^id)
 
+  # One holder's ballot through a shared profile leaves it to the others:
+  # the view then tells whose it is.
   defp without_my_ballot(query, :waiting, %Profile{id: profile_id}) do
     from([p] in query,
       left_join: b in PollBallot,
-      on: b.poll_id == p.id and b.profile_id == ^profile_id,
+      on: b.poll_id == p.id and b.profile_id == ^profile_id and not b.by_holder,
       where: is_nil(b.id)
     )
   end
 
   defp without_my_ballot(query, _status, _profile), do: query
 
-  defp keep_status(rows, :waiting), do: Enum.filter(rows, & &1.view.can_vote?)
+  defp keep_status(rows, :waiting),
+    do: Enum.filter(rows, &(&1.view.can_vote? and not &1.view.voted?))
+
   defp keep_status(rows, _status), do: rows
 
   defp contexts(polls, profile) do
@@ -197,37 +201,73 @@ defmodule PotokIde.Polls do
     end)
   end
 
-  def views(polls, %Profile{} = profile, account, contexts, now) do
-    account_id = ballot_account_id(profile, account)
-    ballots = ballots_of_viewer(polls, profile, account_id)
+  def views(polls, %Profile{} = profile, %Account{} = account, contexts, now) do
+    shared? = Identity.really_shared?(profile)
+    ballots = ballots_of_viewer(polls, profile, account.id)
 
     Map.new(polls, fn %Poll{} = poll ->
       {group, access} = Map.fetch!(contexts, poll.group_id)
-      {own, other} = split_ballots(Map.get(ballots, poll.id, []), profile)
+      voter = voter(poll, shared?, profile, account)
 
-      {poll.id, Rules.view(poll, group, access, profile, own, other, now)}
+      {own, other} =
+        ballots
+        |> Map.get(poll.id, [])
+        |> Enum.filter(&of_voter?(&1, profile, voter))
+        |> split_ballots(profile)
+
+      {poll.id, Rules.view(poll, group, access, profile, own, other, now, Identity.kind(shared?))}
     end)
   end
 
-  defp ballots_of_viewer(polls, profile, account_id) do
+  # Every ballot that could be the viewer's in any poll: each poll then keeps
+  # those its own rule makes the viewer's (`of_voter?/3`).
+  defp ballots_of_viewer(polls, %Profile{id: profile_id}, account_id) do
     case for %Poll{id: id, voters_count: count} <- polls, count > 0, do: id do
       [] ->
         %{}
 
       poll_ids ->
-        from(b in PollBallot, where: b.poll_id in ^poll_ids)
-        |> of_voter(profile, account_id)
+        from(b in PollBallot,
+          where:
+            b.poll_id in ^poll_ids and
+              (b.profile_id == ^profile_id or b.account_id == ^account_id)
+        )
         |> Repo.all()
         |> Enum.group_by(& &1.poll_id)
     end
   end
 
-  defp of_voter(query, %Profile{id: profile_id}, nil),
+  # Who the vote of `profile` counts as in the poll (`Identity.voter/5`).
+  defp voter(%Poll{} = poll, shared?, %Profile{} = profile, %Account{id: account_id}),
+    do: Identity.voter(shared?, profile, account_id, poll.unique_votes, poll.shared_votes)
+
+  # The ballots that stand in the way of `voter`'s vote, or are its own: those
+  # of its account, whichever profile gave them, and its profile's own. A
+  # shared profile that votes once has only its own, and one holder of it only
+  # those of their account, not the other holders'.
+  defp of_voter(query, %Profile{id: profile_id}, {:account, account_id}),
+    do: where(query, [b], b.profile_id == ^profile_id or b.account_id == ^account_id)
+
+  defp of_voter(query, %Profile{id: profile_id}, {:profile, _id}),
     do: where(query, [b], b.profile_id == ^profile_id)
 
-  defp of_voter(query, %Profile{id: profile_id}, account_id) do
-    where(query, [b], b.profile_id == ^profile_id or b.account_id == ^account_id)
-  end
+  defp of_voter(query, %Profile{}, {:each_holder, account_id}),
+    do: where(query, [b], b.account_id == ^account_id)
+
+  defp of_voter(query, %Profile{id: profile_id}, :excluded),
+    do: where(query, [b], b.profile_id == ^profile_id)
+
+  defp of_voter?(%PollBallot{} = b, %Profile{id: profile_id}, {:account, account_id}),
+    do: b.profile_id == profile_id or b.account_id == account_id
+
+  defp of_voter?(%PollBallot{} = b, %Profile{id: profile_id}, {:profile, _id}),
+    do: b.profile_id == profile_id
+
+  defp of_voter?(%PollBallot{} = b, %Profile{}, {:each_holder, account_id}),
+    do: b.account_id == account_id
+
+  defp of_voter?(%PollBallot{} = b, %Profile{id: profile_id}, :excluded),
+    do: b.profile_id == profile_id
 
   defp split_ballots(ballots, %Profile{id: profile_id}) do
     own = Enum.find(ballots, &(&1.profile_id == profile_id))
@@ -516,20 +556,21 @@ defmodule PotokIde.Polls do
 
   @doc """
   Records the vote of `profile`, of `account`, for `option_ids`, and returns the
-  poll. One account gives one vote, whichever of its profiles it uses; a poll
-  that allows it takes a new vote in place of the old one.
+  poll. One account gives one vote, whichever of its profiles it uses, and a
+  shared profile votes as the poll says (`Identity.voter/5`); a poll that
+  allows it takes a new vote in place of the old one.
   """
   def vote(%Profile{} = profile, %Account{} = account, %Poll{id: poll_id}, option_ids)
       when is_list(option_ids) do
     now = DateTime.utc_now(:second)
-    account_id = ballot_account_id(profile, account)
+    shared? = Identity.really_shared?(profile)
 
     Repo.transaction(fn ->
       poll = Repo.one(locked_poll(poll_id)) || Repo.rollback(:not_found)
       group = Repo.get!(Group, poll.group_id)
       access = Access.for_profile(profile, group)
 
-      case Rules.vote_block(poll, group, access, profile, now) do
+      case Rules.vote_block(poll, group, access, profile, now, Identity.kind(shared?)) do
         nil -> :ok
         reason -> Repo.rollback(reason)
       end
@@ -538,14 +579,15 @@ defmodule PotokIde.Polls do
         do: Repo.rollback(:rate_limited)
 
       option_ids = checked_choice(poll, option_ids)
+      voter = voter(poll, shared?, profile, account)
 
       ballots =
         from(b in PollBallot, where: b.poll_id == ^poll.id)
-        |> of_voter(profile, account_id)
+        |> of_voter(profile, voter)
         |> Repo.all()
 
       case split_ballots(ballots, profile) do
-        {nil, nil} -> first_vote(poll, profile, account_id, option_ids, now)
+        {nil, nil} -> first_vote(poll, profile, voter, option_ids, now)
         {nil, _other} -> Repo.rollback(:voted_with_other_profile)
         {ballot, _} -> change_vote(poll, ballot, option_ids, now)
       end
@@ -564,11 +606,12 @@ defmodule PotokIde.Polls do
   end
 
   # Nothing that can be read back may tie a voter to an answer in a secret poll.
-  defp first_vote(%Poll{} = poll, profile, account_id, option_ids, now) do
+  defp first_vote(%Poll{} = poll, profile, voter, option_ids, now) do
     Repo.insert!(%PollBallot{
       poll_id: poll.id,
       profile_id: profile.id,
-      account_id: account_id,
+      account_id: ballot_account_id(voter),
+      by_holder: match?({:each_holder, _}, voter),
       option_ids: if(poll.secret, do: [], else: option_ids),
       inserted_at: now
     })
@@ -667,19 +710,23 @@ defmodule PotokIde.Polls do
   end
 
   # The account a ballot counts against: none for a profile that several accounts
-  # really share, which votes for all of them. Forms answer by the same rule.
-  defp ballot_account_id(%Profile{} = profile, %Account{} = account),
-    do: Identity.counted_account_id(profile, account)
+  # really share and that votes for all of them. Forms answer by the same rule.
+  defp ballot_account_id({:account, account_id}), do: account_id
+  defp ballot_account_id({:each_holder, account_id}), do: account_id
+  defp ballot_account_id({:profile, _profile_id}), do: nil
 
   @doc """
   Adds an answer of a member to an open poll that allows it. It takes the next
   place, and the same words in any letter case are refused.
   """
   def add_option(%Profile{} = profile, %Poll{} = poll, attrs) do
+    kind = Identity.kind(Identity.really_shared?(profile))
+
     with_locked_poll(poll, profile, fn locked, group, access ->
       locked = Repo.preload(locked, :options)
-      vote_block = Rules.vote_block(locked, group, access, profile, DateTime.utc_now(:second))
-      view = Rules.view(locked, group, access, profile, nil, nil, DateTime.utc_now(:second))
+      now = DateTime.utc_now(:second)
+      vote_block = Rules.vote_block(locked, group, access, profile, now, kind)
+      view = Rules.view(locked, group, access, profile, nil, nil, now, kind)
 
       if not is_nil(vote_block) or not view.can_add_option? do
         {:error, :not_permitted}
@@ -964,32 +1011,49 @@ defmodule PotokIde.Polls do
   end
 
   @doc """
-  How many may vote: people, not profiles, as one account votes once, and each
-  shared profile as one. nil for a public poll, where anyone may.
+  The members who may vote in the poll, by their roles and by the kinds of
+  profile it takes, each with what its vote counts as
+  (`Identity.counted_voters/5`): `[{profile_id, counted}]`.
   """
-  def eligible_count(%Poll{is_public: true}, %Group{}), do: nil
-
-  def eligible_count(%Poll{} = poll, %Group{} = group) do
+  def voting_profiles(%Poll{} = poll, %Group{} = group) do
     profile_ids = eligible_profile_ids(poll, group)
 
+    # One row per holder; a profile no account holds counts on its own, so
+    # its `sharing` does not matter.
     holders =
       from(ap in AccountProfile,
         join: p in Profile,
         on: p.id == ap.profile_id,
         where: ap.profile_id in ^profile_ids,
-        select: {ap.profile_id, ap.account_id, p.sharing}
+        select: {ap.profile_id, {ap.account_id, p.sharing}}
       )
       |> Repo.all()
-      |> Enum.group_by(&elem(&1, 0))
+      |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
 
-    profile_ids
-    |> Enum.map(fn profile_id ->
-      case Map.get(holders, profile_id, []) do
-        [{_profile_id, account_id, _sharing}] -> {:account, account_id}
-        [] -> {:profile, profile_id}
-        _several_accounts -> {:shared, profile_id}
-      end
-    end)
+    for profile_id <- profile_ids,
+        rows = Map.get(holders, profile_id, []),
+        counted =
+          Identity.counted_voters(
+            profile_id,
+            rows |> List.first({nil, :unique}) |> elem(1),
+            Enum.map(rows, &elem(&1, 0)),
+            poll.unique_votes,
+            poll.shared_votes
+          ),
+        counted != [],
+        do: {profile_id, counted}
+  end
+
+  @doc """
+  How many may vote: people, not profiles, as one account votes once, and a
+  shared profile as the poll says. nil for a public poll, where anyone may.
+  """
+  def eligible_count(%Poll{is_public: true}, %Group{}), do: nil
+
+  def eligible_count(%Poll{} = poll, %Group{} = group) do
+    poll
+    |> voting_profiles(group)
+    |> Enum.flat_map(&elem(&1, 1))
     |> Enum.uniq()
     |> length()
   end

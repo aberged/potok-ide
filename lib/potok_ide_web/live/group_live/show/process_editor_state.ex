@@ -1077,7 +1077,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
     attrs =
       params
       |> Map.take(
-        ~w(label text in name role field op value target list item question description majority quorum effect)
+        ~w(label text in name role field op value target list item question description majority quorum unique shared effect)
       )
       |> maybe_put("admins", admins(params))
       |> maybe_put("inherits", inherits(params))
@@ -2342,7 +2342,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
         node
         |> Map.take(
-          ~w(label text in name role admins fields field op value target list item intro question description majority quorum effect)
+          ~w(label text in name role admins fields field op value target list item intro question description majority quorum unique shared effect)
         )
         |> Map.merge(poll_form_values(node))
         |> Map.merge(%{
@@ -2391,6 +2391,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
     %{
       "answers" => Enum.join(node["answers"] || [], "\n"),
       "secret" => node["secret"] in [true, "true"],
+      "unique" => node["unique"] || "yes",
+      "shared" => node["shared"] || "as_one",
       "poll_who_mode" => if(named?, do: "named", else: "starter"),
       "poll_who" => if(named?, do: node["who"])
     }
@@ -2472,6 +2474,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
   defp reason_text(:effect_quorum, _path),
     do: gettext("A decision that changes a role needs a quorum.")
+
+  defp reason_text(:no_voters, _path),
+    do: gettext("Somebody has to vote: unique or shared profiles.")
 
   defp reason_text(:effect_not_permitted, _path),
     do:

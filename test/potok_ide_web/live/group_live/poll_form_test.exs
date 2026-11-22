@@ -79,6 +79,28 @@ defmodule PotokIdeWeb.GroupLive.PollFormTest do
     assert has_element?(lv, "#value-poll-card-#{poll.value_id}", "Where to?")
   end
 
+  test "says how each kind of profile votes, and the card tells it", ctx do
+    lv = ctx.member_account |> chat(ctx.group) |> open_form()
+
+    assert has_element?(lv, "#poll-form-voter-kinds select[name='poll[unique_votes]']")
+    assert has_element?(lv, "#poll-form-voter-kinds select[name='poll[shared_votes]']")
+
+    submit(lv, filled(%{shared_votes: "each_holder"}))
+
+    assert [poll] = Repo.all(Poll)
+    assert poll.shared_votes == :each_holder
+    assert has_element?(lv, "#value-poll-card-#{poll.value_id}-voter-kinds")
+  end
+
+  test "a poll as always says nothing of the kinds of profile", ctx do
+    lv = ctx.member_account |> chat(ctx.group) |> open_form()
+
+    submit(lv, filled())
+
+    assert [poll] = Repo.all(Poll)
+    refute has_element?(lv, "#value-poll-card-#{poll.value_id}-voter-kinds")
+  end
+
   test "shows what is wrong and stays open", ctx do
     lv = ctx.member_account |> chat(ctx.group) |> open_form()
 
