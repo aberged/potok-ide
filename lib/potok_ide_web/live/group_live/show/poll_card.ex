@@ -448,6 +448,12 @@ defmodule PotokIdeWeb.GroupLive.Show.PollCard do
     )
   end
 
+  defp effect_text(%{kind: :admit} = effect) do
+    dgettext("polls", "If it passes: %{name}, who asked, becomes a member of the group.",
+      name: person(effect)
+    )
+  end
+
   defp effect_text(%{kind: :end_elections}) do
     dgettext("polls", "If it passes: the group no longer elects its admins.")
   end
@@ -467,6 +473,12 @@ defmodule PotokIdeWeb.GroupLive.Show.PollCard do
 
   defp effect_status(%{status: :last_admin}),
     do: dgettext("polls", "Not done: the group would be left without an admin.")
+
+  defp effect_status(%{status: :request_gone}),
+    do: dgettext("polls", "Not done: the request is no longer there.")
+
+  defp effect_status(%{status: :already_member}),
+    do: dgettext("polls", "Nothing to do: they are in the group already.")
 
   defp person(%{profile: %{username: username}}), do: "@" <> username
   defp person(_effect), do: dgettext("polls", "a former member")

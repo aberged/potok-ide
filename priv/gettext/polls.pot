@@ -71,14 +71,14 @@ msgstr ""
 msgid "A vote cannot be changed."
 msgstr ""
 
-#: lib/potok_ide/polls/effects.ex:422
+#: lib/potok_ide/polls/effects.ex:423
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:344
 #, elixir-autogen, elixir-format
 msgid "Abstain"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:536
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:537
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:548
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:549
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:565
 #, elixir-autogen, elixir-format
 msgid "Add answer"
@@ -89,7 +89,7 @@ msgstr ""
 msgid "After voting, and everyone at the end"
 msgstr ""
 
-#: lib/potok_ide/polls/effects.ex:421
+#: lib/potok_ide/polls/effects.ex:422
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:344
 #, elixir-autogen, elixir-format
 msgid "Against"
@@ -105,7 +105,7 @@ msgstr ""
 msgid "An hour before the end"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:621
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:633
 #: lib/potok_ide_web/live/group_live/show/polls_state.ex:474
 #, elixir-autogen, elixir-format
 msgid "Another profile of yours has already voted."
@@ -137,7 +137,7 @@ msgstr ""
 msgid "Anyone signed in can vote and the poll shows among public polls, so its result is a mood, not a count of people."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:649
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:661
 #, elixir-autogen, elixir-format
 msgid "Anyone signed in can vote, so this shows a mood, not a count of people."
 msgstr ""
@@ -172,7 +172,7 @@ msgstr ""
 msgid "Change poll"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:575
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:587
 #, elixir-autogen, elixir-format
 msgid "Change vote"
 msgstr ""
@@ -241,7 +241,7 @@ msgstr ""
 msgid "Deleted profile"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:676
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:688
 #, elixir-autogen, elixir-format
 msgid "Details"
 msgstr ""
@@ -266,7 +266,7 @@ msgstr ""
 msgid "End, change and delete polls started by others, and always see their results and details."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:660
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:672
 #, elixir-autogen, elixir-format
 msgid "Every member can see who voted for what."
 msgstr ""
@@ -276,7 +276,7 @@ msgstr ""
 msgid "Finished"
 msgstr ""
 
-#: lib/potok_ide/polls/effects.ex:420
+#: lib/potok_ide/polls/effects.ex:421
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:344
 #, elixir-autogen, elixir-format
 msgid "For"
@@ -378,13 +378,13 @@ msgstr ""
 msgid "My groups"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:604
+#: lib/potok_ide_web/live/group_live/show.ex:607
 #: lib/potok_ide_web/live/group_live/show/polls_tab.ex:31
 #, elixir-autogen, elixir-format
 msgid "My polls"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:654
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:666
 #, elixir-autogen, elixir-format
 msgid "Neither the group's admins nor the app can see who voted for what."
 msgstr ""
@@ -437,7 +437,7 @@ msgstr ""
 msgid "Nobody"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:629
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:641
 #, elixir-autogen, elixir-format
 msgid "Nobody can vote any more."
 msgstr ""
@@ -478,7 +478,7 @@ msgstr ""
 msgid "Only at the end"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:632
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:644
 #, elixir-autogen, elixir-format
 msgid "Only these vote: %{roles}."
 msgstr ""
@@ -519,7 +519,7 @@ msgstr ""
 msgid "Poll"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:605
+#: lib/potok_ide_web/live/group_live/show.ex:608
 #: lib/potok_ide_web/live/group_live/show/create_menu.ex:264
 #: lib/potok_ide_web/live/group_live/show/group_menu.ex:57
 #: lib/potok_ide_web/live/group_live/show/polls_tab.ex:32
@@ -663,12 +663,12 @@ msgstr ""
 msgid "The most votes"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:663
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:675
 #, elixir-autogen, elixir-format
 msgid "The organizer and those who manage polls can see who voted for what."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:666
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:678
 #, elixir-autogen, elixir-format
 msgid "The organizer, those who manage polls and these roles can see who voted for what: %{roles}."
 msgstr ""
@@ -742,7 +742,7 @@ msgstr ""
 msgid "Two thirds of the votes"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:565
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:577
 #, elixir-autogen, elixir-format
 msgid "Until"
 msgstr ""
@@ -767,7 +767,7 @@ msgstr ""
 msgid "Voted at (UTC)"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:561
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:573
 #, elixir-autogen, elixir-format
 msgid "Voted:"
 msgstr ""
@@ -852,7 +852,7 @@ msgstr ""
 msgid "Yes / No"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:645
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:657
 #, elixir-autogen, elixir-format
 msgid "You cannot vote in this group."
 msgstr ""
@@ -884,18 +884,18 @@ msgstr ""
 msgid "You voted"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:523
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:524
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:535
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:536
 #, elixir-autogen, elixir-format
 msgid "Your answer"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:642
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:654
 #, elixir-autogen, elixir-format
 msgid "Your roles do not allow voting."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:624
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:636
 #, elixir-autogen, elixir-format
 msgid "Your vote is recorded."
 msgstr ""
@@ -925,7 +925,7 @@ msgstr ""
 msgid "Ended"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:677
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:689
 #, elixir-autogen, elixir-format
 msgid "View"
 msgstr ""
@@ -940,7 +940,7 @@ msgstr ""
 msgid "Remove this answer?"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:474
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:486
 #, elixir-autogen, elixir-format
 msgid "(deleted role)"
 msgstr ""
@@ -995,7 +995,7 @@ msgstr ""
 msgid "Done as soon as the voting ends at its deadline."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:455
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:461
 #, elixir-autogen, elixir-format
 msgid "Done."
 msgstr ""
@@ -1025,7 +1025,7 @@ msgstr ""
 msgid "If it passes: %{name} loses the role %{role}."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:452
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:458
 #, elixir-autogen, elixir-format
 msgid "If it passes: the group no longer elects its admins."
 msgstr ""
@@ -1040,27 +1040,27 @@ msgstr ""
 msgid "Members can stand for themselves"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:457
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:463
 #, elixir-autogen, elixir-format
 msgid "Not done: it did not pass."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:469
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:475
 #, elixir-autogen, elixir-format
 msgid "Not done: the group would be left without an admin."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:460
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:466
 #, elixir-autogen, elixir-format
 msgid "Not done: the member is no longer in the group."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:466
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:472
 #, elixir-autogen, elixir-format
 msgid "Not done: the role is held through the parent group."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:463
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:469
 #, elixir-autogen, elixir-format
 msgid "Not done: the role no longer exists."
 msgstr ""
@@ -1102,7 +1102,7 @@ msgstr ""
 msgid "Shall the group stop electing its admins?"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:500
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:512
 #, elixir-autogen, elixir-format
 msgid "Stand in the election"
 msgstr ""
@@ -1153,12 +1153,12 @@ msgstr ""
 msgid "You now hold the role %{role}"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:472
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:484
 #, elixir-autogen, elixir-format
 msgid "a former member"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:456
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:462
 #, elixir-autogen, elixir-format
 msgid "Not done."
 msgstr ""
@@ -1176,7 +1176,7 @@ msgstr ""
 msgid "Do not vote"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:606
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:618
 #: lib/potok_ide_web/live/group_live/show/request_rules.ex:218
 #, elixir-autogen, elixir-format
 msgid "Each holder of a shared profile votes through it as themself."
@@ -1194,24 +1194,24 @@ msgstr ""
 msgid "One vote for all who hold it"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:636
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:648
 #, elixir-autogen, elixir-format
 msgid "Only shared profiles vote in this poll."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:615
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:627
 #: lib/potok_ide_web/live/group_live/show/request_rules.ex:227
 #, elixir-autogen, elixir-format
 msgid "Only shared profiles vote, each of their holders separately."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:612
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:624
 #: lib/potok_ide_web/live/group_live/show/request_rules.ex:224
 #, elixir-autogen, elixir-format
 msgid "Only shared profiles vote, once for all who hold each."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:609
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:621
 #: lib/potok_ide_web/live/group_live/show/request_rules.ex:221
 #, elixir-autogen, elixir-format
 msgid "Only unique profiles vote; shared profiles do not."
@@ -1223,7 +1223,7 @@ msgstr ""
 msgid "Shared profiles"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:639
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:651
 #, elixir-autogen, elixir-format
 msgid "Shared profiles do not vote in this poll."
 msgstr ""
@@ -1238,4 +1238,19 @@ msgstr ""
 #: lib/potok_ide_web/live/group_live/show/request_rules.ex:105
 #, elixir-autogen, elixir-format
 msgid "Vote, one vote per account"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:452
+#, elixir-autogen, elixir-format
+msgid "If it passes: %{name}, who asked, becomes a member of the group."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:478
+#, elixir-autogen, elixir-format
+msgid "Not done: the request is no longer there."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:481
+#, elixir-autogen, elixir-format
+msgid "Nothing to do: they are in the group already."
 msgstr ""

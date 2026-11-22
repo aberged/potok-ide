@@ -116,42 +116,42 @@ msgstr "Obaveštenje: %{group}"
 msgid "%{name} in %{group}"
 msgstr "%{name} u grupi %{group}"
 
-#: lib/potok_ide/social/notifications.ex:302
+#: lib/potok_ide/social/notifications.ex:303
 #, elixir-autogen, elixir-format
 msgid "Admin"
 msgstr "Administrator"
 
-#: lib/potok_ide/social/notifications.ex:292
+#: lib/potok_ide/social/notifications.ex:293
 #, elixir-autogen, elixir-format
 msgid "Given: %{roles}."
 msgstr "Dodeljeno: %{roles}."
 
-#: lib/potok_ide/social/notifications.ex:298
+#: lib/potok_ide/social/notifications.ex:299
 #, elixir-autogen, elixir-format
 msgid "Put to a vote: %{roles}."
 msgstr "Na glasanju: %{roles}."
 
-#: lib/potok_ide/social/notifications.ex:295
+#: lib/potok_ide/social/notifications.ex:296
 #, elixir-autogen, elixir-format
 msgid "Refused: %{roles}."
 msgstr "Odbijeno: %{roles}."
 
-#: lib/potok_ide/social/notifications.ex:268
+#: lib/potok_ide/social/notifications.ex:269
 #, elixir-autogen, elixir-format
 msgid "The group admitted you by a vote."
 msgstr "Grupa te je primila glasanjem."
 
-#: lib/potok_ide/social/notifications.ex:242
+#: lib/potok_ide/social/notifications.ex:243
 #, elixir-autogen, elixir-format
 msgid "The group votes on admitting you."
 msgstr "Grupa glasa o tvom prijemu."
 
-#: lib/potok_ide/social/notifications.ex:271
+#: lib/potok_ide/social/notifications.ex:273
 #, elixir-autogen, elixir-format
 msgid "The vote did not admit you."
 msgstr "Glasanje te nije primilo."
 
-#: lib/potok_ide/social/notifications.ex:274
+#: lib/potok_ide/social/notifications.ex:276
 #, elixir-autogen, elixir-format
 msgid "The vote did not give you the role %{role}."
 msgstr "Glasanje ti nije dalo ulogu %{role}."
@@ -161,13 +161,13 @@ msgstr "Glasanje ti nije dalo ulogu %{role}."
 msgid "You are a member now."
 msgstr "Sada si član."
 
-#: lib/potok_ide/social/notifications.ex:251
-#: lib/potok_ide/social/notifications.ex:281
+#: lib/potok_ide/social/notifications.ex:252
+#: lib/potok_ide/social/notifications.ex:282
 #, elixir-autogen, elixir-format
 msgid "Your request in %{group}"
 msgstr "Tvoj zahtev u grupi %{group}"
 
-#: lib/potok_ide/social/notifications.ex:240
+#: lib/potok_ide/social/notifications.ex:241
 #, elixir-autogen, elixir-format
 msgid "Your request to join was refused."
 msgstr "Tvoj zahtev za pristup je odbijen."

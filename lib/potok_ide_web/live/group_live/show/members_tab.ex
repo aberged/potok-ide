@@ -2,8 +2,8 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
   use PotokIdeWeb, :html
 
   alias PotokIde.Polls.Effects
-  alias PotokIde.Social.{Access, GroupRole}
-  alias PotokIdeWeb.GroupLive.Show.{Components, ProcessesTab, RolesTab}
+  alias PotokIde.Social.{Access, GroupRequests, GroupRole}
+  alias PotokIdeWeb.GroupLive.Show.{Components, ProcessesTab, RequestDialogs, RolesTab}
   alias PotokIdeWeb.TagComponents
 
   attr :members, :any, required: true, doc: "stream of `%{id, profile, role_keys}`"
@@ -17,6 +17,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
   attr :group, :map, required: true
   attr :access, Access, required: true
   attr :join_requests, :list, default: []
+  attr :role_requests, :list, default: [], doc: "members' requests for roles, with their profiles"
   attr :pending_join_requests_count, :integer, default: 0
   attr :blocks, :list, default: [], doc: "the group's blocks, for those who may lift them"
 
@@ -41,6 +42,13 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
         assigns.group.elects_admins and
           Effects.may_propose?(assigns.access, assigns.group, :elect)
       )
+      # A member may ask for a role the statute lets be asked for.
+      |> assign(
+        :can_ask_roles?,
+        assigns.access.member? and GroupRequests.group_allowed?(assigns.group) and
+          GroupRequests.requestable_roles(assigns.access, assigns.group) != []
+      )
+      |> assign(:request_roles, RequestDialogs.manifest_roles(assigns.access))
 
     ~H"""
     <div id="group-panel-members" class="card flex min-h-0 flex-1 flex-col px-2">
@@ -53,7 +61,19 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
         >
           {gettext("Members")}
           <:subtitle>{gettext("Who is in the group, with their roles.")}</:subtitle>
-          <:actions :if={Access.can?(@access, :invite_members) or @call_election?}>
+          <:actions :if={Access.can?(@access, :invite_members) or @call_election? or @can_ask_roles?}>
+            <.button
+              :if={@can_ask_roles?}
+              id="group-members-ask-roles"
+              type="button"
+              phx-click="request_dialog_open"
+              phx-value-kind="roles"
+              variant="soft"
+              size="sm"
+            >
+              <.icon name="hero-hand-raised" class="size-4" />
+              {gettext("Ask for roles")}
+            </.button>
             <.button
               :if={@call_election?}
               id="group-members-call-election"
@@ -88,10 +108,12 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
         >
           <div class="mb-3 flex items-center justify-between gap-3">
             <div>
-              <h4 class="text-sm font-semibold text-base-content">{gettext("Access requests")}</h4>
+              <h4 class="text-sm font-semibold text-base-content">{gettext("Requests")}</h4>
 
               <p class="text-xs text-base-content/70">
-                {gettext("Profiles waiting for approval to join this public group.")}
+                {gettext(
+                  "Who asks to join or for roles. The statute says how each role is had, and the group's settings how it admits."
+                )}
               </p>
             </div>
 
@@ -103,51 +125,126 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
           </div>
 
           <div
-            :if={@join_requests == []}
+            :if={@join_requests == [] and @role_requests == []}
             id="group-join-requests-empty"
             class="rounded-2xl border border-dashed border-amber-300/70 bg-base-100/50 px-4 py-3 text-sm text-base-content/70"
           >
-            {gettext("No pending access requests.")}
+            {gettext("No pending requests.")}
           </div>
 
           <ul :if={@join_requests != []} id="group-join-requests-list" class="space-y-3">
             <li :for={request <- @join_requests} id={"group-join-request-#{request.id}"}>
-              <div class="flex items-start justify-between gap-3 rounded-2xl border border-dashed border-amber-300/70 bg-base-100/50 px-4 py-3">
-                <div class="min-w-0 flex-1">
-                  <Components.profile_identity
-                    profile={request.requester}
-                    current_profile={@current_profile}
-                    direct_group_link={true}
-                  />
-                  <div class="mt-2 text-xs text-base-content/65">
-                    <Components.local_time
-                      id={"group-join-request-inserted-at-#{request.id}"}
-                      datetime={request.inserted_at}
+              <div class="rounded-2xl border border-dashed border-amber-300/70 bg-base-100/50 px-4 py-3">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0 flex-1">
+                    <Components.profile_identity
+                      profile={request.requester}
+                      current_profile={@current_profile}
+                      direct_group_link={true}
                     />
+                    <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-base-content/65">
+                      <span>{gettext("asks to join")}</span>
+                      <Components.local_time
+                        id={"group-join-request-inserted-at-#{request.id}"}
+                        datetime={request.inserted_at}
+                      />
+                    </div>
+                  </div>
+
+                  <div class="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                    <span
+                      :if={request.poll_id}
+                      id={"group-join-request-#{request.id}-voting"}
+                      class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary"
+                    >
+                      <.icon name="hero-scale" class="size-3.5" />
+                      {gettext("In a vote")}
+                    </span>
+                    <.button
+                      :if={is_nil(request.poll_id)}
+                      id={"group-decide-join-request-#{request.id}"}
+                      type="button"
+                      phx-click="request_decision_open"
+                      phx-value-kind="join"
+                      phx-value-id={request.id}
+                      variant="primary"
+                      size="sm"
+                    >
+                      {gettext("Decide")}
+                    </.button>
+                    <.button
+                      :if={is_nil(request.poll_id) and request.role_keys == []}
+                      id={"group-accept-join-request-#{request.id}"}
+                      type="button"
+                      phx-click="accept_join_request"
+                      phx-value-id={request.id}
+                      variant="success"
+                      size="sm"
+                    >
+                      {gettext("Accept")}
+                    </.button>
+                    <.button
+                      :if={is_nil(request.poll_id) and request.role_keys == []}
+                      id={"group-reject-join-request-#{request.id}"}
+                      type="button"
+                      phx-click="reject_join_request"
+                      phx-value-id={request.id}
+                      size="sm"
+                    >
+                      {gettext("Reject")}
+                    </.button>
                   </div>
                 </div>
+                <.request_details
+                  id={"group-join-request-#{request.id}"}
+                  note={request.note}
+                  keys={request.role_keys}
+                  roles={@request_roles}
+                />
+              </div>
+            </li>
+          </ul>
 
-                <div class="flex shrink-0 items-center gap-2">
+          <ul
+            :if={@role_requests != []}
+            id="group-role-requests-list"
+            class={["space-y-3", @join_requests != [] && "mt-3"]}
+          >
+            <li :for={request <- @role_requests} id={"group-role-request-#{request.id}"}>
+              <div class="rounded-2xl border border-dashed border-primary/30 bg-base-100/50 px-4 py-3">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0 flex-1">
+                    <Components.profile_identity
+                      profile={request.profile}
+                      current_profile={@current_profile}
+                      direct_group_link={true}
+                    />
+                    <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-base-content/65">
+                      <span>{gettext("asks for roles")}</span>
+                      <Components.local_time
+                        id={"group-role-request-inserted-at-#{request.id}"}
+                        datetime={request.updated_at}
+                      />
+                    </div>
+                  </div>
                   <.button
-                    id={"group-accept-join-request-#{request.id}"}
+                    id={"group-decide-role-request-#{request.id}"}
                     type="button"
-                    phx-click="accept_join_request"
+                    phx-click="request_decision_open"
+                    phx-value-kind="roles"
                     phx-value-id={request.id}
-                    variant="success"
+                    variant="primary"
                     size="sm"
                   >
-                    {gettext("Accept")}
-                  </.button>
-                  <.button
-                    id={"group-reject-join-request-#{request.id}"}
-                    type="button"
-                    phx-click="reject_join_request"
-                    phx-value-id={request.id}
-                    size="sm"
-                  >
-                    {gettext("Reject")}
+                    {gettext("Decide")}
                   </.button>
                 </div>
+                <.request_details
+                  id={"group-role-request-#{request.id}"}
+                  note={request.note}
+                  keys={request.role_keys}
+                  roles={@request_roles}
+                />
               </div>
             </li>
           </ul>
@@ -566,5 +663,26 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
   # from the effective manifest are left out.
   defp member_roles(assignable_roles, role_keys) do
     Enum.filter(assignable_roles, &(&1.key in role_keys))
+  end
+
+  attr :id, :string, required: true
+  attr :note, :string, default: nil
+  attr :keys, :list, required: true
+  attr :roles, :list, required: true
+
+  # What a request asks for and why, under who asked.
+  defp request_details(assigns) do
+    ~H"""
+    <div :if={@note || @keys != []} class="mt-2 space-y-1.5">
+      <RequestDialogs.role_chips id={"#{@id}-roles"} keys={@keys} roles={@roles} />
+      <p
+        :if={@note}
+        id={"#{@id}-note"}
+        class="line-clamp-4 rounded-xl bg-base-200/50 px-3 py-2 text-sm whitespace-pre-line"
+      >
+        {@note}
+      </p>
+    </div>
+    """
   end
 end

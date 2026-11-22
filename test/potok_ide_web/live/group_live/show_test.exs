@@ -2326,6 +2326,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert guest_srcdoc =~ "#{requester_profile.id}:false"
 
       requester_lv |> element("#group-request-access") |> render_click()
+      requester_lv |> form("#request-form", request: %{note: ""}) |> render_submit()
       [request] = Social.list_pending_group_join_requests(group)
       {:ok, _} = Social.accept_group_join_request(owner_profile, group, request.id)
 
@@ -2384,6 +2385,14 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       |> element("#group-request-access")
       |> render_click()
 
+      # The dialog says how the group admits before anything is sent.
+      assert has_element?(requester_lv, "#request-dialog-admission")
+
+      requester_lv
+      |> form("#request-form", request: %{note: "Živim u ulazu A."})
+      |> render_submit()
+
+      refute has_element?(requester_lv, "#request-dialog")
       assert has_element?(requester_lv, "#group-request-access-pending", "Access request pending")
       assert Social.count_pending_group_join_requests(group) == 1
 
@@ -2397,6 +2406,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert has_element?(owner_lv, "#group-join-requests-list", requester_profile.username)
 
       [request] = Social.list_pending_group_join_requests(group)
+      assert has_element?(owner_lv, "#group-join-request-#{request.id}-note", "Živim u ulazu A.")
 
       owner_lv
       |> element("#group-accept-join-request-#{request.id}")
@@ -2405,7 +2415,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert Social.member_of_group?(requester_profile, group)
       refute has_element?(owner_lv, "#group-pending-join-requests-badge-#{group.id}")
       refute has_element?(owner_lv, "#group-join-requests-list", requester_profile.username)
-      assert has_element?(owner_lv, "#group-join-requests-empty", "No pending access requests.")
+      assert has_element?(owner_lv, "#group-join-requests-empty", "No pending requests.")
 
       assert eventually(fn ->
                not has_element?(requester_lv, "#group-request-access-pending") and

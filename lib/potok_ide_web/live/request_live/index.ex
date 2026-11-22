@@ -3,7 +3,8 @@ defmodule PotokIdeWeb.RequestLive.Index do
 
   alias PotokIde.Processes
   alias PotokIde.Social
-  alias PotokIdeWeb.GroupLive.Show.Components
+  alias PotokIde.Social.{Access, GroupRequests}
+  alias PotokIdeWeb.GroupLive.Show.{Components, RequestDialogs}
   alias PotokIdeWeb.ProfileAuth
   @approved_requests_per_page 10
   @created_requests_per_page 10
@@ -49,7 +50,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
           tab_id_prefix="requests-tab"
           counts={
             %{
-              "pending" => length(@requests),
+              "pending" => length(@requests) + length(@role_requests),
               "processes" => @waiting_count,
               "approved" => @approved_requests_pagination.total_count,
               "created" => @created_requests_pagination.total_count
@@ -102,10 +103,14 @@ defmodule PotokIdeWeb.RequestLive.Index do
           active={@section == "pending"}
           icon="hero-clock"
           title={gettext("Requests to approve")}
-          subtitle={gettext("Pending group access requests that your current profile can approve.")}
+          subtitle={
+            gettext(
+              "Requests to join and for roles in the groups where your current profile decides them."
+            )
+          }
         >
           <div
-            :if={@requests == []}
+            :if={@requests == [] and @role_requests == []}
             class="rounded-2xl border border-base-300/60 bg-base-100/70 px-4 py-3 text-sm text-base-content/70"
           >
             {gettext("No pending approval requests.")}
@@ -133,10 +138,16 @@ defmodule PotokIdeWeb.RequestLive.Index do
               />
               <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-base-content/70">
                 <span class="inline-flex items-center rounded-full bg-sky-500/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-sky-700 dark:text-sky-300">
-                  {gettext("Pending")}
+                  {if(request.poll_id, do: gettext("In a vote"), else: gettext("Pending"))}
                 </span>
                 <span>{gettext("Review this access request for the selected group.")}</span>
               </div>
+              <.request_details
+                id={"approval-request-#{request.id}"}
+                note={request.note}
+                keys={request.role_keys}
+                roles={manifest_roles(request.group)}
+              />
 
               <div class="flex flex-wrap items-center justify-between gap-3">
                 <div class="text-sm text-base-content/70">
@@ -148,8 +159,20 @@ defmodule PotokIdeWeb.RequestLive.Index do
                   />
                 </div>
 
-                <div class="flex items-center gap-2">
+                <div :if={is_nil(request.poll_id)} class="flex items-center gap-2">
                   <.button
+                    id={"request-decide-#{request.id}"}
+                    type="button"
+                    phx-click="request_decision_open"
+                    phx-value-kind="join"
+                    phx-value-id={request.id}
+                    variant="primary"
+                    size="sm"
+                  >
+                    {gettext("Decide")}
+                  </.button>
+                  <.button
+                    :if={request.role_keys == []}
                     id={"request-accept-#{request.id}"}
                     type="button"
                     phx-click="accept"
@@ -160,6 +183,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
                     {gettext("Accept")}
                   </.button>
                   <.button
+                    :if={request.role_keys == []}
                     id={"request-reject-#{request.id}"}
                     type="button"
                     phx-click="reject"
@@ -169,6 +193,56 @@ defmodule PotokIdeWeb.RequestLive.Index do
                     {gettext("Reject")}
                   </.button>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div :if={@role_requests != []} id="role-requests-to-decide" class="mt-3 space-y-3">
+            <div
+              :for={request <- @role_requests}
+              id={"approval-role-request-#{request.id}"}
+              class="space-y-3 rounded-2xl border border-base-300/70 bg-base-100/80 p-4"
+            >
+              <Components.group_identity
+                group={request.group}
+                current_profile={@current_profile}
+                avatar_size="size-12"
+                text_class="text-sm"
+              />
+              <Components.profile_identity
+                profile={request.profile}
+                avatar_size="size-10"
+                text_class="text-sm"
+                title={gettext("Asks for roles")}
+                current_profile={@current_profile}
+                direct_group_link={true}
+              />
+              <.request_details
+                id={"approval-role-request-#{request.id}"}
+                note={request.note}
+                keys={request.role_keys}
+                roles={manifest_roles(request.group)}
+              />
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="text-sm text-base-content/70">
+                  {gettext("Requested on")}
+                  <Components.local_time
+                    id={"role-request-updated-at-#{request.id}"}
+                    datetime={request.updated_at}
+                    class="ml-1 text-xs font-thin italic"
+                  />
+                </div>
+                <.button
+                  id={"role-request-decide-#{request.id}"}
+                  type="button"
+                  phx-click="request_decision_open"
+                  phx-value-kind="roles"
+                  phx-value-id={request.id}
+                  variant="primary"
+                  size="sm"
+                >
+                  {gettext("Decide")}
+                </.button>
               </div>
             </div>
           </div>
@@ -336,6 +410,13 @@ defmodule PotokIdeWeb.RequestLive.Index do
           }
         >
           <div :if={@section == "created"} class="space-y-3">
+            <.my_waiting
+              join={@my_join_requests}
+              roles={@my_role_requests}
+              current_profile={@current_profile}
+            />
+            <.my_decisions decisions={@my_decisions} current_profile={@current_profile} />
+
             <div
               :if={@created_requests_pagination.total_count == 0}
               class="rounded-2xl border border-base-300/60 bg-base-100/70 px-4 py-3 text-sm text-base-content/70"
@@ -418,8 +499,204 @@ defmodule PotokIdeWeb.RequestLive.Index do
           </div>
         </Components.settings_card>
       </.page_container>
+      <RequestDialogs.decide_dialog state={@decision_dialog} current_profile={@current_profile} />
     </Layouts.app>
     """
+  end
+
+  attr :id, :string, required: true
+  attr :note, :string, default: nil
+  attr :keys, :list, required: true
+  attr :roles, :list, required: true
+
+  # What a request asks for and why.
+  defp request_details(assigns) do
+    ~H"""
+    <div :if={@note || @keys != []} class="space-y-1.5">
+      <RequestDialogs.role_chips id={"#{@id}-roles"} keys={@keys} roles={@roles} />
+      <p
+        :if={@note}
+        id={"#{@id}-note"}
+        class="line-clamp-4 rounded-xl bg-base-200/50 px-3 py-2 text-sm whitespace-pre-line"
+      >
+        {@note}
+      </p>
+    </div>
+    """
+  end
+
+  attr :join, :list, required: true
+  attr :roles, :list, required: true
+  attr :current_profile, :map, required: true
+
+  # What the profile asked for and still waits for, with a way to take it back
+  # while nobody votes on it.
+  defp my_waiting(assigns) do
+    ~H"""
+    <div :if={@join != [] or @roles != []} id="my-waiting-requests" class="space-y-3">
+      <h3 class="text-sm font-semibold">{gettext("Still waiting")}</h3>
+      <div
+        :for={request <- @join}
+        id={"my-join-request-#{request.id}"}
+        class="space-y-2 rounded-2xl border border-base-300/70 bg-base-100/80 p-4"
+      >
+        <Components.group_identity
+          group={request.group}
+          current_profile={@current_profile}
+          avatar_size="size-10"
+          text_class="text-sm"
+        />
+        <p class="text-sm text-base-content/70">
+          {if(request.poll_id,
+            do: gettext("The group votes on admitting you."),
+            else: gettext("You asked to join.")
+          )}
+        </p>
+        <.request_details
+          id={"my-join-request-#{request.id}"}
+          note={request.note}
+          keys={request.role_keys}
+          roles={manifest_roles(request.group)}
+        />
+        <.button
+          :if={is_nil(request.poll_id)}
+          id={"my-join-request-#{request.id}-withdraw"}
+          type="button"
+          phx-click="request_withdraw"
+          phx-value-kind="join"
+          phx-value-group={request.group_id}
+          data-confirm={gettext("Take back your request to join?")}
+          size="sm"
+        >
+          {gettext("Take it back")}
+        </.button>
+      </div>
+      <div
+        :for={request <- @roles}
+        id={"my-role-request-#{request.id}"}
+        class="space-y-2 rounded-2xl border border-base-300/70 bg-base-100/80 p-4"
+      >
+        <Components.group_identity
+          group={request.group}
+          current_profile={@current_profile}
+          avatar_size="size-10"
+          text_class="text-sm"
+        />
+        <p class="text-sm text-base-content/70">{gettext("You asked for roles.")}</p>
+        <.request_details
+          id={"my-role-request-#{request.id}"}
+          note={request.note}
+          keys={request.role_keys}
+          roles={manifest_roles(request.group)}
+        />
+        <.button
+          id={"my-role-request-#{request.id}-withdraw"}
+          type="button"
+          phx-click="request_withdraw"
+          phx-value-kind="roles"
+          phx-value-group={request.group_id}
+          data-confirm={gettext("Take back your request for roles?")}
+          size="sm"
+        >
+          {gettext("Take it back")}
+        </.button>
+      </div>
+    </div>
+    """
+  end
+
+  attr :decisions, :list, required: true
+  attr :current_profile, :map, required: true
+
+  # What became of the profile's requests, with who decided and why.
+  defp my_decisions(assigns) do
+    ~H"""
+    <div :if={@decisions != []} id="my-request-decisions" class="space-y-3">
+      <h3 class="text-sm font-semibold">{gettext("Decisions on your requests")}</h3>
+      <div
+        :for={decision <- @decisions}
+        id={"my-request-decision-#{decision.id}"}
+        class="space-y-2 rounded-2xl border border-base-300/70 bg-base-100/80 p-4"
+      >
+        <Components.group_identity
+          group={decision.group}
+          current_profile={@current_profile}
+          avatar_size="size-10"
+          text_class="text-sm"
+        />
+        <p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+          <span class="font-semibold">{subject_label(decision)}</span>
+          <span class={[
+            "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
+            decision_class(decision)
+          ]}>
+            {decision_label(decision)}
+          </span>
+          <Components.local_time
+            id={"my-request-decision-at-#{decision.id}"}
+            datetime={decision.inserted_at}
+            class="text-xs font-thin italic text-base-content/65"
+          />
+        </p>
+        <Components.profile_identity
+          :if={decision.decider}
+          profile={decision.decider}
+          avatar_size="size-8"
+          text_class="text-sm"
+          title={gettext("Decided by")}
+          current_profile={@current_profile}
+          direct_group_link={true}
+        />
+        <p
+          :if={decision.reason}
+          id={"my-request-decision-#{decision.id}-reason"}
+          class="rounded-xl bg-base-200/50 px-3 py-2 text-sm"
+        >
+          „{decision.reason}“
+        </p>
+      </div>
+    </div>
+    """
+  end
+
+  defp subject_label(%{role_key: nil}), do: gettext("Admission")
+
+  defp subject_label(%{role_key: key, group: group}) do
+    case Enum.find(manifest_roles(group), &(&1.key == key)) do
+      nil -> gettext("A role since deleted")
+      role -> PotokIdeWeb.GroupLive.Show.RolesTab.role_label(role)
+    end
+  end
+
+  defp decision_label(%{decision: :granted, role_key: nil}), do: gettext("Admitted")
+  defp decision_label(%{decision: :granted}), do: gettext("Given")
+  defp decision_label(%{decision: :declined}), do: gettext("Refused")
+  defp decision_label(%{decision: :voted, poll: %{closed_at: nil}}), do: gettext("In a vote")
+
+  defp decision_label(%{decision: :voted, poll: %{effect_status: :applied}}),
+    do: gettext("Carried by the vote")
+
+  defp decision_label(%{decision: :voted, poll: %{}}), do: gettext("Not carried by the vote")
+  defp decision_label(%{decision: :voted}), do: gettext("Put to a vote")
+
+  defp decision_class(%{decision: :declined}), do: "bg-error/10 text-error"
+
+  defp decision_class(%{decision: :voted, poll: %{closed_at: closed_at, effect_status: status}})
+       when not is_nil(closed_at) and status != :applied,
+       do: "bg-error/10 text-error"
+
+  defp decision_class(%{decision: :voted, poll: %{closed_at: nil}}),
+    do: "bg-primary/10 text-primary"
+
+  defp decision_class(_decision),
+    do: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+
+  # The roles a request names, as the group's statute has them now.
+  defp manifest_roles(group) do
+    case Access.effective_manifest(group) do
+      nil -> []
+      manifest -> Enum.reject(manifest.roles, &(&1.key == "everyone"))
+    end
   end
 
   @impl true
@@ -435,6 +712,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
       |> stream(:approved_requests, [], reset: true)
       |> assign(:created_requests_pagination, default_created_requests_pagination())
       |> stream(:created_requests, [], reset: true)
+      |> assign(:decision_dialog, nil)
       |> ProfileAuth.sync_profile_subscription()
 
     socket = assign_requests(socket, socket.assigns.current_profile)
@@ -443,7 +721,9 @@ defmodule PotokIdeWeb.RequestLive.Index do
     # the page opens on that.
     section =
       socket.assigns.section ||
-        if(socket.assigns.requests == [] and socket.assigns.waiting_count > 0,
+        if(
+          socket.assigns.requests == [] and socket.assigns.role_requests == [] and
+            socket.assigns.waiting_count > 0,
           do: "processes",
           else: "pending"
         )
@@ -564,6 +844,68 @@ defmodule PotokIdeWeb.RequestLive.Index do
     )
   end
 
+  def handle_event("request_decision_open", %{"kind" => kind, "id" => id}, socket) do
+    profile = socket.assigns.current_profile
+
+    found =
+      with {id, ""} <- Integer.parse(id) do
+        case kind do
+          "roles" -> Enum.find(socket.assigns.role_requests, &(&1.id == id))
+          _join -> Enum.find(socket.assigns.requests, &(&1.id == id))
+        end
+      end
+
+    with %{group: group} = request <- found,
+         state when not is_nil(state) <-
+           RequestDialogs.decide_state(group, Access.for_profile(profile, group), request) do
+      {:noreply, assign(socket, :decision_dialog, state)}
+    else
+      _none -> {:noreply, put_flash(socket, :error, gettext("Access request not found."))}
+    end
+  end
+
+  def handle_event("request_decision_close", _params, socket),
+    do: {:noreply, assign(socket, :decision_dialog, nil)}
+
+  def handle_event("request_decide", %{"decision" => params}, socket) do
+    %{current_profile: profile, decision_dialog: state} = socket.assigns
+
+    case state && RequestDialogs.decide(profile, Social.get_group!(state.group_id), state, params) do
+      {:ok, message} ->
+        {:noreply,
+         socket
+         |> assign(:decision_dialog, nil)
+         |> put_flash(:info, message)
+         |> assign_requests(profile)}
+
+      {:error, message} ->
+        {:noreply, assign(socket, :decision_dialog, %{state | error: message})}
+
+      nil ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("request_withdraw", %{"kind" => kind, "group" => group_id}, socket) do
+    profile = socket.assigns.current_profile
+
+    with {group_id, ""} <- Integer.parse(group_id),
+         group when not is_nil(group) <- PotokIde.Repo.get(Social.Group, group_id),
+         :ok <-
+           GroupRequests.withdraw(profile, group, if(kind == "roles", do: :roles, else: :join)) do
+      {:noreply,
+       socket
+       |> put_flash(:info, gettext("Your request is taken back."))
+       |> assign_requests(profile)}
+    else
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, RequestDialogs.error_message(reason))}
+
+      _none ->
+        {:noreply, put_flash(socket, :error, gettext("Access request not found."))}
+    end
+  end
+
   def handle_event("reject", %{"id" => id}, socket) do
     handle_request_action(
       socket,
@@ -644,6 +986,10 @@ defmodule PotokIdeWeb.RequestLive.Index do
   defp assign_requests(socket, nil) do
     socket
     |> assign(:requests, [])
+    |> assign(:role_requests, [])
+    |> assign(:my_join_requests, [])
+    |> assign(:my_role_requests, [])
+    |> assign(:my_decisions, [])
     |> assign(waiting_groups: [], waiting_count: 0)
     |> assign(:approved_requests_pagination, default_approved_requests_pagination())
     |> stream(:approved_requests, [], reset: true)
@@ -654,6 +1000,10 @@ defmodule PotokIdeWeb.RequestLive.Index do
   defp assign_requests(socket, profile) do
     socket
     |> assign(:requests, Social.list_pending_group_join_requests_for_approver(profile))
+    |> assign(:role_requests, GroupRequests.roles_requests_for_decider(profile))
+    |> assign(:my_join_requests, GroupRequests.join_requests_of(profile))
+    |> assign(:my_role_requests, GroupRequests.roles_requests_of(profile))
+    |> assign(:my_decisions, GroupRequests.decisions_of(profile, 20))
     |> refresh_waiting(profile)
     |> refresh_approved_requests(profile)
     |> refresh_created_requests(profile)

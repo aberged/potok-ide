@@ -71,14 +71,14 @@ msgstr "Тајно гласање не може поново да се отво�
 msgid "A vote cannot be changed."
 msgstr "Глас не може да се промени."
 
-#: lib/potok_ide/polls/effects.ex:422
+#: lib/potok_ide/polls/effects.ex:423
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:344
 #, elixir-autogen, elixir-format
 msgid "Abstain"
 msgstr "Уздржан"
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:536
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:537
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:548
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:549
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:565
 #, elixir-autogen, elixir-format
 msgid "Add answer"
@@ -89,7 +89,7 @@ msgstr "Додај одговор"
 msgid "After voting, and everyone at the end"
 msgstr "После гласања, а сви на крају"
 
-#: lib/potok_ide/polls/effects.ex:421
+#: lib/potok_ide/polls/effects.ex:422
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:344
 #, elixir-autogen, elixir-format
 msgid "Against"
@@ -105,7 +105,7 @@ msgstr "Сва гласања"
 msgid "An hour before the end"
 msgstr "Сат пре краја"
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:621
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:633
 #: lib/potok_ide_web/live/group_live/show/polls_state.ex:474
 #, elixir-autogen, elixir-format
 msgid "Another profile of yours has already voted."
@@ -137,7 +137,7 @@ msgstr "Одговори"
 msgid "Anyone signed in can vote and the poll shows among public polls, so its result is a mood, not a count of people."
 msgstr "Гласа свако ко је пријављен, а гласање се види међу јавним гласањима, па резултат показује расположење, а не број људи."
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:649
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:661
 #, elixir-autogen, elixir-format
 msgid "Anyone signed in can vote, so this shows a mood, not a count of people."
 msgstr "Гласа свако ко је пријављен, па резултат показује расположење, а не број људи."
@@ -172,7 +172,7 @@ msgstr "Промени рок"
 msgid "Change poll"
 msgstr "Измени гласање"
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:575
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:587
 #, elixir-autogen, elixir-format
 msgid "Change vote"
 msgstr "Промени глас"
@@ -241,7 +241,7 @@ msgstr "Обрисати ово гласање, са свим гласовима
 msgid "Deleted profile"
 msgstr "Обрисан профил"
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:676
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:688
 #, elixir-autogen, elixir-format
 msgid "Details"
 msgstr "Детаљи"
@@ -266,7 +266,7 @@ msgstr "Завршити ово гласање сада?"
 msgid "End, change and delete polls started by others, and always see their results and details."
 msgstr "Завршава, мења и брише туђа гласања и увек види њихове резултате и детаље."
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:660
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:672
 #, elixir-autogen, elixir-format
 msgid "Every member can see who voted for what."
 msgstr "Сваки члан види ко је за шта гласао."
@@ -276,7 +276,7 @@ msgstr "Сваки члан види ко је за шта гласао."
 msgid "Finished"
 msgstr "Завршена"
 
-#: lib/potok_ide/polls/effects.ex:420
+#: lib/potok_ide/polls/effects.ex:421
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:344
 #, elixir-autogen, elixir-format
 msgid "For"
@@ -378,13 +378,13 @@ msgstr "Више од половине оних који имају право �
 msgid "My groups"
 msgstr "Моје групе"
 
-#: lib/potok_ide_web/live/group_live/show.ex:604
+#: lib/potok_ide_web/live/group_live/show.ex:607
 #: lib/potok_ide_web/live/group_live/show/polls_tab.ex:31
 #, elixir-autogen, elixir-format
 msgid "My polls"
 msgstr "Моја гласања"
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:654
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:666
 #, elixir-autogen, elixir-format
 msgid "Neither the group's admins nor the app can see who voted for what."
 msgstr "Ни админи групе ни апликација не виде ко је за шта гласао."
@@ -437,7 +437,7 @@ msgstr "Без подсетника"
 msgid "Nobody"
 msgstr "Нико"
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:629
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:641
 #, elixir-autogen, elixir-format
 msgid "Nobody can vote any more."
 msgstr "Више нико не може да гласа."
@@ -478,7 +478,7 @@ msgstr "Један"
 msgid "Only at the end"
 msgstr "Тек на крају"
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:632
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:644
 #, elixir-autogen, elixir-format
 msgid "Only these vote: %{roles}."
 msgstr "Гласају само: %{roles}."
@@ -519,7 +519,7 @@ msgstr "Прво изабери одговор."
 msgid "Poll"
 msgstr "Гласање"
 
-#: lib/potok_ide_web/live/group_live/show.ex:605
+#: lib/potok_ide_web/live/group_live/show.ex:608
 #: lib/potok_ide_web/live/group_live/show/create_menu.ex:264
 #: lib/potok_ide_web/live/group_live/show/group_menu.ex:57
 #: lib/potok_ide_web/live/group_live/show/polls_tab.ex:32
@@ -663,12 +663,12 @@ msgstr "Тај избор није исправан."
 msgid "The most votes"
 msgstr "Највише гласова"
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:663
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:675
 #, elixir-autogen, elixir-format
 msgid "The organizer and those who manage polls can see who voted for what."
 msgstr "Ко је за шта гласао виде организатор и они који управљају гласањима."
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:666
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:678
 #, elixir-autogen, elixir-format
 msgid "The organizer, those who manage polls and these roles can see who voted for what: %{roles}."
 msgstr "Ко је за шта гласао виде организатор, они који управљају гласањима и ове улоге: %{roles}."
@@ -742,7 +742,7 @@ msgstr "Одзив и ко је учествовао. Организатор и�
 msgid "Two thirds of the votes"
 msgstr "Две трећине гласова"
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:565
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:577
 #, elixir-autogen, elixir-format
 msgid "Until"
 msgstr "До"
@@ -767,7 +767,7 @@ msgstr "Гласа тамо где то дозвољавају правила г
 msgid "Voted at (UTC)"
 msgstr "Време гласа (УТЦ)"
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:561
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:573
 #, elixir-autogen, elixir-format
 msgid "Voted:"
 msgstr "Гласало:"
@@ -852,7 +852,7 @@ msgstr "Да"
 msgid "Yes / No"
 msgstr "Да / Не"
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:645
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:657
 #, elixir-autogen, elixir-format
 msgid "You cannot vote in this group."
 msgstr "У овој групи не можеш да гласаш."
@@ -884,18 +884,18 @@ msgstr "Овде не можеш да гласаш."
 msgid "You voted"
 msgstr "Глас је дат"
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:523
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:524
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:535
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:536
 #, elixir-autogen, elixir-format
 msgid "Your answer"
 msgstr "Твој одговор"
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:642
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:654
 #, elixir-autogen, elixir-format
 msgid "Your roles do not allow voting."
 msgstr "Твоје улоге не дозвољавају гласање."
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:624
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:636
 #, elixir-autogen, elixir-format
 msgid "Your vote is recorded."
 msgstr "Твој глас је забележен."
@@ -925,7 +925,7 @@ msgstr "Гласања и одлуке, на једном месту."
 msgid "Ended"
 msgstr "Завршено"
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:677
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:689
 #, elixir-autogen, elixir-format
 msgid "View"
 msgstr "Погледај"
@@ -940,7 +940,7 @@ msgstr "Одговори без гласова"
 msgid "Remove this answer?"
 msgstr "Уклонити овај одговор?"
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:474
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:486
 #, elixir-autogen, elixir-format
 msgid "(deleted role)"
 msgstr "(обрисана улога)"
@@ -995,7 +995,7 @@ msgstr "Промени подсетник"
 msgid "Done as soon as the voting ends at its deadline."
 msgstr "Спроводи се чим се гласање заврши на року."
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:455
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:461
 #, elixir-autogen, elixir-format
 msgid "Done."
 msgstr "Спроведено."
@@ -1025,7 +1025,7 @@ msgstr "Ако прође: %{name} добија улогу %{role}."
 msgid "If it passes: %{name} loses the role %{role}."
 msgstr "Ако прође: %{name} губи улогу %{role}."
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:452
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:458
 #, elixir-autogen, elixir-format
 msgid "If it passes: the group no longer elects its admins."
 msgstr "Ако прође: група више не бира администраторе гласањем."
@@ -1040,27 +1040,27 @@ msgstr "Члан"
 msgid "Members can stand for themselves"
 msgstr "Чланови могу сами да се кандидују"
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:457
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:463
 #, elixir-autogen, elixir-format
 msgid "Not done: it did not pass."
 msgstr "Није спроведено: одлука није прошла."
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:469
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:475
 #, elixir-autogen, elixir-format
 msgid "Not done: the group would be left without an admin."
 msgstr "Није спроведено: група би остала без администратора."
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:460
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:466
 #, elixir-autogen, elixir-format
 msgid "Not done: the member is no longer in the group."
 msgstr "Није спроведено: члан више није у групи."
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:466
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:472
 #, elixir-autogen, elixir-format
 msgid "Not done: the role is held through the parent group."
 msgstr "Није спроведено: улога је наслеђена из надгрупе."
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:463
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:469
 #, elixir-autogen, elixir-format
 msgid "Not done: the role no longer exists."
 msgstr "Није спроведено: улога више не постоји."
@@ -1102,7 +1102,7 @@ msgstr "Тражи чланове по имену"
 msgid "Shall the group stop electing its admins?"
 msgstr "Да ли група престаје да бира администраторе гласањем?"
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:500
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:512
 #, elixir-autogen, elixir-format
 msgid "Stand in the election"
 msgstr "Кандидуј се"
@@ -1153,12 +1153,12 @@ msgstr "Више немаш улогу %{role}"
 msgid "You now hold the role %{role}"
 msgstr "Сада имаш улогу %{role}"
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:472
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:484
 #, elixir-autogen, elixir-format
 msgid "a former member"
 msgstr "бивши члан"
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:456
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:462
 #, elixir-autogen, elixir-format
 msgid "Not done."
 msgstr "Није спроведено."
@@ -1176,7 +1176,7 @@ msgstr "Дељени профил је онај који држи више на�
 msgid "Do not vote"
 msgstr "Не гласају"
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:606
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:618
 #: lib/potok_ide_web/live/group_live/show/request_rules.ex:218
 #, elixir-autogen, elixir-format
 msgid "Each holder of a shared profile votes through it as themself."
@@ -1194,24 +1194,24 @@ msgstr "Сваки носилац гласа посебно"
 msgid "One vote for all who hold it"
 msgstr "Један глас за све који га држе"
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:636
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:648
 #, elixir-autogen, elixir-format
 msgid "Only shared profiles vote in this poll."
 msgstr "У овој анкети гласају само дељени профили."
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:615
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:627
 #: lib/potok_ide_web/live/group_live/show/request_rules.ex:227
 #, elixir-autogen, elixir-format
 msgid "Only shared profiles vote, each of their holders separately."
 msgstr "Гласају само дељени профили, и то сваки њихов носилац посебно."
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:612
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:624
 #: lib/potok_ide_web/live/group_live/show/request_rules.ex:224
 #, elixir-autogen, elixir-format
 msgid "Only shared profiles vote, once for all who hold each."
 msgstr "Гласају само дељени профили, сваки једним гласом за све који га држе."
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:609
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:621
 #: lib/potok_ide_web/live/group_live/show/request_rules.ex:221
 #, elixir-autogen, elixir-format
 msgid "Only unique profiles vote; shared profiles do not."
@@ -1223,7 +1223,7 @@ msgstr "Гласају само јединствени профили; деље�
 msgid "Shared profiles"
 msgstr "Дељени профили"
 
-#: lib/potok_ide_web/live/group_live/show/poll_card.ex:639
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:651
 #, elixir-autogen, elixir-format
 msgid "Shared profiles do not vote in this poll."
 msgstr "Дељени профили не гласају у овој анкети."
@@ -1239,3 +1239,18 @@ msgstr "Јединствени профили"
 #, elixir-autogen, elixir-format
 msgid "Vote, one vote per account"
 msgstr "Гласају, један глас по налогу"
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:452
+#, elixir-autogen, elixir-format
+msgid "If it passes: %{name}, who asked, becomes a member of the group."
+msgstr "Ако прође: %{name}, који/а је тражио/ла, постаје члан групе."
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:478
+#, elixir-autogen, elixir-format
+msgid "Not done: the request is no longer there."
+msgstr "Није спроведено: захтева више нема."
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:481
+#, elixir-autogen, elixir-format
+msgid "Nothing to do: they are in the group already."
+msgstr "Нема шта да се спроведе: већ је у групи."

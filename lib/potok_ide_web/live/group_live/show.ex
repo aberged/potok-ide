@@ -29,6 +29,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   alias PotokIde.Notices
   alias PotokIde.Polls
   alias PotokIde.Polls.Effects
+  alias PotokIde.Social.GroupRequests
   alias PotokIde.RateLimit
   alias PotokIde.Storage
   alias PotokIde.Tags
@@ -57,6 +58,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     ProcessForm,
     ProcessesState,
     ProcessesTab,
+    RequestDialogs,
     RequestRules,
     RolesTab,
     RootMapState,
@@ -363,7 +365,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
                   :if={is_nil(@pending_join_request)}
                   id="group-request-access"
                   type="button"
-                  phx-click="request_join"
+                  phx-click="request_dialog_open"
+                  phx-value-kind="join"
                   variant="soft"
                   class="max-sm:w-10 max-sm:px-0"
                 >
@@ -373,11 +376,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 <div
                   :if={!is_nil(@pending_join_request)}
                   id="group-request-access-pending"
-                  title={gettext("Access request pending")}
+                  title={pending_request_label(@pending_join_request)}
                   class="inline-flex items-center justify-center rounded-full bg-sky-900 text-sm font-medium text-sky-50 max-sm:size-10 sm:px-3 sm:py-2"
                 >
                   <.icon name="hero-clock" class="size-5 sm:hidden" />
-                  <span class="max-sm:sr-only">{gettext("Access request pending")}</span>
+                  <span class="max-sm:sr-only">{pending_request_label(@pending_join_request)}</span>
                 </div>
               </div>
 
@@ -705,6 +708,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 group={@group}
                 access={@access}
                 join_requests={@pending_join_requests}
+                role_requests={@role_requests}
                 pending_join_requests_count={@pending_join_requests_count}
                 blocks={@group_blocks}
               />
@@ -943,6 +947,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
       <CreateMenu.menu menu={@group_create_menu} />
       <KindMenu.dialog menu={@group_kind_menu} />
       <PollForm.dialog state={@poll_form} />
+      <RequestDialogs.ask_dialog state={@request_dialog} />
+      <RequestDialogs.decide_dialog state={@decision_dialog} current_profile={@current_profile} />
       <ProcessForm.dialog state={@process_form} />
       <ProcessesTab.start_dialog start={@processes_start} />
       <ValueSearch.dialog
@@ -1098,7 +1104,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:invite_profile_suggestions, [])
          |> assign(:pending_join_request, nil)
          |> assign(:pending_join_requests, [])
+         |> assign(:role_requests, [])
          |> assign(:pending_join_requests_count, 0)
+         |> assign(:request_dialog, nil)
+         |> assign(:decision_dialog, nil)
          |> assign(:group_tags, [])
          |> assign(:group_reactions, [])
          |> assign(:can_react_to_group, false)
@@ -1851,6 +1860,86 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_event("load_more_members", _params, socket) do
     {:noreply, load_more_members(socket)}
+  end
+
+  # Asking to join (`kind` "join") or, as a member, for roles ("roles").
+  def handle_event("request_dialog_open", params, socket) do
+    %{group: group, access: access, current_profile: profile} = socket.assigns
+    kind = if params["kind"] == "roles", do: :roles, else: :join
+
+    held =
+      if kind == :roles do
+        %{
+          waiting: (GroupRequests.roles_request_of(group, profile) || %{role_keys: []}).role_keys,
+          voting: GroupRequests.voting_role_keys(group, profile)
+        }
+      else
+        %{waiting: [], voting: []}
+      end
+
+    case RequestDialogs.ask_state(group, access, kind, held) do
+      nil -> {:noreply, put_flash(socket, :info, gettext("There is no role to ask for here."))}
+      state -> {:noreply, assign(socket, :request_dialog, state)}
+    end
+  end
+
+  def handle_event("request_dialog_close", _params, socket),
+    do: {:noreply, assign(socket, :request_dialog, nil)}
+
+  def handle_event("request_send", %{"request" => params}, socket) do
+    %{group: group, current_profile: profile, request_dialog: state} = socket.assigns
+
+    case state &&
+           RequestDialogs.ask(profile, socket.assigns.current_scope.account, group, state, params) do
+      {:ok, message} ->
+        {:noreply,
+         socket
+         |> assign(:request_dialog, nil)
+         |> put_flash(:info, message)
+         |> refresh_group_data()}
+
+      {:error, message} ->
+        {:noreply, assign(socket, :request_dialog, %{state | error: message})}
+
+      nil ->
+        {:noreply, socket}
+    end
+  end
+
+  # Whoever decides opens a request: `kind` "join" or "roles".
+  def handle_event("request_decision_open", %{"kind" => kind, "id" => id}, socket) do
+    %{group: group, access: access} = socket.assigns
+
+    with {id, ""} <- Integer.parse(id),
+         ref = if(kind == "roles", do: {:roles, id}, else: {:join, id}),
+         request when not is_nil(request) <- GroupRequests.get_request(group, ref),
+         state when not is_nil(state) <- RequestDialogs.decide_state(group, access, request) do
+      {:noreply, assign(socket, :decision_dialog, state)}
+    else
+      _none -> {:noreply, put_flash(socket, :error, gettext("Access request not found."))}
+    end
+  end
+
+  def handle_event("request_decision_close", _params, socket),
+    do: {:noreply, assign(socket, :decision_dialog, nil)}
+
+  def handle_event("request_decide", %{"decision" => params}, socket) do
+    %{group: group, current_profile: profile, decision_dialog: state} = socket.assigns
+
+    case state && RequestDialogs.decide(profile, group, state, params) do
+      {:ok, message} ->
+        {:noreply,
+         socket
+         |> assign(:decision_dialog, nil)
+         |> put_flash(:info, message)
+         |> refresh_group_data()}
+
+      {:error, message} ->
+        {:noreply, assign(socket, :decision_dialog, %{state | error: message})}
+
+      nil ->
+        {:noreply, socket}
+    end
   end
 
   def handle_event("request_join", _params, socket) do
@@ -6093,11 +6182,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
         nil
       end
 
-    pending_join_requests =
+    pending =
       if needs_members?(group, active_tab) and can_manage_join_requests do
-        Social.list_pending_group_join_requests(group)
+        GroupRequests.pending(group)
       else
-        []
+        %{join: [], roles: []}
       end
 
     pending_join_requests_count =
@@ -6117,7 +6206,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
     socket
     |> assign(:pending_join_request, pending_join_request)
-    |> assign(:pending_join_requests, pending_join_requests)
+    |> assign(:pending_join_requests, pending.join)
+    |> assign(:role_requests, pending.roles)
     |> assign(:pending_join_requests_count, pending_join_requests_count)
     |> assign(:group_blocks, group_blocks)
   end
@@ -7179,6 +7269,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
+  defp pending_request_label(%{poll_id: poll_id}) when not is_nil(poll_id),
+    do: gettext("The group votes on your request")
+
+  defp pending_request_label(_request), do: gettext("Access request pending")
+
   defp handle_join_request_action(socket, id, action, success_message) do
     current_profile = socket.assigns.current_profile
     group = socket.assigns.group
@@ -7197,6 +7292,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
           {:error, :request_not_found} ->
             {:noreply, put_flash(socket, :error, gettext("Access request not found."))}
+
+          {:error, :in_vote} ->
+            {:noreply, put_flash(socket, :error, RequestDialogs.error_message(:in_vote))}
 
           {:error, %Ecto.Changeset{}} ->
             {:noreply, put_flash(socket, :error, gettext("Could not update access request."))}

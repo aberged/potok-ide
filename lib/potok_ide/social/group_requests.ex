@@ -86,6 +86,66 @@ defmodule PotokIde.Social.GroupRequests do
   end
 
   @doc """
+  What the holder of `access` may make of a request for `role` in `group`, in
+  the order a form offers it: `:grant`, `:refuse`, `:vote` and `:later`, as
+  the rule allows. A role no longer asked for can only be refused, one the
+  rule always votes on only goes to a vote.
+  """
+  def choices(%GroupRole{} = role, %Access{} = access, %Group{} = group) do
+    case mode(role, group) do
+      :closed ->
+        [:refuse]
+
+      :vote ->
+        [:vote]
+
+      :approve ->
+        if(may_grant?(access, group, role),
+          do: [:grant, :refuse, :later],
+          else: [:refuse, :later]
+        )
+
+      :choose ->
+        if(may_grant?(access, group, role),
+          do: [:grant, :refuse, :vote, :later],
+          else: [:refuse, :vote, :later]
+        )
+    end
+  end
+
+  @doc "What a form picks first of `choices/3`: to wait, unless the rule decides."
+  def default_choice(choices) do
+    cond do
+      :later in choices -> :later
+      choices == [:vote] -> :vote
+      true -> hd(choices)
+    end
+  end
+
+  @doc "What whoever decides may do with a request to join `group`: none while a vote decides every one."
+  def admission_choices(%Group{join_mode: :approve}), do: [:admit, :refuse]
+  def admission_choices(%Group{join_mode: :choose}), do: [:admit, :refuse, :vote]
+  def admission_choices(%Group{join_mode: :vote}), do: []
+
+  @doc """
+  A request of `group`, `{:join, id}` or `{:roles, id}`, with who asked; nil
+  when there is none.
+  """
+  def get_request(%Group{id: group_id}, {:join, id}) when is_integer(id) do
+    GroupJoinRequest
+    |> Repo.get_by(id: id, group_id: group_id)
+    |> then(&(&1 && Repo.preload(&1, :requester)))
+  end
+
+  def get_request(%Group{id: group_id}, {:roles, id}) when is_integer(id) do
+    GroupRoleRequest
+    |> Repo.get_by(id: id, group_id: group_id)
+    |> then(&(&1 && Repo.preload(&1, :profile)))
+  end
+
+  def get_request(_group, _ref), do: nil
+
+  @doc """
   The roles of `group` the holder of `access` may ask for: those its statute
   lets be asked for, but "everyone" and those it holds already, its own or
   through the parent.
@@ -653,6 +713,16 @@ defmodule PotokIde.Social.GroupRequests do
     accesses = Access.for_profile_in_groups(profile, groups)
 
     Enum.filter(requests, &may_decide?(Map.fetch!(accesses, &1.group_id), &1.group))
+  end
+
+  @doc "The requests to join `profile` has waiting, with their groups."
+  def join_requests_of(%Profile{id: profile_id}) do
+    from(r in GroupJoinRequest,
+      where: r.requester_id == ^profile_id,
+      order_by: [desc: r.inserted_at, desc: r.id],
+      preload: :group
+    )
+    |> Repo.all()
   end
 
   @doc "The requests for roles `profile` has waiting, with their groups."
