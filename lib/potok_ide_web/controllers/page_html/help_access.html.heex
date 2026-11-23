@@ -660,6 +660,14 @@
         )
       } />
     </p>
+    <p id="hg-calc-in-app">
+      <.hg_text text={
+        dgettext(
+          "help_guides",
+          "In the app, the access overview of every group does the same with the group's real roles (`AccessCatalog`), and every member sees it: it asks the rules the group's page asks, so it says only what the page does. An admin can also open the group's page as the roles picked would see it (`AccessPreview`)."
+        )
+      } />
+    </p>
     <%!-- `assets/js/help_access.js` takes over from here: it reads `data-calc`
           (`HelpGuides.calc/0`) and draws the rows again at every change. --%>
     <div id="help-access-calc" class="hg-calc" data-calc={Jason.encode!(@calc)}>
@@ -889,6 +897,17 @@
         </dd>
       </div>
       <div>
+        <dt>{dgettext("help_guides", "Keeps what changed")}</dt>
+        <dd>
+          <.hg_text text={
+            dgettext(
+              "help_guides",
+              "Every change above, and every role given or taken, member admitted, removed or blocked, goes into the group's access history (`AccessHistory`) in the same step, with who made it. Every member reads it; blocks only those who may remove members."
+            )
+          } />
+        </dd>
+      </div>
+      <div>
         <dt>{dgettext("help_guides", "Makes the group's templates")}</dt>
         <dd>
           {dgettext(
@@ -967,6 +986,14 @@
               dgettext(
                 "help_guides",
                 "<b>A guest</b> has no profile, and so no permissions. They see a public group's name, picture and part of its description, and the whole description only if the group opened it to guests."
+              )
+            } />
+          </li>
+          <li>
+            <.hg_text text={
+              dgettext(
+                "help_guides",
+                "<b>A preview of the group as others see it</b> is for its admins only, as an admin already sees whatever a role sees. In it nothing changes: every event that would write stops, an upload is refused, no read marker moves and the app of a description does not run."
               )
             } />
           </li>

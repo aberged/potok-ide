@@ -66,7 +66,7 @@ What each person may do in a group is set by roles. Every group has the role Adm
 
 A sub-group takes its roles from the group above. If it needs different ones, it gets a manifest of its own, its own list of roles and permissions. How what you may do is worked out from roles and a manifest, with an example you change yourself, is on the page [Access rights in Potok](/pomoc/prava-pristupa).
 
-Roles are given by an admin, and also by [a decision of a poll](#odluka-o-ulogama): the poll says to whom it gives or from whom it takes which role, and that happens as soon as it ends. You can also [ask for a role](#zahtevi): each role says [how it is had](#kako-se-dobija-uloga), whether whoever manages requests gives it or a vote decides. A group can also [elect its admins](#izbor-administratora): Admin is then given and taken only by decisions of polls, not by founding the group.
+Roles are given by an admin, and also by [a decision of a poll](#odluka-o-ulogama): the poll says to whom it gives or from whom it takes which role, and that happens as soon as it ends. You can also [ask for a role](#zahtevi): each role says [how it is had](#kako-se-dobija-uloga), whether whoever manages requests gives it or a vote decides. A group can also [elect its admins](#izbor-administratora): Admin is then given and taken only by decisions of polls, not by founding the group. Who may do what, and why, every member sees in the [access overview](#pregled-pristupa), and every change of roles stays on record.
 
 ### Public, private and open {:#vidljivost}
 
@@ -309,6 +309,24 @@ A group has 20 permissions. At first, the role Everyone has the ones marked in t
 | Send notices | Notices to followers | |
 | Manage tags | Public tags on messages, files, events and the group | |
 | Edit group | Settings, description and app data | |
+
+### Access overview {:#pregled-pristupa}
+
+In the group's menu, under **Access overview**, and with the **Who may do what** button on the Roles and Members tabs, you see who may do what in the group, and why. The rules are the same for everyone, so every member sees the overview, and someone outside a public group sees only what they may do there and how one becomes a member.
+
+At the top you pick who to see it as: yourself, a new member, an admin, one or more roles together, and in a public group also someone outside it, a blocked profile or a guest. Each thing says whether they may and why, for example which role allows it, or that one role's denial wins over another's allowance. Below is what that pick would see: the group's sections, descriptions, the sub-groups it would be in, polls and app data.
+
+![Access overview: as a new member](pregled-pristupa)
+
+Further down are all roles side by side, how many people hold the permissions that act on others and through which roles, how each role is had, the rules of single things you see yourself, the sub-groups and how access changes. Tapping the number of a role's holders opens Members narrowed to that role.
+
+![Who holds power and how a role is had](pregled-pristupa-moc)
+
+At the bottom is the history: who gave or took which role, who changed roles, permissions or the settings that let people in, who admitted, removed or blocked whom, and when. Only those who may remove members see blocks in it. The history is kept since it began, so earlier changes are not in it.
+
+An admin of the group can also open it as the pick would: the **See the group like this** button shows the group's real page as that pick sees it, with a bar on top. It is only a preview: nothing can change, the app of a description does not run, and your own messages and unread counts stay yours. **Leave the preview** brings back the page as you see it.
+
+![The group as a new member sees it](pogledaj-kao)
 
 ## Calendar {:#kalendar}
 

@@ -135,6 +135,11 @@ defmodule PotokIdeWeb.HelpGuides do
         lib/potok_ide/social/group_manifest.ex
         lib/potok_ide/social/group_member_role.ex
         lib/potok_ide/social/member_inheritance.ex
+        lib/potok_ide/social/access_overview.ex
+        lib/potok_ide/social/access_history.ex
+        lib/potok_ide/social/group_access_change.ex
+        lib/potok_ide_web/live/group_live/show/access_catalog.ex
+        lib/potok_ide_web/live/group_live/show/access_preview.ex
         lib/potok_ide/social/group.ex
         lib/potok_ide/social.ex
       ),
@@ -144,6 +149,11 @@ defmodule PotokIdeWeb.HelpGuides do
         lib/potok_ide/social/group_manifest.ex
         lib/potok_ide/social/group_member_role.ex
         lib/potok_ide/social/member_inheritance.ex
+        lib/potok_ide/social/access_overview.ex
+        lib/potok_ide/social/access_history.ex
+        lib/potok_ide/social/group_access_change.ex
+        lib/potok_ide_web/live/group_live/show/access_catalog.ex
+        lib/potok_ide_web/live/group_live/show/access_preview.ex
       )
     }
   end

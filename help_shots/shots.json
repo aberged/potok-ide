@@ -234,6 +234,24 @@
     "url": "/groups/{groups.mz}/roles"
   },
   {
+    "name": "pregled-pristupa",
+    "as": "ana",
+    "url": "/groups/{groups.mz}/access",
+    "steps": [{ "click": "#access-view-preset-new" }, { "wait": "#access-view-preset-new[aria-pressed=true]" }, { "pause": 400 }]
+  },
+  {
+    "name": "pregled-pristupa-moc",
+    "as": "ana",
+    "url": "/groups/{groups.mz}/access",
+    "steps": [{ "wait": "#access-power" }, { "scroll": "#access-power" }, { "pause": 400 }]
+  },
+  {
+    "name": "pogledaj-kao",
+    "as": "ana",
+    "url": "/groups/{groups.mz}?as=everyone",
+    "steps": [{ "wait": "#access-preview-banner" }, { "pause": 400 }]
+  },
+  {
     "name": "kalendar",
     "as": "ana",
     "url": "/groups/{groups.root}/calendar"

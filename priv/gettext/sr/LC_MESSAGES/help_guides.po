@@ -66,17 +66,17 @@ msgstr "%{c2}, %{c3}, %{c4} do %{kb} KB"
 msgid "%{l}Everyone%{r} ∪ (assigned in G ∩ roles of M)"
 msgstr "%{l}Svi%{r} ∪ (dodeljene u G ∩ uloge iz M)"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:707
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:715
 #, elixir-autogen, elixir-format
 msgid "%{role} (every member)"
 msgstr "%{role} (svaki član)"
 
-#: lib/potok_ide_web/help_guides.ex:641
+#: lib/potok_ide_web/help_guides.ex:649
 #, elixir-autogen, elixir-format
 msgid "(Everyone cannot deny)"
 msgstr "(Svi ne može da zabrani)"
 
-#: lib/potok_ide_web/help_guides.ex:640
+#: lib/potok_ide_web/help_guides.ex:648
 #, elixir-autogen, elixir-format
 msgid "(does not change)"
 msgstr "(ne menja se)"
@@ -121,22 +121,22 @@ msgstr "3. Dozvole"
 msgid "4 · Everyone in the sub-group finds out"
 msgstr "4 · Svi u podgrupi saznaju"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:927
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:946
 #, elixir-autogen, elixir-format
 msgid "<b>A direct conversation</b> stands under the root and uses the root's manifest. Whoever opens it is recorded as Admin, but roles are not assigned in it and it gets no manifest of its own."
 msgstr "<b>Direktan razgovor</b> stoji pod korenom i koristi korenski manifest. Ko ga otvori, zapisan je kao Administrator, ali se u njemu uloge ne dodeljuju i svoj manifest se ne pravi."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:967
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:986
 #, elixir-autogen, elixir-format
 msgid "<b>A guest</b> has no profile, and so no permissions. They see a public group's name, picture and part of its description, and the whole description only if the group opened it to guests."
 msgstr "<b>Gost</b> nema profil, pa ni dozvole. Vidi ime, sliku i deo opisa javne grupe, a ceo opis samo ako ga je grupa otvorila gostima."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:935
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:954
 #, elixir-autogen, elixir-format
 msgid "<b>A process's profile</b> is a member only where the process puts it, with what Everyone may, until an Admin assigns it another role. It is not inherited and is not counted when something goes to the people with a permission."
 msgstr "<b>Profil procesa</b> je član samo gde ga proces stavi, sa onim što sme Svi, dok mu Administrator ne dodeli još neku ulogu. Ne nasleđuje se i ne broji se kad nešto ide ljudima sa nekom dozvolom."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:919
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:938
 #, elixir-autogen, elixir-format
 msgid "<b>A thread</b> is a group under the group of its message: it uses that group's manifest, and its members are only the participants, with the roles they hold in the group. Whoever opens it is its Admin, and so can make it a manifest of its own."
 msgstr "<b>Nit</b> je grupa ispod grupe svoje poruke: koristi njen manifest, a članovi su samo učesnici, sa ulogama koje drže u grupi. Ko je otvori, njen je Administrator, pa joj može napraviti i svoj manifest."
@@ -161,7 +161,7 @@ msgstr "Puna oznaka znači da grupa ima svoj manifest, prazna da koristi tuđi. 
 msgid "A group in Potok keeps data and rules. An app and a process work on the same group, but do not see each other. An app asks Potok through the API, a process writes into the group as its member, and both times Potok checks the permissions."
 msgstr "Grupa u Potoku čuva podatke i pravila. Aplikacija i proces rade nad istom grupom, ali se međusobno ne vide. Aplikacija pita Potok preko API-ja, proces upisuje u grupu kao njen član, a Potok oba puta proveri dozvole."
 
-#: lib/potok_ide_web/help_guides.ex:628
+#: lib/potok_ide_web/help_guides.ex:636
 #, elixir-autogen, elixir-format
 msgid "A guest with no account"
 msgstr "Gost bez naloga"
@@ -191,7 +191,7 @@ msgstr "Komšinica u turi 812 poruči 3 litra mleka i dodirne „Sačuvaj porud�
 msgid "A neighbor orders"
 msgstr "Komšinica poručuje"
 
-#: lib/potok_ide_web/help_guides.ex:627
+#: lib/potok_ide_web/help_guides.ex:635
 #, elixir-autogen, elixir-format
 msgid "A neighbor · not a member"
 msgstr "Komšija · nije član"
@@ -206,12 +206,12 @@ msgstr "Nova vrednost aplikacije"
 msgid "A person and a role"
 msgstr "Osoba i uloga"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1011
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1038
 #, elixir-autogen, elixir-format
 msgid "A poll says which roles vote, which see the results and the details, and how unique and shared profiles vote."
 msgstr "Glasanje kaže koje uloge glasaju, koje vide rezultate i pojedinosti, i kako glasaju jedinstveni i deljeni profili."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1017
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1044
 #, elixir-autogen, elixir-format
 msgid "A process asks a role by a form or a decision, and sends it a push, if it may mention roles."
 msgstr "Proces pita ulogu formom ili odlukom, i šalje joj push, ako sme da pominje uloge."
@@ -226,7 +226,7 @@ msgstr "Proces razgovara s drugim procesom samo korakom nacrtanim za to, pozivom
 msgid "A profile is a member of a group and holds assignments of roles in it. A group has at most one manifest of its own, and a manifest holds roles with lists of what they allow and deny. An assignment and a role are joined only by the role's key."
 msgstr "Profil je član grupe i drži dodele uloga u njoj. Grupa ima najviše jedan svoj manifest, a manifest sadrži uloge sa listama dozvola i zabrana. Dodelu i ulogu spaja samo ključ uloge."
 
-#: lib/potok_ide_web/help_guides.ex:681
+#: lib/potok_ide_web/help_guides.ex:689
 #, elixir-autogen, elixir-format
 msgid "A profile you set"
 msgstr "Podešen profil"
@@ -264,7 +264,7 @@ msgstr "Prava pristupa u Potoku"
 msgid "Admin"
 msgstr "Administrator"
 
-#: lib/potok_ide_web/help_guides.ex:647
+#: lib/potok_ide_web/help_guides.ex:655
 #, elixir-autogen, elixir-format
 msgid "Admin holds every permission"
 msgstr "Administrator drži sve dozvole"
@@ -294,12 +294,12 @@ msgstr "Sve su to metode objekta `window.potok`. Svaka postaje jedna poruka okvi
 msgid "Alternative description"
 msgstr "Alternativni opis"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:999
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1026
 #, elixir-autogen, elixir-format
 msgid "An alternative description can be seen by some roles only, along with those who may edit the group."
 msgstr "Alternativni opis može da vide samo neke uloge, uz one koji smeju da uređuju grupu."
 
-#: lib/potok_ide_web/help_guides.ex:396
+#: lib/potok_ide_web/help_guides.ex:404
 #, elixir-autogen, elixir-format
 msgid "An app's `localStorage`, a copy in Potok's page, apart for every app."
 msgstr "`localStorage` aplikacije, kopija u Potokovoj stranici, posebno za svaku aplikaciju."
@@ -324,7 +324,7 @@ msgstr "Instanca procesa stoji na formi ili odluci dok neko ne odgovori. Odatle 
 msgid "An instance waits for a person"
 msgstr "Instanca čeka osobu"
 
-#: lib/potok_ide_web/help_guides.ex:622
+#: lib/potok_ide_web/help_guides.ex:630
 #, elixir-autogen, elixir-format
 msgid "Ana · Admin"
 msgstr "Ana · Administrator"
@@ -357,7 +357,7 @@ msgstr "Aplikacija (API): da"
 msgid "App data"
 msgstr "Podaci aplikacija"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:805
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:813
 #, elixir-autogen, elixir-format
 msgid "Assigns and takes away roles"
 msgstr "Dodeljuje i skida uloge"
@@ -377,17 +377,17 @@ msgstr "B se pali na reč „kvar“"
 msgid "Back to the help"
 msgstr "Nazad na pomoć"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:901
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:920
 #, elixir-autogen, elixir-format
 msgid "Blocks a profile"
 msgstr "Blokira profil"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:783
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:791
 #, elixir-autogen, elixir-format
 msgid "Bring back the example's manifest"
 msgstr "Vrati manifest iz primera"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:856
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:864
 #, elixir-autogen, elixir-format
 msgid "Changes roles and permissions"
 msgstr "Menja uloge i dozvole"
@@ -397,7 +397,7 @@ msgstr "Menja uloge i dozvole"
 msgid "Chat"
 msgstr "Razgovor"
 
-#: lib/potok_ide_web/help_guides.ex:349
+#: lib/potok_ide_web/help_guides.ex:357
 #, elixir-autogen, elixir-format
 msgid "Data in collections"
 msgstr "Podaci u kolekcijama"
@@ -407,7 +407,7 @@ msgstr "Podaci u kolekcijama"
 msgid "Database"
 msgstr "Baza"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:865
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:873
 #, elixir-autogen, elixir-format
 msgid "Deletes a role"
 msgstr "Briše ulogu"
@@ -468,12 +468,12 @@ msgstr "Svaki korak ide u svojoj transakciji, pa se ono što upiše desi jednom.
 msgid "Everyone"
 msgstr "Svi"
 
-#: lib/potok_ide_web/help_guides.ex:665
+#: lib/potok_ide_web/help_guides.ex:673
 #, elixir-autogen, elixir-format
 msgid "Everyone may not react"
 msgstr "Svi ne sme da reaguje"
 
-#: lib/potok_ide_web/help_guides.ex:669
+#: lib/potok_ide_web/help_guides.ex:677
 #, elixir-autogen, elixir-format
 msgid "Everyone may not write"
 msgstr "Svi ne sme da piše"
@@ -483,7 +483,7 @@ msgstr "Svi ne sme da piše"
 msgid "Everyone, direct"
 msgstr "Svi, direktno"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:671
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:679
 #, elixir-autogen, elixir-format
 msgid "Example profiles"
 msgstr "Primeri profila"
@@ -493,7 +493,7 @@ msgstr "Primeri profila"
 msgid "Exceptions in a public group:"
 msgstr "Izuzeci u javnoj grupi:"
 
-#: lib/potok_ide_web/help_guides.ex:357
+#: lib/potok_ide_web/help_guides.ex:365
 #, elixir-autogen, elixir-format
 msgid "Files, description, sign-in"
 msgstr "Fajlovi, opis, prijava"
@@ -518,19 +518,19 @@ msgstr "Od koda do okvira"
 msgid "From the same series"
 msgstr "Iz iste serije"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:874
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:882
 #, elixir-autogen, elixir-format
 msgid "Goes back to the inherited one"
 msgstr "Vraća se na nasleđeni"
 
 #: lib/potok_ide_web/controllers/page_html/help_access.html.heex:64
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:714
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:722
 #: lib/potok_ide_web/controllers/page_html/help_app_architecture.html.heex:132
 #, elixir-autogen, elixir-format
 msgid "Group"
 msgstr "Grupa"
 
-#: lib/potok_ide_web/help_guides.ex:351
+#: lib/potok_ide_web/help_guides.ex:359
 #, elixir-autogen, elixir-format
 msgid "Groups below"
 msgstr "Grupe ispod"
@@ -540,7 +540,7 @@ msgstr "Grupe ispod"
 msgid "Groups below it"
 msgstr "Grupe ispod sebe"
 
-#: lib/potok_ide_web/help_guides.ex:414
+#: lib/potok_ide_web/help_guides.ex:422
 #, elixir-autogen, elixir-format
 msgid "Groups by one `createChildren`, all or none, for one token."
 msgstr "Grupa jednim `createChildren`, sve ili nijedna, za jedan token."
@@ -570,14 +570,14 @@ msgstr "HTML u opisu grupe, podrazumevanom ili alternativnom. Radi kod gledaoca,
 msgid "Has a profile?"
 msgstr "Ima profil?"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:752
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:760
 #, elixir-autogen, elixir-format
 msgid "Has it?"
 msgstr "Ima?"
 
 #: lib/potok_ide_web/controllers/page_html/help_access.html.heex:238
 #: lib/potok_ide_web/controllers/page_html/help_access.html.heex:307
-#: lib/potok_ide_web/help_guides.ex:515
+#: lib/potok_ide_web/help_guides.ex:523
 #, elixir-autogen, elixir-format
 msgid "House council"
 msgstr "Kućni savet"
@@ -597,7 +597,7 @@ msgstr "Kako se računa"
 msgid "In a browser it runs with the %{c1},"
 msgstr "U pregledaču radi uz %{c1},"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:867
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:875
 #, elixir-autogen, elixir-format
 msgid "It also deletes its assignments in every group that uses that manifest. Groups with a copy of their own keep their role."
 msgstr "Briše i njene dodele u svim grupama koje koriste taj manifest. Grupe sa svojom kopijom zadržavaju svoju ulogu."
@@ -637,7 +637,7 @@ msgstr "Piše u svojoj grupi i u podgrupama koje je sam napravio, koliko mu tamo
 msgid "It writes only into its own collections. It reads other apps' values only outside collections, and another app's collection never."
 msgstr "Upisuje samo u svoje kolekcije. Tuđe vrednosti čita samo van kolekcija, a tuđu kolekciju nikad."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:797
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:805
 #, elixir-autogen, elixir-format
 msgid "Its maker becomes its first Admin. A new group has no manifest of its own and uses an ancestor's. The exceptions are `.feed` and an app's groups for files, which are made with a manifest of their own, and a sub-group a process makes: its Admins are the people the process names."
 msgstr "Tvorac postaje njen prvi Administrator. Nova grupa nema svoj manifest, nego koristi pretkov. Izuzeci su `.feed` i grupe za fajlove aplikacije, koje nastaju sa svojim manifestom, i podgrupa koju napravi proces: njeni Administratori su ljudi koje proces navede."
@@ -647,7 +647,7 @@ msgstr "Tvorac postaje njen prvi Administrator. Nova grupa nema svoj manifest, n
 msgid "Its own collections"
 msgstr "Svoje kolekcije"
 
-#: lib/potok_ide_web/help_guides.ex:624
+#: lib/potok_ide_web/help_guides.ex:632
 #, elixir-autogen, elixir-format
 msgid "Jelena · only Everyone"
 msgstr "Jelena · samo Svi"
@@ -704,12 +704,12 @@ msgstr "M2 · nasleđen"
 msgid "M2 · own"
 msgstr "M2 · svoj"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:794
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:802
 #, elixir-autogen, elixir-format
 msgid "Makes a group"
 msgstr "Pravi grupu"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:847
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:855
 #, elixir-autogen, elixir-format
 msgid "Makes a manifest of its own"
 msgstr "Pravi svoj manifest"
@@ -724,12 +724,12 @@ msgstr "Upravnik"
 msgid "Manifest"
 msgstr "Manifest"
 
-#: lib/potok_ide_web/help_guides.ex:352
+#: lib/potok_ide_web/help_guides.ex:360
 #, elixir-autogen, elixir-format
 msgid "Map"
 msgstr "Mapa"
 
-#: lib/potok_ide_web/help_guides.ex:623
+#: lib/potok_ide_web/help_guides.ex:631
 #, elixir-autogen, elixir-format
 msgid "Marko · House council"
 msgstr "Marko · Kućni savet"
@@ -744,7 +744,7 @@ msgstr "Članovi i uloge"
 msgid "Membership"
 msgstr "Članstvo"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1023
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1050
 #, elixir-autogen, elixir-format
 msgid "Mentioning a role in a message tells everyone who holds it, with the permission Mention roles."
 msgstr "Pominjanje uloge u poruci javlja svima koji je drže, uz dozvolu Pominjanje uloga."
@@ -805,17 +805,17 @@ msgstr "PROVERA DOZVOLA"
 msgid "People"
 msgstr "Ljudi"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:743
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:751
 #, elixir-autogen, elixir-format
 msgid "Permission"
 msgstr "Dozvola"
 
-#: lib/potok_ide_web/help_guides.ex:625
+#: lib/potok_ide_web/help_guides.ex:633
 #, elixir-autogen, elixir-format
 msgid "Petar · Tenant"
 msgstr "Petar · Podstanar"
 
-#: lib/potok_ide_web/help_guides.ex:354
+#: lib/potok_ide_web/help_guides.ex:362
 #, elixir-autogen, elixir-format
 msgid "Polls"
 msgstr "Ankete"
@@ -875,7 +875,7 @@ msgid "Process B"
 msgstr "Proces B"
 
 #: lib/potok_ide_web/controllers/page_html/help_processes_apps.html.heex:145
-#: lib/potok_ide_web/help_guides.ex:353
+#: lib/potok_ide_web/help_guides.ex:361
 #, elixir-autogen, elixir-format
 msgid "Processes"
 msgstr "Procesi"
@@ -886,7 +886,7 @@ msgid "Processes among themselves"
 msgstr "Procesi među sobom"
 
 #: lib/potok_ide_web/controllers/page_html/help_access.html.heex:29
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:685
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:693
 #, elixir-autogen, elixir-format
 msgid "Profile"
 msgstr "Profil"
@@ -896,12 +896,12 @@ msgstr "Profil"
 msgid "Profile P opens group G"
 msgstr "Profil P otvara grupu G"
 
-#: lib/potok_ide_web/help_guides.ex:355
+#: lib/potok_ide_web/help_guides.ex:363
 #, elixir-autogen, elixir-format
 msgid "Reactions, sharing, link"
 msgstr "Reakcije, deljenje, link"
 
-#: lib/potok_ide_web/help_guides.ex:654
+#: lib/potok_ide_web/help_guides.ex:662
 #, elixir-autogen, elixir-format
 msgid "Reacts to the group"
 msgstr "Reaguje na grupu"
@@ -911,7 +911,7 @@ msgstr "Reaguje na grupu"
 msgid "Read"
 msgstr "Pročitaj"
 
-#: lib/potok_ide_web/help_guides.ex:655
+#: lib/potok_ide_web/help_guides.ex:663
 #, elixir-autogen, elixir-format
 msgid "Reads the chat"
 msgstr "Čita razgovor"
@@ -948,7 +948,7 @@ msgstr "Uloga"
 msgid "Role assignment"
 msgstr "Dodela uloge"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:993
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1020
 #, elixir-autogen, elixir-format
 msgid "Roles also work outside these %{n} permissions"
 msgstr "Uloge rade i van ovih %{n} dozvola"
@@ -974,12 +974,12 @@ msgstr "S i T nisu učestvovali"
 msgid "Settings"
 msgstr "Podešavanja"
 
-#: lib/potok_ide_web/help_guides.ex:350
+#: lib/potok_ide_web/help_guides.ex:358
 #, elixir-autogen, elixir-format
 msgid "Settings and people"
 msgstr "Podešavanja i ljudi"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:915
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:934
 #, elixir-autogen, elixir-format
 msgid "Special cases"
 msgstr "Posebni slučajevi"
@@ -999,17 +999,17 @@ msgstr "Podgrupa"
 msgid "Sub-groups"
 msgstr "Podgrupe"
 
-#: lib/potok_ide_web/help_guides.ex:521
+#: lib/potok_ide_web/help_guides.ex:529
 #, elixir-autogen, elixir-format
 msgid "Tenant"
 msgstr "Podstanar"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:858
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:866
 #, elixir-autogen, elixir-format
 msgid "The Admin of a group that has a manifest of its own. Admin always has everything, Everyone only allows, and the root's manifest is not changed. A change holds for every group below that uses that manifest."
 msgstr "Administrator grupe koja ima svoj manifest. Administrator uvek ima sve, Svi samo dozvoljava, a korenski manifest se ne menja. Promena važi za svaku grupu ispod koja taj manifest koristi."
 
-#: lib/potok_ide_web/help_guides.ex:432
+#: lib/potok_ide_web/help_guides.ex:440
 #, elixir-autogen, elixir-format
 msgid "The answer to a call from an app the viewer has closed in the meantime."
 msgstr "Odgovor na poziv aplikacije koju je gledalac u međuvremenu zatvorio."
@@ -1034,12 +1034,12 @@ msgstr "Arhitektura Potok aplikacije"
 msgid "The example is Zgrada Cvetna 12 from the help, with the processes “Reporting a fault” and “Repairer” (<a1>steps 9 and 10</a1>). One thing is added here: the report is started, and its first outcome picked, by an app in the building's description. In the help that is done on the Processes tab, and the process is the same either way."
 msgstr "Primer je Zgrada Cvetna 12 iz pomoći, sa procesima „Prijava kvara“ i „Majstor“ (<a1>koraci 9 i 10</a1>). Jedno je ovde dodato: prijavu pokreće i prvi ishod bira aplikacija u opisu zgrade. U pomoći se to radi na kartici Procesi, a proces je u oba slučaja isti."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:876
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:884
 #, elixir-autogen, elixir-format
 msgid "The group deletes its own manifest. Assignments of roles the inherited manifest lacks are deleted, except Admin."
 msgstr "Grupa briše svoj manifest. Dodele uloga kojih nasleđeni manifest nema brišu se, osim Administratora."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:885
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:893
 #, elixir-autogen, elixir-format
 msgid "The group gets the parent's members with their roles, marked as inherited: all of them, or only those who hold the chosen roles. When it is turned off, the inherited ones become direct and nobody drops out."
 msgstr "Grupa dobija članove roditelja sa njihovim ulogama, označene kao nasleđene: sve, ili samo one koji drže izabrane uloge. Kad se isključi, nasleđeni postaju direktni i niko ne ispada."
@@ -1049,12 +1049,12 @@ msgstr "Grupa dobija članove roditelja sa njihovim ulogama, označene kao nasle
 msgid "The group in Potok"
 msgstr "Grupa u Potoku"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:849
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:857
 #, elixir-autogen, elixir-format
 msgid "The group's Admin, except in a direct conversation. The group gets a copy of the manifest in force with the same role keys, so every assignment still holds."
 msgstr "Administrator grupe, osim u direktnom razgovoru. Dobija kopiju važećeg manifesta sa istim ključevima uloga, pa sve dodele i dalje važe."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:807
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:815
 #, elixir-autogen, elixir-format
 msgid "The group's Admin, only to its members, and only roles of the manifest in force, or a decision of a poll that says so, or, on a request, whoever manages requests where the role's rule lets them. Everyone is not assigned. The last Admin cannot be taken away, and a role inherited from the parent is taken away in the parent. Where the group elects its admins, Admin is given and taken only by a decision."
 msgstr "Administrator grupe, samo njenim članovima, i samo uloge iz važećeg manifesta, ili odluka glasanja koja to kaže, ili, na zahtev, onaj ko upravlja zahtevima kad mu pravilo uloge to dopušta. Svi se ne dodeljuje. Poslednji Administrator se ne može skinuti, a uloga nasleđena iz roditelja skida se u roditelju. Gde grupa bira administratore, Administrator se daje i oduzima samo odlukom."
@@ -1069,7 +1069,7 @@ msgstr "LiveView grupe"
 msgid "The group's page"
 msgstr "Stranica grupe"
 
-#: lib/potok_ide_web/help_guides.ex:378
+#: lib/potok_ide_web/help_guides.ex:386
 #, elixir-autogen, elixir-format
 msgid "The most one value in a collection holds, and an app's settings."
 msgstr "Najviše jedna vrednost u kolekciji i podešavanja aplikacije."
@@ -1102,7 +1102,7 @@ msgstr "Slika pokazuje korake koji diraju grupu. Svi koraci od kojih se proces c
 msgid "The procedure: find the manifest in force; a guest has no permissions; a profile that is not a member has none but the exceptions of a public group; a member holds the role Everyone and the assigned roles the manifest has; Admin has everything; otherwise the permissions are the union of what is allowed minus the union of what is denied."
 msgstr "Postupak: nađi važeći manifest; gost nema dozvole; nečlan nema dozvole osim izuzetaka javne grupe; član drži ulogu Svi i dodeljene uloge koje manifest ima; Administrator ima sve; inače dozvole su unija dozvoljenog minus unija zabranjenog."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:781
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:789
 #, elixir-autogen, elixir-format
 msgid "The roles the profile holds are in blue."
 msgstr "Plavo su uloge koje profil drži."
@@ -1117,7 +1117,7 @@ msgstr "Koren i Mesna zajednica imaju svoje manifeste. Zgrada Cvetna 12 i Ulaz A
 msgid "The rules are copied from the <a1>domain map</a1> and from the code."
 msgstr "Pravila su prepisana sa <a1>mape domena</a1> i iz koda."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1005
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1032
 #, elixir-autogen, elixir-format
 msgid "The rules of an app's collections say which roles write, and which read everything."
 msgstr "Pravila kolekcija aplikacije kažu koje uloge pišu, a koje čitaju sve."
@@ -1162,7 +1162,7 @@ msgstr "Nit „Kvar: lift“"
 msgid "Three columns: the app in the browser, the group in Potok and the processes on the server. Every link of the app and of the processes with the group goes through the check of permissions, and the app and a process never see each other directly."
 msgstr "Tri kolone: aplikacija u pregledaču, grupa u Potoku i procesi na serveru. Sve veze aplikacije i procesa sa grupom prolaze kroz proveru dozvola, a aplikacija i proces se nikad ne vide direktno."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:883
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:891
 #, elixir-autogen, elixir-format
 msgid "Turns on “Inherit members”"
 msgstr "Uključi „Nasleđuje članove“"
@@ -1177,12 +1177,12 @@ msgstr "Niz stablo se nasleđuju dve različite stvari. Manifest se nasleđuje u
 msgid "Two inheritances down the tree"
 msgstr "Dva nasleđivanja niz stablo"
 
-#: lib/potok_ide_web/help_guides.ex:387
+#: lib/potok_ide_web/help_guides.ex:395
 #, elixir-autogen, elixir-format
 msgid "Values of a profile that is not a member of a public group, where a rule lets it write, in one group across all its apps."
 msgstr "Vrednosti nečlana javne grupe, gde ga pravilo pušta da piše, u jednoj grupi kroz sve njene aplikacije."
 
-#: lib/potok_ide_web/help_guides.ex:626
+#: lib/potok_ide_web/help_guides.ex:634
 #, elixir-autogen, elixir-format
 msgid "Vesna · council and tenant"
 msgstr "Vesna · savet i podstanar"
@@ -1237,7 +1237,7 @@ msgstr "Gde koji staje"
 msgid "Where this is in the code:"
 msgstr "Izvori u kodu:"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:791
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:799
 #, elixir-autogen, elixir-format
 msgid "Who changes what"
 msgstr "Ko šta menja"
@@ -1257,12 +1257,12 @@ msgstr "Ko je ko"
 msgid "Who talks to whom"
 msgstr "Ko s kim razgovara"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:903
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:922
 #, elixir-autogen, elixir-format
 msgid "Whoever may remove members blocks. A blocked profile does not write, react, vote in a public poll or ask for access, and cannot be invited. A member answers to their roles, so a block also takes them out of the group. An inherited member cannot be blocked here, as their membership comes from the parent."
 msgstr "Blokira onaj ko sme da uklanja članove. Blokiran ne piše, ne reaguje, ne glasa u javnom glasanju, ne traži pristup i ne može biti pozvan. Član odgovara svojim ulogama, pa ga blok i izbacuje iz grupe. Nasleđen član se ovde ne može blokirati, jer mu članstvo dolazi iz roditelja."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:753
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:761
 #, elixir-autogen, elixir-format
 msgid "Why"
 msgstr "Zašto"
@@ -1272,12 +1272,12 @@ msgstr "Zašto"
 msgid "Work it out yourself"
 msgstr "Izračunaj sam"
 
-#: lib/potok_ide_web/help_guides.ex:368
+#: lib/potok_ide_web/help_guides.ex:376
 #, elixir-autogen, elixir-format
 msgid "Writes in a row per open page, and then the tokens fill up again in %{seconds} s."
 msgstr "Upisa zaredom po otvorenoj stranici, pa se tokeni dopunjuju za %{seconds} s."
 
-#: lib/potok_ide_web/help_guides.ex:656
+#: lib/potok_ide_web/help_guides.ex:664
 #, elixir-autogen, elixir-format
 msgid "Writes in the chat"
 msgstr "Piše u razgovor"
@@ -1300,7 +1300,7 @@ msgstr "Zgrada Cvetna 12"
 msgid "Zgrada Cvetna 14"
 msgstr "Zgrada Cvetna 14"
 
-#: lib/potok_ide_web/help_guides.ex:423
+#: lib/potok_ide_web/help_guides.ex:431
 #, elixir-autogen, elixir-format
 msgid "`summarizeValues` and `aggregateValues` read all of an app's values, so they are limited per viewer, together with `listWaiting`, `placeShapes` and `listPlaces`."
 msgstr "`summarizeValues` i `aggregateValues` čitaju sve vrednosti aplikacije, pa su ograničeni po gledaocu, zajedno sa `listWaiting`, `placeShapes` i `listPlaces`."
@@ -1335,7 +1335,7 @@ msgstr "odluka čeka upravnika"
 msgid "a denial beats every allowance; Everyone only allows"
 msgstr "zabrana pobeđuje svaku dozvolu; Svi samo dozvoljava"
 
-#: lib/potok_ide_web/help_guides.ex:650
+#: lib/potok_ide_web/help_guides.ex:658
 #, elixir-autogen, elixir-format
 msgid "a denial beats the allowance"
 msgstr "zabrana pobeđuje dozvolu"
@@ -1355,12 +1355,12 @@ msgstr "lice u grupama"
 msgid "a group without one uses an ancestor's"
 msgstr "grupa bez svog koristi pretkov"
 
-#: lib/potok_ide_web/help_guides.ex:645
+#: lib/potok_ide_web/help_guides.ex:653
 #, elixir-autogen, elixir-format
 msgid "a guest has no profile, and so no permissions"
 msgstr "gost nema profil, pa ni dozvole"
 
-#: lib/potok_ide_web/help_guides.ex:682
+#: lib/potok_ide_web/help_guides.ex:690
 #, elixir-autogen, elixir-format
 msgid "a guest, with no profile"
 msgstr "gost, bez profila"
@@ -1370,18 +1370,18 @@ msgstr "gost, bez profila"
 msgid "a member of the building"
 msgstr "član zgrade"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:696
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:704
 #, elixir-autogen, elixir-format
 msgid "a member of the group"
 msgstr "član grupe"
 
-#: lib/potok_ide_web/help_guides.ex:674
+#: lib/potok_ide_web/help_guides.ex:682
 #, elixir-autogen, elixir-format
 msgid "a member reads the chat of their group"
 msgstr "član čita razgovor svoje grupe"
 
-#: lib/potok_ide_web/help_guides.ex:671
-#: lib/potok_ide_web/help_guides.ex:676
+#: lib/potok_ide_web/help_guides.ex:679
+#: lib/potok_ide_web/help_guides.ex:684
 #, elixir-autogen, elixir-format
 msgid "a member: by the permission %{permission}"
 msgstr "član: po dozvoli %{permission}"
@@ -1396,7 +1396,7 @@ msgstr "proces po gledaocu"
 msgid "a project template"
 msgstr "šablon projekta"
 
-#: lib/potok_ide_web/help_guides.ex:664
+#: lib/potok_ide_web/help_guides.ex:672
 #, elixir-autogen, elixir-format
 msgid "a public group, and Everyone may react"
 msgstr "javna grupa, a Svi sme da reaguje"
@@ -1431,13 +1431,13 @@ msgstr "doda %{c1} opisa na ekranu"
 msgid "all the CSS"
 msgstr "sav CSS"
 
-#: lib/potok_ide_web/help_guides.ex:648
+#: lib/potok_ide_web/help_guides.ex:656
 #, elixir-autogen, elixir-format
 msgid "allowed by"
 msgstr "dozvoljava"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:777
-#: lib/potok_ide_web/help_guides.ex:635
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:785
+#: lib/potok_ide_web/help_guides.ex:643
 #, elixir-autogen, elixir-format
 msgid "allows"
 msgstr "dozvoljava"
@@ -1457,7 +1457,7 @@ msgstr "dodaje i licence zavisnosti"
 msgid "also works for a guest of a public group"
 msgstr "radi i za gosta javne grupe"
 
-#: lib/potok_ide_web/help_guides.ex:638
+#: lib/potok_ide_web/help_guides.ex:646
 #, elixir-autogen, elixir-format
 msgid "always has"
 msgstr "uvek ima"
@@ -1472,7 +1472,7 @@ msgstr "dodela uloge koje M nema se ne broji"
 msgid "an entity types the input · step: changes a field"
 msgstr "entitet je tip ulaza · korak: menja polje"
 
-#: lib/potok_ide_web/help_guides.ex:668
+#: lib/potok_ide_web/help_guides.ex:676
 #, elixir-autogen, elixir-format
 msgid "an open chat, and Everyone may write"
 msgstr "otvoren razgovor, a Svi sme da piše"
@@ -1607,13 +1607,13 @@ msgstr "proveri izvor i metodu"
 msgid "checks who may, starts"
 msgstr "proveri ko sme, pokreće"
 
-#: lib/potok_ide_web/help_guides.ex:649
+#: lib/potok_ide_web/help_guides.ex:657
 #, elixir-autogen, elixir-format
 msgid "denied by"
 msgstr "zabranjuje"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:778
-#: lib/potok_ide_web/help_guides.ex:636
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:786
+#: lib/potok_ide_web/help_guides.ex:644
 #, elixir-autogen, elixir-format
 msgid "denies"
 msgstr "zabranjuje"
@@ -1628,7 +1628,7 @@ msgstr "zabranjuje […]"
 msgid "direct or inherited"
 msgstr "direktno ili nasleđeno"
 
-#: lib/potok_ide_web/help_guides.ex:643
+#: lib/potok_ide_web/help_guides.ex:651
 #, elixir-autogen, elixir-format
 msgid "does not have it"
 msgstr "nema"
@@ -1714,12 +1714,12 @@ msgstr "grupa · profil · ključ"
 msgid "guest"
 msgstr "gost"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:690
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:698
 #, elixir-autogen, elixir-format
 msgid "has an account (is not a guest)"
 msgstr "ima nalog (nije gost)"
 
-#: lib/potok_ide_web/help_guides.ex:642
+#: lib/potok_ide_web/help_guides.ex:650
 #, elixir-autogen, elixir-format
 msgid "has it"
 msgstr "ima"
@@ -1847,17 +1847,17 @@ msgstr "poruke su vrednosti, niti su grupe"
 msgid "no"
 msgstr "ne"
 
-#: lib/potok_ide_web/help_guides.ex:651
+#: lib/potok_ide_web/help_guides.ex:659
 #, elixir-autogen, elixir-format
 msgid "none of their roles allows it"
 msgstr "nijedna njegova uloga ne dozvoljava"
 
-#: lib/potok_ide_web/help_guides.ex:646
+#: lib/potok_ide_web/help_guides.ex:654
 #, elixir-autogen, elixir-format
 msgid "not a member, so holds no role"
 msgstr "nije član, pa ne drži nijednu ulogu"
 
-#: lib/potok_ide_web/help_guides.ex:683
+#: lib/potok_ide_web/help_guides.ex:691
 #, elixir-autogen, elixir-format
 msgid "not a member: holds no role"
 msgstr "nije član: ne drži nijednu ulogu"
@@ -1867,7 +1867,7 @@ msgstr "nije član: ne drži nijednu ulogu"
 msgid "not its description: nothing"
 msgstr "nije njen opis: ništa"
 
-#: lib/potok_ide_web/help_guides.ex:686
+#: lib/potok_ide_web/help_guides.ex:694
 #, elixir-autogen, elixir-format
 msgid "of %{count} permissions"
 msgstr "od %{count} dozvola"
@@ -1903,12 +1903,12 @@ msgstr "jedan nalog ih ima više"
 msgid "one file, everything inside"
 msgstr "jedan fajl, sve unutra"
 
-#: lib/potok_ide_web/help_guides.ex:659
+#: lib/potok_ide_web/help_guides.ex:667
 #, elixir-autogen, elixir-format
 msgid "only a signed-in profile reacts"
 msgstr "reaguje samo prijavljen profil"
 
-#: lib/potok_ide_web/help_guides.ex:661
+#: lib/potok_ide_web/help_guides.ex:669
 #, elixir-autogen, elixir-format
 msgid "only a signed-in profile writes"
 msgstr "piše samo prijavljen profil"
@@ -1923,7 +1923,7 @@ msgstr "čitaju samo urednici"
 msgid "only membership gives the role Everyone"
 msgstr "ulogu Svi daje samo članstvo"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:726
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:734
 #, elixir-autogen, elixir-format
 msgid "open chat"
 msgstr "otvoren razgovor"
@@ -1963,7 +1963,7 @@ msgstr "dozvole iz manifesta grupe"
 msgid "profile, roles"
 msgstr "profil, uloge"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:719
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:727
 #, elixir-autogen, elixir-format
 msgid "public"
 msgstr "javna"
@@ -1983,7 +1983,7 @@ msgstr "push, „Čeka tebe“"
 msgid "reads"
 msgstr "čita"
 
-#: lib/potok_ide_web/help_guides.ex:684
+#: lib/potok_ide_web/help_guides.ex:692
 #, elixir-autogen, elixir-format
 msgid "roles:"
 msgstr "uloge:"
@@ -1998,8 +1998,8 @@ msgstr "ture; otvara ih organizator"
 msgid "rules, the write, processes"
 msgstr "pravila, upis, procesi"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:779
-#: lib/potok_ide_web/help_guides.ex:637
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:787
+#: lib/potok_ide_web/help_guides.ex:645
 #, elixir-autogen, elixir-format
 msgid "says nothing"
 msgstr "ne kaže ništa"
@@ -2051,17 +2051,17 @@ msgstr "HTML aplikacije Mleko"
 msgid "the SDK calls the collection's listeners"
 msgstr "SDK zove slušaoce kolekcije"
 
-#: lib/potok_ide_web/help_guides.ex:660
+#: lib/potok_ide_web/help_guides.ex:668
 #, elixir-autogen, elixir-format
 msgid "the chat is behind the sign-in"
 msgstr "razgovor je iza prijave"
 
-#: lib/potok_ide_web/help_guides.ex:667
+#: lib/potok_ide_web/help_guides.ex:675
 #, elixir-autogen, elixir-format
 msgid "the chat is not open"
 msgstr "razgovor nije otvoren"
 
-#: lib/potok_ide_web/help_guides.ex:666
+#: lib/potok_ide_web/help_guides.ex:674
 #, elixir-autogen, elixir-format
 msgid "the chat is open; a block does not stop reading"
 msgstr "razgovor je otvoren; blok čitanje ne zaustavlja"
@@ -2086,12 +2086,12 @@ msgstr "ishod odluke"
 msgid "the fault's title and description"
 msgstr "naslov i opis kvara"
 
-#: lib/potok_ide_web/help_guides.ex:662
+#: lib/potok_ide_web/help_guides.ex:670
 #, elixir-autogen, elixir-format
 msgid "the group is not public"
 msgstr "grupa nije javna"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:733
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:741
 #, elixir-autogen, elixir-format
 msgid "the profile is blocked in it"
 msgstr "profil je blokiran u njoj"
@@ -2146,7 +2146,7 @@ msgstr "brojač „Čeka tebe“, kartica Procesi"
 msgid "then runs your %{c1}"
 msgstr "pa pokrene tvoj %{c1}"
 
-#: lib/potok_ide_web/help_guides.ex:663
+#: lib/potok_ide_web/help_guides.ex:671
 #, elixir-autogen, elixir-format
 msgid "they are blocked"
 msgstr "blokiran je"
@@ -2414,7 +2414,7 @@ msgstr "isti opis? token za upis (%{burst} / %{window} s)"
 msgid "the write and its processes, together"
 msgstr "upis i procesi kolekcije, zajedno"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:983
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1010
 #, elixir-autogen, elixir-format
 msgid "<b>A deleted account</b> leaves its profile as \"Deleted user\", a member of no group and with no role. A group never loses its last Admin, so the person first makes someone else Admin of each group they alone hold."
 msgstr "<b>Obrisan nalog</b> ostavlja svoj profil kao „Obrisan korisnik“, bez članstva u ijednoj grupi i bez uloga. Grupa nikad ne ostaje bez poslednjeg Admina, pa osoba prvo nekog drugog postavi za Admina svake grupe koju drži sama."
@@ -2424,12 +2424,12 @@ msgstr "<b>Obrisan nalog</b> ostavlja svoj profil kao „Obrisan korisnik“, be
 msgid "An app is one HTML file that you upload into the description, on its own or in a ZIP. Potok adds the rest of the frame for every viewer. The frame has no `allow-same-origin`, so it does not see Potok's page, its cookies or the session, and talks to Potok only by messages. When the HTML or the viewer's access (membership, roles) changes, the frame loads again, as an app reads its data once, at the start. A site from another address fits in an app too, in a frame of its own inside this one: the SDK tells it the theme and the language and passes on only the calls the description lists on that frame (`data-potok-api`). It also remembers the page the site's reader is on, so a rebuilt frame opens there, and `?page=` in the group's address names a chapter."
 msgstr "Aplikacija je jedan HTML fajl koji otpremiš u opis, sam ili u ZIP-u. Ostatak okvira Potok dodaje za svakog gledaoca. Okvir nema `allow-same-origin`, pa ne vidi Potokovu stranicu, kolačiće ni sesiju, i sa Potokom razgovara samo porukama. Kad se promeni HTML ili pristup gledaoca (članstvo, uloge), okvir se učita ponovo, jer aplikacija svoje podatke čita jednom, na početku. U aplikaciju može da stane i sajt sa druge adrese, u svom okviru unutar ovog: SDK mu javlja temu i jezik i prosleđuje samo pozive koje opis navede na tom okviru (`data-potok-api`). Pamti i stranicu na kojoj je čitalac sajta, pa se okvir napravljen iznova otvara tamo, a `?page=` u adresi grupe imenuje poglavlje."
 
-#: lib/potok_ide_web/help_guides.ex:405
+#: lib/potok_ide_web/help_guides.ex:413
 #, elixir-autogen, elixir-format
 msgid "Keys an app keeps in its personal memory for one person, and the most one holds. Only that person reads them; a guest's stay in the browser."
 msgstr "Ključevi koje aplikacija čuva u ličnoj memoriji za jednu osobu, i koliko najviše drži jedan. Čita ih samo ta osoba; gostu ostaju u pregledaču."
 
-#: lib/potok_ide_web/help_guides.ex:356
+#: lib/potok_ide_web/help_guides.ex:364
 #, elixir-autogen, elixir-format
 msgid "Personal memory"
 msgstr "Lična memorija"
@@ -2444,22 +2444,22 @@ msgstr "Majstor je javan, pa ga zovu procesi grupa iznad Zgrade Cvetna 12 i proc
 msgid "a group field stays here; a signal, if asked"
 msgstr "polje grupe ostaje ovde; signal, ako se traži"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:975
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1002
 #, elixir-autogen, elixir-format
 msgid "<b>A link to a form</b> in a message shows the form's title and subtitle only to those who may open it: its members, and everyone when a public group's form takes non-members. The others see the card a guest would get, or only the link."
 msgstr "<b>Link ka formi</b> u poruci pokazuje naslov i podnaslov forme samo onima koji smeju da je otvore: njenim članovima, i svima kad forma javne grupe prima i one koji nisu članovi. Ostali vide karticu koju bi dobio gost, ili samo link."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:892
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:911
 #, elixir-autogen, elixir-format
 msgid "Makes the group's templates"
 msgstr "Pravi šablone grupe"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:894
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:913
 #, elixir-autogen, elixir-format
 msgid "Whoever may edit the group (`edit_group`), except in a direct conversation or a thread. The templates serve every group below it too, where whoever writes a description uses them but cannot change them."
 msgstr "Ko sme da uređuje grupu (`edit_group`), osim u direktnom razgovoru i niti. Šabloni važe i u svakoj grupi ispod nje, gde ih koristi ko piše opis, ali ne može da ih menja."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:943
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:962
 #, elixir-autogen, elixir-format
 msgid "<b>A decision of a poll</b> that gives or takes a role is put to the whole group, with a quorum and a deadline, and is carried out as the poll ends. The role it gave keeps the poll (`poll_id`). In a group run by its founders only an Admin raises one; a process raises one through its owner, an Admin, and holds no more than Everyone all the same."
 msgstr "<b>Odluka glasanja</b> koja dodeljuje ili oduzima ulogu stavlja se pred celu grupu, sa kvorumom i rokom, i sprovodi se kad se glasanje završi. Uloga koju je dala pamti to glasanje (`poll_id`). U grupi koju vode osnivači takvu odluku raspisuje samo Administrator; proces je raspisuje preko svog vlasnika, Administratora, i svejedno nema više od uloge Svi."
@@ -2469,42 +2469,42 @@ msgstr "<b>Odluka glasanja</b> koja dodeljuje ili oduzima ulogu stavlja se pred 
 msgid "It gives or takes no role itself. Its Poll step puts that to the group, saying how unique and shared profiles vote, and the decision does it as the poll ends; in a group run by its founders only while its owner is an Admin."
 msgstr "Sam ne dodeljuje i ne oduzima uloge. Korak Glasanje to stavlja pred grupu, uz to kako glasaju jedinstveni i deljeni profili, a odluka to uradi kad se glasanje završi; u grupi koju vode osnivači samo dok je vlasnik procesa Administrator."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:814
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:822
 #, elixir-autogen, elixir-format
 msgid "Lets the group elect its admins"
 msgstr "Uvodi izbor administratora"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:817
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:825
 #, elixir-autogen, elixir-format
 msgid "The group's Admin turns it on (`elects_admins`). From then on Admin comes and goes only by a decision of a poll, an admin leaves the group only so, and the admins it had stay for the time being, until the first election. Only a decision turns it off."
 msgstr "Uključuje ga Administrator grupe (`elects_admins`). Od tada se Administrator dobija i gubi samo odlukom glasanja, samo tako administrator napušta grupu, a dosadašnji administratori ostaju privremeno, do prvih izbora. Gasi ga samo odluka."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:951
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:970
 #, elixir-autogen, elixir-format
 msgid "<b>A request</b> that goes to a vote raises a poll in the name of whoever asked, by the rule written down beforehand, and the poll's decision gives the role or, for admission, takes them in as it closes. An invitation still brings someone in at once, so a group that admits only by a vote gives nobody the right to invite."
 msgstr "<b>Zahtev</b> koji ide na glasanje raspisuje glasanje u ime onoga ko traži, po pravilu zapisanom unapred, a odluka glasanja dodeljuje ulogu ili, za prijem, uvodi u grupu kad se glasanje zatvori. Pozivnica i dalje odmah uvodi u grupu, pa grupa koja prima samo glasanjem nikome ne daje pravo da poziva."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:959
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:978
 #, elixir-autogen, elixir-format
 msgid "<b>A shared profile</b> that one account holds votes as that person. Held by several, it votes as the poll says: once for all of them, each holder through it as themself, or not at all."
 msgstr "<b>Deljeni profil</b> koji drži jedan nalog glasa kao ta osoba. Kad ga drži više naloga, glasa kako kaže glasanje: jednom za sve njih, kroz njega svaki nosilac u svoje ime, ili nikako."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:836
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:844
 #, elixir-autogen, elixir-format
 msgid "Decides requests"
 msgstr "Odlučuje o zahtevima"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:828
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:836
 #, elixir-autogen, elixir-format
 msgid "The Admin of a group with a manifest of its own writes, for each role, whether one may ask for it and who decides (`request_mode`): whoever manages requests, they or a vote, or always a vote, whose rules it writes down beforehand. The group's Admin writes the same for a request to join (`join_mode`). Where the group elects its admins, Admin is had on request only by a vote."
 msgstr "Administrator grupe sa sopstvenim manifestom za svaku ulogu piše da li se može tražiti i ko odlučuje (`request_mode`): onaj ko upravlja zahtevima, on ili glasanje, ili uvek glasanje, čija pravila zapisuje unapred. Administrator grupe isto piše za zahtev za pristup (`join_mode`). Gde grupa bira administratore, Administrator se na zahtev dobija samo glasanjem."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:839
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:847
 #, elixir-autogen, elixir-format
 msgid "Whoever may manage requests (`manage_join_requests`), as each role's rule says: admits or refuses, gives a role, refuses it, puts it to a vote or leaves it for later, with a reason the one who asked reads. Admin on request only by an Admin. What a vote decides is the group's, and nobody stands before it."
 msgstr "Onaj ko sme da upravlja zahtevima (`manage_join_requests`), kako kaže pravilo svake uloge: primi ili odbije, dodeli ulogu, odbije je, stavi je na glasanje ili ostavi za kasnije, uz razlog koji čita onaj ko je tražio. Administratora na zahtev dodeljuje samo Administrator. O onome o čemu odlučuje glasanje odlučuje grupa, i niko ne stoji pred tim."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:825
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:833
 #, elixir-autogen, elixir-format
 msgid "Writes how a role is had, and how the group admits"
 msgstr "Piše kako se dobija uloga i kako grupa prima"
@@ -2513,3 +2513,23 @@ msgstr "Piše kako se dobija uloga i kako grupa prima"
 #, elixir-autogen, elixir-format
 msgid "It decides no request to join or for a role: that is for whoever manages requests, or for a vote."
 msgstr "Ne odlučuje ni o jednom zahtevu za pristup ili za ulogu: to je posao onoga ko upravlja zahtevima, ili glasanja."
+
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:994
+#, elixir-autogen, elixir-format
+msgid "<b>A preview of the group as others see it</b> is for its admins only, as an admin already sees whatever a role sees. In it nothing changes: every event that would write stops, an upload is refused, no read marker moves and the app of a description does not run."
+msgstr "<b>Pregled grupe kako je drugi vide</b> imaju samo njeni administratori, jer administrator ionako vidi sve što vidi i uloga. U njemu se ništa ne menja: zaustavlja se svaki događaj koji bi nešto upisao, otpremanje se odbija, oznaka pročitanog se ne pomera, a aplikacija iz opisa se ne pokreće."
+
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:903
+#, elixir-autogen, elixir-format
+msgid "Every change above, and every role given or taken, member admitted, removed or blocked, goes into the group's access history (`AccessHistory`) in the same step, with who made it. Every member reads it; blocks only those who may remove members."
+msgstr "Svaka promena odozgo, i svaka uloga data ili oduzeta, član primljen, uklonjen ili blokiran, upisuje se u istoriju pristupa grupe (`AccessHistory`) u istom koraku, sa onim ko je to uradio. Čita je svaki član, a blokade samo oni koji smeju da uklanjaju članove."
+
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:665
+#, elixir-autogen, elixir-format
+msgid "In the app, the access overview of every group does the same with the group's real roles (`AccessCatalog`), and every member sees it: it asks the rules the group's page asks, so it says only what the page does. An admin can also open the group's page as the roles picked would see it (`AccessPreview`)."
+msgstr "U aplikaciji isto radi pregled pristupa svake grupe, nad njenim pravim ulogama (`AccessCatalog`), i vidi ga svaki član: pita pravila koja pita i stranica grupe, pa kaže samo ono što stranica radi. Administrator može i da otvori stranicu grupe onako kako je izabrane uloge vide (`AccessPreview`)."
+
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:900
+#, elixir-autogen, elixir-format
+msgid "Keeps what changed"
+msgstr "Beleži šta se promenilo"

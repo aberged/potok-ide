@@ -56,7 +56,12 @@ defmodule PotokIdeWeb.GroupLive.Show.AccessTab do
       |> assign(:picked_keys, picked_keys(spec))
       |> assign(
         :pickable_roles,
-        Enum.reject(manifest.roles, &(&1.key == GroupRole.everyone_key()))
+        # Admin holds every permission, so it stands among the ready picks
+        # and adds nothing to a combination; every member holds Everyone.
+        Enum.reject(
+          manifest.roles,
+          &(&1.key in [GroupRole.everyone_key(), GroupRole.admin_key()])
+        )
       )
       |> assign(:rows, facts && AccessCatalog.rows(viewer, assigns.group, facts))
       |> assign(:sees, facts && data && AccessCatalog.sees(viewer, assigns.group, facts, data))
@@ -695,7 +700,10 @@ defmodule PotokIdeWeb.GroupLive.Show.AccessTab do
     <span
       class={[
         "inline-flex size-5 shrink-0 items-center justify-center rounded-full",
-        if(@ok, do: "bg-success/15 text-success", else: "bg-base-200 text-base-content/40")
+        if(@ok,
+          do: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+          else: "bg-base-200 text-base-content/40"
+        )
       ]}
       role="img"
       aria-label={@label || if(@ok, do: gettext("Yes"), else: gettext("No"))}

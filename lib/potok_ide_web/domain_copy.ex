@@ -1800,6 +1800,14 @@ defmodule PotokIdeWeb.DomainCopy do
           )
       },
       %{
+        title: dgettext("domain_map", "Every member sees who may do what"),
+        text:
+          dgettext(
+            "domain_map",
+            "The access overview of a <Group>group</Group> tells every member what each <GroupRole>role</GroupRole> of the <GroupManifest>manifest</GroupManifest> lets one do there, and why, also for roles picked together, where a denial wins over what another role allows; and what someone outside a public group, a blocked profile or a guest may. It asks the same rules the group's page does, so it cannot say anything the page does not do. It counts who holds the permissions that act on others from the <GroupMemberRole>roles</GroupMemberRole> people hold, and lists the rules of the things the member sees: <GroupAltDescription>alternative descriptions</GroupAltDescription>, <Poll>polls</Poll>, the collections of apps and the processes. Someone outside a public group sees only what they may do there and how one comes in, with no names. An admin can also open the group's page as the roles picked would see it, as a preview in which nothing changes."
+          )
+      },
+      %{
         title: dgettext("domain_map", "Every change of access stays on record"),
         text:
           dgettext(

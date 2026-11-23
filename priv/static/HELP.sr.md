@@ -72,7 +72,7 @@ Nasleđivanje možeš da suziš na uloge: tada podgrupi dolaze samo članovi koj
 
 Podgrupa preuzima uloge od grupe iznad. Ako joj trebaju drugačije, dobija sopstveni manifest, svoj spisak uloga i dozvola. Kako se iz uloga i manifesta računa šta smeš, sa primerom koji sam menjaš, pokazuje strana [Prava pristupa u Potoku](/pomoc/prava-pristupa).
 
-Uloge dodeljuje administrator, a može i [odluka glasanja](#odluka-o-ulogama): glasanje kaže kome daje ili oduzima koju ulogu, i to se desi čim se završi. Ulogu možeš i da [zatražiš](#zahtevi): uz svaku ulogu piše [kako se dobija](#kako-se-dobija-uloga), da li je dodeljuje onaj ko upravlja zahtevima ili o njoj odlučuje glasanje. Grupa može i da [bira administratore](#izbor-administratora): tada ulogu Administrator daju i oduzimaju samo odluke glasanja, a ne osnivanje grupe.
+Uloge dodeljuje administrator, a može i [odluka glasanja](#odluka-o-ulogama): glasanje kaže kome daje ili oduzima koju ulogu, i to se desi čim se završi. Ulogu možeš i da [zatražiš](#zahtevi): uz svaku ulogu piše [kako se dobija](#kako-se-dobija-uloga), da li je dodeljuje onaj ko upravlja zahtevima ili o njoj odlučuje glasanje. Grupa može i da [bira administratore](#izbor-administratora): tada ulogu Administrator daju i oduzimaju samo odluke glasanja, a ne osnivanje grupe. Ko šta sme, i zašto, svaki član vidi u [pregledu pristupa](#pregled-pristupa), a svaka promena uloga ostaje zapisana.
 
 ### Javno, privatno i otvoreno {:#vidljivost}
 
@@ -315,6 +315,24 @@ Grupa ima 20 dozvola. Uloga Svi na početku ima one označene u poslednjoj kolon
 | Slanje obaveštenja | Obaveštenja pratiocima | |
 | Upravljanje tagovima | Javni tagovi na porukama, fajlovima, događajima i grupi | |
 | Uređivanje grupe | Podešavanja, opis i podaci aplikacije | |
+
+### Pregled pristupa {:#pregled-pristupa}
+
+U meniju grupe, pod **Pregled pristupa**, a i dugmetom **Ko šta sme** na karticama Uloge i Članovi, vidiš ko šta sme u grupi i zašto. Pravila su ista za sve, pa pregled vidi svaki član, a nečlan javne grupe samo ono što on tu može i kako se postaje član.
+
+Gore biraš kao koga gledaš: sebe, novog člana, administratora, jednu ili više uloga zajedno, a u javnoj grupi i nekoga van grupe, blokiran profil ili gosta. Za svaku stvar piše da li sme i zašto, na primer koja uloga to dozvoljava ili da zabrana jedne uloge pobeđuje dozvolu druge. Ispod je šta bi ta kombinacija videla: odeljke grupe, opise, podgrupe u kojima bi bila, glasanja i podatke aplikacija.
+
+![Pregled pristupa: kao novi član](pregled-pristupa)
+
+Dalje su sve uloge jedna pored druge, koliko ljudi ima dozvole koje deluju na druge i preko kojih uloga, kako se dobija svaka uloga, pravila pojedinih stvari koje i sam vidiš, podgrupe i kako se pristup menja. Dodir na broj nosilaca uloge otvara Članove suzene na tu ulogu.
+
+![Ko ima moć i kako se dobija uloga](pregled-pristupa-moc)
+
+Na dnu je istorija: ko je kome dao ili oduzeo ulogu, ko je menjao uloge, dozvole ili podešavanja kojima se ulazi u grupu, ko je koga primio, uklonio ili blokirao, i kada. Blokade u njoj vide samo oni koji smeju da uklanjaju članove. Istorija se beleži od kad postoji, pa ranijih promena u njoj nema.
+
+Administrator grupe može i da je otvori kao izabrana kombinacija: dugme **Pogledaj grupu ovako** prikazuje pravu stranicu grupe onako kako je ta kombinacija vidi, sa trakom na vrhu. To je samo pregled: ništa se ne može promeniti, aplikacija u opisu se ne pokreće, a tvoje poruke i nepročitano ostaju tvoji. **Izađi iz pregleda** vraća stranicu kakvu ti vidiš.
+
+![Grupa kako je vidi novi član](pogledaj-kao)
 
 ## Kalendar {:#kalendar}
 

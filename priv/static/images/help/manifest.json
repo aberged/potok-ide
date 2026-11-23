@@ -159,6 +159,10 @@
     "h": 844,
     "w": 390
   },
+  "pogledaj-kao": {
+    "h": 844,
+    "w": 390
+  },
   "poruka-meni": {
     "h": 844,
     "w": 390
@@ -184,6 +188,14 @@
     "w": 390
   },
   "precica-izbor": {
+    "h": 844,
+    "w": 390
+  },
+  "pregled-pristupa": {
+    "h": 844,
+    "w": 390
+  },
+  "pregled-pristupa-moc": {
     "h": 844,
     "w": 390
   },
