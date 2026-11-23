@@ -244,7 +244,7 @@ Vrstu grupe menjaš u Uredi grupu → Osnovno, dugmetom Promeni. Nova vrsta dono
 
 Kartica Članovi pokazuje sve članove, njihove uloge i ko je na mreži. Odatle se odlučuje o [zahtevima za pristup i za uloge](#zahtevi), dodeljuju uloge, [uklanjaju članovi](#uklanjanje) i skidaju [blokade](#blokiranje). Nasleđeni članovi su označeni, a dodirom na člana otvaraš razgovor u četiri oka. Uloga koju je dala odluka glasanja ima oznaku **izabran**, koja vodi na to glasanje. Dugmetom **Uloga** spisak sužavaš na one koji imaju jednu ulogu, i tada piše koliko ih je.
 
-Pozvati možeš profil po korisničkom imenu ili nekoga po imejlu: ako još nema nalog, dobija pozivnicu za Potok. Profili se predlažu od trećeg slova imena.
+Pozvati možeš profil po korisničkom imenu ili nekoga po imejlu: ako još nema nalog, dobija pozivnicu za Potok. Profili se predlažu od trećeg slova imena. Pozivnica važi 30 dana: pozvani je prihvata ili briše na stranici Pozivnice, a posle toga ističe i možeš ponovo da ga pozoveš.
 
 ![Članovi i zahtevi za pristup](clanovi) ![Pozivanje u grupu](pozovi)
 

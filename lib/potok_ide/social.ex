@@ -2217,6 +2217,15 @@ defmodule PotokIde.Social do
 
       true ->
         Multi.new()
+        # A lapsed invitation of the same pair would hold the pending index.
+        |> Multi.delete_all(
+          :lapsed,
+          from(i in GroupInvitation,
+            where:
+              i.group_id == ^group.id and i.invitee_id == ^invitee.id and is_nil(i.accepted_at) and
+                i.inserted_at <= ^GroupInvitation.cutoff()
+          )
+        )
         |> Multi.insert(
           :invitation,
           GroupInvitation.changeset(%GroupInvitation{}, %{
@@ -2295,50 +2304,82 @@ defmodule PotokIde.Social do
   def accept_group_invitation(%GroupInvitation{} = invitation, %Profile{} = invitee) do
     invitation = Repo.preload(invitation, [:group, :inviter])
 
-    if invitation.invitee_id != invitee.id do
-      {:error, :invitee_mismatch}
-    else
-      Multi.new()
-      |> Multi.update(:invitation, GroupInvitation.accept_changeset(invitation))
-      |> Multi.insert(:membership, fn %{invitation: inv} ->
-        GroupMembership.changeset(%GroupMembership{}, %{
-          group_id: inv.group_id,
-          profile_id: inv.invitee_id
-        })
-      end)
-      |> Multi.delete_all(
-        :join_requests,
-        from(r in GroupJoinRequest,
-          where: r.group_id == ^invitation.group_id and r.requester_id == ^invitation.invitee_id
-        )
-      )
-      |> Multi.run(:read_marker, fn repo, %{invitation: inv} ->
-        read_history_on_join(repo, inv.invitee_id, inv.group_id)
-      end)
-      |> Multi.run(:inheritance, fn repo, %{invitation: inv} ->
-        {:ok, MemberInheritance.sync(repo, inv.group_id, [inv.invitee_id])}
-      end)
-      |> Repo.transaction()
-      |> case do
-        {:ok, %{invitation: inv, inheritance: changes}} ->
-          broadcast_profile_invitations_updated(invitee)
-          broadcast_profile_group_join_requests_updated(invitee)
-          broadcast_profile_invitations_updated(invitation.inviter)
-          broadcast_group_join_request_updates_for_group(invitation.group)
+    cond do
+      invitation.invitee_id != invitee.id ->
+        {:error, :invitee_mismatch}
 
-          broadcast_group_members_changed(invitation.group, [:members, :requests],
-            profile_id: invitee.id
-          )
+      # A lapsed invitation is gone the moment someone tries it.
+      GroupInvitation.expired?(invitation) ->
+        Repo.delete_all(from(i in GroupInvitation, where: i.id == ^invitation.id))
+        broadcast_profile_invitations_updated(invitee)
+        {:error, :expired}
 
-          broadcast_group_membership_changed(invitee.id, inv.group_id, :added)
-          broadcast_inheritance_changes(changes)
-          notify_profile_inviter_of_group_invitation_acceptance(invitation, invitee)
-          {:ok, inv}
-
-        {:error, _step, reason, _changes} ->
-          {:error, reason}
-      end
+      true ->
+        accept_live_group_invitation(invitation, invitee)
     end
+  end
+
+  defp accept_live_group_invitation(%GroupInvitation{} = invitation, %Profile{} = invitee) do
+    Multi.new()
+    |> Multi.update(:invitation, GroupInvitation.accept_changeset(invitation))
+    |> Multi.insert(:membership, fn %{invitation: inv} ->
+      GroupMembership.changeset(%GroupMembership{}, %{
+        group_id: inv.group_id,
+        profile_id: inv.invitee_id
+      })
+    end)
+    |> Multi.delete_all(
+      :join_requests,
+      from(r in GroupJoinRequest,
+        where: r.group_id == ^invitation.group_id and r.requester_id == ^invitation.invitee_id
+      )
+    )
+    |> Multi.run(:read_marker, fn repo, %{invitation: inv} ->
+      read_history_on_join(repo, inv.invitee_id, inv.group_id)
+    end)
+    |> Multi.run(:inheritance, fn repo, %{invitation: inv} ->
+      {:ok, MemberInheritance.sync(repo, inv.group_id, [inv.invitee_id])}
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{invitation: inv, inheritance: changes}} ->
+        broadcast_profile_invitations_updated(invitee)
+        broadcast_profile_group_join_requests_updated(invitee)
+        broadcast_profile_invitations_updated(invitation.inviter)
+        broadcast_group_join_request_updates_for_group(invitation.group)
+
+        broadcast_group_members_changed(invitation.group, [:members, :requests],
+          profile_id: invitee.id
+        )
+
+        broadcast_group_membership_changed(invitee.id, inv.group_id, :added)
+        broadcast_inheritance_changes(changes)
+        notify_profile_inviter_of_group_invitation_acceptance(invitation, invitee)
+        {:ok, inv}
+
+      {:error, _step, reason, _changes} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  Deletes the group invitations that waited longer than
+  `GroupInvitation.valid_days/0`, and the account invitations as old, which
+  would only become such invitations. The hourly sweep calls it. Returns how
+  many went.
+  """
+  def delete_expired_invitations do
+    cutoff = GroupInvitation.cutoff()
+
+    {invitations, _} =
+      Repo.delete_all(
+        from(i in GroupInvitation, where: is_nil(i.accepted_at) and i.inserted_at <= ^cutoff)
+      )
+
+    {account_invitations, _} =
+      Repo.delete_all(from(i in GroupAccountInvitation, where: i.inserted_at <= ^cutoff))
+
+    invitations + account_invitations
   end
 
   def delete_group_invitation(%GroupInvitation{} = invitation, %Profile{} = invitee) do
@@ -2805,7 +2846,8 @@ defmodule PotokIde.Social do
 
     sql = """
     SELECT
-      (SELECT COUNT(*) FROM group_invitations WHERE invitee_id = $1 AND accepted_at IS NULL) +
+      (SELECT COUNT(*) FROM group_invitations WHERE invitee_id = $1 AND accepted_at IS NULL
+         AND inserted_at > now() - make_interval(days => #{GroupInvitation.valid_days()})) +
       (SELECT COUNT(*) FROM profile_invitations WHERE invitee_id = $1 AND accepted_at IS NULL),
       (
         SELECT COALESCE(array_agg(ARRAY[r.group_id, r.request_count]), '{}')
@@ -2838,7 +2880,7 @@ defmodule PotokIde.Social do
       (SELECT COUNT(*) FROM (#{PotokIde.Processes.waiting_sql("$1")}) w)
     """
 
-    case Repo.query(sql, [profile_id], cache_statement: "social_nav_counts_v9_#{unread?}") do
+    case Repo.query(sql, [profile_id], cache_statement: "social_nav_counts_v10_#{unread?}") do
       {:ok,
        %{
          rows: [
@@ -4828,7 +4870,7 @@ defmodule PotokIde.Social do
         left_join: gi in GroupInvitation,
         on:
           gi.invitee_id == p.id and gi.group_id == ^group.id and
-            is_nil(gi.accepted_at),
+            is_nil(gi.accepted_at) and gi.inserted_at > ^GroupInvitation.cutoff(),
         where:
           p.id != ^inviter.id and p.kind == :person and is_nil(gm.profile_id) and
             is_nil(gi.id) and ilike(p.username, ^like_search_term),
@@ -8053,6 +8095,7 @@ defmodule PotokIde.Social do
       join: g in assoc(i, :group),
       join: inviter in assoc(i, :inviter),
       where: i.invitee_id == ^invitee.id,
+      where: not is_nil(i.accepted_at) or i.inserted_at > ^GroupInvitation.cutoff(),
       where: ^invitation_name_search_dynamic(search),
       order_by: [
         asc: fragment("CASE WHEN ? IS NULL THEN 0 ELSE 1 END", i.accepted_at),
@@ -8078,6 +8121,7 @@ defmodule PotokIde.Social do
       join: g in assoc(i, :group),
       join: invitee in assoc(i, :invitee),
       where: i.inviter_id == ^inviter.id,
+      where: not is_nil(i.accepted_at) or i.inserted_at > ^GroupInvitation.cutoff(),
       where: ^sent_invitation_name_search_dynamic(search),
       order_by: [
         asc: fragment("CASE WHEN ? IS NULL THEN 0 ELSE 1 END", i.accepted_at),
@@ -8097,6 +8141,7 @@ defmodule PotokIde.Social do
 
     from(i in GroupInvitation,
       where: i.invitee_id == ^invitee.id,
+      where: not is_nil(i.accepted_at) or i.inserted_at > ^GroupInvitation.cutoff(),
       select: count(i.id)
     )
     |> Repo.one()
@@ -8107,6 +8152,7 @@ defmodule PotokIde.Social do
 
     from(i in GroupInvitation,
       where: i.inviter_id == ^inviter.id,
+      where: not is_nil(i.accepted_at) or i.inserted_at > ^GroupInvitation.cutoff(),
       select: count(i.id)
     )
     |> Repo.one()
@@ -8121,6 +8167,7 @@ defmodule PotokIde.Social do
       join: g in assoc(i, :group),
       join: inviter in assoc(i, :inviter),
       where: i.invitee_id == ^invitee.id,
+      where: not is_nil(i.accepted_at) or i.inserted_at > ^GroupInvitation.cutoff(),
       where: ^invitation_name_search_dynamic(search),
       select: count(i.id)
     )
@@ -8136,6 +8183,7 @@ defmodule PotokIde.Social do
       join: g in assoc(i, :group),
       join: invitee in assoc(i, :invitee),
       where: i.inviter_id == ^inviter.id,
+      where: not is_nil(i.accepted_at) or i.inserted_at > ^GroupInvitation.cutoff(),
       where: ^sent_invitation_name_search_dynamic(search),
       select: count(i.id)
     )
@@ -8145,11 +8193,12 @@ defmodule PotokIde.Social do
   def count_pending_invitations(%Profile{id: invitee_id}) do
     sql = """
     SELECT
-      (SELECT COUNT(*) FROM group_invitations WHERE invitee_id = $1 AND accepted_at IS NULL) +
+      (SELECT COUNT(*) FROM group_invitations WHERE invitee_id = $1 AND accepted_at IS NULL
+         AND inserted_at > now() - make_interval(days => #{GroupInvitation.valid_days()})) +
       (SELECT COUNT(*) FROM profile_invitations WHERE invitee_id = $1 AND accepted_at IS NULL)
     """
 
-    case Repo.query(sql, [invitee_id], cache_statement: "social_pending_invitations_count") do
+    case Repo.query(sql, [invitee_id], cache_statement: "social_pending_invitations_count_v2") do
       {:ok, %{rows: [[count]]}} -> count
       {:error, _reason} -> 0
     end
@@ -8171,6 +8220,7 @@ defmodule PotokIde.Social do
 
     from(i in GroupInvitation,
       where: i.id == ^invitation_id and i.invitee_id == ^invitee.id and is_nil(i.accepted_at),
+      where: i.inserted_at > ^GroupInvitation.cutoff(),
       preload: [:inviter, :group]
     )
     |> Repo.one()
@@ -8360,6 +8410,7 @@ defmodule PotokIde.Social do
   defp pending_group_invitation_for_profile?(%Group{} = group, %Profile{} = profile) do
     from(i in GroupInvitation,
       where: i.group_id == ^group.id and i.invitee_id == ^profile.id and is_nil(i.accepted_at),
+      where: i.inserted_at > ^GroupInvitation.cutoff(),
       select: 1
     )
     |> Repo.exists?()
@@ -8511,7 +8562,12 @@ defmodule PotokIde.Social do
     |> list_pending_group_account_invitations()
     |> Enum.each(fn pending_invitation ->
       case invite_profile_to_group(pending_invitation.inviter, pending_invitation.group, profile) do
-        {:ok, _invitation} ->
+        {:ok, invitation} ->
+          # The invitation has waited since it was sent to the address.
+          Repo.update_all(from(i in GroupInvitation, where: i.id == ^invitation.id),
+            set: [inserted_at: pending_invitation.inserted_at]
+          )
+
           ensure_direct_group_between_profiles(profile, pending_invitation.inviter)
           _ = Repo.delete(pending_invitation)
           :ok
@@ -8551,6 +8607,7 @@ defmodule PotokIde.Social do
   defp list_pending_group_account_invitations(%Account{} = account) do
     from(invitation in GroupAccountInvitation,
       where: invitation.account_id == ^account.id,
+      where: invitation.inserted_at > ^GroupInvitation.cutoff(),
       preload: [:group, :inviter],
       order_by: [asc: invitation.inserted_at]
     )

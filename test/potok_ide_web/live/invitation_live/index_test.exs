@@ -601,6 +601,28 @@ defmodule PotokIdeWeb.InvitationLive.IndexTest do
     end
   end
 
+  describe "how long an invitation holds" do
+    test "a waiting invitation says how many days it has left, on both sides", %{conn: conn} do
+      {inviter_account, inviter} = PotokIde.EventsFixtures.account_with_profile!("inv-days")
+      {invitee_account, invitee} = PotokIde.EventsFixtures.account_with_profile!("inee-days")
+      group = PotokIde.EventsFixtures.group_with_members!(inviter, [])
+
+      {:ok, invitation} = Social.invite_profile_to_group(inviter, group, invitee)
+
+      {:ok, lv, _html} = conn |> log_in_account(invitee_account) |> live(~p"/invitations")
+      assert has_element?(lv, "#invitation-expires-#{invitation.id}", "Valid for 30 more days")
+
+      {:ok, lv, _html} = build_conn() |> log_in_account(inviter_account) |> live(~p"/invitations")
+      pick_tab(lv, "sent")
+
+      assert has_element?(
+               lv,
+               "#sent-invitation-expires-#{invitation.id}",
+               "Valid for 30 more days"
+             )
+    end
+  end
+
   defp pick_tab(lv, key) do
     lv
     |> element("#invitations-tab-#{key}")

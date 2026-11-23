@@ -14,7 +14,7 @@ msgid "A link to confirm your email change has been sent to the new address."
 msgstr "Link za potvrdu promene imejl adrese je poslat na novu adresu."
 
 #: lib/potok_ide_web/live/group_live/show/members_tab.ex:216
-#: lib/potok_ide_web/live/invitation_live/index.ex:132
+#: lib/potok_ide_web/live/invitation_live/index.ex:141
 #: lib/potok_ide_web/live/request_live/index.ex:183
 #, elixir-autogen, elixir-format
 msgid "Accept"
@@ -69,7 +69,7 @@ msgstr "Potvrdite novu lozinku"
 msgid "Confirming..."
 msgstr "Potvrđivanje..."
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:409
+#: lib/potok_ide_web/live/invitation_live/index.ex:425
 #, elixir-autogen, elixir-format
 msgid "Could not accept invitation."
 msgstr "Nije moguće prihvatiti pozivnicu."
@@ -202,22 +202,22 @@ msgstr "Ako je vaš imejl u našem sistemu, uskoro ćete dobiti uputstva za prij
 msgid "Invalid email or password"
 msgstr "Neispravan imejl ili lozinka"
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:401
+#: lib/potok_ide_web/live/invitation_live/index.ex:417
 #, elixir-autogen, elixir-format
 msgid "Invitation accepted."
 msgstr "Pozivnica je prihvaćena."
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:422
+#: lib/potok_ide_web/live/invitation_live/index.ex:438
 #, elixir-autogen, elixir-format
 msgid "Invitation deleted."
 msgstr "Pozivnica je obrisana."
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:406
+#: lib/potok_ide_web/live/invitation_live/index.ex:422
 #, elixir-autogen, elixir-format
-msgid "Invitation not found (or already accepted)."
-msgstr "Pozivnica nije pronađena ili je već prihvaćena."
+msgid "This invitation was accepted or has lapsed."
+msgstr "Ova pozivnica je već prihvaćena ili je istekla."
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:426
+#: lib/potok_ide_web/live/invitation_live/index.ex:442
 #, elixir-autogen, elixir-format
 msgid "Invitation not found."
 msgstr "Pozivnica nije pronađena."
@@ -232,32 +232,32 @@ msgstr "Pozivnica je poslata."
 #: lib/potok_ide_web/components/layouts.ex:154
 #: lib/potok_ide_web/components/layouts.ex:156
 #: lib/potok_ide_web/components/layouts.ex:363
-#: lib/potok_ide_web/live/invitation_live/index.ex:35
+#: lib/potok_ide_web/live/invitation_live/index.ex:36
 #, elixir-autogen, elixir-format
 msgid "Invitations"
 msgstr "Pozivnice"
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:37
+#: lib/potok_ide_web/live/invitation_live/index.ex:38
 #, elixir-autogen, elixir-format
 msgid "Received and sent group invitations for your current profile."
 msgstr "Primljene i poslate grupne pozivnice za vaš trenutni profil."
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:81
+#: lib/potok_ide_web/live/invitation_live/index.ex:82
 #, elixir-autogen, elixir-format
 msgid "Invitations for me"
 msgstr "Pozivnice za mene"
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:82
+#: lib/potok_ide_web/live/invitation_live/index.ex:83
 #, elixir-autogen, elixir-format
 msgid "Invitations addressed to your current profile."
 msgstr "Pozivnice upućene vašem trenutnom profilu."
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:180
+#: lib/potok_ide_web/live/invitation_live/index.ex:189
 #, elixir-autogen, elixir-format
 msgid "Invitations sent by me"
 msgstr "Pozivnice koje sam poslao"
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:181
+#: lib/potok_ide_web/live/invitation_live/index.ex:190
 #, elixir-autogen, elixir-format
 msgid "Invitations your current profile has sent to other profiles."
 msgstr "Pozivnice koje je vaš trenutni profil poslao drugim profilima."
@@ -274,22 +274,22 @@ msgstr "Pozovi"
 msgid "Invite profile"
 msgstr "Pozovi profil"
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:111
+#: lib/potok_ide_web/live/invitation_live/index.ex:112
 #, elixir-autogen, elixir-format
 msgid "Invited by:"
 msgstr "Pozvao:"
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:210
+#: lib/potok_ide_web/live/invitation_live/index.ex:219
 #, elixir-autogen, elixir-format
 msgid "Invited:"
 msgstr "Pozvan:"
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:152
+#: lib/potok_ide_web/live/invitation_live/index.ex:161
 #, elixir-autogen, elixir-format
 msgid "Are you sure you want to delete this invitation?"
 msgstr "Da li sigurno želiš da obrišeš ovu pozivnicu?"
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:429
+#: lib/potok_ide_web/live/invitation_live/index.ex:445
 #, elixir-autogen, elixir-format
 msgid "Could not delete invitation."
 msgstr "Nije moguće obrisati pozivnicu."
@@ -397,22 +397,22 @@ msgstr "Nova lozinka"
 msgid "No members."
 msgstr "Nema članova."
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:90
+#: lib/potok_ide_web/live/invitation_live/index.ex:91
 #, elixir-autogen, elixir-format
 msgid "No pending invitations."
 msgstr "Nema pozivnica na čekanju."
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:91
+#: lib/potok_ide_web/live/invitation_live/index.ex:92
 #, elixir-autogen
 msgid "No invitations match your search."
 msgstr "Nijedna pozivnica ne odgovara tvojoj pretrazi."
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:189
+#: lib/potok_ide_web/live/invitation_live/index.ex:198
 #, elixir-autogen, elixir-format
 msgid "No invitations sent by this profile."
 msgstr "Ovaj profil još nije poslao nijednu pozivnicu."
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:190
+#: lib/potok_ide_web/live/invitation_live/index.ex:199
 #, elixir-autogen, elixir-format
 msgid "No sent invitations match your search."
 msgstr "Nijedna poslata pozivnica ne odgovara tvojoj pretrazi."
@@ -783,8 +783,8 @@ msgstr "Pozivnica za deljeni profil je već na čekanju."
 msgid "Accept shared profile"
 msgstr "Prihvati deljeni profil"
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:140
-#: lib/potok_ide_web/live/invitation_live/index.ex:233
+#: lib/potok_ide_web/live/invitation_live/index.ex:149
+#: lib/potok_ide_web/live/invitation_live/index.ex:242
 #, elixir-autogen, elixir-format
 msgid "Accepted on"
 msgstr "Prihvaćeno"
@@ -1121,7 +1121,7 @@ msgstr "Otvori karticu za pozivanje naloga"
 msgid "Opening direct group..."
 msgstr "Otvaranje direktne grupe..."
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:227
+#: lib/potok_ide_web/live/invitation_live/index.ex:236
 #: lib/potok_ide_web/live/request_live/index.ex:141
 #: lib/potok_ide_web/live/request_live/index.ex:466
 #, elixir-autogen, elixir-format
@@ -1483,7 +1483,7 @@ msgstr "Poslednji uspeh"
 msgid "Load more approved requests"
 msgstr "Učitaj još odobrenih zahteva"
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:169
+#: lib/potok_ide_web/live/invitation_live/index.ex:178
 #, elixir-autogen, elixir-format
 msgid "Load more invitations"
 msgstr "Učitaj još pozivnica"
@@ -1585,18 +1585,18 @@ msgstr "Moji zahtevi"
 msgid "Search by name"
 msgstr "Pretraži po imenu"
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:71
+#: lib/potok_ide_web/live/invitation_live/index.ex:72
 #: lib/potok_ide_web/live/request_live/index.ex:89
 #, elixir-autogen, elixir-format
 msgid "Search by group or profile"
 msgstr "Pretraži po grupi ili profilu"
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:232
+#: lib/potok_ide_web/live/invitation_live/index.ex:241
 #, elixir-autogen, elixir-format
 msgid "Sent on"
 msgstr "Poslato"
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:257
+#: lib/potok_ide_web/live/invitation_live/index.ex:273
 #, elixir-autogen, elixir-format
 msgid "Load more sent invitations"
 msgstr "Učitaj još poslatih pozivnica"
@@ -1668,7 +1668,7 @@ msgstr "https://example.com/group.png ili data:image/..."
 msgid "A new version of Potok is ready."
 msgstr "Nova verzija Potoka je spremna."
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:228
+#: lib/potok_ide_web/live/invitation_live/index.ex:237
 #, elixir-autogen, elixir-format
 msgid "Accepted"
 msgstr "Prihvaćeno"
@@ -2627,7 +2627,7 @@ msgstr "Nije moguće sačuvati opis."
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:792
 #: lib/potok_ide_web/live/group_live/show/process_entities.ex:181
 #: lib/potok_ide_web/live/group_live/show/templates_card.ex:128
-#: lib/potok_ide_web/live/invitation_live/index.ex:154
+#: lib/potok_ide_web/live/invitation_live/index.ex:163
 #, elixir-autogen, elixir-format
 msgid "Delete"
 msgstr "Obriši"
@@ -3729,13 +3729,13 @@ msgstr "Adresa kojom se prijavljujete."
 msgid "Requests to approve"
 msgstr "Zahtevi za odobrenje"
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:712
+#: lib/potok_ide_web/live/invitation_live/index.ex:728
 #, elixir-autogen, elixir-format
 msgctxt "invitations tab"
 msgid "Received"
 msgstr "Primljene"
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:713
+#: lib/potok_ide_web/live/invitation_live/index.ex:729
 #, elixir-autogen, elixir-format
 msgctxt "invitations tab"
 msgid "Sent"
@@ -12595,3 +12595,16 @@ msgstr "Više nisi član grupe."
 #, elixir-autogen, elixir-format
 msgid "You cannot leave this group."
 msgstr "Iz ove grupe ne možeš da izađeš."
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:785
+#, elixir-autogen, elixir-format
+msgid "Lapses within a day"
+msgstr "Ističe za manje od jednog dana"
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:782
+#, elixir-autogen, elixir-format
+msgid "Valid for %{count} more day"
+msgid_plural "Valid for %{count} more days"
+msgstr[0] "Važi još %{count} dan"
+msgstr[1] "Važi još %{count} dana"
+msgstr[2] "Važi još %{count} dana"

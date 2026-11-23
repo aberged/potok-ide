@@ -2,6 +2,7 @@ defmodule PotokIdeWeb.InvitationLive.Index do
   use PotokIdeWeb, :live_view
 
   alias PotokIde.Social
+  alias PotokIde.Social.GroupInvitation
   alias PotokIdeWeb.ProfileAuth
   alias PotokIdeWeb.GroupLive.Show.Components
   @invitations_per_page 20
@@ -120,6 +121,14 @@ defmodule PotokIdeWeb.InvitationLive.Index do
                         class="text-xs font-thin italic"
                       />
                     </div>
+
+                    <p
+                      :if={is_nil(inv.accepted_at)}
+                      id={"invitation-expires-#{inv.id}"}
+                      class="mt-1 text-xs text-base-content/60"
+                    >
+                      {valid_for(inv)}
+                    </p>
 
                     <div :if={is_nil(inv.accepted_at)} class="mt-2 flex flex-wrap gap-2">
                       <.button
@@ -243,6 +252,13 @@ defmodule PotokIdeWeb.InvitationLive.Index do
                         class="text-xs font-thin italic"
                       />
                     </div>
+                    <p
+                      :if={is_nil(inv.accepted_at)}
+                      id={"sent-invitation-expires-#{inv.id}"}
+                      class="mt-1 text-xs text-base-content/60"
+                    >
+                      {valid_for(inv)}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -403,7 +419,7 @@ defmodule PotokIdeWeb.InvitationLive.Index do
     else
       nil ->
         {:noreply,
-         put_flash(socket, :error, gettext("Invitation not found (or already accepted)."))}
+         put_flash(socket, :error, gettext("This invitation was accepted or has lapsed."))}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, gettext("Could not accept invitation."))}
@@ -756,4 +772,17 @@ defmodule PotokIdeWeb.InvitationLive.Index do
   end
 
   defp normalize_invitations_search_query(_), do: ""
+
+  # How long a waiting invitation still holds (`GroupInvitation.valid_days/0`).
+  defp valid_for(invitation) do
+    seconds = DateTime.diff(GroupInvitation.expires_at(invitation), DateTime.utc_now(:second))
+
+    case div(seconds + 86_399, 86_400) do
+      days when days > 1 ->
+        ngettext("Valid for %{count} more day", "Valid for %{count} more days", days)
+
+      _today ->
+        gettext("Lapses within a day")
+    end
+  end
 end

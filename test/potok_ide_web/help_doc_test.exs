@@ -1,7 +1,7 @@
 defmodule PotokIdeWeb.HelpDocTest do
   use ExUnit.Case, async: true
 
-  alias PotokIde.Social.GroupRole
+  alias PotokIde.Social.{GroupInvitation, GroupRole}
   alias PotokIde.Storage
   alias PotokIdeWeb.HelpDoc
   alias PotokIdeWeb.HelpMarkdown
@@ -198,6 +198,15 @@ defmodule PotokIdeWeb.HelpDocTest do
         html = HelpDoc.get(locale).html
         assert html =~ ~r/\b#{files}\b/
         assert html =~ ~r/\b#{size} MB/
+      end
+
+      days = GroupInvitation.valid_days()
+
+      for {locale, words} <- [
+            {"sr", ~r/Pozivnica važi #{days} dana/u},
+            {"en", ~r/An invitation holds for #{days} days/}
+          ] do
+        assert HelpDoc.get(locale).html =~ words, "#{locale} does not say #{days} days"
       end
     end
   end
