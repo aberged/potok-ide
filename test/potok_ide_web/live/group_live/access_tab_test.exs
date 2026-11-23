@@ -81,6 +81,36 @@ defmodule PotokIdeWeb.GroupLive.AccessTabTest do
     refute has_element?(lv, "#access-history")
   end
 
+  test "the history tells who left, and the roles they took along", ctx do
+    alias PotokIde.Social.AccessHistory
+
+    AccessHistory.record!(PotokIde.Repo, ctx.group, :member_left,
+      actor: ctx.member.id,
+      subject: ctx.member.id,
+      data: %{roles: [%{"key" => ctx.savet.key, "name" => "savet"}]}
+    )
+
+    AccessHistory.record!(PotokIde.Repo, ctx.group, :member_left,
+      actor: ctx.owner.id,
+      subject: ctx.owner.id,
+      data: %{roles: [%{"key" => "admin", "name" => "admin"}]}
+    )
+
+    {:ok, lv, _html} = open(ctx.member_account, ctx.group)
+
+    assert has_element?(
+             lv,
+             "#access-history-list",
+             "at-member leaves the group, and with it: savet."
+           )
+
+    assert has_element?(
+             lv,
+             "#access-history-list",
+             "at-owner leaves the group, and with it: Admin."
+           )
+  end
+
   test "roles picked together: a denial wins over what another role allows", ctx do
     {:ok, lv, _html} = open(ctx.member_account, ctx.group)
 

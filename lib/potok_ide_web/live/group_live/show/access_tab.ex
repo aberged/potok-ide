@@ -879,7 +879,13 @@ defmodule PotokIdeWeb.GroupLive.Show.AccessTab do
   defp change_icon(kind) when kind in [:role_given, :role_taken], do: "hero-tag"
 
   defp change_icon(kind)
-       when kind in [:member_admitted, :member_removed, :member_blocked, :member_unblocked],
+       when kind in [
+              :member_admitted,
+              :member_removed,
+              :member_blocked,
+              :member_unblocked,
+              :member_left
+            ],
        do: "hero-user"
 
   defp change_icon(kind) when kind in [:elections_on, :elections_off], do: "hero-scale"
@@ -897,6 +903,17 @@ defmodule PotokIdeWeb.GroupLive.Show.AccessTab do
 
   defp subject_name(%GroupAccessChange{subject: %{username: name}}), do: name
   defp subject_name(_change), do: gettext("someone")
+
+  # The roles someone held as they left, by their names now or as they were
+  # called then.
+  defp left_roles(%GroupAccessChange{data: data}, manifest) do
+    for %{"key" => key} = role <- List.wrap(data["roles"]) do
+      case Enum.find(manifest.roles, &(&1.key == key)) do
+        nil -> role["name"] || key
+        found -> RolesTab.role_label(found)
+      end
+    end
+  end
 
   # A role by its name now, or as it was called when it went.
   defp change_role(%GroupAccessChange{role_key: key, data: data}, manifest) do
@@ -1020,6 +1037,20 @@ defmodule PotokIdeWeb.GroupLive.Show.AccessTab do
         actor: actor_name(change),
         subject: subject_name(change)
       )
+
+  # Who left, and the roles they held then: an admin who leaves resigns.
+  defp change_text(%GroupAccessChange{kind: :member_left} = change, manifest) do
+    case left_roles(change, manifest) do
+      [] ->
+        gettext("%{subject} leaves the group.", subject: subject_name(change))
+
+      roles ->
+        gettext("%{subject} leaves the group, and with it: %{roles}.",
+          subject: subject_name(change),
+          roles: Enum.join(roles, ", ")
+        )
+    end
+  end
 
   defp change_text(%GroupAccessChange{kind: :member_blocked} = change, _manifest),
     do:

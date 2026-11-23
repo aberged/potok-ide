@@ -2,8 +2,9 @@ defmodule PotokIde.Social.GroupAccessChange do
   @moduledoc """
   One change of who may do what in a group, kept for its members to read:
   a role given or taken, a permission or a role of the statute changed, a
-  setting of the group that lets people in or out, a member admitted, removed
-  or blocked. `PotokIde.Social.AccessHistory` writes it in the same
+  setting of the group that lets people in or out, a member admitted, removed,
+  blocked or gone of their own accord (`member_left`, with the names of the
+  roles they held in `data`). `PotokIde.Social.AccessHistory` writes it in the same
   transaction as the change, so a change that did not happen leaves no row.
 
   `actor` is who did it, nil for a decision of a poll (`poll`) or a profile
@@ -33,7 +34,8 @@ defmodule PotokIde.Social.GroupAccessChange do
     :member_admitted,
     :member_removed,
     :member_blocked,
-    :member_unblocked
+    :member_unblocked,
+    :member_left
   ]
 
   # What only those who may lift blocks read (`PotokIde.Social.AccessHistory.list/3`).
