@@ -36,6 +36,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   alias PotokIde.Tags
 
   alias PotokIdeWeb.GroupLive.Show.{
+    AccessPreview,
     AccessTab,
     CalendarState,
     CalendarTab,
@@ -198,6 +199,34 @@ defmodule PotokIdeWeb.GroupLive.Show do
           group_id={@group.id}
         />
         <div id="group-page-main" class="flex min-h-0 min-w-0 flex-1 flex-col">
+          <div
+            :if={@access_preview}
+            id="access-preview-banner"
+            role="status"
+            class="mx-2 mb-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm"
+          >
+            <.icon name="hero-eye" class="size-4 shrink-0 text-amber-700 dark:text-amber-300" />
+            <p class="min-w-0 flex-1">
+              <span class="font-semibold">
+                {gettext("You see the group as: %{who}", who: @access_preview.label)}
+              </span>
+              <span class="text-base-content/70">
+                {gettext(
+                  "Only a preview: nothing changes. Your own messages and unread counts stay yours."
+                )}
+              </span>
+            </p>
+            <.link
+              id="access-preview-change"
+              navigate={~p"/groups/#{@group.id}/access"}
+              class="text-xs font-semibold text-primary underline-offset-2 hover:underline"
+            >
+              {gettext("Change")}
+            </.link>
+            <.button id="access-preview-exit" type="button" phx-click="access_preview_exit" size="sm">
+              {gettext("Leave the preview")}
+            </.button>
+          </div>
           <%!-- The back link, the name and the menu share a row; in a narrower header (a narrower
            screen, or the column of groups beside it) the sections take a row of their own. On phones the header is flat and the sections are
            equal columns, and neither they nor the path stay while typing. A flat header
@@ -875,6 +904,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 app_upload={if(@current_profile, do: @uploads.app_file)}
                 host="page"
                 location={@group_location}
+                preview={@access_preview != nil}
               />
               <CreateGroupTab.panel
                 :if={Access.can?(@access, :create_subgroups) and @active_tab == "create_group"}
@@ -993,7 +1023,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
     access = Social.get_group_access(current_profile, group)
     is_member = access.member?
-    active_tab = normalize_active_tab(Map.get(params, "tab"), group, access)
+    # An admin may look at the page as others would (`AccessPreview`): the
+    # tabs follow the access shown, whether the page opens follows their own.
+    preview = AccessPreview.parse(params["as"], group, access)
+    shown_access = if preview, do: AccessPreview.access(preview, access.manifest), else: access
+    active_tab = normalize_active_tab(Map.get(params, "tab"), group, shown_access)
     sub_groups_kind = normalize_sub_groups_kind(Map.get(params, "sub_groups_kind"), group)
 
     cond do
@@ -1018,6 +1052,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:members_role, members_role_param(params["role"], active_tab, access))
          |> assign(:access_overview, nil)
          |> assign(:access_view, :self)
+         |> assign(:access_preview, preview && AccessPreview.state(preview, access.manifest))
+         |> guard_preview()
          |> assign(:values_has_more?, false)
          |> assign(:values_has_newer?, false)
          |> assign(:oldest_value_id, nil)
@@ -1090,7 +1126,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:active_alt_description, nil)
          |> assign(:alt_description_form, nil)
          |> assign(:editing_alt_description, nil)
-         |> assign_access(access)
+         |> assign_access(access, group)
          |> assign(:group, group)
          |> assign(:active_tab, active_tab)
          |> assign(:manifest_owner, nil)
@@ -1151,9 +1187,23 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   @impl true
   def handle_params(params, uri, socket) do
-    # A link from the Requests page opens a form that waits for the viewer.
-    {:noreply, socket} = route_params(params, uri, socket)
-    {:noreply, ProcessForm.open_from_params(socket, params)}
+    asked = params["as"]
+
+    case socket.assigns.access_preview do
+      # Another `as` is another preview: the page mounts anew for it. Links
+      # within the page drop `as` and keep the one it has.
+      %{param: param} when is_binary(asked) and asked != param ->
+        %URI{path: path, query: query} = URI.parse(uri)
+        {:noreply, push_navigate(socket, to: if(query, do: path <> "?" <> query, else: path))}
+
+      %{} ->
+        route_params(params, uri, socket)
+
+      nil ->
+        # A link from the Requests page opens a form that waits for the viewer.
+        {:noreply, socket} = route_params(params, uri, socket)
+        {:noreply, ProcessForm.open_from_params(socket, params)}
+    end
   end
 
   defp route_params(params, _uri, socket) do
@@ -1894,6 +1944,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
       spec -> {:noreply, assign(socket, :access_view, spec)}
     end
   end
+
+  # Leaving a preview mounts the page anew, as the one who looks.
+  def handle_event("access_preview_exit", _params, socket),
+    do: {:noreply, push_navigate(socket, to: preview_exit_path(socket))}
 
   # Older changes of the access history, after the last one on screen.
   def handle_event("access_history_more", _params, socket) do
@@ -3961,7 +4015,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
         value_facts(socket.assigns.group, socket.assigns.access) == value_facts(group, access)
 
       socket
-      |> assign_access(access)
+      |> assign_access(access, group)
       |> NoticesState.reload(group, access)
       |> put_private(:keep_values?, keep_values?)
       |> load_group_data(group)
@@ -4789,6 +4843,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
   # Also called when an upload to the bucket fails, with the entry not done.
   # Each picture is kept as soon as it is up; pictures picked together go out
   # together, as one message, once none of them is still on its way.
+  defp description_picture_progress(
+         :description_picture,
+         entry,
+         %{assigns: %{access_preview: %{}}} = socket
+       ),
+       do: {:noreply, cancel_upload(socket, :description_picture, entry.ref)}
+
   defp description_picture_progress(:description_picture, %{done?: true} = entry, socket) do
     if can_post_description_picture?(socket.assigns.group, socket.assigns.access) do
       group = socket.assigns.group
@@ -4867,6 +4928,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
     allow_upload(socket, :description_video, opts)
   end
+
+  defp description_video_progress(
+         :description_video,
+         entry,
+         %{assigns: %{access_preview: %{}}} = socket
+       ),
+       do: {:noreply, cancel_upload(socket, :description_video, entry.ref)}
 
   defp description_video_progress(:description_video, %{done?: true} = entry, socket) do
     %{current_profile: profile, group: group, access: access} = socket.assigns
@@ -4960,6 +5028,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   # Also called when an upload to the bucket fails, with the entry not done.
+  defp keyboard_media_progress(
+         :keyboard_media,
+         entry,
+         %{assigns: %{access_preview: %{}}} = socket
+       ),
+       do: {:noreply, cancel_upload(socket, :keyboard_media, entry.ref)}
+
   defp keyboard_media_progress(:keyboard_media, %{done?: true} = entry, socket) do
     %{current_profile: profile, group: group, access: access} = socket.assigns
 
@@ -5001,6 +5076,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp put_keyboard_media_error(socket),
     do: put_flash(socket, :error, gettext("The picture could not be sent."))
+
+  defp presign_attachment(_entry, %{assigns: %{access_preview: %{}}} = socket),
+    do: {:error, %{reason: "preview"}, socket}
 
   defp presign_attachment(entry, socket) do
     key = Storage.new_key(socket.assigns.group.id)
@@ -6711,10 +6789,48 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp maybe_load_access_overview(socket, _group, _active_tab),
     do: assign(socket, access_overview: nil, access_view: :self)
 
-  defp assign_access(socket, %Access{} = access) do
+  # The viewer's own access, or, while an admin looks as others would, the
+  # access the preview shows, worked out again from their own: a preview that
+  # no longer holds (no longer an admin, the group closed) ends.
+  defp assign_access(socket, access, group \\ nil)
+
+  defp assign_access(
+         %{assigns: %{access_preview: %{} = preview}} = socket,
+         %Access{} = own,
+         group
+       ) do
+    case AccessPreview.reapply(preview, group || socket.assigns.group, own) do
+      {:ok, state, shown} ->
+        socket
+        |> assign(:access_preview, state)
+        |> assign(:access, shown)
+        |> assign(:is_member, shown.member?)
+
+      :ended ->
+        socket
+        |> assign(:access, own)
+        |> assign(:is_member, own.member?)
+        |> put_flash(:info, gettext("The preview ended, as it no longer holds."))
+        |> push_navigate(to: preview_exit_path(socket, group))
+    end
+  end
+
+  defp assign_access(socket, %Access{} = access, _group) do
     socket
     |> assign(:access, access)
     |> assign(:is_member, access.member?)
+  end
+
+  # While a preview lasts, every event passes `AccessPreview.guard/3`.
+  defp guard_preview(%{assigns: %{access_preview: %{}}} = socket),
+    do: attach_hook(socket, :access_preview, :handle_event, &AccessPreview.guard/3)
+
+  defp guard_preview(socket), do: socket
+
+  defp preview_exit_path(socket, group \\ nil) do
+    group = group || socket.assigns.group
+    tab = Map.get(socket.assigns, :active_tab) || PageRules.default_tab(group)
+    ~p"/groups/#{group.id}/#{tab}"
   end
 
   # After the viewer changed roles: their own access and the roles tab. Other
@@ -6876,6 +6992,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   # shown, and when it leaves (`terminate/2`). The profile's other pages learn
   # of it that much later.
   defp mark_value_read(%{assigns: %{is_member: false}} = socket, %Value{}), do: socket
+  defp mark_value_read(%{assigns: %{access_preview: %{}}} = socket, %Value{}), do: socket
 
   defp mark_value_read(socket, %Value{id: value_id}) do
     pending = max(socket.private[:read_marker_value_id] || 0, value_id)
@@ -6913,6 +7030,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   # Only members have unread counts, so only they get a marker; someone
   # reading an open chat from outside has none to move.
+  defp maybe_mark_group_values_read(%{assigns: %{access_preview: %{}}} = socket, _group, _tab),
+    do: socket
+
   defp maybe_mark_group_values_read(socket, group, active_tab) do
     profile = socket.assigns.current_profile
 

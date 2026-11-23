@@ -14,7 +14,14 @@ defmodule PotokIdeWeb.GroupLive.Show.AccessTab do
 
   alias PotokIde.Processes.Graph
   alias PotokIde.Social.{Access, AccessHistory, Group, GroupAccessChange, GroupRole}
-  alias PotokIdeWeb.GroupLive.Show.{AccessCatalog, Components, RequestRules, RolesTab}
+
+  alias PotokIdeWeb.GroupLive.Show.{
+    AccessCatalog,
+    AccessPreview,
+    Components,
+    RequestRules,
+    RolesTab
+  }
 
   attr :group, :map, required: true
   attr :access, Access, required: true, doc: "the viewer's own access"
@@ -56,6 +63,13 @@ defmodule PotokIdeWeb.GroupLive.Show.AccessTab do
       |> assign(:columns, AccessCatalog.columns(manifest, assigns.group))
       |> assign(:statute, AccessCatalog.statute(manifest, assigns.group))
       |> assign(:own_manifest?, Access.own_manifest?(assigns.group, manifest))
+      # An admin opens the page itself as the pick would see it.
+      |> assign(
+        :preview_param,
+        (assigns.access.admin? and view != :self and
+           AccessPreview.parse(AccessPreview.param(spec) || "", assigns.group, assigns.access)) &&
+          AccessPreview.param(spec)
+      )
 
     ~H"""
     <div id="group-panel-access" class="card flex min-h-0 flex-1 flex-col px-2">
@@ -160,6 +174,15 @@ defmodule PotokIdeWeb.GroupLive.Show.AccessTab do
                   all: length(AccessCatalog.capabilities())
                 )}
               </p>
+              <.link
+                :if={@preview_param}
+                id="access-preview-open"
+                navigate={~p"/groups/#{@group.id}?#{[as: @preview_param]}"}
+                class="inline-flex h-8 items-center gap-1.5 rounded-full bg-primary px-3 text-xs font-semibold text-primary-content shadow-sm transition duration-150 ease-out hover:-translate-y-px active:scale-95"
+              >
+                <.icon name="hero-eye" class="size-3.5" />
+                {gettext("See the group like this")}
+              </.link>
             </div>
             <div class="grid gap-3 lg:grid-cols-2">
               <div

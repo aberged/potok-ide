@@ -73,6 +73,10 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
     default: nil,
     doc: "where the group stands (`location/2`), shown over the description"
 
+  attr :preview, :boolean,
+    default: false,
+    doc: "an admin sees the group as others would (`AccessPreview`): an app does not run"
+
   def panel(assigns) do
     source = assigns.active_alt_description || assigns.group
 
@@ -199,7 +203,26 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
         <%!-- Each app gets its own frame id, so switching apps mounts a new hook
         with that app's storage instead of reusing the previous one. --%>
         <div
-          :if={!blank_description?(@source.description) and @source.uses_api}
+          :if={!blank_description?(@source.description) and @source.uses_api and @preview}
+          id={"#{@prefix}-panel-description"}
+          class={@column}
+        >
+          <div
+            id={"#{@prefix}-app-preview"}
+            class="flex items-start gap-3 rounded-3xl border border-dashed border-base-300 bg-base-100/70 p-5 text-sm text-base-content/70"
+          >
+            <.icon name="hero-puzzle-piece" class="mt-0.5 size-5 shrink-0 text-base-content/50" />
+            <p>
+              {gettext(
+                "Here the app %{name} would run. In a preview it does not, so that nothing changes.",
+                name: Map.get(@source, :name) || @group.name
+              )}
+            </p>
+          </div>
+        </div>
+
+        <div
+          :if={!blank_description?(@source.description) and @source.uses_api and !@preview}
           id={"#{@prefix}-panel-description"}
           class="flex min-h-0 flex-1 flex-col"
         >
