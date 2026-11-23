@@ -2410,41 +2410,117 @@ defmodule PotokIde.Social do
         {:error, :last_admin}
 
       true ->
-        # The member's roles go with the membership (composite foreign key).
-        Multi.new()
-        |> Multi.delete_all(
-          :membership,
-          from(gm in GroupMembership,
-            where: gm.group_id == ^group.id and gm.profile_id == ^member.id
+        drop_membership(group, member, fn repo ->
+          AccessHistory.record!(repo, group, :member_removed,
+            actor: actor.id,
+            subject: member.id
           )
-        )
-        |> Multi.delete_all(
-          :group_value_reads,
-          from(gvr in GroupValueRead,
-            where: gvr.group_id == ^group.id and gvr.profile_id == ^member.id
-          )
-        )
-        |> Multi.run(:inheritance, fn repo, _changes ->
-          {:ok, MemberInheritance.sync(repo, group.id, [member.id])}
         end)
-        |> Multi.run(:history, fn repo, _changes ->
-          {:ok,
-           AccessHistory.record!(repo, group, :member_removed,
-             actor: actor.id,
-             subject: member.id
-           )}
-        end)
-        |> Repo.transaction()
-        |> case do
-          {:ok, %{inheritance: changes}} ->
-            broadcast_group_members_changed(group, [:members], profile_id: member.id)
-            broadcast_group_membership_changed(member.id, group.id, :removed)
-            broadcast_inheritance_changes(changes)
-            {:ok, member}
+    end
+  end
 
-          {:error, _step, reason, _changes} ->
-            {:error, reason}
-        end
+  @doc """
+  `profile` leaves `group` of its own accord, under `leave_refusal/2`: its
+  roles there go, and so do its places in the sub-groups that inherit it. An
+  admin in a group that elects its admins may leave too, which resigns the
+  role. The access history keeps it (`member_left`) with the roles it held.
+  """
+  def leave_group(%Profile{} = profile, %Group{} = group) do
+    case leave_refusal(profile, group) do
+      nil ->
+        roles = held_roles(profile, group)
+
+        drop_membership(group, profile, fn repo ->
+          AccessHistory.record!(repo, group, :member_left,
+            actor: profile.id,
+            subject: profile.id,
+            data: %{roles: roles}
+          )
+        end)
+
+      reason ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  Why `profile` may not leave `group`, or nil when it may: there is no leaving
+  the root, a direct conversation or a thread, whoever is held through the
+  parent leaves there, an app's process goes with its app, and a group keeps
+  its last admin.
+  """
+  def leave_refusal(%Profile{} = profile, %Group{} = group) do
+    access = Access.for_profile(profile, group)
+
+    cond do
+      group.is_root ->
+        :root_group
+
+      group.is_direct ->
+        :direct_group
+
+      not is_nil(group.parent_value_id) ->
+        :thread
+
+      not access.member? ->
+        :not_a_group_member
+
+      AppProcesses.app_process_of?(profile, group) ->
+        :process_profile
+
+      Map.has_key?(Access.inherited_by_profile(group, [profile.id]), profile.id) ->
+        :inherited_member
+
+      access.admin? and Access.count_admins(group) <= 1 ->
+        :last_admin
+
+      true ->
+        nil
+    end
+  end
+
+  # The roles `profile` holds in `group`, by key and by their names now, for
+  # the access history to tell after they are gone.
+  defp held_roles(%Profile{id: profile_id}, %Group{} = group) do
+    names = Map.new(Access.effective_manifest(group).roles, &{&1.key, &1.name})
+
+    group
+    |> Access.role_keys_by_profile([profile_id])
+    |> Map.get(profile_id, [])
+    |> Enum.map(&%{"key" => &1, "name" => Map.get(names, &1, &1)})
+  end
+
+  # The membership goes with its roles (composite foreign key), the read
+  # marker, the places in the sub-groups that inherit it and a request for
+  # roles that waits; `history` writes what happened in the same transaction.
+  defp drop_membership(%Group{} = group, %Profile{} = member, history) do
+    Multi.new()
+    |> Multi.delete_all(
+      :membership,
+      from(gm in GroupMembership,
+        where: gm.group_id == ^group.id and gm.profile_id == ^member.id
+      )
+    )
+    |> Multi.delete_all(
+      :group_value_reads,
+      from(gvr in GroupValueRead,
+        where: gvr.group_id == ^group.id and gvr.profile_id == ^member.id
+      )
+    )
+    |> Multi.run(:inheritance, fn repo, _changes ->
+      {:ok, MemberInheritance.sync(repo, group.id, [member.id])}
+    end)
+    |> Multi.run(:history, fn repo, _changes -> {:ok, history.(repo)} end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{inheritance: changes}} ->
+        broadcast_group_members_changed(group, [:members], profile_id: member.id)
+        broadcast_group_membership_changed(member.id, group.id, :removed)
+        broadcast_inheritance_changes(changes)
+        {:ok, member}
+
+      {:error, _step, reason, _changes} ->
+        {:error, reason}
     end
   end
 

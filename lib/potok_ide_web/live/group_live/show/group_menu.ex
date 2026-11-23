@@ -198,8 +198,29 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
         label={gettext("Edit group")}
         icon="hero-cog-6-tooth"
       />
+      <.menu_item
+        :if={leave?(@group, @access)}
+        id={"#{@id_prefix}-leave"}
+        icon="hero-arrow-right-start-on-rectangle"
+        label={gettext("Leave the group")}
+        data-dropdown-close
+        data-confirm={
+          gettext(
+            "Leave %{group}? Your roles in it go too, and so do your places in the sub-groups that take you in through it.",
+            group: @group.name
+          )
+        }
+        phx-click={open_dialog("group_leave", %{id: @group.id}, @row?)}
+      />
     </div>
     """
+  end
+
+  # A member may try to leave any group but the root, a direct conversation and
+  # a thread; `Social.leave_refusal/2` tells the rest, as whether the viewer is
+  # held through the parent takes a query.
+  defp leave?(%Group{} = group, access) do
+    access.member? and !group.is_root and !group.is_direct and is_nil(group.parent_value_id)
   end
 
   @doc """

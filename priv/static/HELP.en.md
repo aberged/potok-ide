@@ -56,7 +56,7 @@ In a group, people write messages, send files, plan events and start polls, and 
 
 ### Membership and inheritance {:#clanstvo}
 
-You get into a group by invitation, or by [a request](#zahtevi), which whoever manages requests or a vote decides, as the group says. A sub-group can inherit members: whoever is a member of the group above is a member of it too, with the same roles. So the assembly and the neighbourhood map have all the local community's members at once, and whoever is no longer a member of the community is no longer theirs.
+You get into a group by invitation, or by [a request](#zahtevi), which whoever manages requests or a vote decides, as the group says, and you leave of your own accord, whenever you like ([leaving](#uklanjanje)). A sub-group can inherit members: whoever is a member of the group above is a member of it too, with the same roles. So the assembly and the neighbourhood map have all the local community's members at once, and whoever is no longer a member of the community is no longer theirs.
 
 You can narrow inheriting down to roles: then only the members who hold one of the chosen roles in the group above come into the sub-group, with all their roles, and whoever loses the last of them leaves. That way the local community's council gets a group of its own without you inviting anyone separately.
 
@@ -293,7 +293,7 @@ A role's name has 2 to 32 characters and no spaces, as a role is mentioned as @n
 
 When you delete a role, everyone who held it loses it, in every group that uses that manifest, and the requests that ask for it forget it. **Inherit again** deletes the group's own manifest: the group uses the manifest of the group above once more, and roles that manifest does not have are lost by those who held them, except Administrator. Every such change stays in the [access history](#pregled-pristupa).
 
-### Removing a member {:#uklanjanje}
+### Removing and leaving {:#uklanjanje}
 
 A member is removed by whoever holds the permission Remove members, with the button by their name on the Members tab. With the membership go their roles in that group, their membership in the sub-groups that inherit them and a request for roles that waits. What they wrote stays.
 
@@ -304,6 +304,8 @@ Not everyone can remove everyone:
 - only an admin removes an admin, and in a group that [elects its admins](#izbor-administratora) only a decision of a poll does;
 - the last admin stays, so the group is never without one;
 - an app's process comes and goes with its app.
+
+You leave a group yourself, with **Leave the group** in its menu. Your roles in it go too, and so do your places in the sub-groups that take you in through it, and your request for roles if one waits. If you are a member through the group above, you leave that one. The last admin cannot go until they make someone else an admin. Who left, and with which roles, stays in the [access history](#pregled-pristupa). From a private group the page takes you to the group above, and a public one you still see, as everyone does.
 
 ### Blocking {:#blokiranje}
 
@@ -352,7 +354,7 @@ Further down are all roles side by side, how many people hold the permissions th
 
 ![Who holds power and how a role is had](pregled-pristupa-moc)
 
-At the bottom is the history: who gave or took which role, who changed roles, permissions or the settings that let people in, who admitted, removed or blocked whom, and when. Only those who may remove members see blocks in it. The history is kept since it began, so earlier changes are not in it.
+At the bottom is the history: who gave or took which role, who changed roles, permissions or the settings that let people in, who admitted, removed or blocked whom, who left of their own accord, and when. Only those who may remove members see blocks in it. The history is kept since it began, so earlier changes are not in it.
 
 An admin of the group can also open it as the pick would: the **See the group like this** button shows the group's real page as that pick sees it, with a bar on top. It is only a preview: nothing can change, the app of a description does not run, and your own messages and unread counts stay yours. **Leave the preview** brings back the page as you see it.
 
@@ -431,7 +433,7 @@ In a group run by its founders such a poll is called by an admin: that is how an
 
 ### A group that elects its admins {:#izbor-administratora}
 
-In Edit group → Access an admin switches on **Let the group elect its admins**. From then on Admin is given and taken only by decisions of polls: not even an admin can give or take it by hand, or remove another admin from the group. The present admins stay for the time being, until an election replaces them or a decision takes the role from them, and are marked **for now** on the Members tab.
+In Edit group → Access an admin switches on **Let the group elect its admins**. From then on Admin is given and taken only by decisions of polls: not even an admin can give or take it by hand, or remove another admin from the group. An admin may leave the group of their own accord, which resigns the role, while at least one more admin stays. The present admins stay for the time being, until an election replaces them or a decision takes the role from them, and are marked **for now** on the Members tab.
 
 An election is called by anyone who may start polls, with **Call an election** on the Members tab: the question, the candidates and the rule are filled in, and members can stand. Such an election has **The one elected takes the place of those who hold it now** switched on, so the one elected takes the place of the present admins at the same moment, and the group is never without an admin. An election without it only adds one more admin, and those for now stay. An admin inherited from the group above stays.
 

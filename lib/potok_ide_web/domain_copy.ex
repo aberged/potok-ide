@@ -1050,7 +1050,7 @@ defmodule PotokIdeWeb.DomainCopy do
   defp entity_description("GroupAccessChange", _edges) do
     dgettext(
       "domain_map",
-      "One change of who may do what in a group: a role given or taken, by an admin, a decision of a poll or an approved request, the statute or a setting that lets people in changed, a member admitted, removed or blocked, and who did it. It is written in the same transaction as the change. Every member reads it, blocks only those who may remove members, and deleting a profile leaves only that someone did it."
+      "One change of who may do what in a group: a role given or taken, by an admin, a decision of a poll or an approved request, the statute or a setting that lets people in changed, a member admitted, removed, blocked or gone of their own accord, and who did it. It is written in the same transaction as the change. Every member reads it, blocks only those who may remove members, and deleting a profile leaves only that someone did it."
     )
   end
 
@@ -1796,7 +1796,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "A <Group>group</Group> that elects its admins gives and takes `admin` only by decisions of <Poll>polls</Poll>: nobody assigns it by hand, and an admin leaves the group only by a decision. An admin switches it on, and the admins it has stay for the time being, until a decision takes the role from them or an election puts its winner in their place in the same step; an election does that only when it says so, as one called from the list of members does. Only a decision switches it off, or an elected admin could stay for good. An admin inherited from the parent stays an admin. The root, direct conversations and threads do not elect their admins."
+            "A <Group>group</Group> that elects its admins gives and takes `admin` only by decisions of <Poll>polls</Poll>: nobody assigns it by hand, and only a decision removes an admin from the group, though an admin may leave of their own accord. An admin switches it on, and the admins it has stay for the time being, until a decision takes the role from them or an election puts its winner in their place in the same step; an election does that only when it says so, as one called from the list of members does. Only a decision switches it off, or an elected admin could stay for good. An admin inherited from the parent stays an admin. The root, direct conversations and threads do not elect their admins."
           )
       },
       %{
@@ -1812,7 +1812,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "Each <GroupMemberRole>role</GroupMemberRole> given or taken, by an admin, a decision of a <Poll>poll</Poll> or an approved request, each change of a <GroupRole>role</GroupRole> of the statute or of its permissions, a <GroupManifest>manifest</GroupManifest> made or dropped, each setting of a <Group>group</Group> that lets people in, who sees an <GroupAltDescription>alternative description</GroupAltDescription>, and each member admitted, removed or blocked is written as a <GroupAccessChange>change of access</GroupAccessChange>, in the same step as the change, with who did it. What follows from these by itself, such as members coming into an inheriting sub-group, is not written, nor are invitations or members leaving of their own accord. Every member of the group reads the changes, and a <GroupBlock>block</GroupBlock> only those who may remove members."
+            "Each <GroupMemberRole>role</GroupMemberRole> given or taken, by an admin, a decision of a <Poll>poll</Poll> or an approved request, each change of a <GroupRole>role</GroupRole> of the statute or of its permissions, a <GroupManifest>manifest</GroupManifest> made or dropped, each setting of a <Group>group</Group> that lets people in, who sees an <GroupAltDescription>alternative description</GroupAltDescription>, and each member admitted, removed, blocked or gone of their own accord, with the roles they held, is written as a <GroupAccessChange>change of access</GroupAccessChange>, in the same step as the change, with who did it. What follows from these by itself, such as members coming into an inheriting sub-group, is not written, nor are invitations. Every member of the group reads the changes, and a <GroupBlock>block</GroupBlock> only those who may remove members."
           )
       },
       %{
@@ -2056,7 +2056,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "A <GroupInvitation>group invitation</GroupInvitation> goes from profile to profile. If the invited account has no profile yet, an <GroupAccountInvitation>account invitation</GroupAccountInvitation> is kept, which becomes an ordinary invitation as soon as the account gets its first profile. A <GroupJoinRequest>join request</GroupJoinRequest> goes the other way, with the roles one would like and, if one wants, why. The group's rule says who decides it: whoever manages requests, who may also put it to a vote, or always a vote. When accepted it is deleted, and an <GroupJoinRequestApproval>approved request</GroupJoinRequestApproval> stays with the name of whoever admitted the member, or the vote that did. An invitation still brings someone in at once."
+            "A <GroupInvitation>group invitation</GroupInvitation> goes from profile to profile. If the invited account has no profile yet, an <GroupAccountInvitation>account invitation</GroupAccountInvitation> is kept, which becomes an ordinary invitation as soon as the account gets its first profile. A <GroupJoinRequest>join request</GroupJoinRequest> goes the other way, with the roles one would like and, if one wants, why. The group's rule says who decides it: whoever manages requests, who may also put it to a vote, or always a vote. When accepted it is deleted, and an <GroupJoinRequestApproval>approved request</GroupJoinRequestApproval> stays with the name of whoever admitted the member, or the vote that did. An invitation still brings someone in at once. A member leaves of their own accord, unless they are held through the parent, which they leave instead, or are the group's last admin."
           )
       },
       %{

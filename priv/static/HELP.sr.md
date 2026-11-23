@@ -62,7 +62,7 @@ U grupi se pišu poruke, šalju fajlovi, zakazuju događaji i pokreću glasanja,
 
 ### Članstvo i nasleđivanje {:#clanstvo}
 
-U grupu se ulazi na poziv ili [zahtevom](#zahtevi), o kome odlučuje onaj ko upravlja zahtevima ili glasanje, kako grupa kaže. Podgrupa može da nasleđuje članove: ko je član grupe iznad, član je i nje, sa istim ulogama. Tako zbor i mapa kraja odmah imaju sve članove mesne zajednice, a ko više nije član mesne zajednice, nije ni njihov.
+U grupu se ulazi na poziv ili [zahtevom](#zahtevi), o kome odlučuje onaj ko upravlja zahtevima ili glasanje, kako grupa kaže, a izlaziš sam, kad hoćeš ([napuštanje](#uklanjanje)). Podgrupa može da nasleđuje članove: ko je član grupe iznad, član je i nje, sa istim ulogama. Tako zbor i mapa kraja odmah imaju sve članove mesne zajednice, a ko više nije član mesne zajednice, nije ni njihov.
 
 Nasleđivanje možeš da suziš na uloge: tada podgrupi dolaze samo članovi koji u grupi iznad imaju neku od izabranih uloga, sa svim svojim ulogama, a ko izgubi poslednju od njih, odlazi. Tako savet mesne zajednice dobija svoju grupu, a da nikoga ne pozivaš posebno.
 
@@ -299,7 +299,7 @@ Ime uloge ima od 2 do 32 znaka i nema razmake, jer se uloga pominje kao @ime, i 
 
 Kad obrišeš ulogu, ona nestaje svima koji su je imali, u svim grupama koje koriste taj manifest, i iz zahteva koji je traže. **Ponovo nasledi** briše sopstveni manifest: grupa opet koristi manifest grupe iznad, a uloge kojih u njemu nema nestaju onima koji su ih imali, osim uloge Administrator. Svaka takva promena ostaje u [istoriji pristupa](#pregled-pristupa).
 
-### Uklanjanje člana {:#uklanjanje}
+### Uklanjanje i napuštanje {:#uklanjanje}
 
 Člana uklanja onaj ko ima dozvolu Uklanjanje članova, dugmetom pored njegovog imena na kartici Članovi. Sa članstvom mu odlaze uloge u toj grupi, članstvo u podgrupama koje ga nasleđuju i zahtev za uloge koji čeka. Ono što je napisao ostaje.
 
@@ -310,6 +310,8 @@ Ne može svako svakoga:
 - administratora uklanja samo administrator, a u grupi koja [bira administratore](#izbor-administratora) samo odluka glasanja;
 - poslednji administrator ostaje, da grupa ne ostane bez njega;
 - proces aplikacije dolazi i odlazi sa svojom aplikacijom.
+
+Iz grupe izlaziš sam, stavkom **Napusti grupu** u njenom meniju. Odlaze i tvoje uloge u njoj, mesto u podgrupama koje te preko nje nasleđuju i tvoj zahtev za uloge, ako čeka. Ako si član preko grupe iznad, izlaziš iz nje. Poslednji administrator ne može da ode, dok nekog drugog ne postavi za administratora. Ko je otišao i sa kojim ulogama, ostaje u [istoriji pristupa](#pregled-pristupa). Iz privatne grupe stranica te vodi na grupu iznad, a javnu i dalje vidiš, kao i svako.
 
 ### Blokiranje {:#blokiranje}
 
@@ -358,7 +360,7 @@ Dalje su sve uloge jedna pored druge, koliko ljudi ima dozvole koje deluju na dr
 
 ![Ko ima moć i kako se dobija uloga](pregled-pristupa-moc)
 
-Na dnu je istorija: ko je kome dao ili oduzeo ulogu, ko je menjao uloge, dozvole ili podešavanja kojima se ulazi u grupu, ko je koga primio, uklonio ili blokirao, i kada. Blokade u njoj vide samo oni koji smeju da uklanjaju članove. Istorija se beleži od kad postoji, pa ranijih promena u njoj nema.
+Na dnu je istorija: ko je kome dao ili oduzeo ulogu, ko je menjao uloge, dozvole ili podešavanja kojima se ulazi u grupu, ko je koga primio, uklonio ili blokirao, ko je sam otišao, i kada. Blokade u njoj vide samo oni koji smeju da uklanjaju članove. Istorija se beleži od kad postoji, pa ranijih promena u njoj nema.
 
 Administrator grupe može i da je otvori kao izabrana kombinacija: dugme **Pogledaj grupu ovako** prikazuje pravu stranicu grupe onako kako je ta kombinacija vidi, sa trakom na vrhu. To je samo pregled: ništa se ne može promeniti, aplikacija u opisu se ne pokreće, a tvoje poruke i nepročitano ostaju tvoji. **Izađi iz pregleda** vraća stranicu kakvu ti vidiš.
 
@@ -437,7 +439,7 @@ U grupi koju vode njeni osnivači takvo glasanje raspisuje administrator: tako o
 
 ### Grupa koja bira administratore {:#izbor-administratora}
 
-U Uredi grupu → Pristup administrator uključuje **Neka grupa bira administratore**. Od tada ulogu Administrator daju i oduzimaju samo odluke glasanja: ni administrator ne može da je dodeli ili oduzme rukom, niti da izbaci drugog administratora iz grupe. Dosadašnji administratori ostaju privremeno, dok ih ne zameni izbor ili im odluka ne oduzme ulogu, i na kartici Članovi imaju oznaku **privremeno**.
+U Uredi grupu → Pristup administrator uključuje **Neka grupa bira administratore**. Od tada ulogu Administrator daju i oduzimaju samo odluke glasanja: ni administrator ne može da je dodeli ili oduzme rukom, niti da izbaci drugog administratora iz grupe. Administrator može sam da napusti grupu, i tako daje ostavku, dok u grupi ostaje bar još jedan administrator. Dosadašnji administratori ostaju privremeno, dok ih ne zameni izbor ili im odluka ne oduzme ulogu, i na kartici Članovi imaju oznaku **privremeno**.
 
 Izbore raspisuje svako ko sme da pokreće glasanja, dugmetom **Raspiši izbore** na kartici Članovi: pitanje, kandidati i pravilo su već upisani, a članovi mogu da se kandiduju. Takav izbor ima uključeno **Izabrani zauzima mesto onih koji ulogu sada imaju**, pa izabrani zauzima mesto dosadašnjih administratora u istom trenutku i grupa nijednog trenutka nije bez administratora. Izbor bez toga samo dodaje još jednog administratora, a privremeni ostaju. Administrator nasleđen iz grupe iznad ostaje.
 

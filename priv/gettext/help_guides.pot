@@ -121,22 +121,22 @@ msgstr ""
 msgid "4 · Everyone in the sub-group finds out"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:946
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:957
 #, elixir-autogen, elixir-format
 msgid "<b>A direct conversation</b> stands under the root and uses the root's manifest. Whoever opens it is recorded as Admin, but roles are not assigned in it and it gets no manifest of its own."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:986
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:997
 #, elixir-autogen, elixir-format
 msgid "<b>A guest</b> has no profile, and so no permissions. They see a public group's name, picture and part of its description, and the whole description only if the group opened it to guests."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:954
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:965
 #, elixir-autogen, elixir-format
 msgid "<b>A process's profile</b> is a member only where the process puts it, with what Everyone may, until an Admin assigns it another role. It is not inherited and is not counted when something goes to the people with a permission."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:938
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:949
 #, elixir-autogen, elixir-format
 msgid "<b>A thread</b> is a group under the group of its message: it uses that group's manifest, and its members are only the participants, with the roles they hold in the group. Whoever opens it is its Admin, and so can make it a manifest of its own."
 msgstr ""
@@ -206,12 +206,12 @@ msgstr ""
 msgid "A person and a role"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1038
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1049
 #, elixir-autogen, elixir-format
 msgid "A poll says which roles vote, which see the results and the details, and how unique and shared profiles vote."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1044
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1055
 #, elixir-autogen, elixir-format
 msgid "A process asks a role by a form or a decision, and sends it a push, if it may mention roles."
 msgstr ""
@@ -294,7 +294,7 @@ msgstr ""
 msgid "Alternative description"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1026
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1037
 #, elixir-autogen, elixir-format
 msgid "An alternative description can be seen by some roles only, along with those who may edit the group."
 msgstr ""
@@ -744,7 +744,7 @@ msgstr ""
 msgid "Membership"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1050
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1061
 #, elixir-autogen, elixir-format
 msgid "Mentioning a role in a message tells everyone who holds it, with the permission Mention roles."
 msgstr ""
@@ -948,7 +948,7 @@ msgstr ""
 msgid "Role assignment"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1020
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1031
 #, elixir-autogen, elixir-format
 msgid "Roles also work outside these %{n} permissions"
 msgstr ""
@@ -979,7 +979,7 @@ msgstr ""
 msgid "Settings and people"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:934
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:945
 #, elixir-autogen, elixir-format
 msgid "Special cases"
 msgstr ""
@@ -1117,7 +1117,7 @@ msgstr ""
 msgid "The rules are copied from the <a1>domain map</a1> and from the code."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1032
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1043
 #, elixir-autogen, elixir-format
 msgid "The rules of an app's collections say which roles write, and which read everything."
 msgstr ""
@@ -2414,7 +2414,7 @@ msgstr ""
 msgid "the write and its processes, together"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1010
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1021
 #, elixir-autogen, elixir-format
 msgid "<b>A deleted account</b> leaves its profile as \"Deleted user\", a member of no group and with no role. A group never loses its last Admin, so the person first makes someone else Admin of each group they alone hold."
 msgstr ""
@@ -2444,7 +2444,7 @@ msgstr ""
 msgid "a group field stays here; a signal, if asked"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1002
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1013
 #, elixir-autogen, elixir-format
 msgid "<b>A link to a form</b> in a message shows the form's title and subtitle only to those who may open it: its members, and everyone when a public group's form takes non-members. The others see the card a guest would get, or only the link."
 msgstr ""
@@ -2459,7 +2459,7 @@ msgstr ""
 msgid "Whoever may edit the group (`edit_group`), except in a direct conversation or a thread. The templates serve every group below it too, where whoever writes a description uses them but cannot change them."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:962
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:973
 #, elixir-autogen, elixir-format
 msgid "<b>A decision of a poll</b> that gives or takes a role is put to every member who may vote, with a quorum and a deadline, and is carried out as the poll ends. The role it gave keeps the poll (`poll_id`). In a group run by its founders only an Admin raises one; a process raises one through its owner, an Admin, and holds no more than Everyone all the same."
 msgstr ""
@@ -2476,15 +2476,15 @@ msgstr ""
 
 #: lib/potok_ide_web/controllers/page_html/help_access.html.heex:825
 #, elixir-autogen, elixir-format
-msgid "The group's Admin turns it on (`elects_admins`). From then on Admin comes and goes only by a decision of a poll, an admin leaves the group only so, and the admins it had stay for the time being, until a decision takes the role from them or an election puts its winner in the holders' place (`effect_replace`). Only a decision turns it off."
+msgid "The group's Admin turns it on (`elects_admins`). From then on Admin comes and goes only by a decision of a poll, only so is an admin removed from the group, though they may leave of their own accord, and the admins it had stay for the time being, until a decision takes the role from them or an election puts its winner in the holders' place (`effect_replace`). Only a decision turns it off."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:970
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:981
 #, elixir-autogen, elixir-format
 msgid "<b>A request</b> that goes to a vote raises a poll in the name of whoever asked, by the rule written down beforehand, and the poll's decision gives the role or, for admission, takes them in as it closes. An invitation still brings someone in at once, so a group that admits only by a vote gives nobody the right to invite."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:978
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:989
 #, elixir-autogen, elixir-format
 msgid "<b>A shared profile</b> that one account holds votes as that person. Held by several, it votes as the poll says: once for all of them, each holder through it as themself, or not at all."
 msgstr ""
@@ -2514,14 +2514,14 @@ msgstr ""
 msgid "It decides no request to join or for a role: that is for whoever manages requests, or for a vote."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:994
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1005
 #, elixir-autogen, elixir-format
 msgid "<b>A preview of the group as others see it</b> is for its admins only, as an admin already sees whatever a role sees. In it nothing changes: every event that would write stops, an upload is refused, no read marker moves and the app of a description does not run."
 msgstr ""
 
 #: lib/potok_ide_web/controllers/page_html/help_access.html.heex:903
 #, elixir-autogen, elixir-format
-msgid "Every change above, and every role given or taken, member admitted, removed or blocked, goes into the group's access history (`AccessHistory`) in the same step, with who made it. Every member reads it; blocks only those who may remove members."
+msgid "Every change above, and every role given or taken, member admitted, removed, blocked or gone of their own accord, goes into the group's access history (`AccessHistory`) in the same step, with who made it. Every member reads it; blocks only those who may remove members."
 msgstr ""
 
 #: lib/potok_ide_web/controllers/page_html/help_access.html.heex:665
@@ -2532,4 +2532,14 @@ msgstr ""
 #: lib/potok_ide_web/controllers/page_html/help_access.html.heex:900
 #, elixir-autogen, elixir-format
 msgid "Keeps what changed"
+msgstr ""
+
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:932
+#, elixir-autogen, elixir-format
+msgid "Every member, by themself (`leave_group`), but not at the root, in a direct conversation or in a thread. A member held through the parent leaves there, and the last admin stays. In a group that elects its admins an admin may leave too, which resigns the role. The history keeps who left, with the roles they held."
+msgstr ""
+
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:929
+#, elixir-autogen, elixir-format
+msgid "Leaves the group"
 msgstr ""

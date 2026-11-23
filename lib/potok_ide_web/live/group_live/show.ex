@@ -2162,6 +2162,49 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
+  # The id comes from the page, so the group must be one the viewer sees: the
+  # menu of a sub-group's row offers it too. Leaving a private open group
+  # leads to its parent, as the viewer no longer sees it.
+  def handle_event("group_leave", %{"id" => id}, socket) do
+    profile = socket.assigns.current_profile
+
+    with %Profile{} <- profile,
+         {group_id, ""} <- Integer.parse(to_string(id)),
+         %Group{} = group <- Social.get_visible_group(profile, group_id) do
+      case Social.leave_group(profile, group) do
+        {:ok, _profile} ->
+          socket = put_flash(socket, :info, gettext("You are no longer a member of the group."))
+
+          cond do
+            group.id != socket.assigns.group.id ->
+              {:noreply, refresh_group_data(socket)}
+
+            group.is_public ->
+              {:noreply, push_navigate(socket, to: ~p"/groups/#{group.id}")}
+
+            true ->
+              {:noreply, push_navigate(socket, to: ~p"/groups/#{group.parent_id}")}
+          end
+
+        {:error, :inherited_member} ->
+          {:noreply,
+           put_flash(
+             socket,
+             :error,
+             gettext("You are a member through the group above. Leave that group instead.")
+           )}
+
+        {:error, :last_admin} ->
+          {:noreply, put_flash(socket, :error, access_error_message(:last_admin))}
+
+        {:error, _reason} ->
+          {:noreply, put_flash(socket, :error, gettext("You cannot leave this group."))}
+      end
+    else
+      _not_visible -> {:noreply, socket}
+    end
+  end
+
   def handle_event("remove_member", %{"id" => id}, socket) do
     current_profile = socket.assigns.current_profile
     group = socket.assigns.group
@@ -6923,7 +6966,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     do: gettext("This group elects its admins: Admin comes and goes by a decision of a poll.")
 
   defp access_error_message(:elected_admin),
-    do: gettext("This group elects its admins: an admin leaves only by a decision of a poll.")
+    do: gettext("This group elects its admins: only a decision of a poll removes an admin.")
 
   defp access_error_message(:direct_group),
     do: gettext("Direct conversations do not have roles or invitations.")

@@ -824,7 +824,7 @@
           <.hg_text text={
             dgettext(
               "help_guides",
-              "The group's Admin turns it on (`elects_admins`). From then on Admin comes and goes only by a decision of a poll, an admin leaves the group only so, and the admins it had stay for the time being, until a decision takes the role from them or an election puts its winner in the holders' place (`effect_replace`). Only a decision turns it off."
+              "The group's Admin turns it on (`elects_admins`). From then on Admin comes and goes only by a decision of a poll, only so is an admin removed from the group, though they may leave of their own accord, and the admins it had stay for the time being, until a decision takes the role from them or an election puts its winner in the holders' place (`effect_replace`). Only a decision turns it off."
             )
           } />
         </dd>
@@ -902,7 +902,7 @@
           <.hg_text text={
             dgettext(
               "help_guides",
-              "Every change above, and every role given or taken, member admitted, removed or blocked, goes into the group's access history (`AccessHistory`) in the same step, with who made it. Every member reads it; blocks only those who may remove members."
+              "Every change above, and every role given or taken, member admitted, removed, blocked or gone of their own accord, goes into the group's access history (`AccessHistory`) in the same step, with who made it. Every member reads it; blocks only those who may remove members."
             )
           } />
         </dd>
@@ -923,6 +923,17 @@
             "help_guides",
             "Whoever may remove members blocks. A blocked profile does not write, react, vote in a public poll or ask for access, and cannot be invited. A member answers to their roles, so a block also takes them out of the group. An inherited member cannot be blocked here, as their membership comes from the parent."
           )}
+        </dd>
+      </div>
+      <div>
+        <dt>{dgettext("help_guides", "Leaves the group")}</dt>
+        <dd>
+          <.hg_text text={
+            dgettext(
+              "help_guides",
+              "Every member, by themself (`leave_group`), but not at the root, in a direct conversation or in a thread. A member held through the parent leaves there, and the last admin stays. In a group that elects its admins an admin may leave too, which resigns the role. The history keeps who left, with the roles they held."
+            )
+          } />
         </dd>
       </div>
     </dl>

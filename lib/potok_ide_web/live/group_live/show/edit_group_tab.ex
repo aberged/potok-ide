@@ -351,7 +351,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                 {if(@elections.on?,
                   do:
                     gettext(
-                      "Admin comes and goes only by a decision of a poll, and an admin leaves the group only so. It is switched off by a decision too."
+                      "Admin comes and goes only by a decision of a poll, and only a decision removes an admin, though they may leave of their own accord. It is switched off by a decision too."
                     ),
                   else:
                     gettext(
