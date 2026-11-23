@@ -375,7 +375,7 @@ Voters see on the poll's card, before they vote, what will happen, say "If it pa
 
 Such a poll keeps the same rules for everyone:
 
-- the whole group votes, and a majority decides with a quorum, so the deadline and the quorum must be set;
+- all members who may vote take part, as the poll says for [unique and shared profiles](#ko-glasa), and a majority decides with a quorum, so the deadline and the quorum must be set;
 - once the first vote is in nothing changes, not even the deadline, except the reminder;
 - it ends at its deadline, not earlier, and is not opened again;
 - once it has a vote it cannot be deleted, nor can the message that carries it, as it is the record of what the group decided.
@@ -384,9 +384,9 @@ In a group run by its founders such a poll is called by an admin: that is how an
 
 ### A group that elects its admins {:#izbor-administratora}
 
-In Edit group → Access an admin switches on **Let the group elect its admins**. From then on Admin is given and taken only by decisions of polls: not even an admin can give or take it by hand, or remove another admin from the group. The present admins stay for the time being, until the first election, and are marked **for now** on the Members tab.
+In Edit group → Access an admin switches on **Let the group elect its admins**. From then on Admin is given and taken only by decisions of polls: not even an admin can give or take it by hand, or remove another admin from the group. The present admins stay for the time being, until an election replaces them or a decision takes the role from them, and are marked **for now** on the Members tab.
 
-An election is called by anyone who may start polls, with **Call an election** on the Members tab: the question, the candidates and the rule are filled in, and members can stand. The one elected takes the place of the present admins at the same moment, so the group is never without an admin. An admin inherited from the group above stays.
+An election is called by anyone who may start polls, with **Call an election** on the Members tab: the question, the candidates and the rule are filled in, and members can stand. Such an election has **The one elected takes the place of those who hold it now** switched on, so the one elected takes the place of the present admins at the same moment, and the group is never without an admin. An election without it only adds one more admin, and those for now stay. An admin inherited from the group above stays.
 
 Electing admins is switched off only by a decision of a poll: in Edit group → Access the button **Propose ending it** calls such a poll. Otherwise an elected admin could switch it off and stay for good.
 

@@ -1123,8 +1123,8 @@ msgstr "Izabrani zauzima mesto onih koji ulogu sada imaju"
 
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:949
 #, elixir-autogen, elixir-format
-msgid "The whole group votes. Once the first vote is in nothing changes, and the voting ends at its deadline, not before. What the decision says is then done at once."
-msgstr "Glasa cela grupa. Kad stigne prvi glas, ništa se više ne menja, a glasanje se završava na roku, ne pre. Ono što odluka kaže tada se odmah sprovodi."
+msgid "All members who may vote take part. Once the first vote is in nothing changes, and the voting ends at its deadline, not before. What the decision says is then done at once."
+msgstr "Glasaju svi članovi koji smeju da glasaju. Kad stigne prvi glas, ništa se više ne menja, a glasanje se završava na roku, ne pre. Ono što odluka kaže tada se odmah sprovodi."
 
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:410
 #, elixir-autogen, elixir-format

@@ -355,7 +355,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                     ),
                   else:
                     gettext(
-                      "Admin then comes and goes only by a decision of a poll. You and the other admins stay for the time being, until the first election. It is switched off only by a decision."
+                      "Admin then comes and goes only by a decision of a poll. You and the other admins stay for the time being, until an election takes your place or a decision takes the role. It is switched off only by a decision."
                     )
                 )}
               </p>

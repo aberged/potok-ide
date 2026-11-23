@@ -283,7 +283,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
           <.icon name="hero-scale" class="mt-0.5 size-4 shrink-0 text-primary" />
           <span>
             {gettext(
-              "This group elects its admins. Admin comes and goes only by a decision of a poll, and the admins it had before the first election stay for the time being."
+              "This group elects its admins. Admin comes and goes only by a decision of a poll, and the admins it had before stay for the time being, until an election takes their place or a decision takes the role."
             )}
           </span>
         </p>
@@ -587,7 +587,10 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
   attr :roles, :list, required: true, doc: "the assigned roles to show"
   attr :group_id, :integer, default: nil
   attr :decided, :map, default: %{}, doc: "`%{role_key => poll_id}`: roles a decision gave"
-  attr :interim_keys, :list, default: [], doc: "roles held until the first election"
+
+  attr :interim_keys, :list,
+    default: [],
+    doc: "roles held until an election or a decision replaces them"
 
   defp role_badges(assigns) do
     ~H"""
@@ -618,7 +621,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
         <span
           :if={role.key in @interim_keys}
           id={"#{@id}-role-interim-#{role.key}"}
-          title={gettext("Until the group's first election")}
+          title={gettext("Until an election takes this place or a decision takes the role")}
           class="-mr-1 rounded-full bg-base-100/70 px-1.5"
         >
           {gettext("for now")}

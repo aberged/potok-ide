@@ -296,7 +296,8 @@ defmodule PotokIde.Polls.Poll do
     end
   end
 
-  # One answer, put to the whole group, decided by a majority with a quorum,
+  # One answer, put to `everyone` (all who may vote, by the kinds of profile
+  # the poll lets vote), decided by a majority with a quorum,
   # at a deadline. Members may stand in an election, each for themselves.
   defp keep_effect(changeset) do
     effect = get_field(changeset, :effect)

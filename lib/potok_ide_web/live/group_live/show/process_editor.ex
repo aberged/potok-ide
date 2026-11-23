@@ -2416,7 +2416,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
         {if(@effect?,
           do:
             gettext(
-              "The whole group votes, and the decision gives or takes the role as the poll ends. The process holds no more than everyone does: the power is the vote's."
+              "All members who may vote take part, and the decision gives or takes the role as the poll ends. The process holds no more than everyone does: the power is the vote's."
             ),
           else:
             gettext(

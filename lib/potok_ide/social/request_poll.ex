@@ -6,8 +6,8 @@ defmodule PotokIde.Social.RequestPoll do
   it to the case: the poll takes it as it stands when it is raised.
 
   It decides by a majority with a quorum, over `hours`, and says who votes
-  by the kind of profile, as `PotokIde.Polls.Poll` does. The whole group
-  votes, as on any decision that changes who holds what.
+  by the kind of profile, as `PotokIde.Polls.Poll` does. All members who may
+  vote take part, as on any decision that changes who holds what.
   """
 
   use Ecto.Schema

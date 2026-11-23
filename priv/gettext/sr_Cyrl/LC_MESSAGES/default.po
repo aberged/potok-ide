@@ -10759,8 +10759,8 @@ msgstr "Улога Администратор се добија и губи са
 
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:357
 #, elixir-autogen, elixir-format
-msgid "Admin then comes and goes only by a decision of a poll. You and the other admins stay for the time being, until the first election. It is switched off only by a decision."
-msgstr "Тада се улога Администратор добија и губи само одлуком гласања. Ти и остали администратори остајете привремено, до првих избора. Гаси се само одлуком."
+msgid "Admin then comes and goes only by a decision of a poll. You and the other admins stay for the time being, until an election takes your place or a decision takes the role. It is switched off only by a decision."
+msgstr "Тада се улога Администратор добија и губи само одлуком гласања. Ти и остали администратори остајете привремено, док вас избор не замени или вам одлука не одузме улогу. Гаси се само одлуком."
 
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:341
 #, elixir-autogen, elixir-format
@@ -10809,8 +10809,8 @@ msgstr "Група сада бира администраторе гласање
 
 #: lib/potok_ide_web/live/group_live/show/members_tab.ex:285
 #, elixir-autogen, elixir-format
-msgid "This group elects its admins. Admin comes and goes only by a decision of a poll, and the admins it had before the first election stay for the time being."
-msgstr "Ова група бира администраторе. Улога Администратор се добија и губи само одлуком гласања, а администратори од пре првих избора остају привремено."
+msgid "This group elects its admins. Admin comes and goes only by a decision of a poll, and the admins it had before stay for the time being, until an election takes their place or a decision takes the role."
+msgstr "Ова група бира администраторе. Улога Администратор се добија и губи само одлуком гласања, а досадашњи администратори остају привремено, док их избор не замени или им одлука не одузме улогу."
 
 #: lib/potok_ide_web/live/group_live/show.ex:6910
 #, elixir-autogen, elixir-format
@@ -10824,8 +10824,8 @@ msgstr "Ова група бира администраторе: админис�
 
 #: lib/potok_ide_web/live/group_live/show/members_tab.ex:621
 #, elixir-autogen, elixir-format
-msgid "Until the group's first election"
-msgstr "До првих избора у групи"
+msgid "Until an election takes this place or a decision takes the role"
+msgstr "До избора који заузме ово место или одлуке која одузме улогу"
 
 #: lib/potok_ide_web/live/group_live/show/members_tab.ex:616
 #, elixir-autogen, elixir-format
@@ -10962,8 +10962,8 @@ msgstr "Гласање траје"
 
 #: lib/potok_ide_web/live/group_live/show/process_editor.ex:2418
 #, elixir-autogen, elixir-format
-msgid "The whole group votes, and the decision gives or takes the role as the poll ends. The process holds no more than everyone does: the power is the vote's."
-msgstr "Гласа цела група, а одлука додељује или одузима улогу кад се гласање заврши. Процес нема више од онога што имају сви: моћ је у гласању."
+msgid "All members who may vote take part, and the decision gives or takes the role as the poll ends. The process holds no more than everyone does: the power is the vote's."
+msgstr "Гласају сви чланови који смеју да гласају, а одлука додељује или одузима улогу кад се гласање заврши. Процес нема више од онога што имају сви: моћ је у гласању."
 
 #: lib/potok_ide_web/live/group_live/show/process_editor.ex:2437
 #, elixir-autogen, elixir-format
@@ -11167,8 +11167,8 @@ msgstr "Гласање: кворум %{quorum} %, %{majority}, траје %{days
 
 #: lib/potok_ide_web/live/group_live/show/request_rules.ex:133
 #, elixir-autogen, elixir-format
-msgid "The whole group votes, by these rules, on every request alike. Whoever asks reads them before sending."
-msgstr "Гласа цела група, по овим правилима, исто за сваки захтев. Ко тражи, прочита их пре слања."
+msgid "All members who may vote take part, by these rules, on every request alike. Whoever asks reads them before sending."
+msgstr "Гласају сви чланови који смеју да гласају, по овим правилима, исто за сваки захтев. Ко тражи, прочита их пре слања."
 
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1429
 #, elixir-autogen, elixir-format
@@ -11628,8 +11628,8 @@ msgstr "%{yes} од %{all} ствари"
 
 #: lib/potok_ide_web/live/group_live/show/access_tab.ex:642
 #, elixir-autogen, elixir-format
-msgid "A decision of a poll can give and take a role, when it is put to the whole group."
-msgstr "Одлука гласања може да да и одузме улогу, кад се питање постави целој групи."
+msgid "A decision of a poll can give and take a role, when it is put to the members who may vote."
+msgstr "Одлука гласања може да да и одузме улогу, кад се питање постави члановима који смеју да гласају."
 
 #: lib/potok_ide_web/live/group_live/show/access_catalog.ex:598
 #, elixir-autogen, elixir-format
@@ -12191,8 +12191,8 @@ msgstr "Ти"
 
 #: lib/potok_ide_web/live/group_live/show/access_tab.ex:812
 #, elixir-autogen, elixir-format
-msgid "a decision put to the whole group"
-msgstr "одлука о којој гласа цела група"
+msgid "a decision, put to all who may vote"
+msgstr "одлука о којој гласају сви који смеју да гласају"
 
 #: lib/potok_ide_web/live/group_live/show/access_tab.ex:857
 #, elixir-autogen, elixir-format

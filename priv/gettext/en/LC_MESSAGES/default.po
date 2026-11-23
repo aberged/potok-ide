@@ -10742,7 +10742,7 @@ msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:357
 #, elixir-autogen, elixir-format
-msgid "Admin then comes and goes only by a decision of a poll. You and the other admins stay for the time being, until the first election. It is switched off only by a decision."
+msgid "Admin then comes and goes only by a decision of a poll. You and the other admins stay for the time being, until an election takes your place or a decision takes the role. It is switched off only by a decision."
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:341
@@ -10792,7 +10792,7 @@ msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/members_tab.ex:285
 #, elixir-autogen, elixir-format
-msgid "This group elects its admins. Admin comes and goes only by a decision of a poll, and the admins it had before the first election stay for the time being."
+msgid "This group elects its admins. Admin comes and goes only by a decision of a poll, and the admins it had before stay for the time being, until an election takes their place or a decision takes the role."
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show.ex:6910
@@ -10807,7 +10807,7 @@ msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/members_tab.ex:621
 #, elixir-autogen, elixir-format
-msgid "Until the group's first election"
+msgid "Until an election takes this place or a decision takes the role"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/members_tab.ex:616
@@ -10945,7 +10945,7 @@ msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/process_editor.ex:2418
 #, elixir-autogen, elixir-format
-msgid "The whole group votes, and the decision gives or takes the role as the poll ends. The process holds no more than everyone does: the power is the vote's."
+msgid "All members who may vote take part, and the decision gives or takes the role as the poll ends. The process holds no more than everyone does: the power is the vote's."
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/process_editor.ex:2437
@@ -11150,7 +11150,7 @@ msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/request_rules.ex:133
 #, elixir-autogen, elixir-format
-msgid "The whole group votes, by these rules, on every request alike. Whoever asks reads them before sending."
+msgid "All members who may vote take part, by these rules, on every request alike. Whoever asks reads them before sending."
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1429
@@ -11605,7 +11605,7 @@ msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/access_tab.ex:642
 #, elixir-autogen, elixir-format
-msgid "A decision of a poll can give and take a role, when it is put to the whole group."
+msgid "A decision of a poll can give and take a role, when it is put to the members who may vote."
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/access_catalog.ex:598
@@ -12168,7 +12168,7 @@ msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/access_tab.ex:812
 #, elixir-autogen, elixir-format
-msgid "a decision put to the whole group"
+msgid "a decision, put to all who may vote"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/access_tab.ex:857

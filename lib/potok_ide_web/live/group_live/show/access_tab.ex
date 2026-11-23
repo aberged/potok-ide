@@ -645,7 +645,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AccessTab do
               </li>
               <li id="access-changes-decisions">
                 {gettext(
-                  "A decision of a poll can give and take a role, when it is put to the whole group."
+                  "A decision of a poll can give and take a role, when it is put to the members who may vote."
                 )}
               </li>
             </ul>
@@ -817,7 +817,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AccessTab do
   defp poll_rule_text(poll, manifest) do
     [
       cond do
-        poll.effect -> gettext("a decision put to the whole group")
+        poll.effect -> gettext("a decision, put to all who may vote")
         poll.is_public -> gettext("non-members vote too")
         true -> gettext("%{roles} vote", roles: role_names(poll.voter_role_keys, manifest))
       end,

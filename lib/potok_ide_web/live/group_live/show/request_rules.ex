@@ -131,7 +131,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RequestRules do
         </div>
         <p class="mb-3 text-xs text-base-content/65 sm:col-span-2">
           {gettext(
-            "The whole group votes, by these rules, on every request alike. Whoever asks reads them before sending."
+            "All members who may vote take part, by these rules, on every request alike. Whoever asks reads them before sending."
           )}
         </p>
       </div>

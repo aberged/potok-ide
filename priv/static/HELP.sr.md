@@ -381,7 +381,7 @@ Glasači na kartici glasanja, pre nego što glasaju, vide šta će se desiti, re
 
 Takvo glasanje drži ista pravila za sve:
 
-- glasa cela grupa, a odlučuje većina uz kvorum, pa se rok i kvorum moraju zadati;
+- glasaju svi članovi koji smeju da glasaju, kako glasanje kaže za [jedinstvene i deljene profile](#ko-glasa), a odlučuje većina uz kvorum, pa se rok i kvorum moraju zadati;
 - kad stigne prvi glas, ništa se više ne menja, ni rok, osim podsetnika;
 - završava se na roku, a ne ranije, i ne otvara se ponovo;
 - čim ima glas, ne može da se obriše, ni ono ni poruka koja ga nosi, jer je zapis onoga što je grupa odlučila.
@@ -390,9 +390,9 @@ U grupi koju vode njeni osnivači takvo glasanje raspisuje administrator: tako o
 
 ### Grupa koja bira administratore {:#izbor-administratora}
 
-U Uredi grupu → Pristup administrator uključuje **Neka grupa bira administratore**. Od tada ulogu Administrator daju i oduzimaju samo odluke glasanja: ni administrator ne može da je dodeli ili oduzme rukom, niti da izbaci drugog administratora iz grupe. Dosadašnji administratori ostaju privremeno, do prvih izbora, i na kartici Članovi imaju oznaku **privremeno**.
+U Uredi grupu → Pristup administrator uključuje **Neka grupa bira administratore**. Od tada ulogu Administrator daju i oduzimaju samo odluke glasanja: ni administrator ne može da je dodeli ili oduzme rukom, niti da izbaci drugog administratora iz grupe. Dosadašnji administratori ostaju privremeno, dok ih ne zameni izbor ili im odluka ne oduzme ulogu, i na kartici Članovi imaju oznaku **privremeno**.
 
-Izbore raspisuje svako ko sme da pokreće glasanja, dugmetom **Raspiši izbore** na kartici Članovi: pitanje, kandidati i pravilo su već upisani, a članovi mogu da se kandiduju. Izabrani zauzima mesto dosadašnjih administratora u istom trenutku, pa grupa nijednog trenutka nije bez administratora. Administrator nasleđen iz grupe iznad ostaje.
+Izbore raspisuje svako ko sme da pokreće glasanja, dugmetom **Raspiši izbore** na kartici Članovi: pitanje, kandidati i pravilo su već upisani, a članovi mogu da se kandiduju. Takav izbor ima uključeno **Izabrani zauzima mesto onih koji ulogu sada imaju**, pa izabrani zauzima mesto dosadašnjih administratora u istom trenutku i grupa nijednog trenutka nije bez administratora. Izbor bez tog izbora samo dodaje još jednog administratora, a privremeni ostaju. Administrator nasleđen iz grupe iznad ostaje.
 
 Izbor administratora se gasi samo odlukom glasanja: u Uredi grupu → Pristup dugme **Predloži gašenje** raspisuje takvo glasanje. Inače bi izabrani administrator mogao da ga ugasi i ostane zauvek.
 

@@ -2461,7 +2461,7 @@ msgstr ""
 
 #: lib/potok_ide_web/controllers/page_html/help_access.html.heex:962
 #, elixir-autogen, elixir-format
-msgid "<b>A decision of a poll</b> that gives or takes a role is put to the whole group, with a quorum and a deadline, and is carried out as the poll ends. The role it gave keeps the poll (`poll_id`). In a group run by its founders only an Admin raises one; a process raises one through its owner, an Admin, and holds no more than Everyone all the same."
+msgid "<b>A decision of a poll</b> that gives or takes a role is put to every member who may vote, with a quorum and a deadline, and is carried out as the poll ends. The role it gave keeps the poll (`poll_id`). In a group run by its founders only an Admin raises one; a process raises one through its owner, an Admin, and holds no more than Everyone all the same."
 msgstr ""
 
 #: lib/potok_ide_web/controllers/page_html/help_processes_apps.html.heex:1051
@@ -2476,7 +2476,7 @@ msgstr ""
 
 #: lib/potok_ide_web/controllers/page_html/help_access.html.heex:825
 #, elixir-autogen, elixir-format
-msgid "The group's Admin turns it on (`elects_admins`). From then on Admin comes and goes only by a decision of a poll, an admin leaves the group only so, and the admins it had stay for the time being, until the first election. Only a decision turns it off."
+msgid "The group's Admin turns it on (`elects_admins`). From then on Admin comes and goes only by a decision of a poll, an admin leaves the group only so, and the admins it had stay for the time being, until a decision takes the role from them or an election puts its winner in the holders' place (`effect_replace`). Only a decision turns it off."
 msgstr ""
 
 #: lib/potok_ide_web/controllers/page_html/help_access.html.heex:970

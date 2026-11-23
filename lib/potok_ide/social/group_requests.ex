@@ -23,8 +23,8 @@ defmodule PotokIde.Social.GroupRequests do
   Admin is given on request only by an admin, and where the group elects its
   admins only by a vote (`mode/2`). Whoever was refused, or not carried by a
   vote, waits seven days before asking the same again, and nobody sends more
-  than a few requests an hour (`RateLimit`), as each vote is a message to
-  the whole group.
+  than a few requests an hour (`RateLimit`), as each vote is a message in
+  the group's chat.
 
   Admission takes along the roles asked for: those given are given in the
   same transaction, those to be voted on get their polls, and those left for

@@ -948,7 +948,7 @@ defmodule PotokIdeWeb.GroupLive.Show.PollForm do
         <p id="poll-form-effect-promise" class="mt-1 text-xs text-base-content/65">
           {dgettext(
             "polls",
-            "The whole group votes. Once the first vote is in nothing changes, and the voting ends at its deadline, not before. What the decision says is then done at once."
+            "All members who may vote take part. Once the first vote is in nothing changes, and the voting ends at its deadline, not before. What the decision says is then done at once."
           )}
         </p>
       </div>

@@ -1074,7 +1074,8 @@ defmodule PotokIde.Social do
 
   @doc """
   Lets `group` elect its admins from now on: only an admin may, and the
-  admins it has stay, for the time being, until the first election. Switching
+  admins it has stay, for the time being, until an election that replaces the
+  holders (`effect_replace`) or a decision takes the role from them. Switching
   it off takes a decision (`end_elections/2`), or the elected admins could
   keep their places by switching it off.
   """

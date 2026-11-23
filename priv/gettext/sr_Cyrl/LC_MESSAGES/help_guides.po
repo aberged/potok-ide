@@ -2461,8 +2461,8 @@ msgstr "Ко сме да уређује групу (`edit_group`), осим у �
 
 #: lib/potok_ide_web/controllers/page_html/help_access.html.heex:962
 #, elixir-autogen, elixir-format
-msgid "<b>A decision of a poll</b> that gives or takes a role is put to the whole group, with a quorum and a deadline, and is carried out as the poll ends. The role it gave keeps the poll (`poll_id`). In a group run by its founders only an Admin raises one; a process raises one through its owner, an Admin, and holds no more than Everyone all the same."
-msgstr "<b>Одлука гласања</b> која додељује или одузима улогу ставља се пред целу групу, са кворумом и роком, и спроводи се кад се гласање заврши. Улога коју је дала памти то гласање (`poll_id`). У групи коју воде оснивачи такву одлуку расписује само Администратор; процес је расписује преко свог власника, Администратора, и свеједно нема више од улоге Сви."
+msgid "<b>A decision of a poll</b> that gives or takes a role is put to every member who may vote, with a quorum and a deadline, and is carried out as the poll ends. The role it gave keeps the poll (`poll_id`). In a group run by its founders only an Admin raises one; a process raises one through its owner, an Admin, and holds no more than Everyone all the same."
+msgstr "<b>Одлука гласања</b> која додељује или одузима улогу ставља се пред све чланове који смеју да гласају, са кворумом и роком, и спроводи се кад се гласање заврши. Улога коју је дала памти то гласање (`poll_id`). У групи коју воде оснивачи такву одлуку расписује само Администратор; процес је расписује преко свог власника, Администратора, и свеједно нема више од улоге Сви."
 
 #: lib/potok_ide_web/controllers/page_html/help_processes_apps.html.heex:1051
 #, elixir-autogen, elixir-format
@@ -2476,8 +2476,8 @@ msgstr "Уводи избор администратора"
 
 #: lib/potok_ide_web/controllers/page_html/help_access.html.heex:825
 #, elixir-autogen, elixir-format
-msgid "The group's Admin turns it on (`elects_admins`). From then on Admin comes and goes only by a decision of a poll, an admin leaves the group only so, and the admins it had stay for the time being, until the first election. Only a decision turns it off."
-msgstr "Укључује га Администратор групе (`elects_admins`). Од тада се Администратор добија и губи само одлуком гласања, само тако администратор напушта групу, а досадашњи администратори остају привремено, до првих избора. Гаси га само одлука."
+msgid "The group's Admin turns it on (`elects_admins`). From then on Admin comes and goes only by a decision of a poll, an admin leaves the group only so, and the admins it had stay for the time being, until a decision takes the role from them or an election puts its winner in the holders' place (`effect_replace`). Only a decision turns it off."
+msgstr "Укључује га Администратор групе (`elects_admins`). Од тада се Администратор добија и губи само одлуком гласања, само тако администратор напушта групу, а досадашњи администратори остају привремено, док им одлука не одузме улогу или избор не постави изабраног на место носилаца (`effect_replace`). Гаси га само одлука."
 
 #: lib/potok_ide_web/controllers/page_html/help_access.html.heex:970
 #, elixir-autogen, elixir-format

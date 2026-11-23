@@ -49,7 +49,8 @@ defmodule PotokIde.Social.Group do
     # every member holds, and always empty for a thread.
     field :inherit_role_keys, {:array, :string}, default: []
     # Admins come and go only by decisions of polls (`PotokIde.Polls.Effects`):
-    # the admins it had when it was switched on stay until the first election.
+    # the admins it had when it was switched on stay until an election that
+    # replaces the holders (`effect_replace`) or a decision takes the role.
     # Set by `Social.set_elects_admins/3` and cleared only by a decision,
     # never cast.
     field :elects_admins, :boolean, default: false

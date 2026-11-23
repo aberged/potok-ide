@@ -1123,7 +1123,7 @@ msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:949
 #, elixir-autogen, elixir-format
-msgid "The whole group votes. Once the first vote is in nothing changes, and the voting ends at its deadline, not before. What the decision says is then done at once."
+msgid "All members who may vote take part. Once the first vote is in nothing changes, and the voting ends at its deadline, not before. What the decision says is then done at once."
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:410
