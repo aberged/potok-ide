@@ -236,7 +236,7 @@ You change the group's kind in Edit group → Basics, with Change. The new kind 
 
 ## Members and roles {:#clanovi}
 
-The Members tab shows all members, their roles and who is online. From there, [requests to join and for roles](#zahtevi) are decided, roles given, and members removed and blocked. Inherited members are marked, and tapping a member opens a one-to-one conversation. A role given by a decision of a poll is marked **elected**, which leads to that poll. The **Role** button narrows the list to those who hold one role, and then says how many they are.
+The Members tab shows all members, their roles and who is online. From there, [requests to join and for roles](#zahtevi) are decided, roles given, [members removed](#uklanjanje) and [blocks](#blokiranje) lifted. Inherited members are marked, and tapping a member opens a one-to-one conversation. A role given by a decision of a poll is marked **elected**, which leads to that poll. The **Role** button narrows the list to those who hold one role, and then says how many they are.
 
 You can invite a profile by username, or someone by email: if they have no account yet, they get an invitation to Potok. Profiles are suggested from the third letter of the name on.
 
@@ -282,6 +282,36 @@ For the roles that go to a vote, they also write down how the vote goes: the quo
 ### Admission to the group {:#prijem}
 
 In Edit group → Access, a public group also has **Admission to the group**: admitted on request by whoever manages requests, on request or by a vote, or always by a vote, with the rules of the vote as for roles. An admin changes it. A request sent before the group went over to a vote is put to a vote by whoever manages requests. When the vote carries, the one who asked becomes a member at that moment, with the roles they asked for: those voted on get their polls, and the others wait for a decision. An invitation still brings someone in at once, so a group that admits only by a vote gives nobody the permission Invite members.
+
+### A manifest of its own {:#manifest}
+
+A manifest is the group's list of roles, with each role's permissions and [the rule for how it is had](#kako-se-dobija-uloga). It holds in the group that has it and in the sub-groups below it that have none of their own. The root has the **Default manifest**, which cannot be changed, and every group uses it until one makes its own.
+
+In Roles an admin presses **Create own manifest** to get a copy of the manifest the group has used so far: the same roles, with the same permissions and rules, so everyone keeps the roles they hold. From then on only this group's admins change it, and the changes hold in the sub-groups that use it too.
+
+A role's name has 2 to 32 characters and no spaces, as a role is mentioned as @name, and it cannot be admin or everyone. The role All members only allows, and Administrator may do everything, so it has no permissions to set.
+
+When you delete a role, everyone who held it loses it, in every group that uses that manifest, and the requests that ask for it forget it. **Inherit again** deletes the group's own manifest: the group uses the manifest of the group above once more, and roles that manifest does not have are lost by those who held them, except Administrator. Every such change stays in the [access history](#pregled-pristupa).
+
+### Removing a member {:#uklanjanje}
+
+A member is removed by whoever holds the permission Remove members, with the button by their name on the Members tab. With the membership go their roles in that group, their membership in the sub-groups that inherit them and a request for roles that waits. What they wrote stays.
+
+Not everyone can remove everyone:
+
+- nobody is removed at the root or in a direct conversation;
+- a member inherited from the group above is removed there;
+- only an admin removes an admin, and in a group that [elects its admins](#izbor-administratora) only a decision of a poll does;
+- the last admin stays, so the group is never without one;
+- an app's process comes and goes with its app.
+
+### Blocking {:#blokiranje}
+
+A public group with an open chat can block a profile that disturbs it: whoever holds the permission Remove members picks **Block in this group** on its message. If that profile is a member, it is removed first, by the rules above. A blocked profile no longer writes, reacts or votes in a public poll in that group, cannot ask to join and cannot be invited, and its requests and invitations go. What it already wrote stays.
+
+The list of blocked profiles, with **Unblock**, is on the Members tab for those who may remove members. Only they see the blocks in the access history too.
+
+![Blocked profiles on the Members tab](blokirani)
 
 ### All permissions {:#dozvole}
 
@@ -359,6 +389,23 @@ In a secret poll nobody, not an admin and not an app, sees who voted for what. T
 
 ![A poll's details: turnout and who voted for what](glasanje-detalji)
 
+### Quorum and the decision rule {:#kvorum}
+
+The right to vote belongs to the members who hold the permission Vote and one of the roles under "Who votes", and to [unique and shared profiles](#ko-glasa) as the poll says. Each account counts once.
+
+The quorum is the share of those with a right to vote who must vote for the poll to decide: with a quorum of 30% and 200 who may vote, at least 60 votes are needed. Short of that, the poll ends with no quorum. The decision rule then says how much is enough:
+
+- **The most votes**: the answer with the most votes wins, and when the first two have as many, it is a tie;
+- **More than half of the votes**: the winner has more than half of the votes given;
+- **Two thirds of the votes**: the winner has at least two thirds of the votes given;
+- **More than half of those who may vote**: the winner has the votes of more than half of all who may vote, whether they voted or not.
+
+A poll with no vote at all has not passed.
+
+Voters can change their vote if the poll allows it, except in a secret one. Members can add answers, up to 30 in all. The roles under "Who sees the results" see them from the start, after their own vote or only at the end, and who voted for what is seen by the roles under "Who sees the details", and always by the organizer and those who manage polls. A public poll, where signed-in non-members of a public group vote too, is opened only by whoever holds the permission Open polls to non-members, and it has no quorum and no decision. A reminder goes out an hour or a day before the end to those who may vote and have not yet.
+
+The organizer and those who manage polls can end a poll before its deadline (**End the poll**) and open it again (**Open again**), which clears the result. A secret poll is not opened again, and a decision that changes roles neither ends before its deadline nor opens again. **Remind them** sends a reminder to those who have not voted yet, at most once an hour.
+
 ### Unique and shared profiles {:#ko-glasa}
 
 In a poll one account gives one vote, whichever of its profiles it votes with. Under "More settings" you also pick how each kind of profile votes. Unique profiles vote or do not. A shared profile votes once for all who hold it, as a collective member; or each of its holders votes through it as themself, counted on their own account, so whoever voted with their own profile does not vote again; or it does not vote. Somebody always votes. A shared profile that only one account holds votes as that person. When it is not as always, the poll's card says who votes, and the number of those who may vote is counted by the same rule.
@@ -387,6 +434,8 @@ In a group run by its founders such a poll is called by an admin: that is how an
 In Edit group → Access an admin switches on **Let the group elect its admins**. From then on Admin is given and taken only by decisions of polls: not even an admin can give or take it by hand, or remove another admin from the group. The present admins stay for the time being, until an election replaces them or a decision takes the role from them, and are marked **for now** on the Members tab.
 
 An election is called by anyone who may start polls, with **Call an election** on the Members tab: the question, the candidates and the rule are filled in, and members can stand. Such an election has **The one elected takes the place of those who hold it now** switched on, so the one elected takes the place of the present admins at the same moment, and the group is never without an admin. An election without it only adds one more admin, and those for now stay. An admin inherited from the group above stays.
+
+![A group that elects its admins: the Members tab](izbori)
 
 Electing admins is switched off only by a decision of a poll: in Edit group → Access the button **Propose ending it** calls such a poll. Otherwise an elected admin could switch it off and stay for good.
 

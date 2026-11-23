@@ -121,3 +121,4 @@ Kad komšija pošalje molbu, proces je najavi u razgovoru Molbi i otvori podgrup
 - [Sve dozvole](/pomoc#dozvole): šta koja dozvola dozvoljava.
 - [Mapa i mesta](/pomoc#mapa): tačke, područja i rute.
 - [Glasanja](/pomoc#glasanja): tajno glasanje, rezultati i sva podešavanja.
+- [Kvorum i pravilo odluke](/pomoc#kvorum): koliko glasova je dovoljno.

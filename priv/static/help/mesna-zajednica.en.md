@@ -120,3 +120,4 @@ When a neighbour sends a request, the process posts it in the chat of Molbe and 
 - [All permissions](/pomoc#dozvole): what each permission allows.
 - [Map and places](/pomoc#mapa): points, areas and routes.
 - [Polls](/pomoc#glasanja): secret polls, results and every setting.
+- [Quorum and the decision rule](/pomoc#kvorum): how many votes are enough.

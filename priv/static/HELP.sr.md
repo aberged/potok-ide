@@ -242,7 +242,7 @@ Vrstu grupe menjaš u Uredi grupu → Osnovno, dugmetom Promeni. Nova vrsta dono
 
 ## Članovi i uloge {:#clanovi}
 
-Kartica Članovi pokazuje sve članove, njihove uloge i ko je na mreži. Odatle se odlučuje o [zahtevima za pristup i za uloge](#zahtevi), dodeljuju uloge, uklanjaju i blokiraju članovi. Nasleđeni članovi su označeni, a dodirom na člana otvaraš razgovor u četiri oka. Uloga koju je dala odluka glasanja ima oznaku **izabran**, koja vodi na to glasanje. Dugmetom **Uloga** spisak sužavaš na one koji imaju jednu ulogu, i tada piše koliko ih je.
+Kartica Članovi pokazuje sve članove, njihove uloge i ko je na mreži. Odatle se odlučuje o [zahtevima za pristup i za uloge](#zahtevi), dodeljuju uloge, [uklanjaju članovi](#uklanjanje) i skidaju [blokade](#blokiranje). Nasleđeni članovi su označeni, a dodirom na člana otvaraš razgovor u četiri oka. Uloga koju je dala odluka glasanja ima oznaku **izabran**, koja vodi na to glasanje. Dugmetom **Uloga** spisak sužavaš na one koji imaju jednu ulogu, i tada piše koliko ih je.
 
 Pozvati možeš profil po korisničkom imenu ili nekoga po imejlu: ako još nema nalog, dobija pozivnicu za Potok. Profili se predlažu od trećeg slova imena.
 
@@ -288,6 +288,36 @@ Za uloge o kojima se glasa zapisuje i kako teče glasanje: kvorum, pravilo odluk
 ### Prijem u grupu {:#prijem}
 
 U Uredi grupu → Pristup, javna grupa ima i **Prijem u grupu**: prijem na zahtev, koji odobrava onaj ko upravlja zahtevima, na zahtev ili glasanjem, ili uvek glasanjem, sa pravilima glasanja kao za uloge. Menja ga administrator. Zahtev poslat pre nego što je grupa prešla na glasanje onaj ko upravlja zahtevima stavlja na glasanje. Kad glasanje prođe, onaj ko je tražio postaje član u istom trenutku, uz uloge koje je tražio: one o kojima se glasa dobijaju svoja glasanja, a ostale čekaju odluku. Pozivnica i dalje odmah uvodi u grupu, pa grupa koja prima samo glasanjem nikome ne daje dozvolu Pozivanje članova.
+
+### Sopstveni manifest {:#manifest}
+
+Manifest je spisak uloga grupe, sa dozvolama svake uloge i [pravilom kako se dobija](#kako-se-dobija-uloga). Važi u grupi koja ga ima i u podgrupama ispod nje koje nemaju svoj. Koren ima **Podrazumevani manifest**, koji se ne menja, i njega koriste sve grupe dok neka ne napravi svoj.
+
+U Ulogama administrator dugmetom **Napravi sopstveni manifest** dobija kopiju manifesta koji grupa do tada koristi: iste uloge, sa istim dozvolama i pravilima, pa svako zadržava uloge koje ima. Od tada taj manifest menjaju samo administratori ove grupe, a promene važe i u podgrupama koje ga koriste.
+
+Ime uloge ima od 2 do 32 znaka i nema razmake, jer se uloga pominje kao @ime, i ne može da bude admin ni everyone. Uloga Svi samo dozvoljava, a Administrator sme sve, pa nema dozvole koje se podešavaju.
+
+Kad obrišeš ulogu, ona nestaje svima koji su je imali, u svim grupama koje koriste taj manifest, i iz zahteva koji je traže. **Ponovo nasledi** briše sopstveni manifest: grupa opet koristi manifest grupe iznad, a uloge kojih u njemu nema nestaju onima koji su ih imali, osim uloge Administrator. Svaka takva promena ostaje u [istoriji pristupa](#pregled-pristupa).
+
+### Uklanjanje člana {:#uklanjanje}
+
+Člana uklanja onaj ko ima dozvolu Uklanjanje članova, dugmetom pored njegovog imena na kartici Članovi. Sa članstvom mu odlaze uloge u toj grupi, članstvo u podgrupama koje ga nasleđuju i zahtev za uloge koji čeka. Ono što je napisao ostaje.
+
+Ne može svako svakoga:
+
+- u korenu i u direktnom razgovoru niko se ne uklanja;
+- član nasleđen iz grupe iznad uklanja se tamo;
+- administratora uklanja samo administrator, a u grupi koja [bira administratore](#izbor-administratora) samo odluka glasanja;
+- poslednji administrator ostaje, da grupa ne ostane bez njega;
+- proces aplikacije dolazi i odlazi sa svojom aplikacijom.
+
+### Blokiranje {:#blokiranje}
+
+Javna grupa sa otvorenim razgovorom može da blokira profil koji u njemu smeta: onaj ko ima dozvolu Uklanjanje članova bira **Blokiraj u ovoj grupi** na njegovoj poruci. Ako je taj profil član, prvo se uklanja, po pravilima iznad. Blokiran profil u toj grupi više ne piše, ne reaguje i ne glasa u javnom glasanju, ne može da zatraži pristup i niko ne može da ga pozove, a njegovi zahtevi i pozivnice nestaju. Ono što je već napisao ostaje.
+
+Spisak blokiranih, sa dugmetom **Odblokiraj**, vide na kartici Članovi oni koji smeju da uklanjaju članove. Samo oni vide i blokade u istoriji pristupa.
+
+![Blokirani profili na kartici Članovi](blokirani)
 
 ### Sve dozvole {:#dozvole}
 
@@ -365,6 +395,23 @@ U tajnom glasanju niko, ni administrator ni aplikacija, ne vidi ko je za šta gl
 
 ![Detalji glasanja: odziv i ko je za šta glasao](glasanje-detalji)
 
+### Kvorum i pravilo odluke {:#kvorum}
+
+Pravo glasa imaju članovi koji imaju dozvolu Glasanje i neku od uloga iz „Ko glasa“, a [jedinstveni i deljeni profili](#ko-glasa) onako kako glasanje kaže. Svaki nalog se broji jednom.
+
+Kvorum je deo onih koji imaju pravo glasa koji mora da glasa da bi glasanje odlučilo: uz kvorum od 30% i 200 onih koji imaju pravo glasa, potrebno je bar 60 glasova. Ako ih nema toliko, glasanje se završava bez kvoruma. Pravilo odluke zatim kaže koliko je dovoljno:
+
+- **Najviše glasova**: pobeđuje odgovor sa najviše glasova, a kad prva dva imaju isto, ishod je nerešen;
+- **Više od polovine glasova**: pobednik ima više od polovine datih glasova;
+- **Dve trećine glasova**: pobednik ima bar dve trećine datih glasova;
+- **Više od polovine onih koji imaju pravo glasa**: pobednik ima glasove više od polovine svih koji smeju da glasaju, glasali oni ili ne.
+
+Glasanje bez ijednog glasa nije prošlo.
+
+Glasači mogu da menjaju glas ako to glasanje dozvoljava, osim u tajnom. Članovi mogu da dodaju odgovore, do 30 ukupno. Rezultate uloge iz „Ko vidi rezultate“ vide od početka, posle svog glasa ili tek na kraju, a ko je za šta glasao vide uloge iz „Ko vidi detalje“, i uvek organizator i oni koji upravljaju glasanjima. Javno glasanje, u kome glasaju i prijavljeni nečlanovi javne grupe, otvara samo onaj ko ima dozvolu Otvaranje glasanja nečlanovima, i ono nema kvorum ni odluku. Podsetnik stiže sat ili dan pre kraja onima koji imaju pravo glasa, a još nisu glasali.
+
+Organizator i oni koji upravljaju glasanjima mogu da ga završe pre roka (**Završi glasanje**) i da ga ponovo otvore (**Otvori ponovo**), čime se rezultat briše. Tajno glasanje se ne otvara ponovo, a odluka koja menja uloge se ne završava pre roka i ne otvara ponovo. **Podseti ih** šalje podsetnik onima koji još nisu glasali, najviše jednom na sat.
+
 ### Jedinstveni i deljeni profili {:#ko-glasa}
 
 U glasanju jedan nalog daje jedan glas, kojim god svojim profilom glasao. Pod „Više podešavanja“ biraš i kako glasaju profili po vrsti. Jedinstveni profili glasaju ili ne glasaju. Deljeni profil glasa jednim glasom za sve koji ga drže, kao kolektivni član; ili kroz njega svaki nosilac glasa posebno, računato na svoj nalog, pa ko je već glasao svojim profilom ne glasa ponovo; ili ne glasa. Bar neko uvek glasa. Deljeni profil koji drži samo jedan nalog glasa kao ta osoba. Kad to nije kao uvek, kartica glasanja kaže ko glasa, a broj onih koji imaju pravo glasa računa se po istom pravilu.
@@ -392,7 +439,9 @@ U grupi koju vode njeni osnivači takvo glasanje raspisuje administrator: tako o
 
 U Uredi grupu → Pristup administrator uključuje **Neka grupa bira administratore**. Od tada ulogu Administrator daju i oduzimaju samo odluke glasanja: ni administrator ne može da je dodeli ili oduzme rukom, niti da izbaci drugog administratora iz grupe. Dosadašnji administratori ostaju privremeno, dok ih ne zameni izbor ili im odluka ne oduzme ulogu, i na kartici Članovi imaju oznaku **privremeno**.
 
-Izbore raspisuje svako ko sme da pokreće glasanja, dugmetom **Raspiši izbore** na kartici Članovi: pitanje, kandidati i pravilo su već upisani, a članovi mogu da se kandiduju. Takav izbor ima uključeno **Izabrani zauzima mesto onih koji ulogu sada imaju**, pa izabrani zauzima mesto dosadašnjih administratora u istom trenutku i grupa nijednog trenutka nije bez administratora. Izbor bez tog izbora samo dodaje još jednog administratora, a privremeni ostaju. Administrator nasleđen iz grupe iznad ostaje.
+Izbore raspisuje svako ko sme da pokreće glasanja, dugmetom **Raspiši izbore** na kartici Članovi: pitanje, kandidati i pravilo su već upisani, a članovi mogu da se kandiduju. Takav izbor ima uključeno **Izabrani zauzima mesto onih koji ulogu sada imaju**, pa izabrani zauzima mesto dosadašnjih administratora u istom trenutku i grupa nijednog trenutka nije bez administratora. Izbor bez toga samo dodaje još jednog administratora, a privremeni ostaju. Administrator nasleđen iz grupe iznad ostaje.
+
+![Grupa koja bira administratore: kartica Članovi](izbori)
 
 Izbor administratora se gasi samo odlukom glasanja: u Uredi grupu → Pristup dugme **Predloži gašenje** raspisuje takvo glasanje. Inače bi izabrani administrator mogao da ga ugasi i ostane zauvek.
 

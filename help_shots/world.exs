@@ -497,6 +497,11 @@ defmodule HelpShots.World do
       "Nova vest: staza uz kanal je gotova. Otvaranje je u nedelju u 11 časova, kod mosta."
     )
 
+    # Readers write in the feed's open chat, and one who would not stop is
+    # blocked there (the help's "Blokiranje").
+    {:ok, news} = Social.update_group(luka, news, %{"has_public_chat" => true})
+    {:ok, _block} = Social.block_from_group(luka, news, p.("petar"))
+
     news
   end
 
@@ -519,6 +524,10 @@ defmodule HelpShots.World do
       })
 
     members(dragan, coop, ~w(ana ivana milica sara) |> Enum.map(p))
+
+    # The co-op elects its admins; Dragan, who founded it, is admin for now
+    # (the help's "Grupa koja bira administratore").
+    {:ok, coop} = Social.set_elects_admins(dragan, coop, true)
 
     orders = preset(dragan, coop, "questionnaire", "Porudžbine")
 

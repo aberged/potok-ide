@@ -252,6 +252,18 @@
     "steps": [{ "wait": "#access-preview-banner" }, { "pause": 400 }]
   },
   {
+    "name": "izbori",
+    "as": "ana",
+    "url": "/groups/{groups.coop}/members",
+    "steps": [{ "wait": "#group-members-elected" }, { "pause": 400 }]
+  },
+  {
+    "name": "blokirani",
+    "as": "luka",
+    "url": "/groups/{groups.news}/members",
+    "steps": [{ "wait": "#group-blocks-panel" }, { "show": "#group-blocks-panel" }, { "pause": 400 }]
+  },
+  {
     "name": "kalendar",
     "as": "ana",
     "url": "/groups/{groups.root}/calendar"
