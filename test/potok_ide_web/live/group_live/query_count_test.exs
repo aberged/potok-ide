@@ -26,6 +26,10 @@ defmodule PotokIdeWeb.GroupLive.QueryCountTest do
   @max_dead_render_queries 7
   @max_root_page_queries 11
   @max_chat_page_queries 24
+  # The access overview: what every tab of a group page loads, then its own
+  # reads (`AccessOverview.load/3`, `PageRules.facts/1`), none of them per
+  # member: the people are counted by the sets of roles they hold.
+  @max_access_page_queries 25
 
   setup %{conn: conn} do
     account = account_fixture()
@@ -340,6 +344,32 @@ defmodule PotokIdeWeb.GroupLive.QueryCountTest do
     send(lv.pid, {:something_a_newer_server_sends, group.id})
 
     assert render(lv) =~ "hello"
+  end
+
+  test "the access overview loads with a bounded number of queries, however many members", %{
+    conn: conn,
+    group: group,
+    profile: profile
+  } do
+    {:ok, _manifest} = Social.create_own_group_manifest(profile, group)
+    {:ok, role} = Social.create_group_role(profile, group, %{"name" => "qc-role"})
+    path = ~p"/groups/#{group.id}/access"
+    # The first view warms the caches the page shares with every other.
+    _ = page_queries(conn, path)
+    {_dead, few} = page_queries(conn, path)
+
+    for number <- 1..6 do
+      {_conn, member} = member_conn("qc-access-#{number}", group, profile)
+
+      if rem(number, 2) == 0,
+        do: {:ok, _} = Social.assign_group_member_role(profile, group, member.id, role.key)
+    end
+
+    _ = page_queries(conn, path)
+    {_dead, many} = page_queries(conn, path)
+
+    assert few <= @max_access_page_queries
+    assert many == few
   end
 
   test "a value reads no more rows in a bigger group", %{group: group, profile: profile} do

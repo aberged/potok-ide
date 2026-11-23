@@ -73,6 +73,16 @@ defmodule PotokIde.Social.GroupRequests do
   @doc "Whether requests are taken in `group` at all: not at the root, in a direct conversation or a thread."
   def group_allowed?(%Group{} = group), do: Effects.group_allowed?(group)
 
+  @doc """
+  Whether the holder of `access` may ask to join `group`, as far as the
+  access tells: someone outside a public group, not blocked there. Whether
+  they are already invited, which also stops them, takes a query
+  (`Social.may_ask_to_join/2`).
+  """
+  def may_ask_to_join?(%Access{} = access, %Group{} = group) do
+    group_allowed?(group) and group.is_public and not access.member? and not access.blocked?
+  end
+
   @doc "Whether the holder of `access` decides the requests of `group`."
   def may_decide?(%Access{} = access, %Group{} = group) do
     group_allowed?(group) and access.member? and

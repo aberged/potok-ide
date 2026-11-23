@@ -14,6 +14,7 @@ defmodule PotokIdeWeb.GroupLive.Show.PageRules do
   """
 
   alias PotokIde.{Events, Notices, Polls, Storage}
+  alias PotokIde.Polls.Effects
   alias PotokIde.Social.{Access, AppProcesses, Group, ValueRules}
 
   @type facts :: %{optional(atom()) => boolean() | (-> boolean())}
@@ -59,6 +60,9 @@ defmodule PotokIdeWeb.GroupLive.Show.PageRules do
 
   def tab("roles", %Group{is_direct: false}, %Access{member?: true}, _facts), do: "roles"
 
+  def tab("access", group, access, _facts),
+    do: if(access_tab?(group, access), do: "access", else: default_tab(group))
+
   # In the root group, the events of every group the profile is in.
   def tab("calendar", group, access, facts),
     do: if(calendar?(group, access, facts), do: "calendar", else: default_tab(group))
@@ -91,6 +95,14 @@ defmodule PotokIdeWeb.GroupLive.Show.PageRules do
 
   @doc "Whether the viewer sees the group at all: any public one, and those they are in."
   def sees_group?(%Group{} = group, %Access{member?: member?}), do: group.is_public or member?
+
+  @doc """
+  Whether the viewer has the access overview: whoever sees the group, where it
+  has roles to tell of, so not the root, a direct conversation or a thread.
+  Members see it whole, others only what they may do there.
+  """
+  def access_tab?(%Group{} = group, %Access{} = access),
+    do: Effects.group_allowed?(group) and sees_group?(group, access)
 
   @doc "Whether the viewer has the Members tab: members of a group under the root."
   def members?(%Group{parent_id: parent_id}, %Access{member?: member?}),

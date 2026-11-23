@@ -40,6 +40,19 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
               "Roles allow or deny what members can do in this group. A denial wins over an allowance, and every member has the everyone role."
             )}
           </:subtitle>
+          <:actions :if={!@group.is_direct and !@group.is_root}>
+            <.button
+              id="group-roles-access"
+              type="button"
+              phx-click="switch_tab"
+              phx-value-tab="access"
+              variant="soft"
+              size="sm"
+            >
+              <.icon name="hero-eye" class="size-4" />
+              {gettext("Who may do what")}
+            </.button>
+          </:actions>
         </.page_header>
 
         <div

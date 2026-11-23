@@ -261,7 +261,7 @@ msgstr ""
 msgid "End this poll now?"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:510
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:523
 #, elixir-autogen, elixir-format
 msgid "End, change and delete polls started by others, and always see their results and details."
 msgstr ""
@@ -324,7 +324,7 @@ msgstr ""
 msgid "Include sub-groups"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:517
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:530
 #, elixir-autogen, elixir-format
 msgid "Let signed-in visitors of a public group vote too."
 msgstr ""
@@ -334,7 +334,8 @@ msgstr ""
 msgid "Load earlier polls"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:456
+#: lib/potok_ide_web/live/group_live/show/access_catalog.ex:189
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:469
 #, elixir-autogen, elixir-format
 msgid "Manage polls"
 msgstr ""
@@ -378,7 +379,7 @@ msgstr ""
 msgid "My groups"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:607
+#: lib/potok_ide_web/live/group_live/show.ex:609
 #: lib/potok_ide_web/live/group_live/show/polls_tab.ex:31
 #, elixir-autogen, elixir-format
 msgid "My polls"
@@ -498,7 +499,8 @@ msgstr ""
 msgid "Open in %{group}"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:457
+#: lib/potok_ide_web/live/group_live/show/access_catalog.ex:190
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:470
 #, elixir-autogen, elixir-format
 msgid "Open polls to non-members"
 msgstr ""
@@ -519,7 +521,8 @@ msgstr ""
 msgid "Poll"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:608
+#: lib/potok_ide_web/live/group_live/show.ex:610
+#: lib/potok_ide_web/live/group_live/show/access_catalog.ex:152
 #: lib/potok_ide_web/live/group_live/show/create_menu.ex:264
 #: lib/potok_ide_web/live/group_live/show/group_menu.ex:57
 #: lib/potok_ide_web/live/group_live/show/polls_tab.ex:32
@@ -627,12 +630,13 @@ msgstr ""
 msgid "Show polls"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:454
+#: lib/potok_ide_web/live/group_live/show/access_catalog.ex:187
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:467
 #, elixir-autogen, elixir-format
 msgid "Start polls"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:500
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:513
 #, elixir-autogen, elixir-format
 msgid "Start polls in this group."
 msgstr ""
@@ -752,12 +756,12 @@ msgstr ""
 msgid "Up to %{count} answers."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:455
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:468
 #, elixir-autogen, elixir-format
 msgid "Vote"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:503
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:516
 #, elixir-autogen, elixir-format
 msgid "Vote where the poll's own rules allow it. Held by the Everyone role, it also lets signed-in visitors vote in a public poll."
 msgstr ""

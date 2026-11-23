@@ -8,6 +8,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   alias PotokIde.Social.{
     Access,
+    AccessOverview,
     AppData,
     AppProcesses,
     Group,
@@ -34,6 +35,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   alias PotokIde.Tags
 
   alias PotokIdeWeb.GroupLive.Show.{
+    AccessTab,
     CalendarState,
     CalendarTab,
     Components,
@@ -938,6 +940,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 role_member_counts={@role_member_counts}
                 members_count={@members_count}
               />
+              <AccessTab.panel
+                :if={@active_tab == "access"}
+                group={@group}
+                access={@access}
+                current_profile={@current_profile}
+                overview={@access_overview}
+                view={@access_view}
+              />
             </div>
           </div>
         </div>
@@ -1005,6 +1015,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:members_pagination, default_pagination(@members_page_size))
          # Read here, as the tab's first load comes before `handle_params`.
          |> assign(:members_role, members_role_param(params["role"], active_tab, access))
+         |> assign(:access_overview, nil)
+         |> assign(:access_view, :self)
          |> assign(:values_has_more?, false)
          |> assign(:values_has_newer?, false)
          |> assign(:oldest_value_id, nil)
@@ -1871,6 +1883,28 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_event("load_more_members", _params, socket) do
     {:noreply, load_more_members(socket)}
+  end
+
+  # The access overview, seen as a ready pick or as roles picked by hand.
+  # Everything is worked out from the manifest, with no query.
+  def handle_event("access_view_preset", %{"preset" => key}, socket) do
+    case AccessTab.preset_spec(socket.assigns.group, key) do
+      nil -> {:noreply, socket}
+      spec -> {:noreply, assign(socket, :access_view, spec)}
+    end
+  end
+
+  def handle_event("access_view_roles", params, socket) do
+    known = MapSet.new(socket.assigns.access.manifest.roles, & &1.key)
+
+    keys =
+      params
+      |> Map.get("roles", [])
+      |> List.wrap()
+      |> Enum.filter(&(is_binary(&1) and &1 != "everyone" and MapSet.member?(known, &1)))
+      |> Enum.uniq()
+
+    {:noreply, assign(socket, :access_view, {:member, keys})}
   end
 
   # The address carries the role, so the narrowed list can be shared and
@@ -3604,6 +3638,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> ProcessesState.assign_waiting()
     |> ProcessesState.maybe_load(group, active_tab)
     |> maybe_load_roles(group, active_tab)
+    |> maybe_load_access_overview(group, active_tab)
     |> maybe_load_thread_origin(group, active_tab)
     |> maybe_load_alt_descriptions(group, active_tab)
     |> TemplatesState.load(group, active_tab)
@@ -6620,6 +6655,21 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   defp maybe_load_roles(socket, _group, _active_tab), do: socket
+
+  # The access overview reads its facts and counts when its tab opens, and
+  # again whenever the group's data is loaded again, as after a change of
+  # roles or members. Elsewhere it holds nothing.
+  defp maybe_load_access_overview(socket, group, "access") do
+    notices? = get_in(socket.assigns, [:notice_state, :notices?]) || false
+
+    assign(socket, :access_overview, %{
+      facts: Map.put(PageRules.facts(group), :notices?, notices?),
+      data: AccessOverview.load(group, socket.assigns.access, socket.assigns.current_profile)
+    })
+  end
+
+  defp maybe_load_access_overview(socket, _group, _active_tab),
+    do: assign(socket, access_overview: nil, access_view: :self)
 
   defp assign_access(socket, %Access{} = access) do
     socket

@@ -76,7 +76,18 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
         >
           {gettext("Members")}
           <:subtitle>{gettext("Who is in the group, with their roles.")}</:subtitle>
-          <:actions :if={Access.can?(@access, :invite_members) or @call_election? or @can_ask_roles?}>
+          <:actions>
+            <.button
+              id="group-members-access"
+              type="button"
+              phx-click="switch_tab"
+              phx-value-tab="access"
+              variant="soft"
+              size="sm"
+            >
+              <.icon name="hero-eye" class="size-4" />
+              {gettext("Who may do what")}
+            </.button>
             <.button
               :if={@can_ask_roles?}
               id="group-members-ask-roles"

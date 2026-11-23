@@ -261,7 +261,7 @@ msgstr "Završi glasanje"
 msgid "End this poll now?"
 msgstr "Završiti ovo glasanje sada?"
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:510
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:523
 #, elixir-autogen, elixir-format
 msgid "End, change and delete polls started by others, and always see their results and details."
 msgstr "Završava, menja i briše tuđa glasanja i uvek vidi njihove rezultate i detalje."
@@ -324,7 +324,7 @@ msgstr "U toku"
 msgid "Include sub-groups"
 msgstr "Sa podgrupama"
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:517
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:530
 #, elixir-autogen, elixir-format
 msgid "Let signed-in visitors of a public group vote too."
 msgstr "Dozvoljava da glasaju i prijavljeni posetioci javne grupe."
@@ -334,7 +334,8 @@ msgstr "Dozvoljava da glasaju i prijavljeni posetioci javne grupe."
 msgid "Load earlier polls"
 msgstr "Učitaj ranija glasanja"
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:456
+#: lib/potok_ide_web/live/group_live/show/access_catalog.ex:189
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:469
 #, elixir-autogen, elixir-format
 msgid "Manage polls"
 msgstr "Upravljanje glasanjima"
@@ -378,7 +379,7 @@ msgstr "Više od polovine onih koji imaju pravo glasa"
 msgid "My groups"
 msgstr "Moje grupe"
 
-#: lib/potok_ide_web/live/group_live/show.ex:607
+#: lib/potok_ide_web/live/group_live/show.ex:609
 #: lib/potok_ide_web/live/group_live/show/polls_tab.ex:31
 #, elixir-autogen, elixir-format
 msgid "My polls"
@@ -498,7 +499,8 @@ msgstr "Otvori ponovo"
 msgid "Open in %{group}"
 msgstr "Otvori u grupi %{group}"
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:457
+#: lib/potok_ide_web/live/group_live/show/access_catalog.ex:190
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:470
 #, elixir-autogen, elixir-format
 msgid "Open polls to non-members"
 msgstr "Otvaranje glasanja nečlanovima"
@@ -519,7 +521,8 @@ msgstr "Prvo izaberi odgovor."
 msgid "Poll"
 msgstr "Glasanje"
 
-#: lib/potok_ide_web/live/group_live/show.ex:608
+#: lib/potok_ide_web/live/group_live/show.ex:610
+#: lib/potok_ide_web/live/group_live/show/access_catalog.ex:152
 #: lib/potok_ide_web/live/group_live/show/create_menu.ex:264
 #: lib/potok_ide_web/live/group_live/show/group_menu.ex:57
 #: lib/potok_ide_web/live/group_live/show/polls_tab.ex:32
@@ -627,12 +630,13 @@ msgstr "Prikaži sve (%{count})"
 msgid "Show polls"
 msgstr "Prikaži glasanja"
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:454
+#: lib/potok_ide_web/live/group_live/show/access_catalog.ex:187
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:467
 #, elixir-autogen, elixir-format
 msgid "Start polls"
 msgstr "Pokretanje glasanja"
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:500
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:513
 #, elixir-autogen, elixir-format
 msgid "Start polls in this group."
 msgstr "Pokreće glasanja u ovoj grupi."
@@ -752,12 +756,12 @@ msgstr "Do"
 msgid "Up to %{count} answers."
 msgstr "Najviše odgovora: %{count}."
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:455
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:468
 #, elixir-autogen, elixir-format
 msgid "Vote"
 msgstr "Glasanje"
 
-#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:503
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:516
 #, elixir-autogen, elixir-format
 msgid "Vote where the poll's own rules allow it. Held by the Everyone role, it also lets signed-in visitors vote in a public poll."
 msgstr "Glasa tamo gde to dozvoljavaju pravila glasanja. Ako je ima uloga Svi, na javnom glasanju mogu da glasaju i prijavljeni posetioci."

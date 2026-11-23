@@ -16,7 +16,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
 
   alias PotokIde.Notices
   alias PotokIde.Social.{Access, Group}
-  alias PotokIdeWeb.GroupLive.Show.Components
+  alias PotokIdeWeb.GroupLive.Show.{Components, PageRules}
   alias PotokIdeWeb.TagComponents
 
   @row_prefix "group-row"
@@ -159,6 +159,15 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
         active_tab={@active_tab}
         label={gettext("Roles")}
         icon="hero-shield-check"
+      />
+      <.tab_item
+        :if={PageRules.access_tab?(@group, @access)}
+        id={"#{@id_prefix}-tab-access"}
+        group={@group}
+        tab="access"
+        active_tab={@active_tab}
+        label={gettext("Access overview")}
+        icon="hero-eye"
       />
       <.menu_item
         :if={Access.can?(@access, :create_subgroups)}

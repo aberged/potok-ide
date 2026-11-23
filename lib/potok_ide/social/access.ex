@@ -294,6 +294,43 @@ defmodule PotokIde.Social.Access do
   def can?(profile, %Group{} = group, permission) when is_atom(permission),
     do: profile |> for_profile(group) |> can?(permission)
 
+  @doc """
+  Why the access has `permission`, or lacks it, in terms of the roles it holds,
+  by the same rules as `can?/2`, whose answer is always the first element:
+
+  - `{true, :admin}`: Admin holds every permission;
+  - `{true, {:allowed_by, keys}}`: the held roles that allow it;
+  - `{false, {:denied_by, deny_keys, allow_keys}}`: held roles deny it, and a
+    denial wins over the roles that allow it (Everyone only allows);
+  - `{false, :not_allowed}`: no held role says anything of it;
+  - `{false, :not_member}`: a profile that is not a member holds no role.
+
+  The access overview of the group's page tells it in words.
+  """
+  def explain(%__MODULE__{member?: false}, permission) when is_atom(permission),
+    do: {false, :not_member}
+
+  def explain(%__MODULE__{admin?: true}, permission) when is_atom(permission),
+    do: {true, :admin}
+
+  def explain(%__MODULE__{} = access, permission) when is_atom(permission) do
+    roles = if access.manifest, do: access.manifest.roles, else: []
+    held = Enum.filter(roles, &(&1.key in access.role_keys))
+    allow = for role <- held, permission in role.allowed, do: role.key
+
+    deny =
+      for role <- held,
+          role.key != GroupRole.everyone_key(),
+          permission in role.denied,
+          do: role.key
+
+    cond do
+      deny != [] -> {false, {:denied_by, deny, allow}}
+      allow != [] -> {true, {:allowed_by, allow}}
+      true -> {false, :not_allowed}
+    end
+  end
+
   @doc "The profile's access to each of `groups`, in one query for the memberships."
   def for_profile_in_groups(_profile, []), do: %{}
 
