@@ -8,6 +8,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   alias PotokIde.Social.{
     Access,
+    AccessHistory,
     AccessOverview,
     AppData,
     AppProcesses,
@@ -1894,6 +1895,25 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
+  # Older changes of the access history, after the last one on screen.
+  def handle_event("access_history_more", _params, socket) do
+    case socket.assigns.access_overview do
+      %{data: %{history: [_ | _] = history} = data} = overview ->
+        last = List.last(history)
+
+        older =
+          AccessHistory.list(socket.assigns.group, socket.assigns.access,
+            before: {last.inserted_at, last.id}
+          )
+
+        data = %{data | history: history ++ older, history_end?: older == []}
+        {:noreply, assign(socket, :access_overview, %{overview | data: data})}
+
+      _other ->
+        {:noreply, socket}
+    end
+  end
+
   def handle_event("access_view_roles", params, socket) do
     known = MapSet.new(socket.assigns.access.manifest.roles, & &1.key)
 
@@ -3706,7 +3726,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp refresh_spread_ms(:group), do: :rand.uniform(@group_refresh_spread_ms)
 
   defp refresh_spread_ms(kind)
-       when kind in [:members, :member_summary, :waiting, :group_processes, :polls_section],
+       when kind in [
+              :members,
+              :member_summary,
+              :waiting,
+              :group_processes,
+              :polls_section,
+              :access_overview
+            ],
        do: :rand.uniform(@members_refresh_spread_ms)
 
   defp refresh_spread_ms(_kind), do: 0
@@ -3740,6 +3767,17 @@ defmodule PotokIdeWeb.GroupLive.Show do
     socket =
       if MapSet.member?(pending, :members) and not MapSet.member?(pending, :group),
         do: reload_member_lists_or_retry(socket),
+        else: socket
+
+    # Members came, went or were blocked: the counts and the history change.
+    socket =
+      if MapSet.member?(pending, :access_overview) and not MapSet.member?(pending, :group),
+        do:
+          maybe_load_access_overview(
+            socket,
+            socket.assigns.group,
+            socket.assigns.active_tab
+          ),
         else: socket
 
     socket =
@@ -3903,9 +3941,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
         do: schedule_refresh(socket, :group),
         else: socket
 
-    if needs_members?(group, active_tab),
-      do: schedule_refresh(socket, :members),
-      else: socket
+    cond do
+      needs_members?(group, active_tab) -> schedule_refresh(socket, :members)
+      active_tab == "access" -> schedule_refresh(socket, :access_overview)
+      true -> socket
+    end
   end
 
   defp reload_current_group(socket) do

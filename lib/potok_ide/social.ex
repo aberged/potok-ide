@@ -25,6 +25,7 @@ defmodule PotokIde.Social do
   alias PotokIde.Accounts.PushSubscription
 
   alias PotokIde.Social.{
+    AccessHistory,
     Access,
     AccountProfile,
     AppBuilds,
@@ -1014,6 +1015,9 @@ defmodule PotokIde.Social do
       |> Multi.run(:inheritance, fn repo, %{group: updated_group} ->
         {:ok, switch_inheritance(repo, editor, group, updated_group)}
       end)
+      |> Multi.run(:history, fn repo, %{group: updated_group} ->
+        {:ok, record_settings(repo, editor, group, updated_group, %{})}
+      end)
       |> Repo.transaction()
       |> case do
         {:ok, %{group: updated_group, inheritance: changes}} ->
@@ -1031,6 +1035,33 @@ defmodule PotokIde.Social do
           {:error, reason}
       end
     end
+  end
+
+  # The settings that let people in or out, as the access history keeps
+  # them: one row for all that changed at once, with each old and new value.
+  @access_settings [
+    :is_public,
+    :has_public_chat,
+    :description_for_guests,
+    :inherits_members,
+    :inherit_role_keys
+  ]
+
+  defp record_settings(repo, editor, %Group{} = before, %Group{} = after_change, extra) do
+    changed =
+      for field <- @access_settings,
+          Map.get(before, field) != Map.get(after_change, field),
+          into: %{},
+          do: {field, [Map.get(before, field), Map.get(after_change, field)]}
+
+    if changed != %{} do
+      AccessHistory.record!(repo, before.id, :settings_changed,
+        actor: editor && editor.id,
+        data: Map.merge(changed, extra)
+      )
+    end
+
+    :ok
   end
 
   @doc """
@@ -1056,10 +1087,15 @@ defmodule PotokIde.Social do
         {:error, :not_permitted}
 
       true ->
-        {_count, _rows} =
-          Repo.update_all(from(g in Group, where: g.id == ^group.id),
-            set: [elects_admins: true, updated_at: DateTime.utc_now(:second)]
-          )
+        {:ok, _} =
+          Repo.transaction(fn ->
+            {count, _rows} =
+              Repo.update_all(from(g in Group, where: g.id == ^group.id and not g.elects_admins),
+                set: [elects_admins: true, updated_at: DateTime.utc_now(:second)]
+              )
+
+            if count > 0, do: AccessHistory.record!(Repo, group, :elections_on, actor: actor.id)
+          end)
 
         broadcast_group_updated(group)
         {:ok, %{group | elects_admins: true}}
@@ -1083,9 +1119,22 @@ defmodule PotokIde.Social do
         {:error, :not_permitted}
 
       true ->
-        group
-        |> Group.join_changeset(attrs)
-        |> Repo.update()
+        Repo.transaction(fn ->
+          case group |> Group.join_changeset(attrs) |> Repo.update() do
+            {:ok, updated} ->
+              if updated.join_mode != group.join_mode or updated.join_poll != group.join_poll do
+                AccessHistory.record!(Repo, group, :join_rule_set,
+                  actor: actor.id,
+                  data: %{from: group.join_mode, to: updated.join_mode}
+                )
+              end
+
+              updated
+
+            {:error, changeset} ->
+              Repo.rollback(changeset)
+          end
+        end)
         |> case do
           {:ok, updated} ->
             broadcast_group_updated(updated)
@@ -1102,10 +1151,12 @@ defmodule PotokIde.Social do
   decision of a poll does it (`PotokIde.Polls.Effects`). The admins it has
   stay. Returns `{:ok, announce}`.
   """
-  def end_elections(repo, %Group{id: group_id}) do
+  def end_elections(repo, %Group{id: group_id}, poll_id \\ nil) do
     repo.update_all(from(g in Group, where: g.id == ^group_id),
       set: [elects_admins: false, updated_at: DateTime.utc_now(:second)]
     )
+
+    AccessHistory.record!(repo, group_id, :elections_off, poll: poll_id)
 
     {:ok, fn -> broadcast_group_updated(group_id) end}
   end
@@ -1441,6 +1492,9 @@ defmodule PotokIde.Social do
       |> Multi.run(:inheritance, fn repo, %{group: withdrawn} ->
         {:ok, MemberInheritance.drop_inherited(repo, withdrawn.id, editor.id)}
       end)
+      |> Multi.run(:history, fn repo, %{group: withdrawn} ->
+        {:ok, record_settings(repo, editor, group, withdrawn, %{withdrawn: true})}
+      end)
       |> Repo.transaction()
       |> case do
         {:ok, %{group: withdrawn, inheritance: changes}} ->
@@ -1668,6 +1722,9 @@ defmodule PotokIde.Social do
         %GroupAltDescription{group_id: group.id, creator_id: editor.id, position: position}
         |> GroupAltDescription.changeset(attrs)
       end)
+      |> Multi.run(:history, fn repo, %{alt_description: created} ->
+        {:ok, record_alt_visibility(repo, editor, group, %GroupAltDescription{}, created)}
+      end)
       |> Repo.transaction()
       |> case do
         {:ok, %{alt_description: alt_description}} ->
@@ -1688,9 +1745,16 @@ defmodule PotokIde.Social do
       ) do
     with :ok <- ensure_permission(editor, group, :edit_group),
          :ok <- ensure_own_alt_description(group, alt_description) do
-      alt_description
-      |> GroupAltDescription.changeset(attrs)
-      |> Repo.update()
+      Repo.transaction(fn ->
+        case alt_description |> GroupAltDescription.changeset(attrs) |> Repo.update() do
+          {:ok, updated} ->
+            record_alt_visibility(Repo, editor, group, alt_description, updated)
+            updated
+
+          {:error, reason} ->
+            Repo.rollback(reason)
+        end
+      end)
       |> case do
         {:ok, updated} ->
           broadcast_alt_descriptions_updated(group)
@@ -1700,6 +1764,24 @@ defmodule PotokIde.Social do
           {:error, reason}
       end
     end
+  end
+
+  # Who sees an alternative description is access too: a change of its roles
+  # or of guests seeing it is kept. A new one open to all says nothing new.
+  defp record_alt_visibility(repo, editor, group, before, after_change) do
+    if before.visible_role_keys != after_change.visible_role_keys or
+         before.for_guests != after_change.for_guests do
+      AccessHistory.record!(repo, group, :alt_visibility_set,
+        actor: editor.id,
+        data: %{
+          alt: after_change.name,
+          roles: after_change.visible_role_keys,
+          guests: after_change.for_guests
+        }
+      )
+    end
+
+    :ok
   end
 
   @doc """
@@ -2344,6 +2426,13 @@ defmodule PotokIde.Social do
         |> Multi.run(:inheritance, fn repo, _changes ->
           {:ok, MemberInheritance.sync(repo, group.id, [member.id])}
         end)
+        |> Multi.run(:history, fn repo, _changes ->
+          {:ok,
+           AccessHistory.record!(repo, group, :member_removed,
+             actor: actor.id,
+             subject: member.id
+           )}
+        end)
         |> Repo.transaction()
         |> case do
           {:ok, %{inheritance: changes}} ->
@@ -2414,6 +2503,13 @@ defmodule PotokIde.Social do
         where: i.group_id == ^group.id and i.invitee_id == ^profile.id and is_nil(i.accepted_at)
       )
     )
+    |> Multi.run(:history, fn repo, %{block: inserted} ->
+      if inserted.id do
+        AccessHistory.record!(repo, group, :member_blocked, actor: actor.id, subject: profile.id)
+      end
+
+      {:ok, :ok}
+    end)
     |> Repo.transaction()
     |> case do
       {:ok, %{block: block}} ->
@@ -2433,8 +2529,19 @@ defmodule PotokIde.Social do
   def unblock_from_group(%Profile{} = actor, %Group{} = group, profile_id)
       when is_integer(profile_id) do
     if Access.can?(actor, group, :remove_members) do
-      from(b in GroupBlock, where: b.group_id == ^group.id and b.profile_id == ^profile_id)
-      |> Repo.delete_all()
+      {:ok, _} =
+        Repo.transaction(fn ->
+          {count, _rows} =
+            from(b in GroupBlock, where: b.group_id == ^group.id and b.profile_id == ^profile_id)
+            |> Repo.delete_all()
+
+          if count > 0 do
+            AccessHistory.record!(Repo, group, :member_unblocked,
+              actor: actor.id,
+              subject: profile_id
+            )
+          end
+        end)
 
       Access.forget([group.id])
       broadcast_group_members_changed(group, [:blocks], profile_id: profile_id)
@@ -2865,6 +2972,12 @@ defmodule PotokIde.Social do
           )
         )
         |> repo.insert!()
+
+        AccessHistory.record!(repo, group, :member_admitted,
+          actor: approval[:approver_id],
+          subject: profile_id,
+          poll: approval[:poll_id]
+        )
 
         {:ok, MemberInheritance.sync(repo, group.id, [profile_id])}
 
@@ -3999,9 +4112,12 @@ defmodule PotokIde.Social do
     with {:ok, manifest} <- editable_manifest(actor, group) do
       position = manifest.roles |> Enum.map(& &1.position) |> Enum.max(fn -> 0 end)
 
-      %GroupRole{manifest_id: manifest.id, key: Ecto.UUID.generate(), position: position + 1}
-      |> GroupRole.changeset(take_role_attrs(attrs))
-      |> Repo.insert()
+      Repo.transaction(fn ->
+        %GroupRole{manifest_id: manifest.id, key: Ecto.UUID.generate(), position: position + 1}
+        |> GroupRole.changeset(take_role_attrs(attrs))
+        |> Repo.insert()
+        |> record_role_change(group, actor, :role_added, fn role -> %{role: role.name} end)
+      end)
       |> case do
         {:ok, role} ->
           broadcast_manifest_updated(manifest)
@@ -4016,9 +4132,14 @@ defmodule PotokIde.Social do
   def rename_group_role(%Profile{} = actor, %Group{} = group, role_key, attrs) do
     with {:ok, manifest} <- editable_manifest(actor, group),
          {:ok, role} <- fetch_custom_role(manifest, role_key) do
-      role
-      |> GroupRole.changeset(take_role_attrs(attrs))
-      |> Repo.update()
+      Repo.transaction(fn ->
+        role
+        |> GroupRole.changeset(take_role_attrs(attrs))
+        |> Repo.update()
+        |> record_role_change(group, actor, :role_renamed, fn renamed ->
+          if renamed.name != role.name, do: %{from: role.name, to: renamed.name}
+        end)
+      end)
       |> case do
         {:ok, role} ->
           broadcast_manifest_updated(manifest)
@@ -4029,6 +4150,23 @@ defmodule PotokIde.Social do
       end
     end
   end
+
+  # Inside a transaction: the role written, or a rollback with what went
+  # wrong. `data` gives the row's data from the role, or nil when nothing
+  # worth keeping changed.
+  defp record_role_change({:ok, role}, group, actor, kind, data) do
+    case data.(role) do
+      nil ->
+        role
+
+      data ->
+        AccessHistory.record!(Repo, group, kind, actor: actor.id, role_key: role.key, data: data)
+        role
+    end
+  end
+
+  defp record_role_change({:error, changeset}, _group, _actor, _kind, _data),
+    do: Repo.rollback(changeset)
 
   defp take_role_attrs(attrs) do
     attrs
@@ -4056,12 +4194,19 @@ defmodule PotokIde.Social do
           :neutral -> {allowed, denied}
         end
 
-      role
-      |> GroupRole.permissions_changeset(
-        sort_permissions(allowed),
-        sort_permissions(denied)
-      )
-      |> Repo.update()
+      Repo.transaction(fn ->
+        role
+        |> GroupRole.permissions_changeset(
+          sort_permissions(allowed),
+          sort_permissions(denied)
+        )
+        |> Repo.update()
+        |> record_role_change(group, actor, :permission_set, fn updated ->
+          from = permission_state(role, permission)
+          to = permission_state(updated, permission)
+          if from != to, do: %{role: role.name, permission: permission, from: from, to: to}
+        end)
+      end)
       |> case do
         {:ok, role} ->
           broadcast_manifest_updated(manifest)
@@ -4088,7 +4233,16 @@ defmodule PotokIde.Social do
            Ecto.Changeset.get_field(changeset, :request_mode) in [:approve, :choose] do
         {:error, :elected_role}
       else
-        case Repo.update(changeset) do
+        Repo.transaction(fn ->
+          changeset
+          |> Repo.update()
+          |> record_role_change(group, actor, :request_rule_set, fn updated ->
+            if updated.request_mode != role.request_mode or
+                 updated.request_poll != role.request_poll,
+               do: %{role: role.name, from: role.request_mode, to: updated.request_mode}
+          end)
+        end)
+        |> case do
           {:ok, role} ->
             broadcast_manifest_updated(manifest)
             {:ok, role}
@@ -4097,6 +4251,14 @@ defmodule PotokIde.Social do
             error
         end
       end
+    end
+  end
+
+  defp permission_state(%GroupRole{} = role, permission) do
+    cond do
+      permission in role.allowed -> :allow
+      permission in role.denied -> :deny
+      true -> :neutral
     end
   end
 
@@ -4128,6 +4290,14 @@ defmodule PotokIde.Social do
         :assignments,
         from(r in GroupMemberRole, where: r.group_id in ^group_ids and r.role_key == ^role.key)
       )
+      |> Multi.run(:history, fn repo, %{assignments: {count, _rows}} ->
+        {:ok,
+         AccessHistory.record!(repo, group, :role_removed,
+           actor: actor.id,
+           role_key: role.key,
+           data: %{role: role.name, assignments: count}
+         )}
+      end)
       |> Multi.run(:inheritance, fn repo, _changes ->
         {:ok, MemberInheritance.forget_roles(repo, group_ids, [role.key])}
       end)
@@ -4169,6 +4339,9 @@ defmodule PotokIde.Social do
 
         Multi.new()
         |> Multi.insert(:manifest, %GroupManifest{group_id: group.id})
+        |> Multi.run(:history, fn repo, _changes ->
+          {:ok, AccessHistory.record!(repo, group, :manifest_copied, actor: actor.id)}
+        end)
         |> Multi.insert_all(:roles, GroupRole, fn %{manifest: manifest} ->
           Enum.map(access.manifest.roles, fn role ->
             role
@@ -4210,6 +4383,7 @@ defmodule PotokIde.Social do
         |> Repo.delete_all()
 
         gone_keys = Enum.map(manifest.roles, & &1.key) -- kept_keys
+        AccessHistory.record!(Repo, group, :manifest_dropped, actor: actor.id)
         forget_requested_roles(Repo, group_ids, gone_keys)
         MemberInheritance.forget_roles(Repo, group_ids, gone_keys)
       end)
@@ -4308,7 +4482,9 @@ defmodule PotokIde.Social do
   def assign_group_member_role(%Profile{} = actor, %Group{} = group, profile_id, role_key)
       when is_integer(profile_id) and is_binary(role_key) do
     with {:ok, _access} <- ensure_role_assignable(actor, group, profile_id, role_key) do
-      Repo.transaction(fn -> put_member_role(Repo, group, profile_id, role_key) end)
+      Repo.transaction(fn ->
+        put_member_role(Repo, group, profile_id, role_key, actor: actor.id)
+      end)
       |> case do
         {:ok, {:ok, member_role, announce}} ->
           announce.()
@@ -4338,7 +4514,9 @@ defmodule PotokIde.Social do
           {:error, :last_admin}
 
         true ->
-          Repo.transaction(fn -> drop_member_roles(Repo, group, [profile_id], role_key) end)
+          Repo.transaction(fn ->
+            drop_member_roles(Repo, group, [profile_id], role_key, actor: actor.id)
+          end)
           |> case do
             {:ok, {:ok, announce}} ->
               announce.()
@@ -4354,16 +4532,29 @@ defmodule PotokIde.Social do
   @doc """
   Gives `profile_id` the role `role_key` in `group`, in the caller's
   transaction, with no check: for `assign_group_member_role/4`, which checked
-  the actor, and for a decision of a poll (`PotokIde.Polls.Effects`), whose
-  id `poll_id` the role then keeps. A role the member holds of their own
-  keeps being theirs, by the decision when one gave it; one held through the
-  parent stays as it is. Inheriting groups below follow.
+  the actor, for a decision of a poll (`PotokIde.Polls.Effects`), whose id
+  `by[:poll]` the role then keeps, and for a granted request. A role the
+  member holds of their own keeps being theirs, by the decision when one gave
+  it; one held through the parent stays as it is. Inheriting groups below
+  follow. A role the member did not hold of their own goes into the access
+  history, with `by[:actor]` or `by[:poll]` as who gave it.
 
   Returns `{:ok, member_role, announce}`: nobody hears of it until the
   caller commits and calls `announce`.
   """
-  def put_member_role(repo, %Group{} = group, profile_id, role_key, poll_id \\ nil)
+  def put_member_role(repo, %Group{} = group, profile_id, role_key, by \\ [])
       when is_integer(profile_id) and is_binary(role_key) do
+    poll_id = by[:poll]
+
+    held? =
+      repo.exists?(
+        from(r in GroupMemberRole,
+          where:
+            r.group_id == ^group.id and r.profile_id == ^profile_id and r.role_key == ^role_key and
+              not r.inherited
+        )
+      )
+
     member_role = %GroupMemberRole{
       group_id: group.id,
       profile_id: profile_id,
@@ -4385,6 +4576,16 @@ defmodule PotokIde.Social do
       conflict_target: [:group_id, :profile_id, :role_key]
     )
 
+    if not held? do
+      AccessHistory.record!(repo, group, :role_given,
+        actor: by[:actor],
+        subject: profile_id,
+        role_key: role_key,
+        poll: poll_id,
+        data: if(by[:via], do: %{via: by[:via]}, else: %{})
+      )
+    end
+
     changes = MemberInheritance.sync(repo, group.id, [profile_id])
     {:ok, member_role, roles_announcement(group, changes)}
   end
@@ -4392,18 +4593,29 @@ defmodule PotokIde.Social do
   @doc """
   Takes `role_key` from those of `profile_ids` who hold it of their own in
   `group`, in the caller's transaction, with no check (see
-  `put_member_role/5`). Roles held through the parent stay. Returns
-  `{:ok, announce}`.
+  `put_member_role/5`). Roles held through the parent stay. Each role taken
+  goes into the access history, as `by` says. Returns `{:ok, announce}`.
   """
-  def drop_member_roles(repo, %Group{} = group, profile_ids, role_key)
+  def drop_member_roles(repo, %Group{} = group, profile_ids, role_key, by \\ [])
       when is_list(profile_ids) and is_binary(role_key) do
-    repo.delete_all(
-      from(r in GroupMemberRole,
-        where:
-          r.group_id == ^group.id and r.profile_id in ^profile_ids and r.role_key == ^role_key and
-            not r.inherited
+    {_count, taken} =
+      repo.delete_all(
+        from(r in GroupMemberRole,
+          where:
+            r.group_id == ^group.id and r.profile_id in ^profile_ids and
+              r.role_key == ^role_key and not r.inherited,
+          select: r.profile_id
+        )
       )
-    )
+
+    for profile_id <- taken do
+      AccessHistory.record!(repo, group, :role_taken,
+        actor: by[:actor],
+        subject: profile_id,
+        role_key: role_key,
+        poll: by[:poll]
+      )
+    end
 
     changes = MemberInheritance.sync(repo, group.id, profile_ids)
     {:ok, roles_announcement(group, changes)}

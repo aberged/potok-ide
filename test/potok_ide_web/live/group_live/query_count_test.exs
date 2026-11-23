@@ -28,8 +28,9 @@ defmodule PotokIdeWeb.GroupLive.QueryCountTest do
   @max_chat_page_queries 24
   # The access overview: what every tab of a group page loads, then its own
   # reads (`AccessOverview.load/3`, `PageRules.facts/1`), none of them per
-  # member: the people are counted by the sets of roles they hold.
-  @max_access_page_queries 25
+  # member: the people are counted by the sets of roles they hold. Its 26th
+  # reads the access history, with who did what joined.
+  @max_access_page_queries 26
 
   setup %{conn: conn} do
     account = account_fixture()
@@ -348,25 +349,41 @@ defmodule PotokIdeWeb.GroupLive.QueryCountTest do
 
   test "the access overview loads with a bounded number of queries, however many members", %{
     conn: conn,
-    group: group,
+    group: small,
     profile: profile
   } do
-    {:ok, _manifest} = Social.create_own_group_manifest(profile, group)
-    {:ok, role} = Social.create_group_role(profile, group, %{"name" => "qc-role"})
-    path = ~p"/groups/#{group.id}/access"
-    # The first view warms the caches the page shares with every other.
-    _ = page_queries(conn, path)
-    {_dead, few} = page_queries(conn, path)
+    # Both groups are made before any page opens: a page left open would hear
+    # of the new members and load again while another is counted.
+    {:ok, big} =
+      Social.create_group(profile, Social.get_root_group!(), %{
+        "name" => "query-count-big",
+        "description" => "",
+        "description_format" => :markdown,
+        "is_public" => false
+      })
 
-    for number <- 1..6 do
-      {_conn, member} = member_conn("qc-access-#{number}", group, profile)
-
-      if rem(number, 2) == 0,
-        do: {:ok, _} = Social.assign_group_member_role(profile, group, member.id, role.key)
+    for group <- [small, big] do
+      {:ok, _manifest} = Social.create_own_group_manifest(profile, group)
     end
 
-    _ = page_queries(conn, path)
-    {_dead, many} = page_queries(conn, path)
+    {:ok, role} = Social.create_group_role(profile, big, %{"name" => "qc-role"})
+    {:ok, _role} = Social.create_group_role(profile, small, %{"name" => "qc-role"})
+
+    for number <- 1..6 do
+      {_conn, member} = member_conn("qc-access-#{number}", big, profile)
+
+      if rem(number, 2) == 0,
+        do: {:ok, _} = Social.assign_group_member_role(profile, big, member.id, role.key)
+    end
+
+    # The first view of each warms the caches the page shares with every other.
+    [few, many] =
+      for group <- [small, big] do
+        path = ~p"/groups/#{group.id}/access"
+        _ = page_queries(conn, path)
+        {_dead, live} = page_queries(conn, path)
+        live
+      end
 
     assert few <= @max_access_page_queries
     assert many == few

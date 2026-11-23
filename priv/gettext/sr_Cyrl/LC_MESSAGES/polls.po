@@ -71,7 +71,7 @@ msgstr "Тајно гласање не може поново да се отво�
 msgid "A vote cannot be changed."
 msgstr "Глас не може да се промени."
 
-#: lib/potok_ide/polls/effects.ex:423
+#: lib/potok_ide/polls/effects.ex:425
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:344
 #, elixir-autogen, elixir-format
 msgid "Abstain"
@@ -89,7 +89,7 @@ msgstr "Додај одговор"
 msgid "After voting, and everyone at the end"
 msgstr "После гласања, а сви на крају"
 
-#: lib/potok_ide/polls/effects.ex:422
+#: lib/potok_ide/polls/effects.ex:424
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:344
 #, elixir-autogen, elixir-format
 msgid "Against"
@@ -276,7 +276,7 @@ msgstr "Сваки члан види ко је за шта гласао."
 msgid "Finished"
 msgstr "Завршена"
 
-#: lib/potok_ide/polls/effects.ex:421
+#: lib/potok_ide/polls/effects.ex:423
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:344
 #, elixir-autogen, elixir-format
 msgid "For"
@@ -379,7 +379,7 @@ msgstr "Више од половине оних који имају право �
 msgid "My groups"
 msgstr "Моје групе"
 
-#: lib/potok_ide_web/live/group_live/show.ex:609
+#: lib/potok_ide_web/live/group_live/show.ex:610
 #: lib/potok_ide_web/live/group_live/show/polls_tab.ex:31
 #, elixir-autogen, elixir-format
 msgid "My polls"
@@ -521,7 +521,7 @@ msgstr "Прво изабери одговор."
 msgid "Poll"
 msgstr "Гласање"
 
-#: lib/potok_ide_web/live/group_live/show.ex:610
+#: lib/potok_ide_web/live/group_live/show.ex:611
 #: lib/potok_ide_web/live/group_live/show/access_catalog.ex:152
 #: lib/potok_ide_web/live/group_live/show/create_menu.ex:264
 #: lib/potok_ide_web/live/group_live/show/group_menu.ex:57

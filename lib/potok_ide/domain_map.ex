@@ -73,7 +73,12 @@ defmodule PotokIde.DomainMap do
        PotokIde.Social.GroupJoinRequest,
        PotokIde.Social.GroupJoinRequestApproval
      ]},
-    {"requests", [PotokIde.Social.GroupRoleRequest, PotokIde.Social.GroupRequestDecision]},
+    {"requests",
+     [
+       PotokIde.Social.GroupRoleRequest,
+       PotokIde.Social.GroupRequestDecision,
+       PotokIde.Social.GroupAccessChange
+     ]},
     {"hosting", [PotokIde.HostingCosts.CostHour, PotokIde.HostingCosts.Invoice]}
   ]
 
@@ -91,6 +96,7 @@ defmodule PotokIde.DomainMap do
     {"GroupJoinRequest", "role_keys", "GroupRole", "key"},
     {"GroupRoleRequest", "role_keys", "GroupRole", "key"},
     {"GroupRequestDecision", "role_key", "GroupRole", "key"},
+    {"GroupAccessChange", "role_key", "GroupRole", "key"},
     {"PollBallot", "option_ids", "PollOption", "id"}
   ]
 

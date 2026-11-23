@@ -290,6 +290,19 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("GroupRequestDecision", "decider_id"), do: dgettext("domain_map", "who decided")
   defp own_field("GroupRequestDecision", "poll_id"), do: dgettext("domain_map", "vote it went to")
   defp own_field("GroupRequestDecision", "reason"), do: dgettext("domain_map", "reason given")
+  defp own_field("GroupAccessChange", "actor_id"), do: dgettext("domain_map", "who did it")
+
+  defp own_field("GroupAccessChange", "subject_id"),
+    do: dgettext("domain_map", "whom it was done to")
+
+  defp own_field("GroupAccessChange", "poll_id"),
+    do: dgettext("domain_map", "decision that did it")
+
+  defp own_field("GroupAccessChange", "kind"), do: dgettext("domain_map", "what changed")
+  defp own_field("GroupAccessChange", "role_key"), do: dgettext("domain_map", "role it was about")
+
+  defp own_field("GroupAccessChange", "data"),
+    do: dgettext("domain_map", "what it was, in a few values")
 
   defp own_field("GroupMemberRole", "profile_id"), do: dgettext("domain_map", "member")
   defp own_field("GroupMemberRole", "role_key"), do: dgettext("domain_map", "role")
@@ -677,7 +690,7 @@ defmodule PotokIdeWeb.DomainCopy do
   def domain_name("notices"), do: dgettext("domain_map", "Following and notices")
   def domain_name("tags"), do: dgettext("domain_map", "Tags")
   def domain_name("joining"), do: dgettext("domain_map", "Joining a group")
-  def domain_name("requests"), do: dgettext("domain_map", "Requests and decisions")
+  def domain_name("requests"), do: dgettext("domain_map", "Requests, decisions and history")
   def domain_name("hosting"), do: dgettext("domain_map", "Hosting costs")
 
   def entity_name("Account"), do: dgettext("domain_map", "Account")
@@ -724,6 +737,7 @@ defmodule PotokIdeWeb.DomainCopy do
   def entity_name("GroupJoinRequestApproval"), do: dgettext("domain_map", "Approved request")
   def entity_name("GroupRoleRequest"), do: dgettext("domain_map", "Request for roles")
   def entity_name("GroupRequestDecision"), do: dgettext("domain_map", "Decision on a request")
+  def entity_name("GroupAccessChange"), do: dgettext("domain_map", "Change of access")
   def entity_name("CostHour"), do: dgettext("domain_map", "Hour of costs")
   def entity_name("Invoice"), do: dgettext("domain_map", "Invoice")
 
@@ -1033,6 +1047,13 @@ defmodule PotokIdeWeb.DomainCopy do
     )
   end
 
+  defp entity_description("GroupAccessChange", _edges) do
+    dgettext(
+      "domain_map",
+      "One change of who may do what in a group: a role given or taken, by an admin, a decision of a poll or an approved request, the statute or a setting that lets people in changed, a member admitted, removed or blocked, and who did it. It is written in the same transaction as the change. Every member reads it, blocks only those who may remove members, and deleting a profile leaves only that someone did it."
+    )
+  end
+
   defp entity_description("GroupRequestDecision", _edges) do
     dgettext(
       "domain_map",
@@ -1198,6 +1219,10 @@ defmodule PotokIdeWeb.DomainCopy do
 
   def check_text("group_join_request_approvals_by_check") do
     dgettext("domain_map", "Someone admitted a member, or a vote did.")
+  end
+
+  def check_text("group_access_changes_role_check") do
+    dgettext("domain_map", "A change of a role names the role.")
   end
 
   def check_text("group_role_requests_role_keys_check") do
@@ -1772,6 +1797,14 @@ defmodule PotokIdeWeb.DomainCopy do
           dgettext(
             "domain_map",
             "A <Group>group</Group> that elects its admins gives and takes `admin` only by decisions of <Poll>polls</Poll>: nobody assigns it by hand, and an admin leaves the group only by a decision. An admin switches it on, and the admins it has stay for the time being, until the first election, which takes their place in the same step. Only a decision switches it off, or an elected admin could stay for good. An admin inherited from the parent stays an admin. The root, direct conversations and threads do not elect their admins."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "Every change of access stays on record"),
+        text:
+          dgettext(
+            "domain_map",
+            "Each <GroupMemberRole>role</GroupMemberRole> given or taken, by an admin, a decision of a <Poll>poll</Poll> or an approved request, each change of a <GroupRole>role</GroupRole> of the statute or of its permissions, a <GroupManifest>manifest</GroupManifest> made or dropped, each setting of a <Group>group</Group> that lets people in, who sees an <GroupAltDescription>alternative description</GroupAltDescription>, and each member admitted, removed or blocked is written as a <GroupAccessChange>change of access</GroupAccessChange>, in the same step as the change, with who did it. What follows from these by itself, such as members coming into an inheriting sub-group, is not written, nor are invitations or members leaving of their own accord. Every member of the group reads the changes, and a <GroupBlock>block</GroupBlock> only those who may remove members."
           )
       },
       %{

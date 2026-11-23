@@ -273,6 +273,12 @@ defmodule PotokIde.Polls.EffectsTest do
       assert closed.effect_status == :applied
       assert admin?(member, group)
       assert role_row(member, group).poll_id == poll.id
+
+      # The access history names the decision as who gave it.
+      assert [%{kind: :role_given, poll_id: poll_id, actor_id: nil, role_key: "admin"}] =
+               access_changes(group, :role_given)
+
+      assert poll_id == poll.id
     end
 
     test "does nothing when the answer against wins", %{
@@ -388,6 +394,11 @@ defmodule PotokIde.Polls.EffectsTest do
 
       assert %{effect_status: :applied} = past_deadline!(poll)
       refute admin?(member, group)
+
+      assert [%{kind: :role_taken, poll_id: poll_id, subject_id: subject_id}] =
+               access_changes(group, :role_taken)
+
+      assert {poll_id, subject_id} == {poll.id, member.id}
     end
 
     test "an election gives the role to the winner and, replacing, takes it from the others", %{
@@ -510,6 +521,11 @@ defmodule PotokIde.Polls.EffectsTest do
 
       assert %{effect_status: :applied} = past_deadline!(poll)
       refute Social.elects_admins?(group)
+
+      assert [%{actor_id: actor_id}] = access_changes(group, :elections_on)
+      assert actor_id == owner.id
+      assert [%{poll_id: poll_id}] = access_changes(group, :elections_off)
+      assert poll_id == poll.id
     end
 
     test "never at the root", %{owner: owner} do
@@ -533,5 +549,16 @@ defmodule PotokIde.Polls.EffectsTest do
       assert {:error, :elected_admin} = Social.remove_group_member(owner, group, member)
       assert {:ok, _member} = Social.remove_group_member(owner, group, other)
     end
+  end
+
+  defp access_changes(group, kind) do
+    import Ecto.Query, only: [from: 2]
+
+    PotokIde.Repo.all(
+      from(c in PotokIde.Social.GroupAccessChange,
+        where: c.group_id == ^group.id and c.kind == ^kind,
+        order_by: c.id
+      )
+    )
   end
 end

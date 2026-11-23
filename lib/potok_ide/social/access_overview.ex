@@ -19,6 +19,7 @@ defmodule PotokIde.Social.AccessOverview do
 
   alias PotokIde.Social.{
     Access,
+    AccessHistory,
     AppData,
     AppProcess,
     Group,
@@ -58,7 +59,8 @@ defmodule PotokIde.Social.AccessOverview do
       apps: Enum.filter(app_rules(group), &MapSet.member?(seen_alt_ids, &1.alt_id)),
       processes: drawn_processes(group),
       waiting: waiting_by_role(group),
-      public_events: if(group.is_public, do: 0, else: public_events_count(group))
+      public_events: if(group.is_public, do: 0, else: public_events_count(group)),
+      history: AccessHistory.list(group, access)
     }
   end
 

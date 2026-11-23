@@ -482,7 +482,12 @@ defmodule PotokIde.Social.GroupRequests do
   defp carry_roles(group, profile, choices, decider, reason, note) do
     Enum.reduce(choices, {[], %{granted: [], declined: [], voted: []}, []}, fn
       {role, :grant}, {announcements, parts, later} ->
-        {:ok, _row, announce} = Social.put_member_role(Repo, group, profile.id, role.key)
+        {:ok, _row, announce} =
+          Social.put_member_role(Repo, group, profile.id, role.key,
+            actor: decider && decider.id,
+            via: :request
+          )
+
         record(group, profile.id, role.key, :granted, decider, nil, reason)
         {[announce | announcements], add(parts, :granted, role), later}
 

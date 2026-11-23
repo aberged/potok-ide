@@ -282,7 +282,7 @@ defmodule PotokIde.Polls.Effects do
          {:ok, role} <- role_there(manifest, poll.effect_role_key),
          :ok <- not_held_through_parent(group, target, role.key) do
       {:ok, _member_role, announce} =
-        Social.put_member_role(Repo, group, target, role.key, poll.id)
+        Social.put_member_role(Repo, group, target, role.key, poll: poll.id)
 
       {:applied, [announce, push(poll, group, [target], :granted, role)]}
     else
@@ -299,7 +299,7 @@ defmodule PotokIde.Polls.Effects do
          :ok <- own_role(group, target, role.key),
          :ok <- not_last_admin(group, target, role.key) do
       held? = target in holders(group, role.key)
-      {:ok, announce} = Social.drop_member_roles(Repo, group, [target], role.key)
+      {:ok, announce} = Social.drop_member_roles(Repo, group, [target], role.key, poll: poll.id)
       pushes = if held?, do: [push(poll, group, [target], :revoked, role)], else: []
       {:applied, [announce | pushes]}
     else
@@ -314,7 +314,9 @@ defmodule PotokIde.Polls.Effects do
          {:ok, role} <- role_there(manifest, poll.effect_role_key),
          :ok <- not_held_through_parent(group, elected, role.key) do
       others = if poll.effect_replace, do: holders(group, role.key) -- [elected], else: []
-      {:ok, _member_role, put} = Social.put_member_role(Repo, group, elected, role.key, poll.id)
+
+      {:ok, _member_role, put} =
+        Social.put_member_role(Repo, group, elected, role.key, poll: poll.id)
 
       dropped =
         case others do
@@ -322,7 +324,7 @@ defmodule PotokIde.Polls.Effects do
             []
 
           others ->
-            {:ok, drop} = Social.drop_member_roles(Repo, group, others, role.key)
+            {:ok, drop} = Social.drop_member_roles(Repo, group, others, role.key, poll: poll.id)
             [drop, push(poll, group, others, :revoked, role)]
         end
 
@@ -335,8 +337,8 @@ defmodule PotokIde.Polls.Effects do
   defp carry_out(%Poll{effect: :admit} = poll, group, _winner),
     do: GroupRequests.admitted_by_vote(poll, group)
 
-  defp carry_out(%Poll{effect: :end_elections}, group, _winner) do
-    {:ok, announce} = Social.end_elections(Repo, group)
+  defp carry_out(%Poll{effect: :end_elections} = poll, group, _winner) do
+    {:ok, announce} = Social.end_elections(Repo, group, poll.id)
     {:applied, [announce]}
   end
 

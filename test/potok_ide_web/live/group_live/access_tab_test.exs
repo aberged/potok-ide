@@ -71,6 +71,16 @@ defmodule PotokIdeWeb.GroupLive.AccessTabTest do
            )
   end
 
+  test "the history tells who gave whom which role, to members only", ctx do
+    {:ok, lv, _html} = open(ctx.member_account, ctx.group)
+
+    assert has_element?(lv, "#access-history-list", "at-owner gives at-member the role savet.")
+    assert has_element?(lv, "#access-history-list", "at-owner adds the role muted.")
+
+    {:ok, lv, _html} = open(ctx.visitor_account, ctx.group)
+    refute has_element?(lv, "#access-history")
+  end
+
   test "roles picked together: a denial wins over what another role allows", ctx do
     {:ok, lv, _html} = open(ctx.member_account, ctx.group)
 

@@ -13,7 +13,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AccessTab do
   use PotokIdeWeb, :html
 
   alias PotokIde.Processes.Graph
-  alias PotokIde.Social.{Access, Group, GroupRole}
+  alias PotokIde.Social.{Access, AccessHistory, Group, GroupAccessChange, GroupRole}
   alias PotokIdeWeb.GroupLive.Show.{AccessCatalog, Components, RequestRules, RolesTab}
 
   attr :group, :map, required: true
@@ -515,6 +515,72 @@ defmodule PotokIdeWeb.GroupLive.Show.AccessTab do
           </section>
 
           <section
+            :if={@data}
+            id="access-history"
+            class="mb-5 rounded-3xl border border-base-300/70 bg-base-100/70 p-4 shadow-sm"
+          >
+            <h3 class="text-sm font-semibold">{gettext("Recent changes")}</h3>
+            <p class="mt-0.5 text-xs text-base-content/65">
+              {gettext(
+                "Who gave or took which role, changed the roles or a setting that lets people in, and when. Kept since the history began."
+              )}
+            </p>
+            <p
+              :if={@data.history == []}
+              id="access-history-empty"
+              class="mt-3 text-sm text-base-content/60"
+            >
+              {gettext("No change of access yet.")}
+            </p>
+            <ol :if={@data.history != []} id="access-history-list" class="mt-3 space-y-2">
+              <li
+                :for={change <- @data.history}
+                id={"access-change-#{change.id}"}
+                data-kind={change.kind}
+                class="flex items-start gap-2.5 text-sm"
+              >
+                <.icon
+                  name={change_icon(change.kind)}
+                  class="mt-0.5 size-4 shrink-0 text-base-content/50"
+                />
+                <div class="min-w-0">
+                  <p>{change_text(change, @manifest)}</p>
+                  <Components.local_time
+                    id={"access-change-#{change.id}-at"}
+                    datetime={change.inserted_at}
+                    class="text-xs text-base-content/55"
+                  />
+                </div>
+              </li>
+            </ol>
+            <div
+              :if={
+                length(@data.history) >= AccessHistory.page_size() and
+                  !Map.get(@data, :history_end?, false)
+              }
+              class="mt-3"
+            >
+              <.button
+                id="access-history-more"
+                type="button"
+                phx-click="access_history_more"
+                size="sm"
+              >
+                {gettext("Older changes")}
+              </.button>
+            </div>
+            <p
+              :if={!@own_manifest?}
+              id="access-history-manifest"
+              class="mt-3 text-xs text-base-content/60"
+            >
+              {gettext(
+                "The manifest this group uses belongs to a group above it, whose history holds its changes."
+              )}
+            </p>
+          </section>
+
+          <section
             :if={@member?}
             id="access-changes"
             class="mb-5 rounded-3xl border border-base-300/70 bg-base-100/70 p-4 shadow-sm"
@@ -776,6 +842,226 @@ defmodule PotokIdeWeb.GroupLive.Show.AccessTab do
     do: graph |> Graph.role_refs() |> Enum.map(&elem(&1, 1)) |> Enum.uniq()
 
   defp step_roles(_graph), do: []
+
+  ## The history
+
+  defp change_icon(kind) when kind in [:role_given, :role_taken], do: "hero-tag"
+
+  defp change_icon(kind)
+       when kind in [:member_admitted, :member_removed, :member_blocked, :member_unblocked],
+       do: "hero-user"
+
+  defp change_icon(kind) when kind in [:elections_on, :elections_off], do: "hero-scale"
+  defp change_icon(:settings_changed), do: "hero-cog-6-tooth"
+  defp change_icon(:alt_visibility_set), do: "hero-document-text"
+  defp change_icon(_kind), do: "hero-shield-check"
+
+  # Who did it: a profile, a decision of a poll, or someone since deleted.
+  defp actor_name(%GroupAccessChange{actor: %{username: name}}), do: name
+
+  defp actor_name(%GroupAccessChange{poll_id: id}) when not is_nil(id),
+    do: gettext("A decision of a poll")
+
+  defp actor_name(_change), do: gettext("Someone")
+
+  defp subject_name(%GroupAccessChange{subject: %{username: name}}), do: name
+  defp subject_name(_change), do: gettext("someone")
+
+  # A role by its name now, or as it was called when it went.
+  defp change_role(%GroupAccessChange{role_key: key, data: data}, manifest) do
+    case Enum.find(manifest.roles, &(&1.key == key)) do
+      nil -> data["role"] || key
+      role -> RolesTab.role_label(role)
+    end
+  end
+
+  defp change_text(%GroupAccessChange{kind: :role_given} = change, manifest) do
+    words = [
+      actor: actor_name(change),
+      subject: subject_name(change),
+      role: change_role(change, manifest)
+    ]
+
+    if change.data["via"] == "request",
+      do: gettext("%{actor} gives %{subject} the role %{role}, as they asked.", words),
+      else: gettext("%{actor} gives %{subject} the role %{role}.", words)
+  end
+
+  defp change_text(%GroupAccessChange{kind: :role_taken} = change, manifest) do
+    gettext("%{actor} takes the role %{role} from %{subject}.",
+      actor: actor_name(change),
+      subject: subject_name(change),
+      role: change_role(change, manifest)
+    )
+  end
+
+  defp change_text(%GroupAccessChange{kind: :permission_set} = change, manifest) do
+    gettext("%{actor}: the role %{role} now %{state}: %{permission}.",
+      actor: actor_name(change),
+      role: change_role(change, manifest),
+      state: permission_state(change.data["to"]),
+      permission: permission_name(change.data["permission"])
+    )
+  end
+
+  defp change_text(%GroupAccessChange{kind: :role_added} = change, manifest),
+    do:
+      gettext("%{actor} adds the role %{role}.",
+        actor: actor_name(change),
+        role: change_role(change, manifest)
+      )
+
+  defp change_text(%GroupAccessChange{kind: :role_renamed} = change, _manifest) do
+    gettext("%{actor} renames the role %{from} to %{to}.",
+      actor: actor_name(change),
+      from: change.data["from"],
+      to: change.data["to"]
+    )
+  end
+
+  defp change_text(%GroupAccessChange{kind: :role_removed} = change, _manifest) do
+    gettext("%{actor} deletes the role %{role}, which %{count} held.",
+      actor: actor_name(change),
+      role: change.data["role"],
+      count: change.data["assignments"] || 0
+    )
+  end
+
+  defp change_text(%GroupAccessChange{kind: :request_rule_set} = change, manifest) do
+    gettext("%{actor} changes how the role %{role} is had: %{mode}.",
+      actor: actor_name(change),
+      role: change_role(change, manifest),
+      mode: mode_name(:role, change.data["to"])
+    )
+  end
+
+  defp change_text(%GroupAccessChange{kind: :manifest_copied} = change, _manifest),
+    do: gettext("%{actor} gives the group a manifest of its own.", actor: actor_name(change))
+
+  defp change_text(%GroupAccessChange{kind: :manifest_dropped} = change, _manifest),
+    do:
+      gettext("%{actor} makes the group use the manifest of the group above it again.",
+        actor: actor_name(change)
+      )
+
+  defp change_text(%GroupAccessChange{kind: :settings_changed} = change, manifest) do
+    gettext("%{actor}: %{changes}.",
+      actor: actor_name(change),
+      changes: settings_words(change.data, manifest)
+    )
+  end
+
+  defp change_text(%GroupAccessChange{kind: :alt_visibility_set} = change, manifest) do
+    gettext("%{actor} sets who sees the description %{alt}: %{who}.",
+      actor: actor_name(change),
+      alt: change.data["alt"],
+      who:
+        alt_rule_text(
+          %{visible_role_keys: change.data["roles"] || [], for_guests: change.data["guests"]},
+          manifest
+        )
+    )
+  end
+
+  defp change_text(%GroupAccessChange{kind: :join_rule_set} = change, _manifest) do
+    gettext("%{actor} changes how a request to join is decided: %{mode}.",
+      actor: actor_name(change),
+      mode: mode_name(:join, change.data["to"])
+    )
+  end
+
+  defp change_text(%GroupAccessChange{kind: :elections_on} = change, _manifest),
+    do: gettext("%{actor} lets the group elect its admins.", actor: actor_name(change))
+
+  defp change_text(%GroupAccessChange{kind: :elections_off} = change, _manifest),
+    do: gettext("%{actor} gives the group back to its founders' rule.", actor: actor_name(change))
+
+  defp change_text(%GroupAccessChange{kind: :member_admitted} = change, _manifest),
+    do:
+      gettext("%{actor} admits %{subject}.",
+        actor: actor_name(change),
+        subject: subject_name(change)
+      )
+
+  defp change_text(%GroupAccessChange{kind: :member_removed} = change, _manifest),
+    do:
+      gettext("%{actor} removes %{subject}.",
+        actor: actor_name(change),
+        subject: subject_name(change)
+      )
+
+  defp change_text(%GroupAccessChange{kind: :member_blocked} = change, _manifest),
+    do:
+      gettext("%{actor} blocks %{subject}.",
+        actor: actor_name(change),
+        subject: subject_name(change)
+      )
+
+  defp change_text(%GroupAccessChange{kind: :member_unblocked} = change, _manifest),
+    do:
+      gettext("%{actor} lifts the block on %{subject}.",
+        actor: actor_name(change),
+        subject: subject_name(change)
+      )
+
+  defp permission_state("allow"), do: gettext("allows")
+  defp permission_state("deny"), do: gettext("denies")
+  defp permission_state(_neutral), do: gettext("no longer sets")
+
+  defp permission_name(name) when is_binary(name) do
+    permission = Enum.find(GroupRole.permissions(), &(Atom.to_string(&1) == name))
+    if permission, do: RolesTab.permission_label(permission), else: name
+  end
+
+  defp permission_name(_name), do: ""
+
+  defp mode_name(kind, mode) when is_binary(mode) do
+    case Enum.find(RequestRules.modes(kind), &(Atom.to_string(&1) == mode)) do
+      nil -> mode
+      known -> String.downcase(RequestRules.mode_label(kind, known))
+    end
+  end
+
+  defp mode_name(_kind, _mode), do: ""
+
+  defp settings_words(data, manifest) do
+    [
+      setting(
+        data["is_public"],
+        gettext("makes the group public"),
+        gettext("makes the group private")
+      ),
+      setting(
+        data["has_public_chat"],
+        gettext("opens the chat to non-members"),
+        gettext("closes the chat to non-members")
+      ),
+      setting(
+        data["description_for_guests"],
+        gettext("opens the description to guests"),
+        gettext("closes the description to guests")
+      ),
+      setting(
+        data["inherits_members"],
+        gettext("lets it take the parent's members"),
+        gettext("stops it taking the parent's members")
+      ),
+      data["inherit_role_keys"] &&
+        gettext("sets which of the parent's members it takes: %{roles}",
+          roles: inherit_words(List.last(data["inherit_role_keys"]), manifest)
+        ),
+      data["withdrawn"] && gettext("withdraws the group")
+    ]
+    |> Enum.filter(& &1)
+    |> Enum.join(", ")
+  end
+
+  defp setting([_old, true], yes, _no), do: yes
+  defp setting([_old, false], _yes, no), do: no
+  defp setting(_change, _yes, _no), do: nil
+
+  defp inherit_words(keys, _manifest) when keys in [nil, []], do: gettext("all of them")
+  defp inherit_words(keys, manifest), do: role_names(keys, manifest)
 
   defp child_rule_text(child, manifest) do
     [

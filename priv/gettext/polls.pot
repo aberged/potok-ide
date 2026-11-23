@@ -71,7 +71,7 @@ msgstr ""
 msgid "A vote cannot be changed."
 msgstr ""
 
-#: lib/potok_ide/polls/effects.ex:423
+#: lib/potok_ide/polls/effects.ex:425
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:344
 #, elixir-autogen, elixir-format
 msgid "Abstain"
@@ -89,7 +89,7 @@ msgstr ""
 msgid "After voting, and everyone at the end"
 msgstr ""
 
-#: lib/potok_ide/polls/effects.ex:422
+#: lib/potok_ide/polls/effects.ex:424
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:344
 #, elixir-autogen, elixir-format
 msgid "Against"
@@ -276,7 +276,7 @@ msgstr ""
 msgid "Finished"
 msgstr ""
 
-#: lib/potok_ide/polls/effects.ex:421
+#: lib/potok_ide/polls/effects.ex:423
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:344
 #, elixir-autogen, elixir-format
 msgid "For"
@@ -379,7 +379,7 @@ msgstr ""
 msgid "My groups"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:609
+#: lib/potok_ide_web/live/group_live/show.ex:610
 #: lib/potok_ide_web/live/group_live/show/polls_tab.ex:31
 #, elixir-autogen, elixir-format
 msgid "My polls"
@@ -521,7 +521,7 @@ msgstr ""
 msgid "Poll"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:610
+#: lib/potok_ide_web/live/group_live/show.ex:611
 #: lib/potok_ide_web/live/group_live/show/access_catalog.ex:152
 #: lib/potok_ide_web/live/group_live/show/create_menu.ex:264
 #: lib/potok_ide_web/live/group_live/show/group_menu.ex:57
