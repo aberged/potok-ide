@@ -584,7 +584,7 @@ defmodule PotokIde.AccountsTest do
         )
 
       assert email.subject == "@acct-mail-inv invites you to “Zbor Stari grad” on Potok"
-      assert email.text_body =~ "the invitation to “Zbor Stari grad” will be waiting"
+      assert email.text_body =~ "The invitation to “Zbor Stari grad” is waiting"
     end
 
     test "names the profile that registered the account" do

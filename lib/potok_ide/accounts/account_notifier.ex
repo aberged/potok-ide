@@ -52,6 +52,27 @@ defmodule PotokIde.Accounts.AccountNotifier do
   end
 
   @doc """
+  Deliver an invitation into `group` to an account in use, from the profile
+  whose username is `inviter`.
+  """
+  def deliver_group_invitation(account, inviter, group) do
+    deliver(
+      account.email,
+      AccountEmails.group_invitation(%{to: account.email, inviter: inviter, group: group})
+    )
+  end
+
+  @doc """
+  Deliver an invitation to Potok to an account in use.
+  """
+  def deliver_potok_invitation(account, inviter) do
+    deliver(
+      account.email,
+      AccountEmails.potok_invitation(%{to: account.email, inviter: inviter})
+    )
+  end
+
+  @doc """
   Deliver a magic link: the sign-in link of a confirmed account, or the
   invitation of an unconfirmed one, which an invitation opened.
 

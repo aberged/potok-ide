@@ -12,6 +12,7 @@ defmodule PotokIdeWeb.AccountEmails do
   import PotokIdeWeb.EmailComponents
 
   alias PotokIde.Accounts.AccountToken
+  alias PotokIde.Social.GroupInvitation
 
   @doc """
   The sign-in link of a confirmed account.
@@ -120,7 +121,7 @@ defmodule PotokIdeWeb.AccountEmails do
       group_note:
         group &&
           gettext(
-            "Once you create your profile, the invitation to “%{group}” will be waiting among your invitations.",
+            "The invitation to “%{group}” is waiting: you join with the profile you make.",
             group: group
           ),
       action: gettext("Accept the invitation"),
@@ -177,6 +178,79 @@ defmodule PotokIdeWeb.AccountEmails do
       </.note>
       <.note>{@unexpected}</.note>
       <.fallback url={@url} app_url={@app_url} />
+    </.layout>
+    """
+  end
+
+  @doc """
+  An invitation into a group, to someone who uses Potok already. It opens
+  Invitations, where the person picks the profile that joins.
+  """
+  def group_invitation(%{to: to, inviter: inviter, group: group}) do
+    title =
+      gettext("@%{username} invites you to “%{group}” on Potok",
+        username: inviter,
+        group: group
+      )
+
+    notice(%{
+      to: to,
+      url: url(~p"/invitations"),
+      title: title,
+      lead:
+        gettext(
+          "You choose the profile you join with, and @%{username} sees it only once you accept.",
+          username: inviter
+        ),
+      action: gettext("Open the invitation"),
+      notes: [
+        ngettext(
+          "The invitation holds for %{count} day.",
+          "The invitation holds for %{count} days.",
+          GroupInvitation.valid_days()
+        ),
+        gettext(
+          "Not expecting this invitation? Ignore this email, or delete the invitation on Potok: nothing happens until you accept it."
+        )
+      ]
+    })
+  end
+
+  @doc """
+  An invitation to Potok, to someone who uses it already: there is nothing
+  to set up.
+  """
+  def potok_invitation(%{to: to, inviter: inviter}) do
+    notice(%{
+      to: to,
+      url: url(~p"/"),
+      title: gettext("@%{username} invites you to Potok", username: inviter),
+      lead: gettext("You are here already: this address has an account, so sign in as always."),
+      action: gettext("Open Potok"),
+      notes: [gettext("Not expecting this? Just ignore this email.")]
+    })
+  end
+
+  defp notice(assigns) do
+    assigns = Map.put(assigns, :eyebrow, gettext("Invitation"))
+
+    %{
+      subject: assigns.title,
+      html: to_html(notice_html(assigns)),
+      text:
+        to_text(
+          [assigns.title, assigns.lead, assigns.action <> ":\n" <> assigns.url] ++ assigns.notes
+        )
+    }
+  end
+
+  defp notice_html(assigns) do
+    ~H"""
+    <.layout to={@to} title={@title} eyebrow={@eyebrow} preheader={@lead}>
+      <.paragraph>{@lead}</.paragraph>
+      <.button href={@url}>{@action}</.button>
+      <.note :for={note <- @notes}>{note}</.note>
+      <.fallback url={@url} />
     </.layout>
     """
   end

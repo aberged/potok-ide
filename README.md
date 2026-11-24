@@ -51,7 +51,7 @@ Invitation behavior:
 Group access and direct-group behavior:
 
 * Public groups support access requests from non-member profiles, and members ask for roles (`PotokIde.Social.GroupRequests`). Each role of a manifest says how it is had (`group_roles.request_mode`: `closed`, `approve`, `choose` or `vote`, with `request_poll`, a `RequestPoll` of quorum, majority, hours, secrecy and who votes), and a public group how it admits (`groups.join_mode`: `approve`, `choose` or `vote`, with `join_poll`). Admins and members with `manage_join_requests` decide in a dialog on the members tab or the requests page: admit, refuse or put admission to a vote, and give, refuse, put to a vote or leave for later each role, with a reason. Admin is given on request only by an admin, and only by a vote where the group elects its admins. A role or admission the rule puts to a vote raises a poll in the requester's name (`Polls.create_poll_for_request/3`, `polls.from_request`, never deleted); `admit` takes them in as it closes, with the roles asked for. Refusals and failed votes keep the same request back seven days, an account sends at most ten requests an hour (`RateLimit` `:group_request`), and whoever asked gets a push for each decision.
-* Members with `invite_members` can invite a profile by username or anyone by email. An email goes to the account behind the address as a `GroupAccountInvitation`, with the same answer to the inviter whoever is there: an address without an account gets a new one and a login link, any other account a push, and the person picks the profile that accepts on Invitations.
+* Members with `invite_members` can invite a profile by username or anyone by email. An email goes to the account behind the address as a `GroupAccountInvitation`, with the same answer to the inviter whoever is there: an address without an account gets a new one and a login link, any other account an email and a push, and the person picks the profile that accepts on Invitations.
 * Groups persist a `home_page` enum with the values `description`, `chat`, and `subgroups`. The create-group and edit-group panels expose that setting so members can control the default landing panel for a group.
 * Opening a group without an explicit tab uses its `home_page`: `description` opens the description panel, `chat` opens the values panel, and `subgroups` opens the sub-groups panel.
 * Root groups ignore `home_page` and always open on the sub-groups panel.
@@ -555,7 +555,8 @@ Group invitations are addressed to profiles, except those by email, which go to 
 | Failed password log-ins | email address | 20 per 15 minutes |
 | Login link requests | typed address, with an account or not | 5 per 15 minutes |
 | Login link requests | IP | 20 per hour |
-| Invitation emails to new addresses (`/accounts/register` and a group's invite form) | inviting account | 50 per hour |
+| Invitations by email, to any address (`/accounts/register` and a group's invite form) | inviting account | 50 per hour |
+| Emails about invitations | email address they go to | 10 per hour |
 | Email change confirmations | account | 10 per hour |
 
 The password is hashed only after both password limits pass. An IPv6 client is counted by its /64 network. Each machine counts for itself, so with several machines a limit lets through that many times as much. Behind Fly's proxy `conn.remote_ip` is the proxy's address; `PotokIdeWeb.ClientIp` takes the client's from `Fly-Client-IP`, a header read only when `FLY_APP_NAME` is set.

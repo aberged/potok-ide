@@ -32,8 +32,11 @@ defmodule PotokIde.RateLimit do
     # Sign-in links asked for one typed address, with an account or not.
     magic_link_email: {5, :timer.minutes(15)},
     magic_link_ip: {20, :timer.hours(1)},
-    # Invitation emails one account sends to new addresses.
+    # Invitations by email one account sends, to any address.
     invitation_email: {50, :timer.hours(1)},
+    # Emails about invitations that one address gets, whoever sends them. Its
+    # own limit: links to sign in are not to run out by others' invitations.
+    invitation_address: {10, :timer.hours(1)},
     # Emails to confirm a new address, per account.
     email_change: {10, :timer.hours(1)},
     # Links that delete an account (`/brisanje-naloga`), per typed address and
@@ -97,6 +100,7 @@ defmodule PotokIde.RateLimit do
     :magic_link_email,
     :magic_link_ip,
     :invitation_email,
+    :invitation_address,
     :email_change,
     :account_deletion_email,
     :account_deletion_ip,
@@ -118,6 +122,7 @@ defmodule PotokIde.RateLimit do
           | :magic_link_email
           | :magic_link_ip
           | :invitation_email
+          | :invitation_address
           | :email_change
           | :account_deletion_email
           | :account_deletion_ip

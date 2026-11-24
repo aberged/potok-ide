@@ -146,7 +146,7 @@ msgstr "Формат описа"
 #: lib/potok_ide_web/controllers/account_deletion_html/new.html.heex:22
 #: lib/potok_ide_web/live/account_live/login.ex:45
 #: lib/potok_ide_web/live/account_live/password_login.ex:35
-#: lib/potok_ide_web/live/account_live/registration.ex:44
+#: lib/potok_ide_web/live/account_live/registration.ex:42
 #: lib/potok_ide_web/live/account_live/settings.ex:46
 #: lib/potok_ide_web/live/account_live/settings.ex:59
 #, elixir-autogen, elixir-format
@@ -255,7 +255,7 @@ msgstr "Позивнице које сам послао"
 msgid "Invitations your current profile has sent to other profiles."
 msgstr "Позивнице које је ваш тренутни профил послао другим профилима."
 
-#: lib/potok_ide_web/live/account_live/registration.ex:53
+#: lib/potok_ide_web/live/account_live/registration.ex:51
 #: lib/potok_ide_web/live/group_live/show/invite_profile_tab.ex:63
 #: lib/potok_ide_web/live/group_live/show/members_tab.ex:125
 #, elixir-autogen, elixir-format
@@ -788,7 +788,7 @@ msgstr "Прихвати дељени профил"
 msgid "Accepted on"
 msgstr "Прихваћено"
 
-#: lib/potok_ide_web/live/account_live/registration.ex:110
+#: lib/potok_ide_web/live/account_live/registration.ex:101
 #, elixir-autogen, elixir-format
 msgid "An invitation email was sent to %{email}"
 msgstr "Имејл са позивницом је послат на %{email}."
@@ -823,7 +823,7 @@ msgstr "Онемогући"
 msgid "Enable notifications"
 msgstr "Омогући обавештења"
 
-#: lib/potok_ide_web/live/account_live/registration.ex:28
+#: lib/potok_ide_web/live/account_live/registration.ex:26
 #, elixir-autogen, elixir-format
 msgid "Invite people to potok by email"
 msgstr "Позовите људе у Поток путем имејла"
@@ -916,7 +916,7 @@ msgstr "Пошаљи позивницу"
 msgid "Send test notification"
 msgstr "Пошаљи пробно обавештење"
 
-#: lib/potok_ide_web/live/account_live/registration.ex:52
+#: lib/potok_ide_web/live/account_live/registration.ex:50
 #, elixir-autogen, elixir-format
 msgid "Sending invitation..."
 msgstr "Слање позивнице..."
@@ -1517,7 +1517,7 @@ msgstr "Без идентификатора"
 msgid "We couldn't send the confirmation email right now. Please try again later."
 msgstr "Тренутно нисмо могли да пошаљемо имејл за потврду. Покушајте поново касније."
 
-#: lib/potok_ide_web/live/account_live/registration.ex:125
+#: lib/potok_ide_web/live/account_live/registration.ex:115
 #, elixir-autogen, elixir-format
 msgid "We couldn't send the invitation email right now. Please try again later."
 msgstr "Тренутно нисмо могли да пошаљемо позивни имејл. Покушајте поново касније."
@@ -3708,7 +3708,7 @@ msgstr "Позовите профил по корисничком имену и�
 msgid "Who is in the group, with their roles."
 msgstr "Ко је у групи и које улоге има."
 
-#: lib/potok_ide_web/live/account_live/registration.ex:30
+#: lib/potok_ide_web/live/account_live/registration.ex:28
 #, elixir-autogen, elixir-format
 msgid "They get an email with a link that logs them in to Potok."
 msgstr "Добиће имејл са линком којим се пријављују у Поток."
@@ -3944,7 +3944,7 @@ msgstr "Без реклама и без праћења. Једини колач�
 msgid "Privacy policy"
 msgstr "Политика приватности"
 
-#: lib/potok_ide_web/emails/account_emails.ex:112
+#: lib/potok_ide_web/emails/account_emails.ex:113
 #, elixir-autogen, elixir-format
 msgid "Potok is where groups talk, exchange values, decide and remember what they decided."
 msgstr "Поток је место где групе разговарају, размењују вредности, одлучују и памте шта су одлучили."
@@ -3967,57 +3967,59 @@ msgstr "За сада се у Поток улази уз позивницу."
 msgid "What is Potok?"
 msgstr "Шта је Поток?"
 
-#: lib/potok_ide_web/emails/account_emails.ex:90
+#: lib/potok_ide_web/emails/account_emails.ex:91
+#: lib/potok_ide_web/emails/account_emails.ex:227
 #, elixir-autogen, elixir-format
 msgid "@%{username} invites you to Potok"
 msgstr "@%{username} те позива у Поток"
 
-#: lib/potok_ide_web/emails/account_emails.ex:82
+#: lib/potok_ide_web/emails/account_emails.ex:83
+#: lib/potok_ide_web/emails/account_emails.ex:191
 #, elixir-autogen, elixir-format
 msgid "@%{username} invites you to “%{group}” on Potok"
 msgstr "@%{username} те позива у групу „%{group}“ на Потоку"
 
-#: lib/potok_ide_web/emails/account_emails.ex:197
+#: lib/potok_ide_web/emails/account_emails.ex:271
 #, elixir-autogen, elixir-format
 msgid "A request came in to move your Potok account from %{old_email} to this address, %{new_email}."
 msgstr "Стигао је захтев да се твој Поток налог пресели са %{old_email} на ову адресу, %{new_email}."
 
-#: lib/potok_ide_web/emails/account_emails.ex:126
+#: lib/potok_ide_web/emails/account_emails.ex:127
 #, elixir-autogen, elixir-format
 msgid "Accept the invitation"
 msgstr "Прихвати позив"
 
-#: lib/potok_ide_web/emails/account_emails.ex:193
+#: lib/potok_ide_web/emails/account_emails.ex:267
 #, elixir-autogen, elixir-format
 msgid "Address change"
 msgstr "Промена адресе"
 
-#: lib/potok_ide_web/emails/account_emails.ex:116
+#: lib/potok_ide_web/emails/account_emails.ex:117
 #, elixir-autogen, elixir-format
 msgid "An account for %{email} is already set up. You don't need a password: the button takes you straight in."
 msgstr "Налог за %{email} је већ отворен. Лозинка ти не треба: дугме те води право унутра."
 
-#: lib/potok_ide_web/emails/account_emails.ex:206
+#: lib/potok_ide_web/emails/account_emails.ex:280
 #, elixir-autogen, elixir-format
 msgid "Confirm address"
 msgstr "Потврди адресу"
 
-#: lib/potok_ide_web/emails/account_emails.ex:194
+#: lib/potok_ide_web/emails/account_emails.ex:268
 #, elixir-autogen, elixir-format
 msgid "Confirm your new address"
 msgstr "Потврди нову адресу"
 
-#: lib/potok_ide_web/emails/account_emails.ex:220
+#: lib/potok_ide_web/emails/account_emails.ex:294
 #, elixir-autogen, elixir-format
 msgid "Confirm your new email address for Potok"
 msgstr "Потврди нову имејл адресу за Поток"
 
-#: lib/potok_ide_web/emails/account_emails.ex:27
+#: lib/potok_ide_web/emails/account_emails.ex:28
 #, elixir-autogen, elixir-format
 msgid "Here's your sign-in link"
 msgstr "Ево твог линка за пријаву"
 
-#: lib/potok_ide_web/emails/account_emails.ex:98
+#: lib/potok_ide_web/emails/account_emails.ex:99
 #, elixir-autogen, elixir-format
 msgid "If it expires, enter %{email} on %{link} and a new one will arrive."
 msgstr "Ако истекне, упиши %{email} на %{link} и стићи ће ти нови."
@@ -4027,30 +4029,26 @@ msgstr "Ако истекне, упиши %{email} на %{link} и стићи ћ
 msgid "If the button doesn't work, copy this address into your browser:"
 msgstr "Ако дугме не ради, копирај ову адресу у прегледач:"
 
-#: lib/potok_ide_web/emails/account_emails.ex:37
+#: lib/potok_ide_web/emails/account_emails.ex:38
 #, elixir-autogen, elixir-format
 msgid "If this wasn't you, just ignore this email: no one gets into your account without this link."
 msgstr "Ако ово није твој захтев, само занемари поруку: без овог линка нико не може да се пријави на твој налог."
 
-#: lib/potok_ide_web/emails/account_emails.ex:214
+#: lib/potok_ide_web/emails/account_emails.ex:288
 #, elixir-autogen, elixir-format
 msgid "If you don't know about this change, ignore this email: the account stays on the old address."
 msgstr "Ако не знаш за ову промену, занемари поруку: налог остаје на старој адреси."
 
-#: lib/potok_ide_web/emails/account_emails.ex:108
+#: lib/potok_ide_web/emails/account_emails.ex:109
+#: lib/potok_ide_web/emails/account_emails.ex:235
 #, elixir-autogen, elixir-format
 msgid "Invitation"
 msgstr "Позивница"
 
-#: lib/potok_ide_web/emails/account_emails.ex:138
+#: lib/potok_ide_web/emails/account_emails.ex:139
 #, elixir-autogen, elixir-format
 msgid "Not expecting this invitation? Just ignore this email: nothing happens until someone clicks the link."
 msgstr "Не очекујеш овај позив? Само занемари поруку: док нико не кликне на линк, ништа се не дешава."
-
-#: lib/potok_ide_web/emails/account_emails.ex:122
-#, elixir-autogen, elixir-format
-msgid "Once you create your profile, the invitation to “%{group}” will be waiting among your invitations."
-msgstr "Кад направиш профил, позив у групу „%{group}“ чекаће те међу позивницама."
 
 #: lib/potok_ide_web/emails/email_components.ex:218
 #: lib/potok_ide_web/emails/email_components.ex:239
@@ -4058,12 +4056,12 @@ msgstr "Кад направиш профил, позив у групу „%{grou
 msgid "Open this link in the app"
 msgstr "Отвори линк у апликацији"
 
-#: lib/potok_ide_web/emails/account_emails.ex:94
+#: lib/potok_ide_web/emails/account_emails.ex:95
 #, elixir-autogen, elixir-format
 msgid "Potok is waiting for you"
 msgstr "Поток те чека"
 
-#: lib/potok_ide_web/emails/account_emails.ex:28
+#: lib/potok_ide_web/emails/account_emails.ex:29
 #, elixir-autogen, elixir-format
 msgid "Press the button and you're in, no password needed."
 msgstr "Кликни на дугме и бићеш унутра, без лозинке."
@@ -4073,23 +4071,23 @@ msgstr "Кликни на дугме и бићеш унутра, без лози
 msgid "Sent to %{email}."
 msgstr "Послато на %{email}."
 
-#: lib/potok_ide_web/emails/account_emails.ex:29
+#: lib/potok_ide_web/emails/account_emails.ex:30
 #, elixir-autogen, elixir-format
 msgid "Sign in to Potok"
 msgstr "Пријави се на Поток"
 
-#: lib/potok_ide_web/emails/account_emails.ex:26
+#: lib/potok_ide_web/emails/account_emails.ex:27
 #, elixir-autogen, elixir-format
 msgid "Sign-in"
 msgstr "Пријава"
 
-#: lib/potok_ide_web/emails/account_emails.ex:203
+#: lib/potok_ide_web/emails/account_emails.ex:277
 #, elixir-autogen, elixir-format
 msgid "The link opens your account settings; if needed, Potok will ask you to sign in first."
 msgstr "Линк отвара подешавања налога; ако треба, Поток ће те прво питати да се пријавиш."
 
-#: lib/potok_ide_web/emails/account_emails.ex:128
-#: lib/potok_ide_web/emails/account_emails.ex:208
+#: lib/potok_ide_web/emails/account_emails.ex:129
+#: lib/potok_ide_web/emails/account_emails.ex:282
 #, elixir-autogen, elixir-format
 msgid "The link works for %{count} day, and only once."
 msgid_plural "The link works for %{count} days, and only once."
@@ -4097,7 +4095,7 @@ msgstr[0] "Линк важи %{count} дан и ради само једном."
 msgstr[1] "Линк важи %{count} дана и ради само једном."
 msgstr[2] "Линк важи %{count} дана и ради само једном."
 
-#: lib/potok_ide_web/emails/account_emails.ex:31
+#: lib/potok_ide_web/emails/account_emails.ex:32
 #, elixir-autogen, elixir-format
 msgid "The link works for %{count} minute, and only once."
 msgid_plural "The link works for %{count} minutes, and only once."
@@ -4105,7 +4103,7 @@ msgstr[0] "Линк важи %{count} минут и ради само једно
 msgstr[1] "Линк важи %{count} минута и ради само једном."
 msgstr[2] "Линк важи %{count} минута и ради само једном."
 
-#: lib/potok_ide_web/emails/account_emails.ex:195
+#: lib/potok_ide_web/emails/account_emails.ex:269
 #, elixir-autogen, elixir-format
 msgid "Until you confirm, your account keeps the old address."
 msgstr "Док не потврдиш, налог користи стару адресу."
@@ -4116,22 +4114,22 @@ msgstr "Док не потврдиш, налог користи стару ад�
 msgid "Using the Potok Android app?"
 msgstr "Користиш Поток апликацију за Андроид?"
 
-#: lib/potok_ide_web/emails/account_emails.ex:43
+#: lib/potok_ide_web/emails/account_emails.ex:44
 #, elixir-autogen, elixir-format
 msgid "Your Potok sign-in link"
 msgstr "Твој линк за пријаву на Поток"
 
-#: lib/potok_ide_web/emails/account_emails.ex:110
+#: lib/potok_ide_web/emails/account_emails.ex:111
 #, elixir-autogen, elixir-format
 msgid "Your account is ready, and you don't need a password."
 msgstr "Налог те већ чека, лозинка ти не треба."
 
-#: lib/potok_ide_web/emails/account_emails.ex:94
+#: lib/potok_ide_web/emails/account_emails.ex:95
 #, elixir-autogen, elixir-format
 msgid "Your invitation to Potok"
 msgstr "Твоја позивница за Поток"
 
-#: lib/potok_ide_web/emails/account_emails.ex:136
+#: lib/potok_ide_web/emails/account_emails.ex:137
 #, elixir-autogen, elixir-format
 msgid "the sign-in page"
 msgstr "страници за пријаву"
@@ -9774,8 +9772,8 @@ msgstr "Група никад не остаје без последњег адм
 msgid "A link that deletes the account is on its way to %{email}. It works for an hour."
 msgstr "Линк за брисање налога стиже на %{email}. Важи сат времена."
 
-#: lib/potok_ide_web/emails/account_emails.ex:244
-#: lib/potok_ide_web/emails/account_emails.ex:295
+#: lib/potok_ide_web/emails/account_emails.ex:318
+#: lib/potok_ide_web/emails/account_emails.ex:369
 #, elixir-autogen, elixir-format
 msgid "Account deletion"
 msgstr "Брисање налога"
@@ -9801,7 +9799,7 @@ msgstr "Обриши налог заувек"
 msgid "Delete the account?"
 msgstr "Обрисати налог?"
 
-#: lib/potok_ide_web/emails/account_emails.ex:245
+#: lib/potok_ide_web/emails/account_emails.ex:319
 #, elixir-autogen, elixir-format
 msgid "Delete your Potok account?"
 msgstr "Да обришеш свој Поток налог?"
@@ -9811,7 +9809,7 @@ msgstr "Да обришеш свој Поток налог?"
 msgid "Deleted user"
 msgstr "Обрисан корисник"
 
-#: lib/potok_ide_web/emails/account_emails.ex:264
+#: lib/potok_ide_web/emails/account_emails.ex:338
 #, elixir-autogen, elixir-format
 msgid "Deleting your Potok account"
 msgstr "Брисање твог Поток налога"
@@ -9841,7 +9839,7 @@ msgstr "Нестаје: налог, његове пријаве и уређај�
 msgid "Groups that go with the account, as you are their only member"
 msgstr "Групе које нестају с налогом, јер си њихов једини члан"
 
-#: lib/potok_ide_web/emails/account_emails.ex:303
+#: lib/potok_ide_web/emails/account_emails.ex:377
 #, elixir-autogen, elixir-format
 msgid "If someone invites this address again, a new account starts from nothing."
 msgstr "Ако неко поново позове ову адресу, нови налог почиње од нуле."
@@ -9851,7 +9849,7 @@ msgstr "Ако неко поново позове ову адресу, нови 
 msgid "If this address has an account, a link to delete it is on its way. It works for an hour."
 msgstr "Ако ова адреса има налог, линк за његово брисање је на путу. Важи сат времена."
 
-#: lib/potok_ide_web/emails/account_emails.ex:260
+#: lib/potok_ide_web/emails/account_emails.ex:334
 #, elixir-autogen, elixir-format
 msgid "If you didn't ask for this, ignore this email: the account stays as it is."
 msgstr "Ако ово није твој захтев, само занемари поруку: налог остаје какав јесте."
@@ -9871,7 +9869,7 @@ msgstr "Задржи налог"
 msgid "Log in again, or ask for the link by email."
 msgstr "Пријави се поново или затражи линк имејлом."
 
-#: lib/potok_ide_web/emails/account_emails.ex:246
+#: lib/potok_ide_web/emails/account_emails.ex:320
 #, elixir-autogen, elixir-format
 msgid "Nothing is deleted until you confirm."
 msgstr "Ништа се не брише док не потврдиш."
@@ -9886,7 +9884,7 @@ msgstr "Профили који постају „Обрисан корисни�
 msgid "Profiles that stay for the other accounts that use them"
 msgstr "Профили који остају другим налозима који их користе"
 
-#: lib/potok_ide_web/emails/account_emails.ex:252
+#: lib/potok_ide_web/emails/account_emails.ex:326
 #, elixir-autogen, elixir-format
 msgid "See and confirm"
 msgstr "Погледај и потврди"
@@ -9897,7 +9895,7 @@ msgstr "Погледај и потврди"
 msgid "Send the link"
 msgstr "Пошаљи линк"
 
-#: lib/potok_ide_web/emails/account_emails.ex:248
+#: lib/potok_ide_web/emails/account_emails.ex:322
 #, elixir-autogen, elixir-format
 msgid "Someone asked to delete the Potok account of %{email}. The link shows what goes and what stays, and the account is deleted only when you confirm there."
 msgstr "Стигао је захтев да се обрише Поток налог адресе %{email}. Линк показује шта нестаје, а шта остаје, и налог се брише тек кад тамо потврдиш."
@@ -9917,7 +9915,7 @@ msgstr "Налог је обрисан"
 msgid "The account is deleted at once."
 msgstr "Налог се брише одмах."
 
-#: lib/potok_ide_web/emails/account_emails.ex:299
+#: lib/potok_ide_web/emails/account_emails.ex:373
 #, elixir-autogen, elixir-format
 msgid "The account of %{email} is deleted, with its sign-ins and devices. What you wrote in groups stays there under \"Deleted user\", with no name, picture, description or details of yours."
 msgstr "Налог адресе %{email} је обрисан, заједно с пријавама и уређајима. Твоје поруке остају у групама под именом „Обрисан корисник“, без твог имена, слике, описа и детаља."
@@ -9927,7 +9925,7 @@ msgstr "Налог адресе %{email} је обрисан, заједно с 
 msgid "The address you typed is not the one of this account."
 msgstr "Уписана адреса није адреса овог налога."
 
-#: lib/potok_ide_web/emails/account_emails.ex:254
+#: lib/potok_ide_web/emails/account_emails.ex:328
 #, elixir-autogen, elixir-format
 msgid "The link works for %{count} minute."
 msgid_plural "The link works for %{count} minutes."
@@ -9935,7 +9933,7 @@ msgstr[0] "Линк важи %{count} минут."
 msgstr[1] "Линк важи %{count} минута."
 msgstr[2] "Линк важи %{count} минута."
 
-#: lib/potok_ide_web/emails/account_emails.ex:297
+#: lib/potok_ide_web/emails/account_emails.ex:371
 #, elixir-autogen, elixir-format
 msgid "This address no longer has an account."
 msgstr "Ова адреса више нема налог."
@@ -9980,8 +9978,8 @@ msgstr "Шта Поток чува о теби и брисање налога."
 msgid "What Potok keeps, in the privacy policy"
 msgstr "Шта Поток чува, у политици приватности"
 
-#: lib/potok_ide_web/emails/account_emails.ex:296
-#: lib/potok_ide_web/emails/account_emails.ex:307
+#: lib/potok_ide_web/emails/account_emails.ex:370
+#: lib/potok_ide_web/emails/account_emails.ex:381
 #, elixir-autogen, elixir-format
 msgid "Your Potok account is deleted"
 msgstr "Твој Поток налог је обрисан"
@@ -12936,3 +12934,46 @@ msgstr "Позивнице у групе које је твој тренутни
 #, elixir-autogen, elixir-format
 msgid "To your account by email, or to your current profile."
 msgstr "Твом налогу имејлом, или твом тренутном профилу."
+
+#: lib/potok_ide_web/emails/account_emails.ex:212
+#, elixir-autogen, elixir-format
+msgid "Not expecting this invitation? Ignore this email, or delete the invitation on Potok: nothing happens until you accept it."
+msgstr "Не очекујеш овај позив? Занемари имејл или обриши позивницу у Потоку: ништа се не дешава док је не прихватиш."
+
+#: lib/potok_ide_web/emails/account_emails.ex:230
+#, elixir-autogen, elixir-format
+msgid "Not expecting this? Just ignore this email."
+msgstr "Не очекујеш ово? Само занемари имејл."
+
+#: lib/potok_ide_web/emails/account_emails.ex:229
+#, elixir-autogen, elixir-format
+msgid "Open Potok"
+msgstr "Отвори Поток"
+
+#: lib/potok_ide_web/emails/account_emails.ex:205
+#, elixir-autogen, elixir-format
+msgid "Open the invitation"
+msgstr "Отвори позивницу"
+
+#: lib/potok_ide_web/emails/account_emails.ex:207
+#, elixir-autogen, elixir-format
+msgid "The invitation holds for %{count} day."
+msgid_plural "The invitation holds for %{count} days."
+msgstr[0] "Позивница важи %{count} дан."
+msgstr[1] "Позивница важи %{count} дана."
+msgstr[2] "Позивница важи %{count} дана."
+
+#: lib/potok_ide_web/emails/account_emails.ex:123
+#, elixir-autogen, elixir-format
+msgid "The invitation to “%{group}” is waiting: you join with the profile you make."
+msgstr "Позив у групу „%{group}“ те чека: улазиш профилом који направиш."
+
+#: lib/potok_ide_web/emails/account_emails.ex:228
+#, elixir-autogen, elixir-format
+msgid "You are here already: this address has an account, so sign in as always."
+msgstr "Већ си ту: ова адреса има налог, па се пријави као и увек."
+
+#: lib/potok_ide_web/emails/account_emails.ex:201
+#, elixir-autogen, elixir-format
+msgid "You choose the profile you join with, and @%{username} sees it only once you accept."
+msgstr "Ти бираш којим профилом улазиш, а @%{username} га види тек кад прихватиш."

@@ -29,7 +29,7 @@ If you have questions about this Privacy Policy or privacy requests, contact us 
 - Tokens of sessions and of links to log in, change your address and delete your account
 - Who invited you to Potok
 
-When someone invites an email address that has no account yet, Potok opens an unconfirmed account for it and sends it an invitation. Such an account deletes itself after 90 days if nobody takes it up and no new invitation comes meanwhile.
+When someone invites an email address that has no account yet, Potok opens an unconfirmed account for it and sends it an invitation. Such an account deletes itself after 90 days if nobody takes it up and no new invitation comes meanwhile. An address that has an account already gets an email about the invitation.
 
 ### Profiles
 
@@ -89,7 +89,7 @@ We process personal data on the basis of:
 
 ### Other users
 
-What you post in a group is seen by those the group's roles allow. Your profile, memberships and posts are seen in the groups and collaboration features you use. A profile's details and description are seen only by those you meant each of them for. You choose who can find your profile: everyone logged in, those who know its exact username or share a group with you, or only those who share a group with you. The answer to an invitation into a group by email does not tell whoever sends it whether you have an account at that address, nor your profiles: they see the address they typed, and your profile only once you accept the invitation with it. When you invite someone into a group or ask to join one, the invited, or those who decide the request, see your details as that group's members do. Public groups are seen by everyone who is logged in.
+What you post in a group is seen by those the group's roles allow. Your profile, memberships and posts are seen in the groups and collaboration features you use. A profile's details and description are seen only by those you meant each of them for. You choose who can find your profile: everyone logged in, those who know its exact username or share a group with you, or only those who share a group with you. The answer to an invitation by email, into a group or to Potok, does not tell whoever sends it whether you have an account at that address, nor your profiles: for a group they see the address they typed, and your profile only once you accept the invitation with it. When you invite someone into a group or ask to join one, the invited, or those who decide the request, see your details as that group's members do. Public groups are seen by everyone who is logged in.
 
 ### Anyone with a link
 

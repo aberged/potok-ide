@@ -68,8 +68,20 @@ defmodule PotokIde.Social.EmailInvitationsTest do
         assert invite(ctx, email) == :ok
       end
 
-      assert_received {:email, %Swoosh.Email{to: [{"", ^new}]}}
-      refute_received {:email, %Swoosh.Email{to: [{"", _other}]}}
+      # Each of them gets one email; only the new one a link to log in.
+      for {address, link} <- [
+            {ctx.account.email, "/invitations"},
+            {without_profile.email, "/invitations"},
+            {new, "/log-in/"}
+          ] do
+        assert_received {:email, %Swoosh.Email{to: [{"", ^address}]} = email}
+        assert email.subject =~ "@" <> ctx.owner.username
+        assert email.subject =~ ctx.group.name
+        assert email.text_body =~ link
+        assert email.text_body =~ "/log-in/" == (address == new)
+      end
+
+      refute_received {:email, _another}
 
       refute Repo.exists?(GroupInvitation)
       assert Repo.aggregate(GroupAccountInvitation, :count) == 3
@@ -132,16 +144,94 @@ defmodule PotokIde.Social.EmailInvitationsTest do
       assert pushed_endpoints() == [endpoint]
     end
 
-    test "links to log in stop at the address's limit, the answer stays", ctx do
+    test "tells an account in use once, and sends a link to log in each time", ctx do
+      unclaimed = unconfirmed_account_fixture()
+      empty_mailbox()
+
+      for _ <- 1..2 do
+        assert invite(ctx, ctx.account.email) == :ok
+        assert invite(ctx, unclaimed.email) == :ok
+      end
+
+      in_use = ctx.account.email
+      waiting = unclaimed.email
+      assert_received {:email, %Swoosh.Email{to: [{"", ^in_use}]}}
+      refute_received {:email, %Swoosh.Email{to: [{"", ^in_use}]}}
+      assert_received {:email, %Swoosh.Email{to: [{"", ^waiting}]}}
+      assert_received {:email, %Swoosh.Email{to: [{"", ^waiting}]}}
+    end
+
+    test "emails stop at the address's limit, the answer and the invitation do not", ctx do
       account = unconfirmed_account_fixture()
       key = RateLimit.email_key(account.email)
-      {max, _window} = RateLimit.limit(:magic_link_email)
-      for _ <- 1..max, do: RateLimit.hit(:magic_link_email, key)
+      {max, _window} = RateLimit.limit(:invitation_address)
+      for _ <- 1..max, do: RateLimit.hit(:invitation_address, key)
       empty_mailbox()
 
       assert invite(ctx, account.email) == :ok
       refute_received {:email, _email}
       assert [_invitation] = EmailInvitations.list(account)
+    end
+
+    test "leaves the address's links to sign in alone", ctx do
+      account = unconfirmed_account_fixture()
+      {max, _window} = RateLimit.limit(:magic_link_email)
+      for _ <- 1..(max + 1), do: assert(invite(ctx, account.email) == :ok)
+
+      assert RateLimit.check(:magic_link_email, RateLimit.email_key(account.email)) == :ok
+    end
+
+    test "writes in the inviter's language, though it is sent apart", ctx do
+      Application.put_env(:potok_ide, :async_notifications, true)
+      on_exit(fn -> Application.put_env(:potok_ide, :async_notifications, false) end)
+      empty_mailbox()
+
+      for {locale, word} <- [{"en", "invites you"}, {"sr", "te poziva"}] do
+        Gettext.put_locale(PotokIdeWeb.Gettext, locale)
+        assert invite(ctx, unique_account_email()) == :ok
+        assert_receive {:email, %Swoosh.Email{subject: subject}}, 2_000
+        assert subject =~ word
+      end
+    end
+  end
+
+  describe "invite_to_potok/4" do
+    defp invite_to_potok(ctx, email) do
+      EmailInvitations.invite_to_potok(
+        ctx.owner,
+        ctx.owner_account.id,
+        email,
+        &"/log-in/#{&1}"
+      )
+    end
+
+    test "answers the same for an account and for none, and emails both", ctx do
+      new = unique_account_email()
+      empty_mailbox()
+
+      for address <- [ctx.account.email, String.upcase(ctx.account.email), new] do
+        assert invite_to_potok(ctx, address) == :ok
+        assert_received {:email, %Swoosh.Email{to: [{"", to}], subject: subject, text_body: body}}
+        assert String.downcase(to) == String.downcase(address)
+        assert subject =~ "@" <> ctx.owner.username
+        assert body =~ "/log-in/" == (address == new)
+      end
+
+      assert Accounts.get_account_by_email(new).invited_by_id == ctx.owner.id
+      assert Accounts.get_account!(ctx.account.id).invited_by_id == ctx.account.invited_by_id
+      refute Repo.exists?(GroupAccountInvitation)
+    end
+
+    test "every address counts against the inviter", ctx do
+      {max, _window} = RateLimit.limit(:invitation_email)
+      for _ <- 1..max, do: RateLimit.hit(:invitation_email, ctx.owner_account.id)
+      empty_mailbox()
+
+      for address <- [ctx.account.email, unique_account_email()] do
+        assert {:error, :rate_limited, _} = invite_to_potok(ctx, address)
+      end
+
+      refute_received {:email, _email}
     end
   end
 

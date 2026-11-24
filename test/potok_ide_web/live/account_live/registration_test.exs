@@ -115,23 +115,46 @@ defmodule PotokIdeWeb.AccountLive.RegistrationTest do
              )
     end
 
-    test "renders errors for duplicated email", %{conn: conn} do
+    test "the answer does not tell whether the address has an account", %{conn: conn} do
       {conn, _profile} = conn_with_current_profile(conn)
+      taken = account_fixture(%{email: "test@email.com"})
 
-      {:ok, lv, _html} =
-        conn
-        |> live(~p"/accounts/register")
+      answers =
+        for email <- [taken.email, unique_account_email()] do
+          {:ok, lv, _html} = live(conn, ~p"/accounts/register")
 
-      account = account_fixture(%{email: "test@email.com"})
+          html =
+            lv
+            |> form("#registration_form", account: %{"email" => email})
+            |> render_submit()
 
-      result =
-        lv
-        |> form("#registration_form",
-          account: %{"email" => account.email}
-        )
-        |> render_submit()
+          refute html =~ "has already been taken"
+          assert_received {:email, %Swoosh.Email{to: [{"", ^email}]}}
+          lv |> element("#flash-info p") |> render() |> String.replace(email, "EMAIL")
+        end
 
-      assert result =~ "has already been taken"
+      assert [answer, answer] = answers
+      assert answer =~ "An invitation email was sent to EMAIL"
+    end
+
+    test "a failed delivery does not tell it either", %{conn: conn} do
+      {conn, _profile} = conn_with_current_profile(conn)
+      taken = account_fixture()
+      original = Application.fetch_env!(:potok_ide, PotokIde.Mailer)
+      on_exit(fn -> Application.put_env(:potok_ide, PotokIde.Mailer, original) end)
+
+      Application.put_env(:potok_ide, PotokIde.Mailer,
+        adapter: Swoosh.Adapters.Gmail,
+        from_email: "potok@example.com",
+        from_name: "Potok"
+      )
+
+      for email <- [taken.email, unique_account_email()] do
+        {:ok, lv, _html} = live(conn, ~p"/accounts/register")
+        lv |> form("#registration_form", account: %{"email" => email}) |> render_submit()
+
+        assert has_element?(lv, "#flash-error p", "We couldn't send the invitation email")
+      end
     end
 
     test "refuses invitations past the account's limit without opening an account", %{

@@ -6,11 +6,13 @@ defmodule PotokIde.Social.EmailInvitations do
   Whoever invites gets the same answer whether the address has an account,
   an account without a profile, or none: an address tells nothing of who is
   behind it. An address with no account gets one and a link to log in; any
-  other account gets a push. The person then picks on Invitations which of
+  other account gets an email and a push. The person then picks on Invitations which of
   their profiles accepts it, or makes a new one, and only then does the
   inviter learn that profile, as an accepted invitation naming it, the
   record of who brought whom in. No direct conversation opens before that,
   nor after: the two share the group, so either may write from the card.
+
+  An invitation to Potok alone (`invite_to_potok/4`) answers the same way.
   """
 
   import Ecto.Query, warn: false
@@ -45,9 +47,14 @@ defmodule PotokIde.Social.EmailInvitations do
 
     with nil <- Social.invitation_refusal(inviter, group),
          :ok <- RateLimit.hit(:invitation_email, inviter_account_id),
-         {:ok, account} <- find_or_register(email),
-         {:ok, _invitation} <- Social.invite_account_to_group(inviter, group, account, email) do
-      if never_logged_in?(account), do: send_login_link(account, inviter, group, login_url)
+         {:ok, account} <- find_or_register(email, nil),
+         {:ok, invitation} <- Social.invite_account_to_group(inviter, group, account, email) do
+      # The link to log in goes again with every invitation, as it lapses
+      # before the invitation does; the rest is told once.
+      if never_logged_in?(account) or invitation.id do
+        in_background(fn -> deliver(account, inviter, group, login_url) end)
+      end
+
       :ok
     else
       {:error, :rate_limited, _retry_after} = limited -> limited
@@ -57,15 +64,36 @@ defmodule PotokIde.Social.EmailInvitations do
     end
   end
 
+  @doc """
+  `inviter` invites the address `email` to Potok alone, with no group. An
+  address with no account gets one, which remembers who invited it, and a
+  link to log in; an account in use is told by email. The inviter learns
+  nothing of which: every address counts against their limit.
+
+  Returns `:ok`, `{:error, :rate_limited, retry_after_ms}`,
+  `{:error, changeset}` for an address that is none, or
+  `{:error, :not_delivered}`.
+  """
+  def invite_to_potok(%Profile{} = inviter, inviter_account_id, email, login_url)
+      when is_binary(email) and is_function(login_url, 1) do
+    with :ok <- RateLimit.hit(:invitation_email, inviter_account_id),
+         {:ok, account} <- find_or_register(String.trim(email), inviter) do
+      case deliver(account, inviter, nil, login_url) do
+        {:ok, _email} -> :ok
+        {:error, _reason} -> {:error, :not_delivered}
+      end
+    end
+  end
+
   # Two people may invite the same new address at once: the one that comes
   # second finds the account the first one made.
-  defp find_or_register(email) do
+  defp find_or_register(email, invited_by) do
     case Accounts.get_account_by_email(email) do
       %Account{} = account ->
         {:ok, account}
 
       nil ->
-        with {:error, changeset} <- Accounts.register_account(%{email: email}) do
+        with {:error, changeset} <- Accounts.register_account(%{email: email}, invited_by) do
           case Accounts.get_account_by_email(email) do
             %Account{} = account -> {:ok, account}
             nil -> {:error, changeset}
@@ -74,17 +102,31 @@ defmodule PotokIde.Social.EmailInvitations do
     end
   end
 
-  # An account that never logged in has no device to push to, so it is told
-  # by email, as often as links to log in are sent to one address.
-  defp never_logged_in?(%Account{} = account) do
-    is_nil(account.confirmed_at) and not Social.account_has_profiles?(account) and
-      RateLimit.hit(:magic_link_email, RateLimit.email_key(account.email)) == :ok
+  defp never_logged_in?(%Account{} = account),
+    do: is_nil(account.confirmed_at) and not Social.account_has_profiles?(account)
+
+  # An account that never logged in gets the link to; one in use is only
+  # told. Past the address's limit nothing is sent, and nobody learns that.
+  defp deliver(%Account{} = account, inviter, group, login_url) do
+    cond do
+      RateLimit.hit(:invitation_address, RateLimit.email_key(account.email)) != :ok ->
+        {:ok, :not_sent}
+
+      never_logged_in?(account) ->
+        Accounts.deliver_login_instructions(account, login_url, invited_by: inviter, group: group)
+
+      true ->
+        Accounts.deliver_invitation_notice(account, inviter, group)
+    end
   end
 
-  # Sent apart from the answer, so how long it takes tells nothing either.
-  defp send_login_link(account, inviter, group, login_url) do
+  # Apart from the answer, so how long sending takes tells nothing either. The
+  # language of the email is the inviter's, as their page has it.
+  defp in_background(fun) do
+    locale = Gettext.get_locale(PotokIdeWeb.Gettext)
+
     PotokIde.PushNotifications.Dispatch.run(fn ->
-      Accounts.deliver_login_instructions(account, login_url, invited_by: inviter, group: group)
+      Gettext.with_locale(PotokIdeWeb.Gettext, locale, fun)
     end)
   end
 

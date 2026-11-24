@@ -1,11 +1,9 @@
 defmodule PotokIdeWeb.AccountLive.Registration do
   use PotokIdeWeb, :live_view
 
-  require Logger
-
   alias PotokIde.Accounts
   alias PotokIde.Accounts.Account
-  alias PotokIde.RateLimit
+  alias PotokIde.Social.EmailInvitations
   alias PotokIdeWeb.RateLimited
 
   @impl true
@@ -72,22 +70,16 @@ defmodule PotokIdeWeb.AccountLive.Registration do
   end
 
   @impl true
-  # The inviting account's limit is checked before the new account is opened
-  # and counted once it is, so a mistyped address costs nothing.
+  # The address is only checked for being one: whether it has an account is
+  # not the inviter's to learn (`EmailInvitations.invite_to_potok/4`). A
+  # mistyped one costs nothing.
   def handle_event("save", %{"account" => account_params}, socket) do
-    inviter_id = socket.assigns.current_scope.account.id
+    changeset = Accounts.change_account_email(%Account{}, account_params, validate_unique: false)
 
-    with :ok <- RateLimit.check(:invitation_email, inviter_id),
-         {:ok, account} <-
-           Accounts.register_account(account_params, socket.assigns.current_profile),
-         :ok <- RateLimit.hit(:invitation_email, inviter_id) do
-      send_invitation(socket, account)
+    if changeset.valid? do
+      invite(socket, Ecto.Changeset.get_field(changeset, :email))
     else
-      {:error, :rate_limited, retry_after} ->
-        {:noreply, put_flash(socket, :error, RateLimited.message(retry_after))}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign_form(socket, changeset)}
+      {:noreply, assign_form(socket, Map.put(changeset, :action, :insert))}
     end
   end
 
@@ -96,28 +88,26 @@ defmodule PotokIdeWeb.AccountLive.Registration do
     {:noreply, assign_form(socket, Map.put(changeset, :action, :validate))}
   end
 
-  defp send_invitation(socket, account) do
-    case Accounts.deliver_login_instructions(
-           account,
-           &url(~p"/accounts/log-in/#{&1}")
-         ) do
-      {:ok, _email} ->
-        {
-          :noreply,
-          socket
-          |> put_flash(
-            :info,
-            gettext(
-              "An invitation email was sent to %{email}",
-              email: account.email
-            )
-          )
-          # |> push_navigate(to: ~p"/accounts/log-in")
-        }
+  defp invite(socket, email) do
+    %{current_profile: inviter, current_scope: %{account: account}} = socket.assigns
+    login_url = &url(~p"/accounts/log-in/#{&1}")
 
-      error ->
-        Logger.error("Invitation email delivery failed: #{inspect(error)}")
+    case EmailInvitations.invite_to_potok(inviter, account.id, email, login_url) do
+      :ok ->
+        {:noreply,
+         put_flash(
+           socket,
+           :info,
+           gettext("An invitation email was sent to %{email}", email: email)
+         )}
 
+      {:error, :rate_limited, retry_after} ->
+        {:noreply, put_flash(socket, :error, RateLimited.message(retry_after))}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign_form(socket, changeset)}
+
+      {:error, :not_delivered} ->
         {:noreply,
          put_flash(
            socket,

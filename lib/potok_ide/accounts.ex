@@ -601,6 +601,16 @@ defmodule PotokIde.Accounts do
     )
   end
 
+  @doc """
+  Emails an account in use that `inviter` invites it, into `group`, or to
+  Potok when there is none. It holds no link to sign in.
+  """
+  def deliver_invitation_notice(%Account{} = account, %Profile{username: inviter}, nil),
+    do: AccountNotifier.deliver_potok_invitation(account, inviter)
+
+  def deliver_invitation_notice(%Account{} = account, %Profile{username: inviter}, group),
+    do: AccountNotifier.deliver_group_invitation(account, inviter, group.name)
+
   defp invitation_details(%Account{confirmed_at: nil} = account, opts) do
     inviter =
       cond do
