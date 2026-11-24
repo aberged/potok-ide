@@ -72,6 +72,17 @@
     "url": "/profiles/{people.ana.profile_id}/edit"
   },
   {
+    "name": "profil-detalji",
+    "as": "ana",
+    "url": "/profiles/{people.ana.profile_id}/edit",
+    "steps": [
+      { "click": "#profile-edit-tab-details" },
+      { "pause": 400 },
+      { "show": "#profile-edit-detail-place-field" },
+      { "pause": 300 }
+    ]
+  },
+  {
     "name": "pocetna-filteri",
     "as": "ana",
     "url": "/groups",

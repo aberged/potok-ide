@@ -2,15 +2,16 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
   use PotokIdeWeb, :live_view
 
   alias PotokIde.Social
-  alias PotokIde.Social.Profile
+  alias PotokIde.Social.{Profile, ProfileDetails}
   alias PotokIde.Tags
   alias PotokIde.Tags.Tag
   alias PotokIdeWeb.GroupLive.Show.Components, as: GroupComponents
   alias PotokIdeWeb.ProfileLive.Components, as: ProfileComponents
   alias PotokIdeWeb.{TagComponents, TagEditor}
 
-  # `ProfileComponents.form_sections/1` and the tags, see `sections/0`.
-  @sections ~w(basics description sharing tags)
+  # `ProfileComponents.form_sections/1`, the details and the tags, see
+  # `sections/0`.
+  @sections ~w(basics details description sharing tags)
 
   # Laid out like a group's edit tab: cards picked one at a time, the other
   # ones only hidden, so an edit made in one survives a switch to another. The
@@ -65,12 +66,22 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
           phx-submit="save"
           novalidate
         >
+          <ProfileComponents.profile_details_card
+            details={@details}
+            section={@section}
+            id_prefix="profile-edit"
+            group_choices={@group_choices}
+            group_filters={@group_filters}
+            shared?={@profile.sharing == :shared}
+          />
           <ProfileComponents.profile_form_cards
             form={@form}
             section={@section}
             id_prefix="profile-edit"
             description_format_options={@description_format_options}
             sharing_options={@sharing_options}
+            group_choices={@group_choices}
+            group_filters={@group_filters}
           />
         </.form>
 
@@ -134,7 +145,7 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
         <%!-- Outside the form, which it submits through `form`, so it can
              stick to the bottom over every card. --%>
         <div
-          :if={dirty?(@form)}
+          :if={dirty?(@form, @details)}
           id="profile-edit-save-bar"
           class="sticky bottom-0 z-10 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-primary/30 bg-base-100/95 px-4 py-3 shadow-xl shadow-primary/10 backdrop-blur"
         >
@@ -182,7 +193,10 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
              |> assign(:profile, profile)
              |> assign(:profile_tags, public_tags(profile))
              |> TagEditor.init()
-             |> assign(:form, to_form(Profile.changeset(profile, %{})))
+             |> assign(:stored_fields, ProfileDetails.list_fields(profile))
+             |> assign(:allowed_group_ids, ProfileDetails.allowed_group_ids(profile))
+             |> assign(:group_choices, ProfileDetails.group_choices(profile))
+             |> reset_form()
              |> assign(:section, "basics")
              |> assign(:profile_invitation_form, new_profile_invitation_form())
              |> assign(
@@ -201,13 +215,17 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
   end
 
   @impl true
-  def handle_event("validate", %{"profile" => attrs}, socket) do
+  def handle_event("validate", %{"profile" => attrs} = params, socket) do
     changeset =
       socket.assigns.profile
-      |> Profile.changeset(attrs)
+      |> Profile.changeset(attrs, allowed_group_ids: socket.assigns.allowed_group_ids)
       |> Map.put(:action, :validate)
 
-    {:noreply, assign(socket, :form, to_form(changeset))}
+    {:noreply,
+     socket
+     |> assign(:form, to_form(changeset))
+     |> assign(:details, detail_changesets(socket, params["details"], :validate))
+     |> assign(:group_filters, group_filters(params))}
   end
 
   def handle_event("set_section", %{"section" => section}, socket) when section in @sections,
@@ -215,13 +233,13 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
 
   def handle_event("set_section", _params, socket), do: {:noreply, socket}
 
-  def handle_event("discard", _params, socket),
-    do: {:noreply, assign(socket, :form, to_form(Profile.changeset(socket.assigns.profile, %{})))}
+  def handle_event("discard", _params, socket), do: {:noreply, reset_form(socket)}
 
-  def handle_event("save", %{"profile" => attrs}, socket) do
+  def handle_event("save", %{"profile" => attrs} = params, socket) do
     account = socket.assigns.current_scope.account
+    details = params["details"] || %{}
 
-    case Social.update_profile_for_account(account, socket.assigns.profile.id, attrs) do
+    case Social.update_profile_for_account(account, socket.assigns.profile.id, attrs, details) do
       {:ok, profile} ->
         {:noreply,
          socket
@@ -236,10 +254,17 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
          |> put_flash(:error, gettext("That profile is not available for this account."))
          |> push_navigate(to: ~p"/profiles")}
 
+      {:error, {:details, changesets}} ->
+        {:noreply,
+         socket
+         |> assign(:details, with_action(changesets, :update))
+         |> assign(:section, "details")}
+
       {:error, changeset} ->
         {:noreply,
          socket
          |> assign(:form, to_form(Map.put(changeset, :action, :validate)))
+         |> assign(:details, detail_changesets(socket, details, :update))
          |> assign(:section, ProfileComponents.error_section(changeset) || socket.assigns.section)}
     end
   end
@@ -336,17 +361,60 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
 
   def handle_info(_message, socket), do: {:noreply, socket}
 
-  # The tabs: the form's cards and the tags. The keys are those of `@sections`.
+  # The tabs: the form's cards, the details after the basics, and the tags.
+  # The keys are those of `@sections`.
   defp sections do
-    ProfileComponents.form_sections("profile-edit") ++
-      [{"tags", "profile-tags-section", gettext("Tags"), false}]
+    [basics | rest] = ProfileComponents.form_sections("profile-edit")
+
+    [basics, {"details", "profile-edit-details", gettext("Details"), false}] ++
+      rest ++ [{"tags", "profile-tags-section", gettext("Tags"), false}]
   end
+
+  # The form as stored: the profile's fields and its details.
+  defp reset_form(socket) do
+    socket
+    |> assign(
+      :form,
+      to_form(
+        Profile.changeset(socket.assigns.profile, %{},
+          allowed_group_ids: socket.assigns.allowed_group_ids
+        )
+      )
+    )
+    |> assign(:details, detail_changesets(socket, nil, nil))
+    |> assign(:group_filters, %{})
+  end
+
+  defp detail_changesets(socket, params, action) do
+    %{profile: profile, stored_fields: stored, allowed_group_ids: allowed} = socket.assigns
+
+    profile
+    |> ProfileDetails.changesets(stored, params, allowed)
+    |> with_action(action)
+  end
+
+  defp with_action(changesets, nil), do: changesets
+
+  defp with_action(changesets, action),
+    do:
+      Enum.map(changesets, fn {key, changeset} -> {key, Map.put(changeset, :action, action)} end)
+
+  # What each list of groups is narrowed to, by the key of its field.
+  defp group_filters(%{"group_filter" => filters}) when is_map(filters),
+    do: Map.filter(filters, fn {key, value} -> is_binary(key) and is_binary(value) end)
+
+  defp group_filters(_params), do: %{}
 
   # Whether the form holds something not saved yet (its save bar shows). A
   # field that fails validation, like a cleared name, is dropped from the
   # changes, so errors count too: the bar's save then shows what is wrong.
-  defp dirty?(%Phoenix.HTML.Form{source: %Ecto.Changeset{changes: changes, errors: errors}}),
-    do: changes != %{} or errors != []
+  defp dirty?(
+         %Phoenix.HTML.Form{source: %Ecto.Changeset{changes: changes, errors: errors}},
+         details
+       ),
+       do:
+         changes != %{} or errors != [] or ProfileDetails.changed?(details) or
+           not ProfileDetails.valid?(details)
 
   defp public_tags(%Profile{id: id} = profile) do
     profile

@@ -13,7 +13,8 @@ defmodule PotokIdeWeb.ProfileLive.Components do
   # opens the card with the error.
   @form_section_fields [
     {"basics", [:username, :profile_picture_url]},
-    {"description", [:description, :description_format]},
+    {"description",
+     [:description, :description_format, :description_audience, :description_group_ids]},
     {"sharing", [:sharing]}
   ]
 
@@ -41,11 +42,20 @@ defmodule PotokIdeWeb.ProfileLive.Components do
   attr :description_format_options, :list, required: true
   attr :sharing_options, :list, required: true
 
+  attr :group_choices, :any,
+    default: nil,
+    doc:
+      "the groups the description may be shown to (`ProfileDetails.group_choices/1`); nil leaves picked groups out"
+
+  attr :group_filters, :map, default: %{}, doc: "what each list of groups is narrowed to"
+
   @doc """
   The cards of the new and edit pages' form, laid out like a group's. A card
   not on screen is only hidden, so the form still sends every field.
   """
   def profile_form_cards(assigns) do
+    assigns = assign(assigns, :shared?, shared_value?(assigns.form[:sharing].value))
+
     ~H"""
     <GroupComponents.settings_card
       id={"#{@id_prefix}-basics"}
@@ -73,7 +83,7 @@ defmodule PotokIdeWeb.ProfileLive.Components do
       tab_id={"#{@id_prefix}-tab-description"}
       active={@section == "description"}
       icon="hero-document-text"
-      title={gettext("Description")}
+      title={gettext("About me")}
       subtitle={gettext("What others read about this profile.")}
     >
       <.input
@@ -87,8 +97,18 @@ defmodule PotokIdeWeb.ProfileLive.Components do
       <.input
         field={@form[:description]}
         id={@form[:description].id}
-        label={gettext("Description")}
+        label={gettext("About me")}
         type="textarea"
+      />
+      <.audience_picker
+        id={"#{@id_prefix}-description-audience"}
+        audience={@form[:description_audience]}
+        group_ids={@form[:description_group_ids]}
+        label={gettext("Who reads it")}
+        choices={@group_choices}
+        filter_name="group_filter[description]"
+        filter={Map.get(@group_filters, "description", "")}
+        shared?={@shared?}
       />
     </GroupComponents.settings_card>
 
@@ -614,11 +634,250 @@ defmodule PotokIdeWeb.ProfileLive.Components do
     """
   end
 
+  attr :details, :list, required: true, doc: "`ProfileDetails.changesets/4`: `{key, changeset}`"
+  attr :section, :string, required: true
+  attr :id_prefix, :string, required: true
+  attr :group_choices, :list, required: true
+  attr :group_filters, :map, default: %{}
+  attr :shared?, :boolean, default: false
+
+  @doc """
+  The details of a profile in its edit form, each with who sees it. The
+  fields go under `details[<key>]`, beside the profile's own.
+  """
+  def profile_details_card(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :forms,
+        for {key, changeset} <- assigns.details do
+          {key,
+           to_form(changeset, as: "details[#{key}]", id: "#{assigns.id_prefix}-detail-#{key}")}
+        end
+      )
+
+    ~H"""
+    <GroupComponents.settings_card
+      id={"#{@id_prefix}-details"}
+      tab_id={"#{@id_prefix}-tab-details"}
+      active={@section == "details"}
+      icon="hero-queue-list"
+      title={gettext("Details")}
+      subtitle={gettext("Who you are and how to reach you. For each one you pick who sees it.")}
+    >
+      <p id={"#{@id_prefix}-details-hint"} class="mb-4 text-sm text-base-content/65">
+        {gettext(
+          "All my groups: people who are in at least one group with this profile, leaving out the root and direct conversations."
+        )}
+      </p>
+      <div class="space-y-3">
+        <div
+          :for={{key, form} <- @forms}
+          id={"#{@id_prefix}-detail-#{key}-field"}
+          class="rounded-2xl border border-base-300/70 bg-base-100 px-3 pt-2 pb-3 transition hover:border-base-300 sm:px-4"
+        >
+          <.input
+            field={form[:value]}
+            label={detail_label(key)}
+            type={detail_input_type(key)}
+            rows={if key == :website, do: "3"}
+            maxlength={detail_maxlength(key)}
+            autocomplete={detail_autocomplete(key)}
+          />
+          <p :if={key == :website} class="-mt-1 mb-2 text-xs text-base-content/65">
+            {gettext("Up to three links, each on its own line.")}
+          </p>
+          <.audience_picker
+            id={"#{@id_prefix}-detail-#{key}-audience"}
+            audience={form[:audience]}
+            group_ids={form[:group_ids]}
+            label={gettext("Who sees it")}
+            choices={@group_choices}
+            filter_name={"group_filter[#{key}]"}
+            filter={Map.get(@group_filters, Atom.to_string(key), "")}
+            shared?={@shared?}
+          />
+        </div>
+      </div>
+    </GroupComponents.settings_card>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :audience, Phoenix.HTML.FormField, required: true
+  attr :group_ids, Phoenix.HTML.FormField, required: true
+  attr :label, :string, required: true
+  attr :choices, :any, default: nil, doc: "the groups to pick from; nil leaves picked groups out"
+  attr :filter_name, :string, required: true
+  attr :filter, :string, default: ""
+  attr :shared?, :boolean, default: false
+
+  @doc """
+  Who sees a detail or the description: a select of the audiences and, for
+  picked groups, the profile's groups to tick. A long list gets a box that
+  narrows it; ticked groups it hides are still sent.
+  """
+  def audience_picker(assigns) do
+    picked = picked_group_ids(assigns.group_ids)
+
+    assigns =
+      assigns
+      |> assign(:picked, picked)
+      |> assign(:choices, stored_first(assigns.choices, assigns.group_ids))
+      |> assign(:groups?, to_string(assigns.audience.value) == "groups")
+      |> assign(:folded_filter, PotokIde.TextFold.fold(String.trim(assigns.filter || "")))
+      |> assign(
+        :group_errors,
+        Enum.map(assigns.group_ids.errors, &PotokIdeWeb.CoreComponents.translate_error/1)
+      )
+
+    ~H"""
+    <div id={@id}>
+      <label class="flex flex-wrap items-center gap-2 text-sm text-base-content/70">
+        <.icon name="hero-eye" class="size-4 shrink-0" />
+        <span>{@label}</span>
+        <select
+          id={@audience.id}
+          name={@audience.name}
+          class="select select-sm w-auto min-w-0 max-w-full flex-1 sm:flex-none"
+        >
+          {Phoenix.HTML.Form.options_for_select(
+            audience_options(@shared?, @choices != nil),
+            @audience.value
+          )}
+        </select>
+      </label>
+      <div
+        :if={@groups? and @choices != nil}
+        id={"#{@id}-groups"}
+        class="mt-2 rounded-2xl border border-base-300/70 bg-base-200/40 p-3"
+      >
+        <input type="hidden" name={@group_ids.name <> "[]"} value="" />
+        <p :if={@choices == []} id={"#{@id}-groups-empty"} class="text-sm text-base-content/65">
+          {gettext("This profile is not in any group yet.")}
+        </p>
+        <input
+          :if={length(@choices) > 8}
+          id={"#{@id}-groups-filter"}
+          type="search"
+          name={@filter_name}
+          value={@filter}
+          placeholder={gettext("Find a group")}
+          phx-debounce="200"
+          class="input input-sm mb-2 w-full"
+        />
+        <div class="max-h-60 space-y-1 overflow-y-auto">
+          <%= for choice <- @choices do %>
+            <%= if group_shown?(choice, @folded_filter) do %>
+              <label class="flex cursor-pointer items-center gap-2 rounded-xl px-2 py-1.5 text-sm transition hover:bg-base-200">
+                <input
+                  type="checkbox"
+                  name={@group_ids.name <> "[]"}
+                  value={choice.id}
+                  checked={MapSet.member?(@picked, to_string(choice.id))}
+                  class="checkbox checkbox-sm"
+                />
+                <span class="min-w-0 truncate">{choice.name}</span>
+                <span :if={choice.parent_name} class="min-w-0 truncate text-xs text-base-content/60">
+                  {choice.parent_name}
+                </span>
+              </label>
+            <% else %>
+              <input
+                :if={MapSet.member?(@picked, to_string(choice.id))}
+                type="hidden"
+                name={@group_ids.name <> "[]"}
+                value={choice.id}
+              />
+            <% end %>
+          <% end %>
+        </div>
+        <p
+          :for={message <- @group_errors}
+          class="mt-1.5 flex items-center gap-2 text-sm text-error"
+        >
+          <.icon name="hero-exclamation-circle" class="size-5" /> {message}
+        </p>
+      </div>
+    </div>
+    """
+  end
+
+  defp picked_group_ids(%Phoenix.HTML.FormField{value: value}) do
+    value
+    |> List.wrap()
+    |> Enum.reject(&(&1 in [nil, ""]))
+    |> MapSet.new(&to_string/1)
+  end
+
+  # The groups saved as picked lead the list; one ticked now stays in place.
+  defp stored_first(nil, _field), do: nil
+
+  defp stored_first(choices, %Phoenix.HTML.FormField{form: form, field: field}) do
+    stored = form.data |> Map.get(field) |> List.wrap() |> MapSet.new()
+    Enum.sort_by(choices, &(not MapSet.member?(stored, &1.id)))
+  end
+
+  defp group_shown?(_choice, ""), do: true
+
+  defp group_shown?(choice, folded_filter) do
+    [choice.name, choice.parent_name]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.any?(&String.contains?(PotokIde.TextFold.fold(&1), folded_filter))
+  end
+
+  defp shared_value?(value), do: to_string(value) == "shared"
+
+  @doc "The audiences to pick from, as select options."
+  def audience_options(shared?, groups?) do
+    for audience <- PotokIde.Social.ProfileField.audiences(),
+        groups? or audience != :groups do
+      {audience_label(audience, shared?), audience}
+    end
+  end
+
+  @doc "How an audience is named; on a shared profile, \"only me\" is its accounts."
+  def audience_label(:only_me, true), do: gettext("Only this profile's accounts")
+  def audience_label(:only_me, _shared?), do: gettext("Only me")
+  def audience_label(:groups, _shared?), do: gettext("Picked groups")
+  def audience_label(:shared_groups, _shared?), do: gettext("All my groups")
+  def audience_label(:signed_in, _shared?), do: gettext("Everyone signed in")
+
+  @doc "The name of a detail."
+  def detail_label(:first_name), do: gettext("First name")
+  def detail_label(:last_name), do: gettext("Last name")
+  def detail_label(:occupation), do: gettext("Occupation or organization")
+  def detail_label(:place), do: gettext("Place")
+  def detail_label(:phone), do: gettext("Phone")
+  def detail_label(:email), do: gettext("Contact email")
+  def detail_label(:website), do: gettext("Links")
+
+  defp detail_input_type(:phone), do: "tel"
+  defp detail_input_type(:email), do: "email"
+  defp detail_input_type(:website), do: "textarea"
+  defp detail_input_type(_key), do: "text"
+
+  defp detail_maxlength(:first_name), do: "50"
+  defp detail_maxlength(:last_name), do: "50"
+  defp detail_maxlength(:occupation), do: "120"
+  defp detail_maxlength(:place), do: "80"
+  defp detail_maxlength(:phone), do: "32"
+  defp detail_maxlength(:email), do: "160"
+  defp detail_maxlength(:website), do: "500"
+
+  defp detail_autocomplete(:first_name), do: "given-name"
+  defp detail_autocomplete(:last_name), do: "family-name"
+  defp detail_autocomplete(:occupation), do: "organization-title"
+  defp detail_autocomplete(:place), do: "address-level2"
+  defp detail_autocomplete(:phone), do: "tel"
+  defp detail_autocomplete(:email), do: "email"
+  defp detail_autocomplete(:website), do: "url"
+
   @doc "The tabs of `profile_form_cards/1`: `{key, panel id, label, danger?}`, in order."
   def form_sections(id_prefix) do
     [
       {"basics", "#{id_prefix}-basics", gettext("Basics"), false},
-      {"description", "#{id_prefix}-description", gettext("Description"), false},
+      {"description", "#{id_prefix}-description", gettext("About me"), false},
       {"sharing", "#{id_prefix}-sharing", gettext("Sharing"), false}
     ]
   end

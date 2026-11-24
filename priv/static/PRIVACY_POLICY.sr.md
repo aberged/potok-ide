@@ -1,6 +1,6 @@
 # Politika privatnosti za Potok
 
-Datum stupanja na snagu: 19. novembar 2026.
+Datum stupanja na snagu: 24. novembar 2026.
 
 Ova Politika privatnosti opisuje kako Potok prikuplja, koristi, čuva i deli informacije kada koristite Potok aplikaciju za Android i iOS, veb-sajt https://potok.rs i povezane usluge.
 
@@ -34,6 +34,7 @@ Kada neko pozove imejl adresu koja još nema nalog, Potok za nju otvara nepotvr�
 ### Profili
 
 - Korisničko ime, opis i sliku profila (slika se čuva u bazi, ili kao adresa slike sa drugog sajta)
+- Detalje profila koje sami upišete: ime, prezime, zanimanje ili organizaciju, mesto, telefon, imejl za kontakt i linkove, i za svaki detalj i za opis ko ih vidi: samo vi, grupe koje izaberete, sve vaše grupe ili svi prijavljeni
 - Da li je profil deljen sa drugim nalozima, i pozivnice za deljenje
 
 ### Grupe i sadržaj
@@ -88,7 +89,7 @@ Lične podatke obrađujemo na osnovu:
 
 ### Drugi korisnici
 
-Ono što objavite u grupi vide oni kojima to uloge u grupi dozvoljavaju. Vaš profil, članstva i objave vide se u grupama i funkcijama za saradnju koje koristite. Javne grupe vidi svako ko je prijavljen.
+Ono što objavite u grupi vide oni kojima to uloge u grupi dozvoljavaju. Vaš profil, članstva i objave vide se u grupama i funkcijama za saradnju koje koristite. Detalje i opis profila vidi samo onaj kome ste ih za svaki od njih namenili. Javne grupe vidi svako ko je prijavljen.
 
 ### Svako ko ima link
 

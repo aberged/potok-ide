@@ -180,6 +180,17 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("Profile", "notice_push"), do: dgettext("domain_map", "push of notices")
   defp own_field("Profile", "kind"), do: dgettext("domain_map", "person, process or deleted")
 
+  defp own_field("Profile", "description_audience"),
+    do: dgettext("domain_map", "who reads the description")
+
+  defp own_field("Profile", "description_group_ids"),
+    do: dgettext("domain_map", "groups reading description")
+
+  defp own_field("ProfileField", "key"), do: dgettext("domain_map", "which detail")
+  defp own_field("ProfileField", "value"), do: dgettext("domain_map", "what it says")
+  defp own_field("ProfileField", "audience"), do: dgettext("domain_map", "who sees it")
+  defp own_field("ProfileField", "group_ids"), do: dgettext("domain_map", "groups that see it")
+
   defp own_field("Group", "group_picture_url"), do: dgettext("domain_map", "group picture")
 
   defp own_field("Group", "description_name") do
@@ -699,6 +710,7 @@ defmodule PotokIdeWeb.DomainCopy do
   def entity_name("GmailRefreshToken"), do: dgettext("domain_map", "Gmail token")
   def entity_name("Profile"), do: dgettext("domain_map", "Profile")
   def entity_name("AccountProfile"), do: dgettext("domain_map", "Account–profile link")
+  def entity_name("ProfileField"), do: dgettext("domain_map", "Profile detail")
   def entity_name("Group"), do: dgettext("domain_map", "Group")
   def entity_name("GroupManifest"), do: dgettext("domain_map", "Manifest")
   def entity_name("GroupRole"), do: dgettext("domain_map", "Role")
@@ -774,9 +786,16 @@ defmodule PotokIdeWeb.DomainCopy do
 
     dgettext(
       "domain_map",
-      "An account's face in groups: username, picture and description. The code does not distinguish purposes such as business, private or club. Everything that happens in a group is signed by a profile, so %{count} of the %{total} foreign keys point at this table. A profile either belongs to one account or several accounts share it. The profile of an app's process belongs to none.",
+      "An account's face in groups: username, picture, description and details. The code does not distinguish purposes such as business, private or club. Everything that happens in a group is signed by a profile, so %{count} of the %{total} foreign keys point at this table. A profile either belongs to one account or several accounts share it. The profile of an app's process belongs to none.",
       count: Enum.count(keys, &(&1.to == "Profile")),
       total: length(keys)
+    )
+  end
+
+  defp entity_description("ProfileField", _edges) do
+    dgettext(
+      "domain_map",
+      "One detail of a profile, only while it is filled: first or last name, occupation, place, phone, contact email or links. Each says who sees it: only the accounts that hold the profile, members of the groups it picks, anyone who is in a group with it, or anyone signed in."
     )
   end
 
@@ -1296,6 +1315,18 @@ defmodule PotokIdeWeb.DomainCopy do
     dgettext("domain_map", "The value has at most 16 KB.")
   end
 
+  def check_text("profile_fields_value_check") do
+    dgettext("domain_map", "The text has 1 to 500 characters.")
+  end
+
+  def check_text("profile_fields_group_ids_check") do
+    dgettext("domain_map", "Only a detail shown to picked groups names groups.")
+  end
+
+  def check_text("profiles_description_group_ids_check") do
+    dgettext("domain_map", "Only a description shown to picked groups names groups.")
+  end
+
   def check_text("group_fields_name_check") do
     dgettext("domain_map", "The name has 1 to 40 characters.")
   end
@@ -1752,11 +1783,19 @@ defmodule PotokIdeWeb.DomainCopy do
           )
       },
       %{
+        title: dgettext("domain_map", "Each detail of a profile has its own audience"),
+        text:
+          dgettext(
+            "domain_map",
+            "A <Profile>profile</Profile> may tell its first and last name, occupation, place, phone, contact email and links, each a <ProfileField>detail</ProfileField> of its own, and its description. Each says who sees it: only the accounts that hold the profile, members of the <Group>groups</Group> it picks, anyone who is in a group with it, or anyone signed in. A group counts when both are its members, inherited too, except the root, where everyone is, direct conversations, which anyone may open, threads and an app's records. A picked group the profile leaves stops counting. Details are read on their own, never with the profile, and go with a deleted account."
+          )
+      },
+      %{
         title: dgettext("domain_map", "A deleted account leaves what was written"),
         text:
           dgettext(
             "domain_map",
-            "Its person deletes <Account>an account</Account>, in the settings or by a link sent to its address. A <Profile>profile</Profile> only that account used stays as a deleted one, with no name, picture or description of theirs, and is left out wherever people are listed, mentioned or invited. Its <Value>values</Value>, <ValueAttachment>files</ValueAttachment>, <Poll>polls</Poll> and <Event>events</Event> stay in the groups, while its <GroupMembership>memberships</GroupMembership>, reactions, <GroupFollow>followings</GroupFollow>, <Tag>tags</Tag> and invitations go. A profile other accounts share stays theirs. A <Group>group</Group> where it is the only admin among people waits until someone else is made one, and one where it is alone goes with it. An account opened by an invitation nobody took up goes after 90 days."
+            "Its person deletes <Account>an account</Account>, in the settings or by a link sent to its address. A <Profile>profile</Profile> only that account used stays as a deleted one, with no name, picture, description or details of theirs, and is left out wherever people are listed, mentioned or invited. Its <Value>values</Value>, <ValueAttachment>files</ValueAttachment>, <Poll>polls</Poll> and <Event>events</Event> stay in the groups, while its <GroupMembership>memberships</GroupMembership>, reactions, <GroupFollow>followings</GroupFollow>, <Tag>tags</Tag> and invitations go. A profile other accounts share stays theirs. A <Group>group</Group> where it is the only admin among people waits until someone else is made one, and one where it is alone goes with it. An account opened by an invitation nobody took up goes after 90 days."
           )
       },
       %{

@@ -1617,6 +1617,7 @@
     --dm-notices: #b4532a;
     --dm-tags: #ad3a76;
     --dm-joining: #4a8128;
+    --dm-requests: #7d6b00;
     /* Warm gray: a technical area beside the domain, named wherever it shows. */
     --dm-hosting: #6e6656;
     --st-beam: #a90533;
@@ -1638,6 +1639,7 @@
     --dm-notices: #f6a77f;
     --dm-tags: #f09ac7;
     --dm-joining: #a3da7c;
+    --dm-requests: #d8c65a;
     --dm-hosting: #c9c0ae;
     --st-beam: #ff8fa3;
     --st-elixir: #c9a6ef;
@@ -1658,6 +1660,7 @@
       --dm-notices: #f6a77f;
       --dm-tags: #f09ac7;
       --dm-joining: #a3da7c;
+      --dm-requests: #d8c65a;
       --dm-hosting: #c9c0ae;
       --st-beam: #ff8fa3;
       --st-elixir: #c9a6ef;

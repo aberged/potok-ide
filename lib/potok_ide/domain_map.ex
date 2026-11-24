@@ -28,7 +28,8 @@ defmodule PotokIde.DomainMap do
        PotokIde.Accounts.PushSubscription,
        PotokIde.GmailRefreshToken
      ]},
-    {"profiles", [PotokIde.Social.Profile, PotokIde.Social.AccountProfile]},
+    {"profiles",
+     [PotokIde.Social.Profile, PotokIde.Social.AccountProfile, PotokIde.Social.ProfileField]},
     {"group",
      [
        PotokIde.Social.Group,
@@ -90,6 +91,8 @@ defmodule PotokIde.DomainMap do
     {"Group", "inherit_role_keys", "GroupRole", "key"},
     {"GroupValueRead", "last_read_value_id", "Value", "id"},
     {"Value", "mentioned_profile_ids", "Profile", "id"},
+    {"Profile", "description_group_ids", "Group", "id"},
+    {"ProfileField", "group_ids", "Group", "id"},
     {"Poll", "voter_role_keys", "GroupRole", "key"},
     {"Poll", "results_role_keys", "GroupRole", "key"},
     {"Poll", "details_role_keys", "GroupRole", "key"},

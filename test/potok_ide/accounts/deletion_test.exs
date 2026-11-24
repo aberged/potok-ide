@@ -84,6 +84,34 @@ defmodule PotokIde.Accounts.DeletionTest do
       refute Social.get_profile_by_username(deleted.username)
     end
 
+    test "takes the profile's details and who read its description", %{
+      member: member,
+      member_account: member_account,
+      group: group
+    } do
+      {:ok, _} =
+        Social.update_profile_for_account(
+          member_account,
+          member.id,
+          %{
+            "description" => "Komšija",
+            "description_audience" => "groups",
+            "description_group_ids" => ["#{group.id}"]
+          },
+          %{"first_name" => %{"value" => "Marko", "audience" => "signed_in"}}
+        )
+
+      assert {:ok, _} = Deletion.delete(member_account)
+
+      deleted = Repo.get!(Profile, member.id)
+      assert deleted.description_audience == :only_me
+      assert deleted.description_group_ids == []
+
+      refute Repo.exists?(
+               from(f in "profile_fields", where: f.profile_id == ^member.id, select: 1)
+             )
+    end
+
     test "is blocked while the person is a group's only admin, with others in it", %{
       owner: owner,
       owner_account: owner_account,

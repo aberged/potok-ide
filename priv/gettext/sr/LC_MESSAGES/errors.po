@@ -286,3 +286,21 @@ msgstr "stavlja filter na deo: %{tag}"
 #, elixir-autogen, elixir-format
 msgid "This template was deleted meanwhile."
 msgstr "Ovaj šablon je u međuvremenu obrisan."
+
+msgid "must be one line"
+msgstr "mora biti u jednom redu"
+
+msgid "is not a phone number"
+msgstr "nije broj telefona"
+
+msgid "is not an email address"
+msgstr "nije adresa e-pošte"
+
+msgid "has more than three links"
+msgstr "ima više od tri linka"
+
+msgid "has a line that is not a link"
+msgstr "ima red koji nije link"
+
+msgid "pick at least one group"
+msgstr "izaberi bar jednu grupu"

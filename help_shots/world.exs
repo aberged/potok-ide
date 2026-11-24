@@ -44,6 +44,7 @@ defmodule HelpShots.World do
     shared = shared_profile(people)
     building = building(p, root, files_dir, shared)
     direct = direct(p)
+    details(people, building.root)
     pending(p, mz)
     invitation = invitation_link(p, building.root)
 
@@ -1072,6 +1073,52 @@ defmodule HelpShots.World do
     )
 
     direct
+  end
+
+  # Names, contacts and descriptions, each for whom it is meant: Ana's phone
+  # for her building alone, her email for herself.
+  defp details(people, building) do
+    for {name, attrs, details} <- [
+          {"ana",
+           %{
+             "description" => "Predsednica saveta MZ Topolik i stanarka Cvetne 12.",
+             "description_audience" => "shared_groups"
+           },
+           %{
+             "first_name" => %{"value" => "Ana", "audience" => "shared_groups"},
+             "last_name" => %{"value" => "Petrović", "audience" => "shared_groups"},
+             "occupation" => %{"value" => "Arhitektkinja", "audience" => "shared_groups"},
+             "place" => %{"value" => "Novi Sad", "audience" => "signed_in"},
+             "phone" => %{
+               "value" => "064 123 4567",
+               "audience" => "groups",
+               "group_ids" => ["#{building.id}"]
+             },
+             "email" => %{"value" => "ana.petrovic@primer.rs", "audience" => "only_me"},
+             "website" => %{"value" => "ana-petrovic.rs", "audience" => "signed_in"}
+           }},
+          {"marko", %{},
+           %{
+             "first_name" => %{"value" => "Marko", "audience" => "shared_groups"},
+             "last_name" => %{"value" => "Jovanović", "audience" => "shared_groups"}
+           }},
+          {"jelena", %{},
+           %{
+             "first_name" => %{"value" => "Jelena", "audience" => "shared_groups"},
+             "last_name" => %{"value" => "Nikolić", "audience" => "shared_groups"},
+             "occupation" => %{"value" => "Učiteljica", "audience" => "signed_in"}
+           }},
+          {"stefan", %{},
+           %{
+             "first_name" => %{"value" => "Stefan", "audience" => "shared_groups"},
+             "last_name" => %{"value" => "Ilić", "audience" => "only_me"}
+           }}
+        ] do
+      person = people[name]
+
+      {:ok, _} =
+        Social.update_profile_for_account(person.account, person.profile.id, attrs, details)
+    end
   end
 
   # Ana and Marko answer for the building's council with one shared profile:

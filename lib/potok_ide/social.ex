@@ -60,6 +60,7 @@ defmodule PotokIde.Social do
     Notifications,
     PinnedGroups,
     Profile,
+    ProfileDetails,
     ProfileInvitation,
     Value,
     ValueAggregate,
@@ -427,26 +428,64 @@ defmodule PotokIde.Social do
     end
   end
 
-  def update_profile_for_account(%Account{} = account, profile_id, attrs)
+  @doc """
+  Saves the profile's form for an account that holds it. `details`, when
+  given, are its details as the form sends them, by key
+  (`PotokIde.Social.ProfileDetails.changesets/4`), saved with it. Returns
+  `{:error, changeset}` for the profile's own fields and
+  `{:error, {:details, changesets}}` when only a detail is wrong.
+  """
+  def update_profile_for_account(%Account{} = account, profile_id, attrs, details \\ nil)
       when is_integer(profile_id) do
     case get_profile_for_account(account, profile_id) do
       nil ->
         {:error, :not_found}
 
       profile ->
-        profile
-        |> load_picture()
-        |> Profile.changeset(attrs)
-        |> keep_shared_while_held()
-        |> Repo.update()
-        |> case do
-          {:ok, updated_profile} = ok ->
-            broadcast_account_profiles_updated(account)
-            broadcast_profile_updated(updated_profile)
-            ok
+        allowed = ProfileDetails.allowed_group_ids(profile)
 
-          error ->
-            error
+        changeset =
+          profile
+          |> load_picture()
+          |> Profile.changeset(attrs, allowed_group_ids: allowed)
+          |> keep_shared_while_held()
+
+        detail_changesets =
+          details &&
+            ProfileDetails.changesets(
+              profile,
+              ProfileDetails.list_fields(profile),
+              details,
+              allowed
+            )
+
+        cond do
+          not changeset.valid? ->
+            {:error, Map.put(changeset, :action, :update)}
+
+          detail_changesets && not ProfileDetails.valid?(detail_changesets) ->
+            {:error, {:details, detail_changesets}}
+
+          true ->
+            Repo.transaction(fn ->
+              case Repo.update(changeset) do
+                {:ok, updated} ->
+                  if detail_changesets, do: ProfileDetails.save!(Repo, detail_changesets)
+                  updated
+
+                {:error, changeset} ->
+                  Repo.rollback(changeset)
+              end
+            end)
+            |> case do
+              {:ok, updated_profile} = ok ->
+                broadcast_account_profiles_updated(account)
+                broadcast_profile_updated(updated_profile)
+                ok
+
+              error ->
+                error
+            end
         end
     end
   end

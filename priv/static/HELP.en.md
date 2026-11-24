@@ -140,17 +140,21 @@ The chat holds the minutes and the house rules (all of them are also in the File
 
 On the Profiles page you see your current and default profile and a list of all your profiles. Tapping a profile in the list changes the one you are using, and "Create profile" makes a new one.
 
-A username has 2 to 16 letters, digits and the characters `_`, `.` and `-`. A profile picture is resized to 200 × 200, and files over 5 MB are rejected. A profile also has a description and public tags.
+A username has 2 to 16 letters, digits and the characters `_`, `.` and `-`. A profile picture is resized to 200 × 200, and files over 5 MB are rejected. A profile also has a description, "About me", details and public tags.
+
+In the Details card you write your first and last name, occupation or organization, place, phone, contact email and up to three links. For each detail, and for the description, you pick who sees it: only you, picked groups, all your groups or everyone signed in. All your groups are the people who are in at least one group with you, leaving out the root and one-to-one conversations. A picked group is seen by its members while you are in it too. At first your name, occupation and place are seen by all your groups, and your phone, email and links by you alone. On a shared profile "only me" means all the accounts of that profile.
+
+![Profile details: the name for all groups, the phone for the building alone](profil-detalji)
 
 You share a shared profile with another profile: in the Sharing part you type its username. The invitation shows on the Profiles page while the invited profile is the current one, and once it is accepted, both accounts use the shared profile.
 
-![Profiles: current, default and the shared profile savet-cvetna](profili) ![Editing a profile: name, picture, description, sharing and tags](profil-uredi)
+![Profiles: current, default and the shared profile savet-cvetna](profili) ![Editing a profile: name, picture, details, description, sharing and tags](profil-uredi)
 
 ## Account and deleting it {:#nalog}
 
 Your account is your address and your sign-in, and your profiles are the faces you show in groups. In the account settings, the Account part links the [privacy policy](/privacy-policy), which says what Potok keeps about you, and has the **Delete account** button.
 
-Before deleting you see what goes and what stays. The account goes, with its sign-ins and devices, your memberships, follows, reactions, tags and invitations. Your messages, files, polls and events stay in the groups under the name "Deleted user", with no name, picture or description of yours. A profile you share with other accounts stays theirs. Groups where you are the only member go with the account.
+Before deleting you see what goes and what stays. The account goes, with its sign-ins and devices, your memberships, follows, reactions, tags and invitations. Your messages, files, polls and events stay in the groups under the name "Deleted user", with no name, picture, description or details of yours. A profile you share with other accounts stays theirs. Groups where you are the only member go with the account.
 
 A group never loses its last admin: if you are the only admin of a group that has other people in it, first make someone else an admin. If you logged in a moment ago, the account is deleted at once, once you type your address. Otherwise a link that works for an hour comes to your address. You can also ask for the same link without logging in, on the [account deletion](/brisanje-naloga) page.
 

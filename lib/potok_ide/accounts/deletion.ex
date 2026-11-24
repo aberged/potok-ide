@@ -7,8 +7,8 @@ defmodule PotokIde.Accounts.Deletion do
   trace of them:
 
     * A profile only this account used becomes a deleted one (`kind:
-      :deleted`): its name becomes `obrisan-<id>`, its picture and description
-      go, and wherever people are listed, mentioned or invited it is left out,
+      :deleted`): its name becomes `obrisan-<id>`, its picture, description
+      and details (`PotokIde.Social.ProfileField`) go, and wherever people are listed, mentioned or invited it is left out,
       as a process's profile is. Its messages, files, polls, events and notices
       stay and show "Obrisan korisnik".
     * A profile other accounts use as well stays as it is for them; only this
@@ -319,7 +319,8 @@ defmodule PotokIde.Accounts.Deletion do
           {"group_request_decisions", :profile_id},
           {"group_account_invitations", :inviter_id},
           {"group_blocks", :profile_id},
-          {"app_profile_entries", :profile_id}
+          {"app_profile_entries", :profile_id},
+          {"profile_fields", :profile_id}
         ] do
       from(r in table, where: field(r, ^column) in type(^ids, {:array, :integer}))
       |> Repo.delete_all()
@@ -349,6 +350,8 @@ defmodule PotokIde.Accounts.Deletion do
           username: deleted_username(id),
           profile_picture_url: nil,
           description: "",
+          description_audience: :only_me,
+          description_group_ids: [],
           sharing: :unique,
           notice_push: false,
           updated_at: now

@@ -1,6 +1,6 @@
 # Privacy Policy for Potok
 
-Effective date: November 19, 2026
+Effective date: November 24, 2026
 
 This Privacy Policy explains how Potok collects, uses, stores and shares information when you use the Potok app for Android and iOS, the website https://potok.rs and related services.
 
@@ -34,6 +34,7 @@ When someone invites an email address that has no account yet, Potok opens an un
 ### Profiles
 
 - Username, description and profile picture (stored in the database, or as the address of a picture on another site)
+- The profile details you write yourself: first and last name, occupation or organization, place, phone, contact email and links, and for each detail and for the description who sees them: only you, groups you pick, all your groups or everyone logged in
 - Whether a profile is shared with other accounts, and invitations to share it
 
 ### Groups and content
@@ -88,7 +89,7 @@ We process personal data on the basis of:
 
 ### Other users
 
-What you post in a group is seen by those the group's roles allow. Your profile, memberships and posts are seen in the groups and collaboration features you use. Public groups are seen by everyone who is logged in.
+What you post in a group is seen by those the group's roles allow. Your profile, memberships and posts are seen in the groups and collaboration features you use. A profile's details and description are seen only by those you meant each of them for. Public groups are seen by everyone who is logged in.
 
 ### Anyone with a link
 

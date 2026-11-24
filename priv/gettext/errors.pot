@@ -291,3 +291,21 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "This template was deleted meanwhile."
 msgstr ""
+
+msgid "must be one line"
+msgstr ""
+
+msgid "is not a phone number"
+msgstr ""
+
+msgid "is not an email address"
+msgstr ""
+
+msgid "has more than three links"
+msgstr ""
+
+msgid "has a line that is not a link"
+msgstr ""
+
+msgid "pick at least one group"
+msgstr ""

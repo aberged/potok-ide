@@ -146,17 +146,21 @@ U razgovoru stoje zapisnici i pravila kućnog reda (svi su i u kartici Fajlovi),
 
 Na stranici Profili vidiš trenutni i podrazumevani profil i spisak svih svojih profila. Dodirom na profil u spisku menjaš onaj kojim se služiš, a „Kreiraj profil“ pravi novi.
 
-Korisničko ime ima od 2 do 16 slova, brojeva i znakova `_`, `.` i `-`. Slika profila se smanjuje na 200 × 200, a fajlovi veći od 5 MB se odbijaju. Profil ima i opis i javne tagove.
+Korisničko ime ima od 2 do 16 slova, brojeva i znakova `_`, `.` i `-`. Slika profila se smanjuje na 200 × 200, a fajlovi veći od 5 MB se odbijaju. Profil ima i opis „O meni“, detalje i javne tagove.
+
+U kartici Detalji upisuješ ime i prezime, zanimanje ili organizaciju, mesto, telefon, e-poštu za kontakt i do tri linka. Za svaki detalj, i za opis, biraš ko ga vidi: samo ti, izabrane grupe, sve tvoje grupe ili svi prijavljeni. Sve tvoje grupe su ljudi koji su s tobom u bar jednoj grupi, ne računajući koren i razgovore u četiri oka. Izabranu grupu vide njeni članovi dok si i ti u njoj. Ime, prezime, zanimanje i mesto u početku vide sve tvoje grupe, a telefon, e-poštu i linkove samo ti. Na deljenom profilu „samo ja“ su svi nalozi tog profila.
+
+![Detalji profila: ime i prezime za sve grupe, telefon samo za zgradu](profil-detalji)
 
 Deljeni profil deliš sa drugim profilom: u delu Deljenje upišeš njegovo korisničko ime. Poziv se vidi na stranici Profili dok je pozvani profil trenutni, a kad ga prihvati, oba naloga koriste deljeni profil.
 
-![Profili: trenutni, podrazumevani i deljeni profil savet-cvetna](profili) ![Uređivanje profila: ime, slika, opis, deljenje i tagovi](profil-uredi)
+![Profili: trenutni, podrazumevani i deljeni profil savet-cvetna](profili) ![Uređivanje profila: ime, slika, detalji, opis, deljenje i tagovi](profil-uredi)
 
 ## Nalog i brisanje {:#nalog}
 
 Nalog je tvoja adresa i prijava, a profili su lica kojima se u grupama predstavljaš. U Podešavanjima naloga, u delu Nalog, je link na [politiku privatnosti](/privacy-policy), gde piše šta Potok čuva o tebi, i dugme **Obriši nalog**.
 
-Pre brisanja vidiš šta nestaje, a šta ostaje. Nestaju nalog, njegove prijave i uređaji, tvoja članstva, praćenja, reakcije, tagovi i pozivnice. Tvoje poruke, fajlovi, glasanja i događaji ostaju u grupama pod imenom „Obrisan korisnik“, bez tvog imena, slike i opisa. Profil koji deliš sa drugim nalozima ostaje njima. Grupe u kojima si jedini član nestaju s nalogom.
+Pre brisanja vidiš šta nestaje, a šta ostaje. Nestaju nalog, njegove prijave i uređaji, tvoja članstva, praćenja, reakcije, tagovi i pozivnice. Tvoje poruke, fajlovi, glasanja i događaji ostaju u grupama pod imenom „Obrisan korisnik“, bez tvog imena, slike, opisa i detalja. Profil koji deliš sa drugim nalozima ostaje njima. Grupe u kojima si jedini član nestaju s nalogom.
 
 Grupa nikad ne ostaje bez poslednjeg administratora: ako si jedini administrator grupe u kojoj ima i drugih, prvo nekog drugog postavi za administratora. Ako je tvoja prijava od maločas, nalog se briše odmah, kad upišeš svoju adresu. Inače ti na adresu stiže link koji važi sat vremena. Isti link možeš da zatražiš i bez prijave, na stranici [brisanje naloga](/brisanje-naloga).
 

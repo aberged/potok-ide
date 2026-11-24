@@ -5,7 +5,7 @@ defmodule PotokIde.Social.Profile do
   import Ecto.Changeset
 
   alias PotokIde.Repo
-  alias PotokIde.Social.AppProcess
+  alias PotokIde.Social.{AppProcess, ProfileField}
 
   @max_profile_picture_url_length 1_000_000
   @max_username_length 16
@@ -14,6 +14,8 @@ defmodule PotokIde.Social.Profile do
   @description_formats [:markdown, :html]
   @sharing_modes [:unique, :shared]
   @kinds [:person, :process, :deleted]
+  # As `PotokIde.Social.ProfileField.audiences/0`.
+  @audiences [:only_me, :groups, :shared_groups, :signed_in]
   # The name a deleted person's profile takes (`PotokIde.Accounts.Deletion`),
   # which nobody may pick.
   @deleted_username ~r/^obrisan-\d+$/
@@ -25,6 +27,9 @@ defmodule PotokIde.Social.Profile do
     field :profile_picture_url, :string, load_in_query: false
     field :description, :string
     field :description_format, Ecto.Enum, values: @description_formats, default: :markdown
+    # Who reads the description, as for a detail (`PotokIde.Social.ProfileField`).
+    field :description_audience, Ecto.Enum, values: @audiences, default: :only_me
+    field :description_group_ids, {:array, :id}, default: []
     field :sharing, Ecto.Enum, values: @sharing_modes, default: :unique
     # A person's profile, or the one that signs what an app's process does
     # (`PotokIde.Social.AppProcesses`): no account holds it, nobody picks it,
@@ -49,6 +54,10 @@ defmodule PotokIde.Social.Profile do
       join_through: PotokIde.Social.GroupMembership,
       join_keys: [profile_id: :id, group_id: :id]
 
+    # Never preloaded with the profile: `PotokIde.Social.ProfileDetails`
+    # reads them and decides who sees which.
+    has_many :fields, ProfileField
+
     has_many :created_groups, PotokIde.Social.Group, foreign_key: :creator_id
     has_many :values, PotokIde.Social.Value, foreign_key: :creator_id
     # Only for a process profile: the process it signs for.
@@ -57,9 +66,22 @@ defmodule PotokIde.Social.Profile do
     timestamps(type: :utc_datetime)
   end
 
-  def changeset(profile, attrs) do
+  @doc """
+  The profile as its form sends it. `allowed_group_ids:` are the groups the
+  description may be shown to (`PotokIde.Social.ProfileDetails.allowed_group_ids/1`);
+  besides them, it keeps only those it picked before.
+  """
+  def changeset(profile, attrs, opts \\ []) do
     profile
-    |> cast(attrs, [:username, :profile_picture_url, :description, :description_format, :sharing])
+    |> cast(normalize_group_ids(attrs), [
+      :username,
+      :profile_picture_url,
+      :description,
+      :description_format,
+      :description_audience,
+      :description_group_ids,
+      :sharing
+    ])
     |> validate_required([:username, :description_format, :sharing])
     |> validate_length(:username, min: 2, max: @max_username_length)
     |> validate_format(:username, @username_format,
@@ -73,6 +95,54 @@ defmodule PotokIde.Social.Profile do
     |> unsafe_validate_unique(:username, Repo)
     |> unique_constraint(:username)
     |> validate_length(:profile_picture_url, max: @max_profile_picture_url_length)
+    |> keep_description_group_ids(allowed_group_ids(profile, opts))
+  end
+
+  # The groups it picked stay allowed, so a form opens unchanged after the
+  # profile left one (it only stops counting); the form drops it once the
+  # profile picks again, as it lists only the groups the profile is in.
+  defp allowed_group_ids(profile, opts) do
+    stored =
+      case profile do
+        %__MODULE__{description_group_ids: ids} when is_list(ids) -> ids
+        _ -> []
+      end
+
+    Keyword.get(opts, :allowed_group_ids, []) ++ stored
+  end
+
+  # A checkbox group sends a hidden "" so that none picked still sends the key.
+  defp normalize_group_ids(attrs) when is_map(attrs) do
+    Map.new(attrs, fn
+      {key, ids} when key in [:description_group_ids, "description_group_ids"] and is_list(ids) ->
+        {key, Enum.reject(ids, &(&1 in ["", nil]))}
+
+      pair ->
+        pair
+    end)
+  end
+
+  defp normalize_group_ids(attrs), do: attrs
+
+  # Picked groups only for `:groups`, and only among the profile's own.
+  defp keep_description_group_ids(changeset, allowed_group_ids) do
+    if get_field(changeset, :description_audience) == :groups do
+      allowed = MapSet.new(allowed_group_ids)
+
+      ids =
+        changeset
+        |> get_field(:description_group_ids)
+        |> Enum.filter(&MapSet.member?(allowed, &1))
+        |> Enum.uniq()
+
+      changeset = put_change(changeset, :description_group_ids, ids)
+
+      if ids == [],
+        do: add_error(changeset, :description_group_ids, "pick at least one group"),
+        else: changeset
+    else
+      put_change(changeset, :description_group_ids, [])
+    end
   end
 
   @doc "Whether the profile signs for an app's process rather than for a person."
