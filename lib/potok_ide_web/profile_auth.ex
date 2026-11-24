@@ -272,14 +272,21 @@ defmodule PotokIdeWeb.ProfileAuth do
     {:cont, socket}
   end
 
+  # An account with no profile at all is not at fault: `/profiles` opens the
+  # modal that makes its first one, so it goes there without the error.
   def on_mount(:require_profile, _params, _session, socket) do
-    if socket.assigns[:current_profile] do
-      {:cont, socket}
-    else
-      {:halt,
-       socket
-       |> put_flash(:error, gettext("Please select or create a profile first."))
-       |> redirect(to: "/profiles")}
+    cond do
+      socket.assigns[:current_profile] ->
+        {:cont, socket}
+
+      account_without_profiles?(socket.assigns[:current_scope]) ->
+        {:halt, redirect(socket, to: "/profiles")}
+
+      true ->
+        {:halt,
+         socket
+         |> put_flash(:error, gettext("Please select or create a profile first."))
+         |> redirect(to: "/profiles")}
     end
   end
 
@@ -287,6 +294,11 @@ defmodule PotokIdeWeb.ProfileAuth do
   # mounts without one: a guest's app (`PotokIdeWeb.GroupLive.GuestApp`).
   def on_mount(:collect_socket_garbage, _params, _session, socket),
     do: {:cont, schedule_transport_gc(socket)}
+
+  defp account_without_profiles?(%{account: %Accounts.Account{} = account}),
+    do: not Social.account_has_profiles?(account)
+
+  defp account_without_profiles?(_scope), do: false
 
   @doc """
   Whether the socket's LiveView counts unread values itself, the header

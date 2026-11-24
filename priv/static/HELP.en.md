@@ -12,7 +12,11 @@ Everything you need to get going: how Potok works, how to organize your communit
 
 ### Getting in {:#ulazak}
 
-For now, you join Potok by invitation. Someone who is already here enters your email, and you get a message with a link that is valid for seven days. Once you open it, the account is yours: set a password in the settings, or log in each time with a magic link that comes to your email and is valid for fifteen minutes.
+For now, you join Potok by invitation. Someone who is already here enters your email, and you get a message with a link that is valid for seven days. The link opens a window where you pick a username and, if you like, a picture: others see you by them in groups. The button "Create profile and join the group" logs you in and takes you straight into the group you were invited to. You add a description and more profiles later, on the [Profiles](#profili) page.
+
+![The window an invitation's link opens: username, picture and the group you join](dobrodoslica)
+
+From then on the account is yours: set a password in the settings, or log in each time with a magic link that comes to your email and is valid for fifteen minutes.
 
 On the log-in page you enter your email and password. If you turn on "Keep me logged in on this device", Potok remembers you for two weeks.
 
@@ -238,7 +242,7 @@ You change the group's kind in Edit group → Basics, with Change. The new kind 
 
 The Members tab shows all members, their roles and who is online. From there, [requests to join and for roles](#zahtevi) are decided, roles given, [members removed](#uklanjanje) and [blocks](#blokiranje) lifted. Inherited members are marked, and tapping a member opens a one-to-one conversation. A role given by a decision of a poll is marked **elected**, which leads to that poll. The **Role** button narrows the list to those who hold one role, and then says how many they are.
 
-You can invite a profile by username, or someone by email: if they have no account yet, they get an invitation to Potok. Profiles are suggested from the third letter of the name on. An invitation holds for 30 days: the one invited accepts or deletes it on the Invitations page, and after that it lapses and you can invite them again.
+You can invite a profile by username, or someone by email: if they have no account yet, they get an invitation to Potok, and once they make a profile from its link, they are in the group. Profiles are suggested from the third letter of the name on. An invitation holds for 30 days: the one invited accepts or deletes it on the Invitations page, and after that it lapses and you can invite them again.
 
 ![Members and access requests](clanovi) ![Inviting into a group](pozovi)
 

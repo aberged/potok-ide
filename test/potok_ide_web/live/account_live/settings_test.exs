@@ -100,6 +100,8 @@ defmodule PotokIdeWeb.AccountLive.SettingsTest do
       assert %{"error" => "You must log in to access this page."} = flash
     end
 
+    # With no profile at all it is no error: `/profiles` opens the modal that
+    # makes the first one.
     test "redirects if account has no current profile", %{conn: conn} do
       {:error, redirect} =
         conn
@@ -108,7 +110,7 @@ defmodule PotokIdeWeb.AccountLive.SettingsTest do
 
       assert {:redirect, %{to: path, flash: flash}} = redirect
       assert path == ~p"/profiles"
-      assert %{"error" => "Please select or create a profile first."} = flash
+      refute flash["error"]
     end
   end
 

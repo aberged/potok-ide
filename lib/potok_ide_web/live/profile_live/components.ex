@@ -1,6 +1,9 @@
 defmodule PotokIdeWeb.ProfileLive.Components do
   use PotokIdeWeb, :html
 
+  alias PotokIde.Initials
+  alias PotokIde.Social.Profile
+  alias PotokIdeWeb.Avatars
   alias PotokIdeWeb.GroupLive.Show.Components, as: GroupComponents
 
   @max_profile_picture_upload_size 5 * 1024 * 1024
@@ -107,6 +110,255 @@ defmodule PotokIdeWeb.ProfileLive.Components do
     </GroupComponents.settings_card>
     """
   end
+
+  attr :form, :any, required: true, doc: "from `welcome_form/2`"
+
+  attr :invitation, :any,
+    default: nil,
+    doc:
+      "the account's invitation (`Social.first_pending_account_invitation/1`), with its group and inviter"
+
+  attr :remember_me, :any,
+    default: nil,
+    doc: "whether the box that keeps the account logged in is ticked; nil leaves the box out"
+
+  attr :button_variant, :string, default: "primary", doc: "`landing` on the guest pages"
+
+  @doc """
+  The first profile of an account, in a modal `<dialog>`: a name and a
+  picture, and with an invitation, the group the profile goes into. The page
+  around it handles `validate_profile`, `create_profile` (with the profile's
+  fields under `profile` and the box under `remember_me`) and `welcome_close`.
+  The rest of a profile is on the Profiles page.
+  """
+  def welcome_dialog(assigns) do
+    picture_url = profile_picture_url(assigns.form[:profile_picture_url].value)
+    username = String.trim(to_string(assigns.form[:username].value))
+    invitation = assigns.invitation
+
+    assigns =
+      assigns
+      |> assign(:picture_url, picture_url)
+      |> assign(:username, username)
+      |> assign(:initial_colors, Initials.colors(username))
+      |> assign(:group, invitation && invitation.group)
+      |> assign(:inviter, invitation && invitation.inviter && invitation.inviter.username)
+      |> assign(:max_profile_picture_upload_size, @max_profile_picture_upload_size)
+      |> assign(:max_profile_picture_dimension, @max_profile_picture_dimension)
+
+    ~H"""
+    <dialog
+      id="welcome-dialog"
+      phx-hook=".WelcomeDialog"
+      phx-mounted={JS.ignore_attributes(["open"])}
+      aria-labelledby="welcome-dialog-title"
+      class="fixed inset-0 m-0 size-full max-h-none max-w-none overflow-hidden bg-transparent p-0 backdrop:bg-transparent"
+    >
+      <div class="flex size-full items-end justify-center sm:items-center sm:p-4">
+        <div
+          id="welcome-dialog-backdrop"
+          class="absolute inset-0 bg-black/30 backdrop-blur-[2px] dark:bg-black/60"
+          phx-click="welcome_close"
+          aria-hidden="true"
+        >
+        </div>
+        <section class="relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl border border-b-0 border-base-300/70 bg-base-100 text-base-content shadow-2xl shadow-base-content/10 sm:max-w-md sm:rounded-3xl sm:border-b">
+          <header class="flex items-start gap-3 px-5 pt-5">
+            <img
+              :if={@group}
+              id="welcome-dialog-group"
+              src={Avatars.group_avatar_url(@group)}
+              alt=""
+              class="size-11 shrink-0 rounded-2xl border border-base-300/70 bg-base-200 object-cover"
+            />
+            <span
+              :if={!@group}
+              class="inline-flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary"
+            >
+              <.icon name="hero-user-plus" class="size-5" />
+            </span>
+            <div class="min-w-0 flex-1">
+              <h2 id="welcome-dialog-title" class="text-lg font-semibold leading-tight">
+                {gettext("Create your profile")}
+              </h2>
+              <p id="welcome-dialog-lead" class="mt-1 text-sm leading-6 text-base-content/70">
+                <%= if @group && @inviter do %>
+                  {gettext(
+                    "@%{username} invites you to “%{group}”. People there will know you by this name and picture.",
+                    username: @inviter,
+                    group: @group.name
+                  )}
+                <% else %>
+                  {gettext("People in groups will know you by this name and picture.")}
+                <% end %>
+              </p>
+            </div>
+            <.icon_button
+              id="welcome-close"
+              type="button"
+              phx-click="welcome_close"
+              icon="hero-x-mark"
+              label={gettext("Close")}
+              class="-mt-1 -mr-1"
+            />
+          </header>
+
+          <.form
+            for={@form}
+            id="welcome-profile-form"
+            phx-change="validate_profile"
+            phx-submit="create_profile"
+            class="min-h-0 flex-1 overflow-y-auto px-5 pt-5 pb-[calc(1.25rem+var(--app-safe-area-bottom))] sm:pb-5"
+          >
+            <%!-- The picker is ignored by patches, so the preview and the
+                 field stand outside it, and the wrapper's `data-picture`
+                 tells its "Clear image" when to show. --%>
+            <div
+              id="welcome-picture"
+              data-picture={if @picture_url, do: "set", else: "none"}
+              class="group/picture mb-5 flex items-center gap-4"
+            >
+              <span
+                id="welcome-picture-preview"
+                class="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-base-300/70 bg-base-200 text-base-content/50 shadow-sm"
+                style={
+                  !@picture_url && @username != "" &&
+                    "background-color: #{elem(@initial_colors, 0)}; color: #{elem(@initial_colors, 1)}"
+                }
+              >
+                <img
+                  :if={@picture_url}
+                  src={@picture_url}
+                  alt={gettext("Profile picture preview")}
+                  class="size-full object-cover"
+                />
+                <span :if={!@picture_url && @username != ""} class="text-xl font-semibold">
+                  {Initials.of(@username)}
+                </span>
+                <.icon :if={!@picture_url && @username == ""} name="hero-user" class="size-7" />
+              </span>
+              <input
+                type="hidden"
+                id="welcome-picture-url"
+                name={@form[:profile_picture_url].name}
+                value={@form[:profile_picture_url].value}
+              />
+              <div
+                id="welcome-picture-picker"
+                phx-hook=".ProfilePicturePicker"
+                phx-update="ignore"
+                data-input-id="welcome-picture-url"
+                data-max-file-size={@max_profile_picture_upload_size}
+                data-max-dimension={@max_profile_picture_dimension}
+                data-file-too-large-message={gettext("Choose an image smaller than 5 MB.")}
+                data-invalid-image-message={gettext("Choose a valid image file.")}
+                data-processing-message={gettext("Could not process that image.")}
+                class="min-w-0 flex-1"
+              >
+                <div class="flex flex-wrap gap-2">
+                  <label for="welcome-picture-file" class={button_class("secondary", "sm")}>
+                    <.icon name="hero-photo" class="size-4" /> {gettext("Choose image")}
+                  </label>
+                  <button
+                    id="welcome-picture-clear"
+                    type="button"
+                    data-profile-picture-clear
+                    class={[button_class("ghost", "sm"), "group-data-[picture=none]/picture:hidden"]}
+                  >
+                    <.icon name="hero-x-mark" class="size-4" /> {gettext("Clear image")}
+                  </button>
+                </div>
+                <input
+                  id="welcome-picture-file"
+                  type="file"
+                  accept="image/*"
+                  class="sr-only"
+                  data-profile-picture-file
+                />
+                <p
+                  data-profile-picture-error
+                  class="mt-2 hidden items-center gap-2 text-sm text-error"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <.icon name="hero-exclamation-circle" class="size-5 shrink-0" /> <span></span>
+                </p>
+              </div>
+            </div>
+
+            <.input
+              field={@form[:username]}
+              id="welcome-username"
+              label={gettext("Username")}
+              maxlength="16"
+              autocomplete="nickname"
+              autofocus
+              required
+            />
+            <p class="-mt-1 mb-4 text-sm text-base-content/65">
+              {gettext("Use 2 to 16 letters or numbers. You can also include _, ., and -.")}
+            </p>
+
+            <.input
+              :if={!is_nil(@remember_me)}
+              type="checkbox"
+              id="welcome-remember-me"
+              name="remember_me"
+              checked={@remember_me}
+              label={gettext("Keep me logged in on this device")}
+            />
+
+            <.button
+              id="welcome-submit"
+              type="submit"
+              variant={@button_variant}
+              phx-disable-with={gettext("Creating...")}
+              class="mt-2 w-full"
+            >
+              {if @group,
+                do: gettext("Create profile and join the group"),
+                else: gettext("Create profile")}
+            </.button>
+
+            <p id="welcome-later" class="mt-4 text-center text-xs leading-5 text-base-content/60">
+              {gettext("You can add a description and more profiles later, on the Profiles page.")}
+            </p>
+          </.form>
+        </section>
+      </div>
+    </dialog>
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".WelcomeDialog">
+      export default {
+        mounted() {
+          // Escape closes the dialog through the server, which removes it.
+          this.el.addEventListener("cancel", event => {
+            event.preventDefault()
+            this.pushEvent("welcome_close", {})
+          })
+          this.el.showModal()
+        },
+        updated() {
+          if (!this.el.open) this.el.showModal()
+        },
+      }
+    </script>
+    """
+  end
+
+  @doc """
+  The form of `welcome_dialog/1`: only a name and a picture, the rest keeps
+  its defaults. `action` shows the errors (`:validate`, `:insert`).
+  """
+  def welcome_form(attrs \\ %{}, action \\ nil) do
+    %Profile{}
+    |> Profile.changeset(welcome_attrs(attrs))
+    |> Map.put(:action, action)
+    |> to_form()
+  end
+
+  @doc "The fields of a profile `welcome_dialog/1` sends."
+  def welcome_attrs(attrs) when is_map(attrs),
+    do: Map.take(attrs, ["username", "profile_picture_url"])
 
   attr :field, :any, required: true
 

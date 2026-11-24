@@ -370,6 +370,63 @@ defmodule PotokIde.Social do
     end
   end
 
+  @doc "Whether the account has a profile, its own or one shared with it."
+  def account_has_profiles?(%Account{} = account) do
+    Repo.exists?(
+      from(account_profile in AccountProfile,
+        where: account_profile.account_id == ^account.id,
+        select: 1
+      )
+    )
+  end
+
+  @doc """
+  The oldest invitation still waiting for an account that has no profile yet,
+  with its group and inviter, or nil. Only the first invitation to an address
+  sends an email, so this is the one the email told of.
+  """
+  def first_pending_account_invitation(%Account{} = account) do
+    account |> pending_group_account_invitations_query() |> limit(1) |> Repo.one()
+  end
+
+  @doc """
+  Creates the account's first profile from an invitation's link and takes it
+  into the group of `first_pending_account_invitation/1`, as the button that
+  creates it says. Any other invitation waits as an ordinary one.
+
+  Returns `{:ok, profile, group}`, where the group is nil when there was no
+  invitation or it no longer holds, or `{:error, changeset}`.
+  """
+  def create_profile_from_invitation(%Account{} = account, attrs) do
+    # Read before the profile exists: creating it turns the account's
+    # invitations into ordinary ones and deletes them.
+    invitation = first_pending_account_invitation(account)
+
+    with {:ok, profile} <- create_profile_for_account(account, attrs) do
+      {:ok, profile, join_invited_group(profile, invitation)}
+    end
+  end
+
+  defp join_invited_group(_profile, nil), do: nil
+
+  defp join_invited_group(%Profile{} = profile, %GroupAccountInvitation{group: group}) do
+    invitation =
+      Repo.one(
+        from(i in GroupInvitation,
+          where:
+            i.group_id == ^group.id and i.invitee_id == ^profile.id and is_nil(i.accepted_at),
+          limit: 1
+        )
+      )
+
+    with %GroupInvitation{} <- invitation,
+         {:ok, _accepted} <- accept_group_invitation(invitation, profile) do
+      group
+    else
+      _gone_or_refused -> nil
+    end
+  end
+
   def update_profile_for_account(%Account{} = account, profile_id, attrs)
       when is_integer(profile_id) do
     case get_profile_for_account(account, profile_id) do
@@ -8605,13 +8662,16 @@ defmodule PotokIde.Social do
   end
 
   defp list_pending_group_account_invitations(%Account{} = account) do
+    account |> pending_group_account_invitations_query() |> Repo.all()
+  end
+
+  defp pending_group_account_invitations_query(%Account{} = account) do
     from(invitation in GroupAccountInvitation,
       where: invitation.account_id == ^account.id,
       where: invitation.inserted_at > ^GroupInvitation.cutoff(),
       preload: [:group, :inviter],
-      order_by: [asc: invitation.inserted_at]
+      order_by: [asc: invitation.inserted_at, asc: invitation.id]
     )
-    |> Repo.all()
   end
 
   defp direct_group_name(%Profile{} = first_profile, %Profile{} = second_profile) do

@@ -45,6 +45,7 @@ defmodule HelpShots.World do
     building = building(p, root, files_dir, shared)
     direct = direct(p)
     pending(p, mz)
+    invitation = invitation_link(p, building.root)
 
     # Ana keeps the assembly's chat on her home page too, as a shortcut.
     {:ok, _shortcut} = Social.create_group_shortcut(p.("ana"), root, mz.zbor.id)
@@ -127,6 +128,8 @@ defmodule HelpShots.World do
       entities: %{building_fault: building.fault.id},
       events: %{zbor: mz.event.id},
       shared_profile_id: shared.id,
+      # The link of an email invitation, for the modal that answers it.
+      links: %{invitation: invitation},
       # For the date fields of forms, which take it as written.
       dates: %{saturday: Date.to_iso8601(next_weekday(6))}
     }
@@ -1106,6 +1109,20 @@ defmodule HelpShots.World do
         "role_keys" => [volunteer.key],
         "note" => "Živim u Topoliku već deset godina i rado pomažem oko akcija u kraju."
       })
+  end
+
+  # Ana invites someone with no account yet into the building by email: the
+  # link in that email opens the modal that makes the first profile. Only the
+  # page is photographed, so the link stays unspent.
+  defp invitation_link(p, building) do
+    {:ok, account} = Accounts.register_account(%{email: "vesna@example.com"})
+
+    {:ok, %PotokIde.Social.GroupAccountInvitation{}} =
+      Social.invite_account_to_group(p.("ana"), building, account)
+
+    {encoded, token} = PotokIde.Accounts.AccountToken.build_email_token(account, "login")
+    Repo.insert!(token)
+    "/accounts/log-in/" <> encoded
   end
 
   # Helpers --------------------------------------------------------------------

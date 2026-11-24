@@ -3,6 +3,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
 
   alias PotokIde.Accounts
   alias PotokIde.Social
+  alias PotokIde.Social.Profile
   alias PotokIdeWeb.ProfileAuth
   alias PotokIdeWeb.ProfileLive.Components, as: ProfileComponents
 
@@ -148,11 +149,31 @@ defmodule PotokIdeWeb.ProfileLive.Index do
             size="md"
             navigate={~p"/groups"}
           />
-          <.button navigate={~p"/profiles/new"} variant="soft">
+          <.button
+            :if={@profiles != []}
+            id="profiles-create"
+            navigate={~p"/profiles/new"}
+            variant="soft"
+          >
+            <.icon name="hero-plus" class="size-4" /> {gettext("Create profile")}
+          </.button>
+          <.button
+            :if={@profiles == []}
+            id="profiles-create"
+            type="button"
+            phx-click="welcome_open"
+            variant="primary"
+          >
             <.icon name="hero-plus" class="size-4" /> {gettext("Create profile")}
           </.button>
         </div>
       </.page_container>
+
+      <ProfileComponents.welcome_dialog
+        :if={@welcome_open}
+        form={@profile_form}
+        invitation={@welcome_invitation}
+      />
     </Layouts.app>
     """
   end
@@ -166,12 +187,29 @@ defmodule PotokIdeWeb.ProfileLive.Index do
       |> put_private(:previous_current_profile, socket.assigns.current_profile)
       |> ProfileAuth.sync_profile_subscription()
 
+    profiles = Social.list_profiles_for_account(account)
+
     {:ok,
      socket
-     |> assign(:profiles, Social.list_profiles_for_account(account))
+     |> assign(:profiles, profiles)
      |> assign(:default_profile, Social.get_account_default_profile(account))
-     |> assign(:profile_invitations, pending_profile_invitations(socket.assigns.current_profile))}
+     |> assign(:profile_invitations, pending_profile_invitations(socket.assigns.current_profile))
+     |> assign_welcome(account, profiles)}
   end
+
+  # An account with no profile yet (one that came in by an invitation's link
+  # before the link made the profile itself) gets the same modal as that link:
+  # a name and a picture, and then the group of its invitation.
+  defp assign_welcome(socket, account, []) do
+    assign(socket,
+      welcome_open: true,
+      welcome_invitation: Social.first_pending_account_invitation(account),
+      profile_form: ProfileComponents.welcome_form()
+    )
+  end
+
+  defp assign_welcome(socket, _account, _profiles),
+    do: assign(socket, welcome_open: false, welcome_invitation: nil, profile_form: nil)
 
   @impl true
   def handle_event("use", %{"id" => id}, socket) do
@@ -227,6 +265,44 @@ defmodule PotokIdeWeb.ProfileLive.Index do
     end
   end
 
+  def handle_event("welcome_open", _params, %{assigns: %{profiles: []}} = socket),
+    do: {:noreply, assign(socket, :welcome_open, true)}
+
+  def handle_event("welcome_open", _params, socket), do: {:noreply, socket}
+
+  def handle_event("welcome_close", _params, socket),
+    do: {:noreply, assign(socket, :welcome_open, false)}
+
+  def handle_event("validate_profile", params, %{assigns: %{profiles: []}} = socket) do
+    form = ProfileComponents.welcome_form(params["profile"] || %{}, :validate)
+    {:noreply, assign(socket, :profile_form, form)}
+  end
+
+  def handle_event("validate_profile", _params, socket), do: {:noreply, socket}
+
+  # The group's page, in another live session, mounts afresh and reads the
+  # new profile.
+  def handle_event("create_profile", params, %{assigns: %{profiles: []}} = socket) do
+    account = socket.assigns.current_scope.account
+    attrs = ProfileComponents.welcome_attrs(params["profile"] || %{})
+
+    case Social.create_profile_from_invitation(account, attrs) do
+      {:ok, _profile, group} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, gettext("Your profile is ready."))
+         |> redirect(to: if(group, do: ~p"/groups/#{group.id}", else: ~p"/groups"))}
+
+      {:error, %Ecto.Changeset{data: %Profile{}} = changeset} ->
+        {:noreply, assign(socket, :profile_form, to_form(changeset))}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, gettext("Could not create the profile."))}
+    end
+  end
+
+  def handle_event("create_profile", _params, socket), do: {:noreply, socket}
+
   def handle_event("accept_profile_invitation", %{"id" => id}, socket) do
     account = socket.assigns.current_scope.account
     invitee = socket.assigns.current_profile
@@ -266,11 +342,13 @@ defmodule PotokIdeWeb.ProfileLive.Index do
     previous_profile = socket.private[:previous_current_profile]
     account = Accounts.get_account!(account_id)
     current_profile = Social.get_account_current_profile(account)
+    profiles = Social.list_profiles_for_account(account)
 
     {:noreply,
      socket
      |> assign(:current_scope, %{socket.assigns.current_scope | account: account})
-     |> assign(:profiles, Social.list_profiles_for_account(account))
+     |> assign(:profiles, profiles)
+     |> assign_welcome(account, profiles)
      |> assign(:default_profile, Social.get_account_default_profile(account))
      |> assign(:current_profile, current_profile)
      |> assign(:profile_invitations, pending_profile_invitations(current_profile))

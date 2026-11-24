@@ -31,15 +31,15 @@ defmodule PotokIdeWeb.AccountAuth do
   @doc """
   Logs the account in.
 
-  Redirects to the session's `:account_return_to` path
-  or falls back to the `signed_in_path/1`.
+  Redirects to the `:return_to` option, else to the session's
+  `:account_return_to` path, else to `signed_in_path/1`.
   """
-  def log_in_account(conn, account, params \\ %{}) do
-    account_return_to = get_session(conn, :account_return_to)
+  def log_in_account(conn, account, params \\ %{}, opts \\ []) do
+    return_to = opts[:return_to] || get_session(conn, :account_return_to)
 
     conn
     |> create_or_extend_session(account, params)
-    |> redirect(to: account_return_to || signed_in_path(conn, account))
+    |> redirect(to: return_to || signed_in_path(conn, account))
   end
 
   @doc """

@@ -18,7 +18,11 @@ Sve što ti treba da počneš: kako Potok radi, kako u njemu da organizuješ svo
 
 ### Ulazak u Potok {:#ulazak}
 
-Za sada se u Potok ulazi uz pozivnicu. Neko ko je već tu upiše tvoj imejl, a tebi stigne poruka sa linkom koji važi sedam dana. Kad ga otvoriš, nalog je tvoj: postavi lozinku u podešavanjima ili se svaki put prijavljuj magičnim linkom koji ti stiže na imejl i važi petnaest minuta.
+Za sada se u Potok ulazi uz pozivnicu. Neko ko je već tu upiše tvoj imejl, a tebi stigne poruka sa linkom koji važi sedam dana. Link otvara prozor u kom biraš korisničko ime i, ako hoćeš, sliku: po njima te drugi vide u grupama. Dugme „Kreiraj profil i uđi u grupu“ te prijavljuje i vodi pravo u grupu u koju si pozvan. Opis i druge profile dodaješ kasnije, na stranici [Profili](#profili).
+
+![Prozor sa linka iz pozivnice: korisničko ime, slika i grupa u koju ulaziš](dobrodoslica)
+
+Od tada je nalog tvoj: postavi lozinku u podešavanjima ili se svaki put prijavljuj magičnim linkom koji ti stiže na imejl i važi petnaest minuta.
 
 Na stranici za prijavu upišeš imejl i lozinku. Ako uključiš „Ostavi me prijavljenim na ovom uređaju“, Potok te pamti dve nedelje.
 
@@ -244,7 +248,7 @@ Vrstu grupe menjaš u Uredi grupu → Osnovno, dugmetom Promeni. Nova vrsta dono
 
 Kartica Članovi pokazuje sve članove, njihove uloge i ko je na mreži. Odatle se odlučuje o [zahtevima za pristup i za uloge](#zahtevi), dodeljuju uloge, [uklanjaju članovi](#uklanjanje) i skidaju [blokade](#blokiranje). Nasleđeni članovi su označeni, a dodirom na člana otvaraš razgovor u četiri oka. Uloga koju je dala odluka glasanja ima oznaku **izabran**, koja vodi na to glasanje. Dugmetom **Uloga** spisak sužavaš na one koji imaju jednu ulogu, i tada piše koliko ih je.
 
-Pozvati možeš profil po korisničkom imenu ili nekoga po imejlu: ako još nema nalog, dobija pozivnicu za Potok. Profili se predlažu od trećeg slova imena. Pozivnica važi 30 dana: pozvani je prihvata ili briše na stranici Pozivnice, a posle toga ističe i možeš ponovo da ga pozoveš.
+Pozvati možeš profil po korisničkom imenu ili nekoga po imejlu: ako još nema nalog, dobija pozivnicu za Potok, a kad sa njenog linka napravi profil, odmah je član grupe. Profili se predlažu od trećeg slova imena. Pozivnica važi 30 dana: pozvani je prihvata ili briše na stranici Pozivnice, a posle toga ističe i možeš ponovo da ga pozoveš.
 
 ![Članovi i zahtevi za pristup](clanovi) ![Pozivanje u grupu](pozovi)
 

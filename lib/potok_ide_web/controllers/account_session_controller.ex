@@ -10,19 +10,28 @@ defmodule PotokIdeWeb.AccountSessionController do
     create(conn, params, gettext("Account confirmed successfully."))
   end
 
+  # The link of an invitation, once its page has made the first profile and
+  # taken it into the invited group (`AccountLive.Confirmation`). A group id
+  # someone changed only leads to a group that sends them back.
+  def create(conn, %{"_action" => "welcome"} = params) do
+    create(conn, params, gettext("Your profile is ready."), return_to: welcome_path(params))
+  end
+
   def create(conn, params) do
     create(conn, params, gettext("Welcome back!"))
   end
 
+  defp create(conn, params, info, opts \\ [])
+
   # magic link login
-  defp create(conn, %{"account" => %{"token" => token} = account_params}, info) do
+  defp create(conn, %{"account" => %{"token" => token} = account_params}, info, opts) do
     case Accounts.login_account_by_magic_link(token) do
       {:ok, {account, tokens_to_disconnect}} ->
         AccountAuth.disconnect_sessions(tokens_to_disconnect)
 
         conn
         |> put_flash(:info, info)
-        |> AccountAuth.log_in_account(account, account_params)
+        |> AccountAuth.log_in_account(account, account_params, opts)
 
       _ ->
         conn
@@ -33,7 +42,7 @@ defmodule PotokIdeWeb.AccountSessionController do
 
   # email + password login: counted per IP and, when it fails, per address,
   # both before the password is hashed.
-  defp create(conn, %{"account" => account_params}, info) do
+  defp create(conn, %{"account" => account_params}, info, _opts) do
     %{"email" => email, "password" => _password} = account_params
     address = RateLimit.email_key(email)
 
@@ -103,6 +112,15 @@ defmodule PotokIdeWeb.AccountSessionController do
     |> put_flash(:info, gettext("Logged out successfully."))
     |> AccountAuth.log_out_account()
   end
+
+  defp welcome_path(%{"account" => %{"group_id" => group_id}}) when is_binary(group_id) do
+    case Integer.parse(group_id) do
+      {id, ""} when id > 0 -> ~p"/groups/#{id}"
+      _not_an_id -> ~p"/groups"
+    end
+  end
+
+  defp welcome_path(_params), do: ~p"/groups"
 
   defp password_log_in(conn, account_params, info, on_failure) do
     %{"email" => email, "password" => password} = account_params

@@ -436,4 +436,57 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
       assert has_element?(lv, "a[href='/profiles/#{profile.id}/edit']")
     end
   end
+
+  # An account logged in with no profile yet gets the modal of an
+  # invitation's link (`ProfileComponents.welcome_dialog/1`).
+  describe "an account with no profile" do
+    setup %{conn: conn} do
+      {_owner_account, owner} = PotokIde.EventsFixtures.account_with_profile!("idx-owner")
+      group = PotokIde.EventsFixtures.group_with_members!(owner, [])
+      account = account_fixture()
+      {:ok, _invitation} = Social.invite_account_to_group(owner, group, account)
+
+      %{conn: log_in_account(conn, account), account: account, group: group}
+    end
+
+    test "gets the modal, and its profile goes into the invited group", ctx do
+      {:ok, lv, _html} = live(ctx.conn, ~p"/profiles")
+
+      assert has_element?(lv, "#welcome-dialog #welcome-profile-form")
+      assert has_element?(lv, "#welcome-dialog-group")
+      refute has_element?(lv, "#welcome-remember-me")
+
+      lv |> element("#welcome-close") |> render_click()
+      refute has_element?(lv, "#welcome-dialog")
+      lv |> element("#profiles-create") |> render_click()
+      assert has_element?(lv, "#welcome-dialog")
+
+      lv
+      |> form("#welcome-profile-form", %{"profile" => %{"username" => "idx-new"}})
+      |> render_submit()
+
+      flash = assert_redirect(lv, ~p"/groups/#{ctx.group.id}")
+      assert flash["info"] =~ "Your profile is ready."
+      profile = Social.get_account_current_profile(Accounts.get_account!(ctx.account.id))
+      assert Social.member_of_group?(profile, ctx.group)
+    end
+
+    test "comes to the profiles page without an error", ctx do
+      assert {:error, {:redirect, %{to: "/profiles", flash: flash}}} = live(ctx.conn, ~p"/groups")
+      refute flash["error"]
+    end
+
+    test "an account with a profile gets no modal", %{conn: conn} do
+      account = account_fixture()
+      {:ok, _profile} = Social.create_profile_for_account(account, %{username: "idx-has"})
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(Accounts.get_account!(account.id))
+        |> live(~p"/profiles")
+
+      refute has_element?(lv, "#welcome-dialog")
+      assert has_element?(lv, "#profiles-create[href='/profiles/new']")
+    end
+  end
 end

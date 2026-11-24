@@ -10,6 +10,16 @@
     "url": "/accounts/log-in"
   },
   {
+    "name": "dobrodoslica",
+    "url": "{links.invitation}",
+    "steps": [
+      { "wait": "#welcome-dialog[open]" },
+      { "fill": ["#welcome-username", "vesna"] },
+      { "wait": "#welcome-picture-preview span" },
+      { "pause": 600 }
+    ]
+  },
+  {
     "name": "pocetna",
     "as": "ana",
     "url": "/groups"
