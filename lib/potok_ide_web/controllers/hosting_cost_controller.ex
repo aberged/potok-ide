@@ -1,8 +1,8 @@
 defmodule PotokIdeWeb.HostingCostController do
   @moduledoc """
-  `/troskovi`: what Potok costs on Fly, open to everyone
-  (`PotokIde.HostingCosts`). Operators also get the form that copies a Fly
-  invoice, which posts to `/troskovi/racuni`.
+  `/troskovi`: what Potok costs on Fly, for every logged-in account
+  (`PotokIde.HostingCosts`); the router sends guests to log in. Operators also
+  get the form that copies a Fly invoice, which posts to `/troskovi/racuni`.
   """
 
   use PotokIdeWeb, :controller

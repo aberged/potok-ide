@@ -84,8 +84,7 @@ defmodule PotokIdeWeb.Router do
     get "/pomoc/:slug", PageController, :help_tutorial
     get "/help", PageController, :help_redirect
     get "/help/:slug", PageController, :help_tutorial_redirect
-    # Public: what Potok costs. The operators' form shows in it for them.
-    get "/troskovi", HostingCostController, :index
+    # Leads to `/troskovi`, which asks a guest to log in first.
     get "/costs", HostingCostController, :index_redirect
     # Public, as app stores ask: the emailed link is the proof, so a person
     # who can't log in, or was only invited, can delete the account too.
@@ -97,10 +96,12 @@ defmodule PotokIdeWeb.Router do
     get "/delete-account", AccountDeletionController, :new_redirect
   end
 
-  # An operator copies a Fly invoice: it needs a login; anyone else gets 404.
+  # What Potok costs, for accounts only: a guest logs in and comes back to it.
+  # An operator copies a Fly invoice there; anyone else posting gets 404.
   scope "/", PotokIdeWeb do
     pipe_through [:browser, :require_authenticated_account]
 
+    get "/troskovi", HostingCostController, :index
     post "/troskovi/racuni", HostingCostController, :save_invoice
   end
 

@@ -1,6 +1,7 @@
 defmodule PotokIde.HostingCosts do
   @moduledoc """
-  What Potok costs on Fly, for the public page `/troskovi`.
+  What Potok costs on Fly, for the page `/troskovi`, which every logged-in
+  account sees.
 
   Fly gives no API for bills, so Potok estimates them: `sample/1`
   (`PotokIde.HostingCosts.Sampler`, every 15 minutes) reads what runs (the

@@ -10,6 +10,8 @@ defmodule PotokIdeWeb.HostingCostControllerTest do
     conn |> get(path) |> html_response(200) |> LazyHTML.from_document()
   end
 
+  defp member(conn), do: log_in_account(conn, account_fixture())
+
   defp has?(document, selector), do: LazyHTML.query(document, selector) |> Enum.any?()
 
   defp text(document, selector), do: document |> LazyHTML.query(selector) |> LazyHTML.text()
@@ -34,13 +36,20 @@ defmodule PotokIdeWeb.HostingCostControllerTest do
     })
   end
 
-  test "guests see what this month costs so far and every month", %{conn: conn} do
+  test "guests are asked to log in, and come back to the page", %{conn: conn} do
+    conn = get(conn, ~p"/troskovi?mesec=2026-09")
+
+    assert redirected_to(conn) == ~p"/accounts/log-in"
+    assert get_session(conn, :account_return_to) == ~p"/troskovi?mesec=2026-09"
+  end
+
+  test "accounts see what this month costs so far and every month", %{conn: conn} do
     cost_hour(:machines, "m1", "0.014")
     cost_hour(:postgres, "basic", "0.053")
     last = this_month() |> Date.add(-1) |> Date.beginning_of_month()
     Repo.insert!(%Invoice{month: last, amount_usd: Decimal.new("47.50"), note: "with VAT"})
 
-    document = page(conn)
+    document = conn |> member() |> page()
 
     assert has?(document, "#costs-current #costs-so-far")
     assert has?(document, "#costs-projected")
@@ -56,7 +65,7 @@ defmodule PotokIdeWeb.HostingCostControllerTest do
   end
 
   test "says when there is nothing to show yet", %{conn: conn} do
-    document = page(conn)
+    document = conn |> member() |> page()
 
     assert has?(document, "#costs-current-empty")
     refute has?(document, "#costs-so-far")
@@ -66,15 +75,10 @@ defmodule PotokIdeWeb.HostingCostControllerTest do
     cost_hour(:machines, "m1", "1234.5")
 
     # Tests read English unless they ask for another language.
-    assert text(page(conn), "#costs-so-far") =~ "$1,234.50"
-    assert text(page(build_conn(), ~p"/troskovi?locale=sr"), "#costs-so-far") =~ "1.234,50 $"
-  end
+    assert text(conn |> member() |> page(), "#costs-so-far") =~ "$1,234.50"
 
-  test "accounts that are not operators see the page as guests do", %{conn: conn} do
-    document = conn |> log_in_account(account_fixture()) |> page()
-
-    assert has?(document, "#costs")
-    refute has?(document, "#invoice-form")
+    assert text(build_conn() |> member() |> page(~p"/troskovi?locale=sr"), "#costs-so-far") =~
+             "1.234,50 $"
   end
 
   test "an operator gets the form, for the month asked for", %{conn: conn} do
@@ -129,8 +133,9 @@ defmodule PotokIdeWeb.HostingCostControllerTest do
     assert conn |> get(~p"/costs") |> redirected_to() == ~p"/troskovi"
   end
 
-  test "/stack and the guest pages link to it", %{conn: conn} do
-    assert has?(page(conn, ~p"/stack"), "#stack-costs-link[href='/troskovi']")
-    assert has?(page(build_conn(), ~p"/troskovi"), "#guest-costs-link")
+  test "/stack links to it for accounts only, and guest pages not at all", %{conn: conn} do
+    assert has?(conn |> member() |> page(~p"/stack"), "#stack-costs-link[href='/troskovi']")
+    refute has?(page(build_conn(), ~p"/stack"), "#stack-costs")
+    refute has?(page(build_conn(), ~p"/stack"), "#guest-costs-link")
   end
 end

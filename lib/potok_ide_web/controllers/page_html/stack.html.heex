@@ -49,7 +49,8 @@
       </div>
     </section>
 
-    <section id="stack-costs" class="dm-stack">
+    <%!-- The costs page is for accounts only, so guests get no way there. --%>
+    <section :if={@current_scope} id="stack-costs" class="dm-stack">
       <.link id="stack-costs-link" href={~p"/troskovi"} class="group">
         <div>
           <h2 class="font-brand">{StackCopy.costs_title()}</h2>

@@ -401,6 +401,7 @@ defmodule PotokIdeWeb.Layouts do
                     {gettext("Help")}
                   </.sidebar_link>
                   <.sidebar_link
+                    :if={@current_scope}
                     id="app-costs-link"
                     icon="hero-banknotes"
                     href={~p"/troskovi"}
@@ -659,13 +660,6 @@ defmodule PotokIdeWeb.Layouts do
                   class="text-sm text-base-content/65 underline-offset-4 transition hover:text-base-content hover:underline"
                 >
                   {gettext("Help")}
-                </.link>
-                <.link
-                  id="guest-costs-link"
-                  href={~p"/troskovi"}
-                  class="text-sm text-base-content/65 underline-offset-4 transition hover:text-base-content hover:underline"
-                >
-                  {gettext("Costs")}
                 </.link>
                 <.link
                   id="guest-privacy-link"
