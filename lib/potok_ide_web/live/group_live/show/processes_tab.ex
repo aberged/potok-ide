@@ -576,6 +576,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
       >
         {label}
       </span>
+    </div>
+
+    <div class="mt-1.5">
       <button
         type="button"
         id={"process-row-#{@entry.id}-runs"}
@@ -816,15 +819,35 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
   defp run_class("failed"), do: "text-rose-600 dark:text-rose-400"
   defp run_class(_kind), do: "text-base-content/50"
 
+  # A step by its name, or by what it does, as its editor offers it.
+  defp step(%{label: label}) when is_binary(label), do: label
+  defp step(%{type: "startEvent"}), do: gettext("Start")
+  defp step(%{type: "endEvent"}), do: gettext("End")
+
+  defp step(%{type: type, element: element}) do
+    kind =
+      case type do
+        "userTask" -> "task"
+        "formTask" -> "form"
+        "pollTask" -> "poll"
+        "callActivity" -> "call"
+        "receiveTask" -> "receive"
+        "exclusiveGateway" -> "gateway"
+        other -> other
+      end
+
+    case List.keyfind(ProcessEditor.insert_kinds(), kind, 0) do
+      {_kind, _icon, name, _text, _class} -> name
+      nil -> element || ""
+    end
+  end
+
   # Where a run stands, by the last thing it did.
-  defp run_state(%{kind: "done", label: label}), do: gettext("Ended at “%{step}”", step: label)
-
-  defp run_state(%{kind: "failed", label: label}),
-    do: gettext("Stopped at “%{step}”", step: label)
-
+  defp run_state(%{kind: "done"} = last), do: gettext("Ended at “%{step}”", step: step(last))
+  defp run_state(%{kind: "failed"} = last), do: gettext("Stopped at “%{step}”", step: step(last))
   defp run_state(%{kind: "cancelled"}), do: gettext("Cancelled")
-  defp run_state(%{kind: "waits", label: label}), do: gettext("Waits at “%{step}”", step: label)
-  defp run_state(%{label: label}), do: gettext("Under way, after “%{step}”", step: label)
+  defp run_state(%{kind: "waits"} = last), do: gettext("Waits at “%{step}”", step: step(last))
+  defp run_state(last), do: gettext("Under way, after “%{step}”", step: step(last))
 
   # What an event of a run says, with who did it where someone did.
   defp event_text(%{kind: "started", actor: %Profile{} = actor}),
@@ -832,11 +855,13 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
 
   defp event_text(%{kind: "started"}), do: gettext("It starts.")
 
-  defp event_text(%{kind: "passed", count: count, label: label}) when count > 1,
-    do: gettext("“%{step}”, %{count} times in all.", step: label, count: count)
+  defp event_text(%{kind: "passed", count: count} = event) when count > 1,
+    do: gettext("“%{step}”, %{count} times in all.", step: step(event), count: count)
 
-  defp event_text(%{kind: "passed", label: label}), do: gettext("“%{step}”", step: label)
-  defp event_text(%{kind: "waits", label: label}), do: gettext("Waits at “%{step}”.", step: label)
+  defp event_text(%{kind: "passed"} = event), do: gettext("“%{step}”", step: step(event))
+
+  defp event_text(%{kind: "waits"} = event),
+    do: gettext("Waits at “%{step}”.", step: step(event))
 
   defp event_text(%{kind: "answered"} = event) do
     name = if event.actor, do: Profile.display_name(event.actor), else: gettext("Someone")
@@ -845,19 +870,19 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
       do:
         gettext("%{name} decides “%{step}”: %{outcome}.",
           name: name,
-          step: event.label,
+          step: step(event),
           outcome: event.outcome
         ),
-      else: gettext("%{name} fills in “%{step}”.", name: name, step: event.label)
+      else: gettext("%{name} fills in “%{step}”.", name: name, step: step(event))
   end
 
-  defp event_text(%{kind: "woke", label: label}),
-    do: gettext("Goes on from “%{step}”.", step: label)
+  defp event_text(%{kind: "woke"} = event),
+    do: gettext("Goes on from “%{step}”.", step: step(event))
 
   defp event_text(%{kind: "failed"} = event),
     do:
       gettext("Stops at “%{step}”: %{reason}.",
-        step: event.label,
+        step: step(event),
         reason: failure_reason(event.outcome)
       )
 
@@ -878,7 +903,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
     end
   end
 
-  defp event_text(%{kind: "done", label: label}), do: gettext("Ends at “%{step}”.", step: label)
+  defp event_text(%{kind: "done"} = event), do: gettext("Ends at “%{step}”.", step: step(event))
 
   defp var_text([before, now]), do: ": #{var_value(before)} → #{var_value(now)}"
   defp var_text(_much), do: gettext(": changed")

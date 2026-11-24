@@ -145,7 +145,7 @@ defmodule PotokIdeWeb.GroupLive.Show.HistoryWords do
         )
 
       :deleted ->
-        gettext("%{actor} deletes the description “%{name}” with all its app kept.", words)
+        gettext("%{actor} deletes the description “%{name}”.", words)
     end
   end
 

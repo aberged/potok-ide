@@ -70,6 +70,8 @@ defmodule HelpShots.World do
       {:ok, _} = Accounts.set_current_profile(person.account, person.profile)
     end
 
+    history_at = history(p, mz.root)
+
     # Announcements went out now; the lists order groups by their newest
     # message as backdated.
     Repo.query!("""
@@ -132,9 +134,61 @@ defmodule HelpShots.World do
       # The link of an email invitation, for the modal that answers it.
       links: %{invitation: invitation},
       # For the date fields of forms, which take it as written.
-      dates: %{saturday: Date.to_iso8601(next_weekday(6))}
+      dates: %{saturday: Date.to_iso8601(next_weekday(6))},
+      # A moment before the changes `history/2` makes, for a page's address.
+      history: %{at: history_at}
     }
   end
+
+  # What the local community was until lately, and who changed it: the world so
+  # far is four days old, its description read another way until yesterday,
+  # and the rest of the changes are today's. Returns a moment between the two.
+  defp history(p, mz) do
+    ana = p.("ana")
+    mz = Repo.get!(Group, mz.id)
+
+    earlier =
+      mz.description
+      |> String.replace("svakog prvog četvrtka u mesecu, u Domu kulture", "kad ga savet zakaže")
+      |> String.replace("- Problem u kraju? Dodaj ga na **Mapu kraja**, sa slikom.\n", "")
+
+    {:ok, _} =
+      PotokIde.History.off(fn ->
+        Repo.update_all(from(g in Group, where: g.id == ^mz.id), set: [description: earlier])
+      end)
+
+    for table <- ~w(group_changes group_access_changes) do
+      column = if table == "group_changes", do: "at", else: "inserted_at"
+      Repo.query!("UPDATE #{table} SET #{column} = #{column} - interval '4 days'")
+    end
+
+    for table <- ~w(groups group_alt_descriptions polls group_events) do
+      Repo.query!("UPDATE #{table} SET inserted_at = inserted_at - interval '4 days' WHERE id IN (SELECT id FROM #{table})")
+    end
+
+    Repo.query!(
+      "UPDATE schema_migrations SET inserted_at = inserted_at - interval '6 days' WHERE version = 20261124183712"
+    )
+
+    {:ok, _} =
+      Social.update_group_description(ana, Repo.get!(Group, mz.id), %{
+        "description" => mz.description
+      })
+
+    Repo.query!("UPDATE group_changes SET at = at - interval '20 hours' WHERE at > now() - interval '1 hour'")
+
+    {:ok, rules} =
+      Social.create_alt_description(ana, Repo.get!(Group, mz.id), %{
+        "name" => "Poslovnik saveta",
+        "description" => "Savet se sastaje jednom mesečno."
+      })
+
+    {:ok, _} = Social.delete_alt_description(ana, Repo.get!(Group, mz.id), rules)
+
+    now() |> DateTime.add(-2, :day) |> DateTime.to_naive() |> NaiveDateTime.to_iso8601() |> String.slice(0, 16)
+  end
+
+  defp now, do: DateTime.utc_now() |> DateTime.shift_zone!(@zone)
 
   # People ------------------------------------------------------------------
 

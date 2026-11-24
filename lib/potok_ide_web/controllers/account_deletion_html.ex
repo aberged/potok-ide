@@ -31,7 +31,7 @@ defmodule PotokIdeWeb.AccountDeletionHTML do
           <.icon name="hero-chat-bubble-left-right" class="mt-0.5 size-4 shrink-0 opacity-70" />
           <span>
             {gettext(
-              "Stays: what you wrote in groups, your files, polls and events, under \"Deleted user\", with no name, picture, description or details of yours."
+              "Stays: what you wrote in groups, your files, polls and events, and in a group's history that you changed something there, under \"Deleted user\", with no name, picture, description or details of yours."
             )}
           </span>
         </li>

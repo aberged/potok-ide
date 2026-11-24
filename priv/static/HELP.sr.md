@@ -208,7 +208,7 @@ Poruku pišeš u polje na dnu i šalješ strelicom. Na telefonu, dok kucaš, gor
 - **Nit**: duži razgovor o jednoj poruci, da ne zatrpava glavni razgovor. Ispod poruke stoji koliko ima nepročitanih poruka u niti, ako u njoj učestvuješ: ako si je otvorio, pisao u njoj, napisao poruku od koje je nastala ili te neko u njoj pomenuo. Samo njima nit šalje i obaveštenja.
 - **Reakcije**: jedan emoji na poruku. Dodirom na reakciju dodaješ ili skidaš svoju.
 - **Pominjanje**: napiši @ i ime člana ili uloge, a @everyone pominje sve. Pomenutom se poruka istakne i stiže mu obaveštenje.
-- **Izmena i brisanje**: svoje poruke možeš da izmeniš i obrišeš, a ko ima dozvolu, briše i tuđe. Izmenjena poruka pored vremena kaže „izmenjeno“, a dugi pritisak pokazuje i kad je izmenjena.
+- **Izmena i brisanje**: svoje poruke možeš da izmeniš i obrišeš, a ko ima dozvolu, briše i tuđe. Izmenjena poruka pored vremena kaže „izmenjeno“, a dugi pritisak pokazuje i kad je izmenjena. Da je poruka izmenjena ili obrisana ostaje u [istoriji grupe](#istorija), bez teksta.
 - **Linkovi** dobijaju pregled, a dugačke poruke se skupljaju dok ih ne otvoriš. Link ka formi pokazuje naslov i podnaslov forme onima koji smeju da je otvore.
 
 Na telefonu dugo pritisni poruku: otvara se list sa brzim reakcijama i svim radnjama. Na računaru se iste radnje pojavljuju kad pređeš mišem preko poruke.
@@ -374,11 +374,31 @@ Dalje su sve uloge jedna pored druge, koliko ljudi ima dozvole koje deluju na dr
 
 ![Ko ima moć i kako se dobija uloga](pregled-pristupa-moc)
 
-Na dnu je istorija: ko je kome dao ili oduzeo ulogu, ko je menjao uloge, dozvole ili podešavanja kojima se ulazi u grupu, ko je koga primio, uklonio ili blokirao, ko je sam otišao, i kada. Blokade u njoj vide samo oni koji smeju da uklanjaju članove. Istorija se beleži od kad postoji, pa ranijih promena u njoj nema.
+Na dnu je istorija: ko je kome dao ili oduzeo ulogu, ko je menjao uloge, dozvole ili podešavanja kojima se ulazi u grupu, ko je koga primio, uklonio ili blokirao, ko je sam otišao, i kada. Blokade u njoj vide samo oni koji smeju da uklanjaju članove. Istorija se beleži od kad postoji, pa ranijih promena u njoj nema. Naziv opisa koji ne vidiš ne piše ni u njoj. Iste promene, zajedno sa svim ostalim, stoje i u [istoriji grupe](#istorija).
 
 Administrator grupe može i da je otvori kao izabrana kombinacija: dugme **Pogledaj grupu ovako** prikazuje pravu stranicu grupe onako kako je ta kombinacija vidi, sa trakom na vrhu. To je samo pregled: ništa se ne može promeniti, aplikacija u opisu se ne pokreće, a tvoje poruke i nepročitano ostaju tvoji. **Izađi iz pregleda** vraća stranicu kakvu ti vidiš.
 
 ![Grupa kako je vidi novi član](pogledaj-kao)
+
+## Istorija grupe {:#istorija}
+
+U meniju grupe, pod **Istorija**, vidiš ko je u grupi šta promenio i kada, od najnovijeg. Čita je svaki član, a svaku stvar po njenim pravilima: opis koji vide samo neke uloge i u istoriji vide samo one, zapise aplikacije ko sme da ih čita, a isključene procese, polja, entitete i šablone oni koji uređuju grupu. Ko nije član, istoriju ne vidi.
+
+![Istorija grupe](istorija)
+
+- **Beleži se** sve što grupa čuva: naziv, opis i podešavanja, alternativni opisi, šabloni, prečice i javne podgrupe, zapisi aplikacija, procesi, polja i entiteti, glasanja i događaji, i sve promene pristupa.
+- **Ne beleži se** tekst poruka i obaveštenja ni emoji reakcija: od njih ostaje samo da su izmenjeni, dodati ili obrisani. Ko je kako glasao ne ulazi u istoriju, a razgovor u četiri oka je nema.
+- **Suzi je** na vrstu, na osobu dodirom na njeno ime, ili na dan. U uređivanju grupe, **Ranije verzije** pored opisa vode na promene baš tog opisa.
+
+Lupa pored promene otvara šta je bilo pre, a šta posle: tekst red po red, zapis polje po polje, proces korak po korak.
+
+![Šta se promenilo u opisu](istorija-promena) ![Grupa kakva je bila](istorija-stanje)
+
+**Stanje na dan** prikazuje grupu kakva je bila u trenutku koji izabereš: naziv i opis, ostale opise, procese, polja, glasanja i događaje, i zapise aplikacija. Aplikacija iz tog vremena se ne pokreće, a poruka tu nema. Adresu te strane možeš da pošalješ drugom članu, i svako na njoj vidi ono što sme.
+
+**Vrati ovu verziju** stoji u promeni koju smeš da vratiš. Naziv, opise, mesto, šablon, vrednost polja i podešavanja aplikacije vraća ko uređuje grupu, a svoj zapis vraćaš ti, ako aplikacija dozvoljava izmenu. Obrisan opis se vraća sa zapisima svoje aplikacije, a obrisana kolekcija odjednom. Raniji crtež procesa otvara se u editoru, nesačuvan. Vraćanje je nova promena, pa i ono ostaje u istoriji. Ko sme da uđe u grupu i da je vidi ne vraća se, a obrisani fajlovi su nestali zauvek.
+
+Izmene koje ista osoba napravi na istom opisu ili procesu u roku od pet minuta su jedna promena, a od jedne stvari se čuva 200 poslednjih verzija. Administrator može i ranije da isprazni stare verzije, a kod svog zapisa u aplikaciji možeš i ti: ono kakvo je bilo nestaje, a ostaje da je promene bilo i ko je ispraznio. Istorija počinje od kad postoji i nestaje s grupom.
 
 ## Kalendar {:#kalendar}
 
@@ -580,6 +600,10 @@ Svako polje grupe ima tip: tekst, broj, da ili ne, datum, datum i vreme, ili izb
 Korak **Pošalji signal** javlja svim procesima grupe da se nešto desilo, recimo da je subota, uz polja koja upišeš. Proces koji je baš tada na koraku **Čekaj signal** sa istim imenom ide dalje, a ko je poslao signal i šta nosi čita kao `{{prijem.from}}` i `{{prijem.mesto}}`. Signal pokreće i procese kojima je okidač taj signal. Signal se ne čuva: proces koji tek posle stigne do čekanja, čeka sledeći. Uz **Samo od procesa na istoj vrednosti ili podgrupi** čekanje prima samo signal poslat o istom predmetu, recimo uplatu za baš tu porudžbinu. [Zadruga](/pomoc/zadruga#subota) tako javlja kupcima da je dan preuzimanja.
 
 Signal ostaje u grupi, osim tamo gde ga prijemnik traži: čekanje ili okidač sa **Čuje i grupe iznad i ispod** prima i signale grupa iznad i ispod svoje, ali ne i susednih grana. Ono što signal nosi prima kao entitet koji sam očekuje, po imenima i tipovima atributa, a signal koji mu ne odgovara ne stiže. Proces koji tako krene nema predmet ni pokretača iz druge grupe, samo ono što signal nosi. Korak **Pošalji signal** pokazuje koliko ga procesa u grupama iznad i ispod čuje.
+
+**Šta su radila pokretanja**, u redu procesa, otvara svako njegovo pokretanje korak po korak: kad je počelo, gde je čekalo, ko je odgovorio i kako se završilo. Ko uređuje grupu vidi sva, a 30 dana i šta je korak promenio u varijablama; ostali članovi vide ona u kojima imaju udeo.
+
+![Šta je radilo jedno pokretanje](zgrada-pokretanja)
 
 Kako procesi, aplikacije i grupa rade zajedno, i gde koji od njih staje, crta strana [Potok, procesi i aplikacije](/pomoc/procesi-i-aplikacije).
 

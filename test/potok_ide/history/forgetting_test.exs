@@ -144,6 +144,30 @@ defmodule PotokIde.History.ForgettingTest do
                History.empty(stranger, own, changed("record", ctx.value.id))
     end
 
+    test "records deleted at once are emptied at once, whatever else was kept of them", ctx do
+      {:ok, other, _} =
+        AppData.insert(ctx.member, ctx.member_account, ctx.group, nil, "molbe", %{
+          "ime" => "Drugi"
+        })
+
+      {:ok, 2} = AppData.delete_collection(ctx.owner, ctx.group, nil, "molbe")
+
+      listed =
+        Repo.one!(
+          from(c in GroupChange,
+            where: c.op == :deleted and c.subject_type == "record" and c.listed
+          )
+        )
+
+      # Two deletions, and the change the first record had before it.
+      assert {:ok, 3} = History.empty(ctx.owner, ctx.group, listed)
+      %{rows: rows} = Repo.query!("SELECT c::text FROM group_changes c")
+      text = rows |> List.flatten() |> Enum.join()
+      refute text =~ "Petar"
+      refute text =~ "Drugi"
+      assert length(of("record", other.id)) == 2
+    end
+
     test "a burst goes on as a new row once it was emptied", ctx do
       update = fn text ->
         {:ok, _} =

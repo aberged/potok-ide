@@ -31,6 +31,14 @@ The three pages on how Potok works inside keep their words in the `help_guides` 
 
 Usually not affected: fixes that restore what the pages already say, styling, refactors, tests, operations. `docs/potok-landing.html` is the user's own page and the app does not read it: leave it.
 
+### History of groups
+
+Triggers keep what changes in a group (`PotokIde.History`, `History.Tracked`, migration `AddHistoryTriggers`), so nothing has to be recorded by hand; what the code owes is who did it:
+
+- **A write to a followed table** goes through `History.signed/2`, `History.transaction/2`, `History.update/2` or `History.delete/3` with `actor:`, or `via:` when nobody did it. `HISTORY_STRICT=1 mix test` fails every unsigned write (tests that write straight to the database aside).
+- **A new column** of a followed table is either kept (the list in `Tracked` and in a new migration that replaces the trigger) or named there as left out; a test fails until it is. Never follow votes, members, profiles or accounts, and never keep a secret or a message's text.
+- **Who may read it** is `History.Reader`: a new kind of thing gets its rule there, and a leak test in `test/potok_ide/history/reading_test.exs`.
+
 ### Phoenix v1.8 guidelines
 
 - **Always** begin your LiveView templates with `<Layouts.app flash={@flash} ...>` which wraps all inner content

@@ -3561,11 +3561,6 @@ msgstr ""
 msgid "One change of what a group keeps: its description and settings, an app's record, a drawn process, an entity or a field, a poll, an event, a template, a shortcut, a sub-group. The database writes it in the same transaction as the change, with what it was before, so nothing passes it by; the app adds who did it. Of a message, a reaction and a notice it keeps only that it was changed or deleted, never the text. Votes are not followed at all. Members read it by the rules of the thing itself."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1945
-#, elixir-autogen, elixir-format
-msgid "The database itself writes a <GroupChange>change in a group</GroupChange> for each thing a <Group>group</Group> keeps that is made, changed or deleted: its own description and settings, <GroupAltDescription>alternative descriptions</GroupAltDescription>, <GroupTemplate>templates</GroupTemplate>, the records of its apps, drawn <AppProcess>processes</AppProcess>, <GroupEntity>entities</GroupEntity> and <GroupField>fields</GroupField>, <Poll>polls</Poll>, <Event>events</Event> and <GroupShortcut>shortcuts</GroupShortcut>, with what it was before, in the same step, whichever way the change came. Who did it and why, a decision of a poll, a step of a process or a deadline, the app adds. Of a <Value>value</Value> in the chat, a <ValueReaction>reaction</ValueReaction> and a <GroupNotice>notice</GroupNotice> only the fact stays: who changed or deleted it and when, never the text or the emoji. A <PollBallot>ballot</PollBallot>, the number of votes and the secret part of an app's config are never written, nor is a group's picture, and the author of an anonymous record stays one. Changes one person makes to the same description, process or config within five minutes are one change. Members read it by the rules of the thing today and by those of that time: whoever did not see an alternative description then does not see what it was. Direct conversations keep no history. It starts with the first change after it was introduced, and goes with the group."
-msgstr ""
-
 #: lib/potok_ide_web/domain_copy.ex:349
 #, elixir-autogen, elixir-format
 msgid "collection"
@@ -3705,4 +3700,9 @@ msgstr ""
 #: lib/potok_ide_web/domain_copy.ex:371
 #, elixir-autogen, elixir-format
 msgid "whether a poll ended"
+msgstr ""
+
+#: lib/potok_ide_web/domain_copy.ex:1945
+#, elixir-autogen, elixir-format
+msgid "The database itself writes a <GroupChange>change in a group</GroupChange> for each thing a <Group>group</Group> keeps that is made, changed or deleted: its own description and settings, <GroupAltDescription>alternative descriptions</GroupAltDescription>, <GroupTemplate>templates</GroupTemplate>, the records of its apps, drawn <AppProcess>processes</AppProcess>, <GroupEntity>entities</GroupEntity> and <GroupField>fields</GroupField>, <Poll>polls</Poll>, <Event>events</Event> and <GroupShortcut>shortcuts</GroupShortcut>, with what it was before, in the same step, whichever way the change came. Who did it and why, a decision of a poll, a step of a process or a deadline, the app adds. Of a <Value>value</Value> in the chat, a <ValueReaction>reaction</ValueReaction> and a <GroupNotice>notice</GroupNotice> only the fact stays: who changed or deleted it and when, never the text or the emoji. A <PollBallot>ballot</PollBallot>, the number of votes and the secret part of an app's config are never written, nor is a group's picture, and the author of an anonymous record stays one. Changes one person makes to the same description, process or config within five minutes are one change. Members read it by the rules of the thing today and by those of that time: whoever did not see an alternative description then does not see what it was. Whoever may make a change may also put back what it took away, a deleted description with the records of its app too, and that is a change of its own. Of one thing the last 200 old versions are kept, and an admin may empty them earlier, so that only the fact stays. Each <ValueProcess>run of a process</ValueProcess> leaves its <RunEvent>steps</RunEvent> as well, which those who edit the group read whole and others where they had a part. Direct conversations keep no history. It starts with the first change after it was introduced, and goes with the group."
 msgstr ""

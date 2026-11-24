@@ -29,6 +29,7 @@ defmodule PotokIdeWeb.HelpGuides do
 
   use Gettext, backend: PotokIdeWeb.Gettext
 
+  alias PotokIde.History
   alias PotokIde.Processes.{Engine, Types}
   alias PotokIde.RateLimit
 
@@ -103,6 +104,7 @@ defmodule PotokIdeWeb.HelpGuides do
         lib/potok_ide_web/live/group_live/show/app_values.ex
         lib/potok_ide/social/app_data.ex
         lib/potok_ide/social/value_rules.ex
+        lib/potok_ide/history.ex
       ),
       watch: ~w(
         assets/js/potok_app_sdk.js
@@ -112,6 +114,7 @@ defmodule PotokIdeWeb.HelpGuides do
         lib/potok_ide_web/live/group_live/show/app_values.ex
         lib/potok_ide/social/app_data.ex
         lib/potok_ide/social/value_rules.ex
+        lib/potok_ide/history.ex
       )
     }
   end
@@ -138,6 +141,8 @@ defmodule PotokIdeWeb.HelpGuides do
         lib/potok_ide/social/access_overview.ex
         lib/potok_ide/social/access_history.ex
         lib/potok_ide/social/group_access_change.ex
+        lib/potok_ide/history/reader.ex
+        lib/potok_ide/history/restore.ex
         lib/potok_ide_web/live/group_live/show/access_catalog.ex
         lib/potok_ide_web/live/group_live/show/access_preview.ex
         lib/potok_ide/social/profile_field.ex
@@ -155,6 +160,8 @@ defmodule PotokIdeWeb.HelpGuides do
         lib/potok_ide/social/access_overview.ex
         lib/potok_ide/social/access_history.ex
         lib/potok_ide/social/group_access_change.ex
+        lib/potok_ide/history/reader.ex
+        lib/potok_ide/history/restore.ex
         lib/potok_ide_web/live/group_live/show/access_catalog.ex
         lib/potok_ide_web/live/group_live/show/access_preview.ex
         lib/potok_ide/social/profile_field.ex
@@ -217,6 +224,7 @@ defmodule PotokIdeWeb.HelpGuides do
       write_window_s: div(AppApi.write_window_ms(), 1000),
       value_kb: div(AppData.max_value_bytes(), 1024),
       config_kb: div(AppData.max_config_bytes(), 1024),
+      versions: History.versions(),
       outsider_values: AppData.outsider_values_per_minute(),
       children: AppApi.max_children_per_call(),
       heavy_reads: heavy_reads,
@@ -394,6 +402,15 @@ defmodule PotokIdeWeb.HelpGuides do
           dgettext(
             "help_guides",
             "The most one value in a collection holds, and an app's settings."
+          )
+      },
+      %{
+        id: "versions",
+        mark: to_string(facts.versions),
+        text:
+          dgettext(
+            "help_guides",
+            "Old versions of one record the group's history keeps. What an editor changes in the settings within five minutes is one version, and `secret` is in none."
           )
       },
       %{

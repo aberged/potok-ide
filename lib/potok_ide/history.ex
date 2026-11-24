@@ -323,8 +323,9 @@ defmodule PotokIde.History do
 
   @doc """
   Empties the old versions of the thing `change` is of: what it was is gone,
-  and that it changed, when and by whom stays, with who emptied it. Returns
-  `{:ok, how many}` or `{:error, :not_permitted}`.
+  and that it changed, when and by whom stays, with who emptied it. Of records
+  deleted at once, those of all of them. Returns `{:ok, how many}` or
+  `{:error, :not_permitted}`.
   """
   def empty(%Profile{} = profile, %Group{} = group, %GroupChange{} = change) do
     access = Access.for_profile(profile, group)
@@ -333,10 +334,8 @@ defmodule PotokIde.History do
       {count, _} =
         GroupChange
         |> where([c], c.group_id == ^group.id)
-        |> where(
-          [c],
-          c.subject_type == ^change.subject_type and c.subject_id == ^change.subject_id
-        )
+        |> where([c], c.subject_type == ^change.subject_type)
+        |> of_subjects(change)
         |> emptied(profile.id)
 
       {:ok, count}
@@ -344,6 +343,26 @@ defmodule PotokIde.History do
       {:error, :not_permitted}
     end
   end
+
+  defp of_subjects(
+         query,
+         %GroupChange{op: :deleted, cause: %{"count" => _}, op_id: op_id} = change
+       )
+       when is_integer(op_id) do
+    together =
+      from(d in GroupChange,
+        where:
+          d.group_id == ^change.group_id and d.subject_type == ^change.subject_type and
+            d.op == :deleted and d.op_id == ^op_id and
+            fragment("? IS NOT DISTINCT FROM ?", d.collection, ^change.collection) and
+            fragment("? IS NOT DISTINCT FROM ?", d.alt_description_id, ^change.alt_description_id),
+        select: d.subject_id
+      )
+
+    where(query, [c], c.subject_id in subquery(together))
+  end
+
+  defp of_subjects(query, change), do: where(query, [c], c.subject_id == ^change.subject_id)
 
   @doc """
   Forgets deleted profiles in the history, in the caller's transaction: their

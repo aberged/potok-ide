@@ -90,7 +90,7 @@ defmodule PotokIdeWeb.GroupLive.Show.HistorySnapshot do
             variant="ghost"
             size="sm"
           >
-            {gettext("All of it")}
+            {gettext("All its settings")}
           </.button>
         </div>
         <div class="mt-2">

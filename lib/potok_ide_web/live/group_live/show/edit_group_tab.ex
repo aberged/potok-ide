@@ -808,7 +808,9 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                   label={gettext("Delete")}
                   variant="danger"
                   data-confirm={
-                    gettext("Delete this description? The data values of its app are deleted too.")
+                    gettext(
+                      "Delete this description? The data values of its app are deleted too. The group's history keeps both, until someone empties them there."
+                    )
                   }
                 />
               </div>
@@ -897,7 +899,10 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                 phx-click="delete_group_data_values"
                 data-confirm={
                   if(@alt_descriptions == [],
-                    do: gettext("Are you sure you want to delete all data values in this group?"),
+                    do:
+                      gettext(
+                        "Are you sure you want to delete all data values in this group? The group's history keeps them, until someone empties them there."
+                      ),
                     else:
                       gettext(
                         "Delete every data value of the default description's app? The other apps keep theirs."

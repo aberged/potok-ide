@@ -272,6 +272,41 @@
     "steps": [{ "wait": "#access-power" }, { "scroll": "#access-power" }, { "pause": 400 }]
   },
   {
+    "name": "istorija",
+    "as": "ana",
+    "url": "/groups/{groups.mz}/history",
+    "steps": [{ "wait": "#history-list > li" }, { "pause": 500 }]
+  },
+  {
+    "name": "istorija-promena",
+    "as": "ana",
+    "url": "/groups/{groups.mz}/history?of=group-{groups.mz}",
+    "steps": [
+      { "wait": "#history-list > li" },
+      { "click": "#history-list > li[data-type=group] button[phx-click=history_open]" },
+      { "wait": "#history-dialog[open]" },
+      { "pause": 500 }
+    ]
+  },
+  {
+    "name": "istorija-stanje",
+    "as": "ana",
+    "url": "/groups/{groups.mz}/history?at={history.at}",
+    "steps": [{ "wait": "#history-snapshot" }, { "pause": 500 }]
+  },
+  {
+    "name": "zgrada-pokretanja",
+    "as": "ivana",
+    "url": "/groups/{groups.building}/processes",
+    "steps": [
+      { "click": "#process-row-{processes.building_reports}-runs" },
+      { "wait": "#process-runs-dialog[open]" },
+      { "click": "#process-runs-dialog li button" },
+      { "wait": "#process-runs-dialog ol" },
+      { "pause": 500 }
+    ]
+  },
+  {
     "name": "pogledaj-kao",
     "as": "ana",
     "url": "/groups/{groups.mz}?as=everyone",

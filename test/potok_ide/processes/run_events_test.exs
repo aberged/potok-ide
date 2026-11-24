@@ -89,8 +89,8 @@ defmodule PotokIde.Processes.RunEventsTest do
     run = start!(ctx, process)
 
     assert kinds(run) == [
-             {"started", "start"},
-             {"passed", "start"},
+             {"started", nil},
+             {"passed", nil},
              {"waits", "Savet odlučuje"}
            ]
 
@@ -98,8 +98,8 @@ defmodule PotokIde.Processes.RunEventsTest do
     Engine.run(run)
 
     assert kinds(run) == [
-             {"started", "start"},
-             {"passed", "start"},
+             {"started", nil},
+             {"passed", nil},
              {"waits", "Savet odlučuje"},
              {"answered", "Savet odlučuje"},
              {"done", "Gotovo"}
@@ -280,7 +280,7 @@ defmodule PotokIde.Processes.RunEventsTest do
     run = start!(ctx, process)
     {:ok, _} = DrawnProcesses.delete(ctx.owner, ctx.group, process.id)
     refute Repo.get(ValueProcess, run)
-    assert {"started", "start"} in kinds(run)
+    assert {"started", nil} in kinds(run)
 
     {:ok, _} = Social.delete_group(ctx.owner, Social.get_group!(ctx.group.id))
     assert kinds(run) == []

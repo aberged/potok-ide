@@ -10,7 +10,8 @@ defmodule PotokIde.Processes.RunEvent do
   - `woke`: what it waited for came, or its deadline did;
   - `failed` (`outcome` is why), `retried`, `cancelled`, `done`.
 
-  `label` and `type` are the step's as it was drawn then. `vars` holds
+  `label` (nil for a step with no name) and `type`, what the step does, are as
+  it was drawn then. `vars` holds
   `[before, after]` of each variable the step changed, for 30 days. A loop's
   steps past the first of a run add up (`count`, until `last_at`).
 

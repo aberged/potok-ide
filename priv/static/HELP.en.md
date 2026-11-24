@@ -202,7 +202,7 @@ You write a message in the field at the bottom and send it with the arrow. On a 
 - **Thread**: a longer conversation about one message, so that it doesn't bury the main chat. Under the message it says how many unread messages the thread has, if you take part in it: you opened it, wrote in it, wrote the message it started from, or someone mentioned you in it. Only those who take part get its notifications.
 - **Reactions**: one emoji on a message. Tapping a reaction adds or removes your own.
 - **Mentions**: type @ and the name of a member or a role, and @everyone mentions everyone. The message stands out for whoever is mentioned, and they get a notification.
-- **Editing and deleting**: you can edit and delete your own messages, and whoever has the permission deletes other people's too. An edited message says "edited" beside its time, and pressing and holding it shows when it was edited.
+- **Editing and deleting**: you can edit and delete your own messages, and whoever has the permission deletes other people's too. An edited message says "edited" beside its time, and pressing and holding it shows when it was edited. That a message was edited or deleted stays in the [group's history](#istorija), without its text.
 - **Links** get a preview, and long messages fold until you open them. A link to a form shows the form's title and subtitle to whoever may open it.
 
 On a phone, press and hold a message: a sheet opens with quick reactions and every action. On a computer, the same actions appear when you move the mouse over a message.
@@ -368,11 +368,31 @@ Further down are all roles side by side, how many people hold the permissions th
 
 ![Who holds power and how a role is had](pregled-pristupa-moc)
 
-At the bottom is the history: who gave or took which role, who changed roles, permissions or the settings that let people in, who admitted, removed or blocked whom, who left of their own accord, and when. Only those who may remove members see blocks in it. The history is kept since it began, so earlier changes are not in it.
+At the bottom is the history: who gave or took which role, who changed roles, permissions or the settings that let people in, who admitted, removed or blocked whom, who left of their own accord, and when. Only those who may remove members see blocks in it. The history is kept since it began, so earlier changes are not in it. The name of a description you do not see is not in it either. The same changes, together with all the others, are in the [group's history](#istorija).
 
 An admin of the group can also open it as the pick would: the **See the group like this** button shows the group's real page as that pick sees it, with a bar on top. It is only a preview: nothing can change, the app of a description does not run, and your own messages and unread counts stay yours. **Leave the preview** brings back the page as you see it.
 
 ![The group as a new member sees it](pogledaj-kao)
+
+## The group's history {:#istorija}
+
+In the group's menu, under **History**, you see who changed what in the group and when, the newest first. Every member reads it, each thing by its own rules: a description only some roles see is seen only by them in the history too, an app's records by whoever may read them, and processes that are off, fields, entities and templates by those who edit the group. Whoever is not a member does not see the history.
+
+![The group's history](istorija)
+
+- **Kept** is all a group keeps: its name, description and settings, alternative descriptions, templates, shortcuts and public sub-groups, the records of apps, processes, fields and entities, polls and events, and all changes of access.
+- **Not kept** is the text of messages and notices or the emoji of reactions: of those only that they were edited, added or deleted stays. Who voted for what is not part of the history, and a direct conversation has none.
+- **Narrow it** to a kind, to a person by tapping their name, or to a day. In the group's settings, **Earlier versions** beside a description leads to the changes of that very description.
+
+The magnifier beside a change opens what it was before and after: a text line by line, a record field by field, a process step by step.
+
+![What changed in the description](istorija-promena) ![The group as it was](istorija-stanje)
+
+**As it was on** shows the group as it was at the moment you pick: its name and description, the other descriptions, processes, fields, polls and events, and the records of its apps. An app of that time does not run, and messages are not there. You can send the address of that page to another member, and everyone sees on it what they may.
+
+**Put this version back** stands in a change you may put back. The name, descriptions, place, a template, a field's value and an app's settings are put back by whoever edits the group, and a record of yours by you, if the app lets you change it. A deleted description comes back with the records of its app, and a deleted collection at once. An earlier drawing of a process opens in the editor, unsaved. Putting back is a change of its own, so it stays in the history too. Who may come into the group and see it is not put back, and deleted files are gone for good.
+
+Changes one person makes to the same description or process within five minutes are one change, and of one thing the last 200 versions are kept. An admin can empty the old versions earlier, and so can you for a record you wrote into an app: what it was is gone, and that there was a change and who emptied it stays. The history begins when it was introduced and goes with the group.
 
 ## Calendar {:#kalendar}
 
@@ -574,6 +594,10 @@ Every field of the group has a type: a text, a number, a yes or no, a date, a da
 The step **Send a signal** tells all the group's processes that something happened, say that it is Saturday, with fields you type. A process that is on the step **Wait for a signal** with the same name just then goes on, and reads who sent the signal and what it carries as `{{prijem.from}}` and `{{prijem.mesto}}`. A signal also starts the processes whose trigger is that signal. A signal is not kept: a process that comes to the wait only later waits for the next one. With **Only from a process on the same value or sub-group** the wait takes only a signal sent about the same subject, say a payment for that very order. The [co-op](/pomoc/zadruga#subota) tells its buyers that way that it is pick-up day.
 
 A signal stays in its group, except where the receiver asks for it: a wait or a trigger with **Also hears the groups above and below** takes the signals of the groups above and below its own too, but not of the branches beside. It takes what the signal carries as the entity it expects itself, by the names and types of the attributes, and a signal that does not fit does not reach it. A process started so has no subject or starter from the other group, only what the signal carries. The step **Send a signal** shows how many processes in the groups above and below hear it.
+
+**What the runs did**, in a process's row, opens each of its runs step by step: when it started, where it waited, who answered and how it ended. Whoever edits the group sees all of them, and for 30 days what a step made of the variables; other members see those they had a part in.
+
+![What one run did](zgrada-pokretanja)
 
 How processes, apps and a group work together, and where each of them stops, is drawn on the page [Potok, processes and apps](/pomoc/procesi-i-aplikacije).
 

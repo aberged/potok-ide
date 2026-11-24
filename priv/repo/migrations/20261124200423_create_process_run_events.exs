@@ -138,8 +138,9 @@ defmodule PotokIde.Repo.Migrations.CreateProcessRunEvents do
         group_id, app_process_id, run_id, kind, element, label, type, outcome, actor_id, vars, at
       ) VALUES (
         of_group, NEW.app_process_id, NEW.id, what, at_element,
-        COALESCE(NULLIF(node ->> 'label', ''), at_element), node ->> 'type', how, who, changed,
-        now_at
+        NULLIF(node ->> 'label', ''),
+        -- What a step does says more than that it is one.
+        COALESCE(node ->> 'action', node ->> 'type'), how, who, changed, now_at
       );
 
       RETURN NULL;

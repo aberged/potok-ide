@@ -67,6 +67,18 @@
     "h": 95,
     "w": 390
   },
+  "istorija": {
+    "h": 844,
+    "w": 390
+  },
+  "istorija-promena": {
+    "h": 844,
+    "w": 390
+  },
+  "istorija-stanje": {
+    "h": 844,
+    "w": 390
+  },
   "izbori": {
     "h": 844,
     "w": 390
@@ -360,6 +372,10 @@
     "w": 390
   },
   "zgrada-pokreni": {
+    "h": 844,
+    "w": 390
+  },
+  "zgrada-pokretanja": {
     "h": 844,
     "w": 390
   },
