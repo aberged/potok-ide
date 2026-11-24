@@ -242,7 +242,7 @@ You change the group's kind in Edit group → Basics, with Change. The new kind 
 
 The Members tab shows all members, their roles and who is online. From there, [requests to join and for roles](#zahtevi) are decided, roles given, [members removed](#uklanjanje) and [blocks](#blokiranje) lifted. Inherited members are marked, and tapping a member opens a one-to-one conversation. A role given by a decision of a poll is marked **elected**, which leads to that poll. The **Role** button narrows the list to those who hold one role, and then says how many they are.
 
-You can invite a profile by username, or someone by email: if they have no account yet, they get an invitation to Potok, and once they make a profile from its link, they are in the group. Profiles are suggested from the third letter of the name on. An invitation holds for 30 days: the one invited accepts or deletes it on the Invitations page, and after that it lapses and you can invite them again.
+You can invite a profile by username, or someone by email: if they have no account yet, they get an invitation to Potok, and once they make a profile from its link, they are in the group. Profiles are suggested from the third letter of the name on. An invitation holds for 30 days: the one invited accepts or deletes it on the Invitations page, and after that it lapses and you can invite them again. An invitation to a unique profile of yours can also be accepted with another unique profile of yours, or with a new one you make there: **Accept with another profile**. That profile joins the group and becomes your current one, and whoever invited you sees which profile came in.
 
 ![Members and access requests](clanovi) ![Inviting into a group](pozovi)
 

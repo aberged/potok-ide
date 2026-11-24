@@ -124,12 +124,17 @@ defmodule PotokIdeWeb.ProfileLive.Components do
 
   attr :button_variant, :string, default: "primary", doc: "`landing` on the guest pages"
 
+  attr :first, :boolean,
+    default: true,
+    doc: "false for one more profile of an account that has some (Invitations)"
+
   @doc """
   The first profile of an account, in a modal `<dialog>`: a name and a
   picture, and with an invitation, the group the profile goes into. The page
   around it handles `validate_profile`, `create_profile` (with the profile's
   fields under `profile` and the box under `remember_me`) and `welcome_close`.
-  The rest of a profile is on the Profiles page.
+  The rest of a profile is on the Profiles page. With `first={false}` it makes
+  one more profile, to accept an invitation with.
   """
   def welcome_dialog(assigns) do
     picture_url = profile_picture_url(assigns.form[:profile_picture_url].value)
@@ -179,7 +184,7 @@ defmodule PotokIdeWeb.ProfileLive.Components do
             </span>
             <div class="min-w-0 flex-1">
               <h2 id="welcome-dialog-title" class="text-lg font-semibold leading-tight">
-                {gettext("Create your profile")}
+                {if @first, do: gettext("Create your profile"), else: gettext("New profile")}
               </h2>
               <p id="welcome-dialog-lead" class="mt-1 text-sm leading-6 text-base-content/70">
                 <%= if @group && @inviter do %>
@@ -321,7 +326,10 @@ defmodule PotokIdeWeb.ProfileLive.Components do
             </.button>
 
             <p id="welcome-later" class="mt-4 text-center text-xs leading-5 text-base-content/60">
-              {gettext("You can add a description and more profiles later, on the Profiles page.")}
+              {if @first,
+                do:
+                  gettext("You can add a description and more profiles later, on the Profiles page."),
+                else: gettext("You can add a description later, on the Profiles page.")}
             </p>
           </.form>
         </section>

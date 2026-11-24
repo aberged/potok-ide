@@ -1,10 +1,14 @@
 defmodule PotokIdeWeb.InvitationLive.Index do
   use PotokIdeWeb, :live_view
 
+  alias PotokIde.Accounts
   alias PotokIde.Social
   alias PotokIde.Social.GroupInvitation
+  alias PotokIde.Social.Profile
   alias PotokIdeWeb.ProfileAuth
   alias PotokIdeWeb.GroupLive.Show.Components
+  alias PotokIdeWeb.InvitationLive.Components, as: InvitationComponents
+  alias PotokIdeWeb.ProfileLive.Components, as: ProfileComponents
   @invitations_per_page 20
   @sent_invitations_per_page 20
   @sections ~w(received sent)
@@ -139,6 +143,19 @@ defmodule PotokIdeWeb.InvitationLive.Index do
                         size="sm"
                       >
                         {gettext("Accept")}
+                      </.button>
+                      <%!-- An invitation to a unique profile may be accepted by
+                           another unique profile of the account, or a new one. --%>
+                      <.button
+                        :if={@current_profile.sharing == :unique}
+                        id={"invitation-accept-as-#{inv.id}"}
+                        phx-click="accept_as_open"
+                        phx-value-id={inv.id}
+                        variant="secondary"
+                        size="sm"
+                      >
+                        <.icon name="hero-arrows-right-left" class="size-4" />
+                        {gettext("Accept with another profile")}
                       </.button>
                     </div>
 
@@ -278,6 +295,19 @@ defmodule PotokIdeWeb.InvitationLive.Index do
 
         <%!-- <div><.link navigate={~p"/groups"} class="link">{gettext("Back to /")}</.link></div> --%>
       </.page_container>
+
+      <InvitationComponents.accept_as_dialog
+        :if={@accept_as && is_nil(@new_profile_form)}
+        invitation={@accept_as.invitation}
+        choices={@accept_as.choices}
+      />
+
+      <ProfileComponents.welcome_dialog
+        :if={@accept_as && @new_profile_form}
+        form={@new_profile_form}
+        invitation={@accept_as.invitation}
+        first={false}
+      />
     </Layouts.app>
     """
   end
@@ -293,6 +323,8 @@ defmodule PotokIdeWeb.InvitationLive.Index do
       |> assign(:invitations_search_query, "")
       |> assign(:visible_invitations, [])
       |> assign(:visible_sent_invitations, [])
+      |> assign(:accept_as, nil)
+      |> assign(:new_profile_form, nil)
       |> stream(:invitations, [], reset: true)
       |> stream(:sent_invitations, [], reset: true)
       |> ProfileAuth.sync_profile_subscription()
@@ -426,6 +458,98 @@ defmodule PotokIdeWeb.InvitationLive.Index do
     end
   end
 
+  # Another unique profile of the account, or a new one, accepts an invitation
+  # to the current (unique) profile.
+  def handle_event("accept_as_open", %{"id" => id}, socket) do
+    account = socket.assigns.current_scope.account
+
+    with %Profile{sharing: :unique} = invitee <- socket.assigns.current_profile,
+         {invitation_id, ""} <- Integer.parse(to_string(id)),
+         %GroupInvitation{} = invitation <-
+           Social.get_pending_invitation_for_invitee(invitee, invitation_id) do
+      choices = Social.invitation_profile_choices(account, invitation)
+
+      {:noreply,
+       assign(socket,
+         accept_as: %{invitation: invitation, choices: choices},
+         new_profile_form: nil
+       )}
+    else
+      _gone ->
+        {:noreply,
+         put_flash(socket, :error, gettext("This invitation was accepted or has lapsed."))}
+    end
+  end
+
+  def handle_event("accept_as_close", _params, socket),
+    do: {:noreply, assign(socket, accept_as: nil, new_profile_form: nil)}
+
+  def handle_event("welcome_close", _params, socket),
+    do: {:noreply, assign(socket, accept_as: nil, new_profile_form: nil)}
+
+  def handle_event("accept_as", _params, %{assigns: %{accept_as: nil}} = socket),
+    do: {:noreply, socket}
+
+  def handle_event("accept_as", %{"profile" => profile_id}, socket) do
+    account = socket.assigns.current_scope.account
+    invitation = socket.assigns.accept_as.invitation
+
+    with {id, ""} <- Integer.parse(to_string(profile_id)),
+         %Profile{} = profile <- Social.get_profile_for_account(account, id),
+         {:ok, _accepted} <- Social.accept_group_invitation_as(invitation, account, profile) do
+      {:noreply, enter_group_as(socket, profile, invitation.group)}
+    else
+      {:error, reason} -> {:noreply, accept_as_failed(socket, reason)}
+      _not_held -> {:noreply, accept_as_failed(socket, :not_held)}
+    end
+  end
+
+  def handle_event("accept_as_new", _params, %{assigns: %{accept_as: nil}} = socket),
+    do: {:noreply, socket}
+
+  def handle_event("accept_as_new", _params, socket),
+    do: {:noreply, assign(socket, :new_profile_form, ProfileComponents.welcome_form())}
+
+  def handle_event("validate_profile", _params, %{assigns: %{accept_as: nil}} = socket),
+    do: {:noreply, socket}
+
+  def handle_event("validate_profile", params, socket) do
+    form = ProfileComponents.welcome_form(params["profile"] || %{}, :validate)
+    {:noreply, assign(socket, :new_profile_form, form)}
+  end
+
+  def handle_event("create_profile", _params, %{assigns: %{accept_as: nil}} = socket),
+    do: {:noreply, socket}
+
+  def handle_event("create_profile", params, socket) do
+    account = socket.assigns.current_scope.account
+    invitation = socket.assigns.accept_as.invitation
+    attrs = ProfileComponents.welcome_attrs(params["profile"] || %{})
+
+    case Social.create_profile_and_accept_invitation(account, invitation, attrs) do
+      {:ok, profile, %{} = group} ->
+        {:noreply, enter_group_as(socket, profile, group)}
+
+      {:ok, profile, nil} ->
+        {:noreply,
+         socket
+         |> assign(accept_as: nil, new_profile_form: nil)
+         |> put_flash(
+           :error,
+           gettext("Profile @%{username} is ready, but the invitation could not be accepted.",
+             username: profile.username
+           )
+         )
+         |> assign_invitations(socket.assigns.current_profile)}
+
+      {:error, %Ecto.Changeset{data: %Profile{}} = changeset} ->
+        {:noreply, assign(socket, :new_profile_form, to_form(changeset))}
+
+      {:error, reason} ->
+        {:noreply, accept_as_failed(socket, reason)}
+    end
+  end
+
   @impl true
   def handle_event("delete_invitation", %{"id" => id}, socket) do
     invitee = socket.assigns.current_profile
@@ -553,6 +677,43 @@ defmodule PotokIdeWeb.InvitationLive.Index do
   # A message no clause above knows (one that ProfileAuth passes on, or one a
   # newer server sends during a deploy) is left alone, not a crash.
   def handle_info(_message, socket), do: {:noreply, socket}
+
+  # The profile that came into the group becomes the current one, and the
+  # group opens. The group's page reads the account's current profile as it
+  # mounts.
+  defp enter_group_as(socket, %Profile{} = profile, group) do
+    {:ok, _account} = Accounts.set_current_profile(socket.assigns.current_scope.account, profile)
+
+    socket
+    |> assign(accept_as: nil, new_profile_form: nil)
+    |> put_flash(
+      :info,
+      gettext("You joined the group as @%{username}.", username: profile.username)
+    )
+    |> push_navigate(to: ~p"/groups/#{group.id}")
+  end
+
+  defp accept_as_failed(socket, reason) do
+    message =
+      case reason do
+        :already_member ->
+          gettext("That profile is already a member of the group.")
+
+        :blocked ->
+          gettext("That profile is blocked in this group.")
+
+        reason when reason in [:expired, :already_accepted] ->
+          gettext("This invitation was accepted or has lapsed.")
+
+        _other ->
+          gettext("Could not accept invitation.")
+      end
+
+    socket
+    |> assign(accept_as: nil, new_profile_form: nil)
+    |> put_flash(:error, message)
+    |> assign_invitations(socket.assigns.current_profile)
+  end
 
   # The unread overview comes first: the invitation lists read their groups'
   # counts from it.

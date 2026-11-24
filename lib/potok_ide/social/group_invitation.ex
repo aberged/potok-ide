@@ -38,8 +38,17 @@ defmodule PotokIde.Social.GroupInvitation do
     )
   end
 
-  def accept_changeset(invitation) do
-    change(invitation, accepted_at: DateTime.utc_now(:second))
+  @doc """
+  Accepts `invitation` for the profile `joining_id` that comes in by it: its
+  invitee, or another unique profile of the same account
+  (`PotokIde.Social.accept_group_invitation_as/3`), which the invitation then
+  names, as the record of who came in.
+  """
+  def accept_changeset(invitation, joining_id \\ nil) do
+    change(invitation,
+      invitee_id: joining_id || invitation.invitee_id,
+      accepted_at: DateTime.utc_now(:second)
+    )
   end
 
   @doc "Whether `invitation` waits no longer: not accepted and past its days."

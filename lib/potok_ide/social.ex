@@ -2376,42 +2376,221 @@ defmodule PotokIde.Social do
     end
   end
 
-  defp accept_live_group_invitation(%GroupInvitation{} = invitation, %Profile{} = invitee) do
+  @doc """
+  Accepts `invitation` with `profile`, a profile of `account`. That is its
+  invitee, or, for an invitation to a unique profile, another unique profile
+  of the same account, which comes into the group in the invitee's place. The
+  invitation then names `profile`, so the inviter sees who came in.
+
+  Returns `{:ok, invitation}` or `{:error, reason}`, a reason of
+  `accept_as_refusal/3` or `:expired`.
+  """
+  def accept_group_invitation_as(
+        %GroupInvitation{} = invitation,
+        %Account{} = account,
+        %Profile{} = profile
+      ) do
+    invitation = Repo.preload(invitation, [:group, :inviter, :invitee])
+
+    cond do
+      invitation.invitee_id == profile.id and is_nil(get_profile_for_account(account, profile.id)) ->
+        {:error, :not_held}
+
+      invitation.invitee_id == profile.id ->
+        accept_group_invitation(invitation, profile)
+
+      reason = accept_as_refusal(invitation, account, profile) ->
+        {:error, reason}
+
+      GroupInvitation.expired?(invitation) ->
+        Repo.delete_all(from(i in GroupInvitation, where: i.id == ^invitation.id))
+        broadcast_profile_invitations_updated(invitation.invitee)
+        {:error, :expired}
+
+      true ->
+        accept_live_group_invitation(invitation, profile)
+    end
+  end
+
+  @doc """
+  Why `profile` may not accept `invitation` in its invitee's place, or nil
+  when it may: both are unique profiles of `account`, `profile` is a person,
+  not yet a member and not blocked in the group.
+  """
+  def accept_as_refusal(
+        %GroupInvitation{} = invitation,
+        %Account{} = account,
+        %Profile{} = profile
+      ) do
+    invitation = Repo.preload(invitation, [:group, :invitee])
+    held = get_profile_for_account(account, profile.id)
+
+    cond do
+      reason = redirect_refusal(invitation, account) -> reason
+      is_nil(held) -> :not_held
+      held.sharing != :unique -> :not_unique
+      held.kind != :person -> :not_person
+      member_of_group?(held, invitation.group) -> :already_member
+      Access.blocked_in_group?(held.id, invitation.group_id) -> :blocked
+      true -> nil
+    end
+  end
+
+  # Whether `account` may take `invitation` to another of its profiles: it
+  # holds the invited profile, a unique one, so it is the only account that
+  # does, and the invitation still waits.
+  defp redirect_refusal(%GroupInvitation{} = invitation, %Account{} = account) do
+    cond do
+      not is_nil(invitation.accepted_at) -> :already_accepted
+      invitation.group.is_direct -> :direct_group
+      is_nil(get_profile_for_account(account, invitation.invitee_id)) -> :invitee_mismatch
+      invitation.invitee.sharing != :unique -> :not_unique
+      true -> nil
+    end
+  end
+
+  @doc """
+  The other unique profiles of `account` that could accept `invitation` in
+  its invitee's place, each with why it cannot (`:member`, `:blocked`) or
+  nil. Empty when the invitation is not one to a unique profile of `account`.
+  """
+  def invitation_profile_choices(%Account{} = account, %GroupInvitation{} = invitation) do
+    invitation = Repo.preload(invitation, [:group, :invitee])
+
+    if redirect_refusal(invitation, account) do
+      []
+    else
+      profiles =
+        account
+        |> list_profiles_for_account()
+        |> Enum.filter(
+          &(&1.id != invitation.invitee_id and &1.sharing == :unique and &1.kind == :person)
+        )
+
+      ids = Enum.map(profiles, & &1.id)
+
+      members =
+        MapSet.new(
+          Repo.all(
+            from(m in GroupMembership,
+              where: m.group_id == ^invitation.group_id and m.profile_id in ^ids,
+              select: m.profile_id
+            )
+          )
+        )
+
+      blocked =
+        MapSet.new(
+          Repo.all(
+            from(b in GroupBlock,
+              where: b.group_id == ^invitation.group_id and b.profile_id in ^ids,
+              select: b.profile_id
+            )
+          )
+        )
+
+      Enum.map(profiles, fn profile ->
+        cond do
+          MapSet.member?(members, profile.id) -> {profile, :member}
+          MapSet.member?(blocked, profile.id) -> {profile, :blocked}
+          true -> {profile, nil}
+        end
+      end)
+    end
+  end
+
+  @doc """
+  Makes a new unique profile for `account` and accepts `invitation`, one to a
+  unique profile of the account, with it. The invitation is checked first, so
+  one that no longer holds makes no profile.
+
+  Returns `{:ok, profile, group}`, where the group is nil when the invitation
+  failed after the profile was made, or `{:error, changeset | reason}`.
+  """
+  def create_profile_and_accept_invitation(
+        %Account{} = account,
+        %GroupInvitation{} = invitation,
+        attrs
+      ) do
+    invitation = Repo.preload(invitation, [:group, :inviter, :invitee])
+
+    cond do
+      reason = redirect_refusal(invitation, account) ->
+        {:error, reason}
+
+      GroupInvitation.expired?(invitation) ->
+        {:error, :expired}
+
+      true ->
+        attrs = attrs |> Map.new(fn {key, value} -> {to_string(key), value} end)
+
+        with {:ok, profile} <-
+               create_profile_for_account(account, Map.put(attrs, "sharing", "unique")) do
+          case accept_group_invitation_as(invitation, account, profile) do
+            {:ok, _accepted} -> {:ok, profile, invitation.group}
+            {:error, _reason} -> {:ok, profile, nil}
+          end
+        end
+    end
+  end
+
+  # `joining` comes into the group by `invitation`: its invitee, or a profile
+  # taking its place (`accept_group_invitation_as/3`), which the invitation
+  # then names. Any other invitation still waiting for `joining` in the group
+  # goes, as it would never be accepted.
+  defp accept_live_group_invitation(%GroupInvitation{} = invitation, %Profile{} = joining) do
+    group_id = invitation.group_id
+
+    other_invitations =
+      from(i in GroupInvitation,
+        where:
+          i.group_id == ^group_id and i.invitee_id == ^joining.id and is_nil(i.accepted_at) and
+            i.id != ^invitation.id
+      )
+
     Multi.new()
-    |> Multi.update(:invitation, GroupInvitation.accept_changeset(invitation))
-    |> Multi.insert(:membership, fn %{invitation: inv} ->
-      GroupMembership.changeset(%GroupMembership{}, %{
-        group_id: inv.group_id,
-        profile_id: inv.invitee_id
-      })
+    |> Multi.all(:other_inviter_ids, select(other_invitations, [i], i.inviter_id))
+    |> Multi.delete_all(:other_invitations, other_invitations)
+    |> Multi.update(:invitation, GroupInvitation.accept_changeset(invitation, joining.id))
+    |> Multi.insert(:membership, fn _changes ->
+      GroupMembership.changeset(%GroupMembership{}, %{group_id: group_id, profile_id: joining.id})
     end)
     |> Multi.delete_all(
       :join_requests,
       from(r in GroupJoinRequest,
-        where: r.group_id == ^invitation.group_id and r.requester_id == ^invitation.invitee_id
+        where: r.group_id == ^group_id and r.requester_id == ^joining.id
       )
     )
-    |> Multi.run(:read_marker, fn repo, %{invitation: inv} ->
-      read_history_on_join(repo, inv.invitee_id, inv.group_id)
+    |> Multi.run(:read_marker, fn repo, _changes ->
+      read_history_on_join(repo, joining.id, group_id)
     end)
-    |> Multi.run(:inheritance, fn repo, %{invitation: inv} ->
-      {:ok, MemberInheritance.sync(repo, inv.group_id, [inv.invitee_id])}
+    |> Multi.run(:inheritance, fn repo, _changes ->
+      {:ok, MemberInheritance.sync(repo, group_id, [joining.id])}
     end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{invitation: inv, inheritance: changes}} ->
-        broadcast_profile_invitations_updated(invitee)
-        broadcast_profile_group_join_requests_updated(invitee)
-        broadcast_profile_invitations_updated(invitation.inviter)
+      {:ok, %{invitation: inv, inheritance: changes, other_inviter_ids: other_inviter_ids}} ->
+        broadcast_profile_invitations_updated(joining)
+
+        if invitation.invitee_id != joining.id,
+          do: broadcast_profile_invitations_updated(%Profile{id: invitation.invitee_id})
+
+        broadcast_profile_group_join_requests_updated(joining)
+
+        [invitation.inviter_id | other_inviter_ids]
+        |> Enum.reject(&is_nil/1)
+        |> Enum.uniq()
+        |> Enum.each(&broadcast_profile_invitations_updated(%Profile{id: &1}))
+
         broadcast_group_join_request_updates_for_group(invitation.group)
 
         broadcast_group_members_changed(invitation.group, [:members, :requests],
-          profile_id: invitee.id
+          profile_id: joining.id
         )
 
-        broadcast_group_membership_changed(invitee.id, inv.group_id, :added)
+        broadcast_group_membership_changed(joining.id, group_id, :added)
         broadcast_inheritance_changes(changes)
-        notify_profile_inviter_of_group_invitation_acceptance(invitation, invitee)
+        notify_profile_inviter_of_group_invitation_acceptance(invitation, joining)
         {:ok, inv}
 
       {:error, _step, reason, _changes} ->

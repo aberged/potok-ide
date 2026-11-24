@@ -1008,7 +1008,7 @@ defmodule PotokIdeWeb.DomainCopy do
   defp entity_description("GroupInvitation", _edges) do
     dgettext(
       "domain_map",
-      "A profile invites another profile to a group. Accepting it creates the membership. One not accepted within 30 days lapses and is deleted, and the profile can be invited again."
+      "A profile invites another profile to a group. Accepting it creates the membership. An invitation to a unique profile can also be accepted by another unique profile of the same account, which it then names. One not accepted within 30 days lapses and is deleted, and the profile can be invited again."
     )
   end
 
@@ -2056,7 +2056,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "A <GroupInvitation>group invitation</GroupInvitation> goes from profile to profile. If the invited account has no profile yet, an <GroupAccountInvitation>account invitation</GroupAccountInvitation> is kept. The first profile, made in the window the email's link opens, goes straight into the group of the oldest one, and every other becomes an ordinary invitation. Either waits 30 days from when it was sent, then lapses. A <GroupJoinRequest>join request</GroupJoinRequest> goes the other way, with the roles one would like and, if one wants, why. The group's rule says who decides it: whoever manages requests, who may also put it to a vote, or always a vote. When accepted it is deleted, and an <GroupJoinRequestApproval>approved request</GroupJoinRequestApproval> stays with the name of whoever admitted the member, or the vote that did. An invitation still brings someone in at once. A member leaves of their own accord, unless they are held through the parent, which they leave instead, or are the group's last admin."
+            "A <GroupInvitation>group invitation</GroupInvitation> goes from profile to profile. If the invited account has no profile yet, an <GroupAccountInvitation>account invitation</GroupAccountInvitation> is kept. The first profile, made in the window the email's link opens, goes straight into the group of the oldest one, and every other becomes an ordinary invitation. Either waits 30 days from when it was sent, then lapses. An invitation to a unique <Profile>profile</Profile> can also be accepted by another unique profile of the same <Account>account</Account>, or by a new one made for it, which joins in its place: the invitation then names that profile, and the inviter sees it. A <GroupJoinRequest>join request</GroupJoinRequest> goes the other way, with the roles one would like and, if one wants, why. The group's rule says who decides it: whoever manages requests, who may also put it to a vote, or always a vote. When accepted it is deleted, and an <GroupJoinRequestApproval>approved request</GroupJoinRequestApproval> stays with the name of whoever admitted the member, or the vote that did. An invitation still brings someone in at once. A member leaves of their own accord, unless they are held through the parent, which they leave instead, or are the group's last admin."
           )
       },
       %{
