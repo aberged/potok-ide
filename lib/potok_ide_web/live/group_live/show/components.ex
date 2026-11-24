@@ -2109,6 +2109,8 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         class="mb-3 w-full"
       />
       <div :if={!@mine?} class="chat-image avatar group-data-continued/value:invisible">
+        <%!-- It cuts the picture to a circle itself: daisyUI's `.avatar` does
+             that for a `div` only, and this is a button as a rule. --%>
         <.dynamic_tag
           tag_name={if @card?, do: "button", else: "div"}
           id={@card? && "value-author-avatar-#{@value.id}"}
@@ -2117,7 +2119,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           phx-value-id={@card? && @value.creator_id}
           aria-label={@card? && Profile.display_name(@value.creator)}
           class={[
-            "relative flex size-8 items-center justify-center rounded-full border border-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm sm:size-10",
+            "relative flex size-8 items-center justify-center overflow-hidden rounded-full border border-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm sm:size-10",
             !@avatar_url && "bg-base-300",
             @card? &&
               "cursor-pointer transition hover:ring-2 hover:ring-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"

@@ -76,6 +76,17 @@ defmodule PotokIdeWeb.GroupLive.ProfileCardTest do
     lv |> element("#value-author-#{value.id}") |> render_click()
 
     assert has_element?(lv, "#profile-card-dialog #profile-card", ctx.ana.username)
+
+    lv |> element("#profile-card-close") |> render_click()
+    refute has_element?(lv, "#profile-card-dialog")
+
+    # The picture opens it too, and as a button it cuts itself to a circle,
+    # which daisyUI's `.avatar` does for a `div` only.
+    avatar = "button#value-author-avatar-#{value.id}.rounded-full.overflow-hidden"
+    assert has_element?(lv, avatar <> " img")
+    lv |> element(avatar) |> render_click()
+
+    assert has_element?(lv, "#profile-card-dialog #profile-card", ctx.ana.username)
   end
 
   test "someone the group does not show opens nothing", %{conn: conn} = ctx do
