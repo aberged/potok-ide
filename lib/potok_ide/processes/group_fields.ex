@@ -30,9 +30,10 @@ defmodule PotokIde.Processes.GroupFields do
 
   import Ecto.Query, warn: false
 
+  alias PotokIde.History
   alias PotokIde.Processes.{GroupField, Types}
   alias PotokIde.Repo
-  alias PotokIde.Social.{Access, AppProcess, Group, ValueRules}
+  alias PotokIde.Social.{Access, AppProcess, Group, Profile, ValueRules}
 
   @max_fields 50
   @max_value 1_000
@@ -144,18 +145,19 @@ defmodule PotokIde.Processes.GroupFields do
   defp kept(_text_type, _options, _trimmed, text), do: {:ok, String.slice(text, 0, @max_value)}
 
   @doc """
-  Declares a field of the group, empty, for the app's editors: `name` (a
+  Declares a field of the group, empty, for the app's editors (`editor` is who
+  signs it, as in the functions below, `PotokIde.History`): `name` (a
   plain word), `type` and, for a choice, its `options`. `{:ok, field}` or
   `{:error, reason}`: `:not_permitted`, `:invalid_name`, `:taken`,
   `:invalid_type`, `:invalid_options` or `:too_many_fields`.
   """
-  def declare(%Group{} = group, %Access{} = access, attrs) when is_map(attrs) do
+  def declare(%Group{} = group, %Access{} = access, attrs, editor \\ nil) when is_map(attrs) do
     name = attrs |> Map.get("name", "") |> to_string() |> String.trim()
 
     with true <- ValueRules.manage?(access) || {:error, :not_permitted},
          true <- (name?(name) and Types.name?(name)) || {:error, :invalid_name},
          {:ok, type, options} <- typed(attrs) do
-      Repo.transaction(fn ->
+      History.transaction(signature(editor), fn ->
         lock_group(group.id)
 
         cond do
@@ -183,13 +185,16 @@ defmodule PotokIde.Processes.GroupFields do
   fits the new one: `{:error, :value_does_not_fit}` otherwise. The drawings
   that use it are saved with the old type until saved again.
   """
-  def retype(%Group{} = group, %Access{} = access, id, attrs) when is_integer(id) do
+  def retype(%Group{} = group, %Access{} = access, id, attrs, editor \\ nil)
+      when is_integer(id) do
     with true <- ValueRules.manage?(access) || {:error, :not_permitted},
          %GroupField{} = field <-
            Repo.get_by(GroupField, id: id, group_id: group.id) || {:error, :not_found},
          {:ok, type, options} <- typed(attrs),
          {:ok, value} <- fitting(definition(type, options), field.value) do
-      field |> Ecto.Changeset.change(type: type, options: options, value: value) |> Repo.update()
+      field
+      |> Ecto.Changeset.change(type: type, options: options, value: value)
+      |> History.update(signature(editor))
     end
   end
 
@@ -201,11 +206,11 @@ defmodule PotokIde.Processes.GroupFields do
   end
 
   @doc "Empties a field, for the app's editors."
-  def clear(%Group{} = group, %Access{} = access, id) when is_integer(id) do
+  def clear(%Group{} = group, %Access{} = access, id, editor \\ nil) when is_integer(id) do
     with true <- ValueRules.manage?(access) || {:error, :not_permitted},
          %GroupField{} = field <-
            Repo.get_by(GroupField, id: id, group_id: group.id) || {:error, :not_found} do
-      field |> Ecto.Changeset.change(value: "") |> Repo.update()
+      field |> Ecto.Changeset.change(value: "") |> History.update(signature(editor))
     end
   end
 
@@ -214,18 +219,23 @@ defmodule PotokIde.Processes.GroupFields do
   process of the group sets or reads it: `{:error, {:in_use, names}}` names
   those processes.
   """
-  def delete(%Group{} = group, %Access{} = access, id) when is_integer(id) do
+  def delete(group, access, id, editor \\ nil)
+
+  def delete(%Group{} = group, %Access{} = access, id, editor) when is_integer(id) do
     with true <- ValueRules.manage?(access) || {:error, :not_permitted},
          %GroupField{} = field <-
            Repo.get_by(GroupField, id: id, group_id: group.id) || {:error, :not_found} do
       case users(group, field.name) do
-        [] -> Repo.delete(field)
+        [] -> History.delete(field, signature(editor))
         names -> {:error, {:in_use, names}}
       end
     end
   end
 
-  def delete(_group, _access, _id), do: {:error, :not_found}
+  def delete(_group, _access, _id, _editor), do: {:error, :not_found}
+
+  defp signature(%Profile{} = editor), do: [actor: editor]
+  defp signature(nil), do: []
 
   # The names of the drawn processes of the group that set or read the field.
   defp users(%Group{id: group_id}, name) do
@@ -247,7 +257,8 @@ defmodule PotokIde.Processes.GroupFields do
   as a drawing of today's language is saved, so a field still comes with
   its first step; a graph of the first language makes it on its first write.
   """
-  def declare_missing(%Group{id: group_id}, %{"v" => 2, "nodes" => nodes}) when is_list(nodes) do
+  def declare_missing(%Group{id: group_id}, %{"v" => 2, "nodes" => nodes}, %Profile{} = editor)
+      when is_list(nodes) do
     wanted =
       for %{"action" => "set", "field" => field} = node <- nodes,
           is_binary(field) and name?(field),
@@ -256,7 +267,7 @@ defmodule PotokIde.Processes.GroupFields do
       end
 
     if wanted != %{} do
-      Repo.transaction(fn ->
+      History.transaction([actor: editor], fn ->
         lock_group(group_id)
 
         known =
@@ -278,7 +289,7 @@ defmodule PotokIde.Processes.GroupFields do
     :ok
   end
 
-  def declare_missing(_group, _graph), do: :ok
+  def declare_missing(_group, _graph, _editor), do: :ok
 
   defp kind(%{"op" => "add"}), do: "number"
   defp kind(_set), do: "text"

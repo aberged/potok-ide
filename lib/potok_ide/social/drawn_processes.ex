@@ -54,6 +54,7 @@ defmodule PotokIde.Social.DrawnProcesses do
     Types
   }
 
+  alias PotokIde.History
   alias PotokIde.Polls.Effects
   alias PotokIde.Repo
 
@@ -195,13 +196,13 @@ defmodule PotokIde.Social.DrawnProcesses do
          {:ok, config} <- trigger_config(trigger, attrs["trigger_config"]),
          {:ok, entity} <- entry_entity(group, trigger, attrs["entry_entity_id"]),
          {:ok, returns} <- return_entity(group, trigger, attrs["return_entity_id"]),
-         :ok <- GroupFields.declare_missing(group, graph),
+         :ok <- GroupFields.declare_missing(group, graph, editor),
          {:ok, graph} <- checked(graph, trigger, config, group, {entity, returns}, nil),
          :ok <- related_here(group, config, graph),
          :ok <- on_collection(group, trigger, alt_id, collection) do
       layout = layout(attrs["layout"], graph)
 
-      Repo.transaction(fn ->
+      History.transaction([actor: editor], fn ->
         AppData.lock_app(group, alt_id)
         access = editor_access!(editor, group)
         known_roles!(graph, access)
@@ -524,7 +525,7 @@ defmodule PotokIde.Social.DrawnProcesses do
             row.return_entity_id
           end
 
-        :ok = GroupFields.declare_missing(group, graph)
+        :ok = GroupFields.declare_missing(group, graph, editor)
 
         graph =
           case checked(graph, row.trigger, config, group, {entity, returns}, row.id) do
@@ -874,7 +875,7 @@ defmodule PotokIde.Social.DrawnProcesses do
         {:error, :not_found}
 
       %AppProcess{alt_description_id: alt_id} ->
-        Repo.transaction(fn ->
+        History.transaction([actor: editor], fn ->
           AppData.lock_app(group, alt_id)
           access = editor_access!(editor, group)
           row = locked(group, id) || Repo.rollback(:not_found)

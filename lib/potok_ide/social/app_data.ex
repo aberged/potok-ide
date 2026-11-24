@@ -27,6 +27,7 @@ defmodule PotokIde.Social.AppData do
 
   alias Phoenix.PubSub
   alias PotokIde.Accounts.Account
+  alias PotokIde.History
   alias PotokIde.Processes.{Engine, Graph, Scheduler}
   alias PotokIde.PushNotifications.Dispatch
   alias PotokIde.Repo
@@ -138,7 +139,7 @@ defmodule PotokIde.Social.AppData do
     with {:ok, data} <- decode(data),
          :ok <- fits(data, @max_config_bytes),
          {:ok, rules} <- ValueRules.normalize(data["rules"]) do
-      Repo.transaction(fn ->
+      History.transaction([actor: profile], fn ->
         lock_app(group, alt)
         fresh_group = Repo.get!(Group, group.id)
         access = Access.for_profile(profile, fresh_group)
@@ -206,9 +207,11 @@ defmodule PotokIde.Social.AppData do
   # files go into the config with no new revision, as the editor's next save
   # must not conflict with them.
   def put_files(%Value{} = config, files) do
-    config
-    |> Ecto.Changeset.change(data: Map.put(config.data, "files", files))
-    |> Repo.update!()
+    History.within([actor: nil, via: :system], fn ->
+      config
+      |> Ecto.Changeset.change(data: Map.put(config.data, "files", files))
+      |> Repo.update!()
+    end)
   end
 
   defp files_of(%Value{data: %{"files" => files}}) when is_map(files), do: files
@@ -336,7 +339,7 @@ defmodule PotokIde.Social.AppData do
 
     with {:ok, data} <- decode(data),
          :ok <- fits(data, @max_value_bytes) do
-      Repo.transaction(fn ->
+      History.transaction([actor: profile], fn ->
         config = shared_config(group, alt)
         value = locked_value(group, alt, id) || Repo.rollback(:not_found)
         group = Repo.get!(Group, group.id)
@@ -379,7 +382,7 @@ defmodule PotokIde.Social.AppData do
 
   @doc "Deletes a value of one of the app's collections: for its editors, with the files it took."
   def delete(%Profile{} = profile, %Group{} = group, alt, id) do
-    Repo.transaction(fn ->
+    History.transaction([actor: profile], fn ->
       access = Access.for_profile(profile, Repo.get!(Group, group.id))
 
       unless ValueRules.manage?(access), do: Repo.rollback(:not_permitted)
@@ -412,7 +415,7 @@ defmodule PotokIde.Social.AppData do
   @doc "Deletes every value of one collection of the app: for its editors. Returns how many."
   def delete_collection(%Profile{} = profile, %Group{} = group, alt, collection) do
     with true <- ValueRules.app_collection?(collection) || {:error, :invalid_collection} do
-      Repo.transaction(fn ->
+      History.transaction([actor: profile], fn ->
         access = Access.for_profile(profile, Repo.get!(Group, group.id))
 
         unless ValueRules.manage?(access), do: Repo.rollback(:not_permitted)
@@ -421,7 +424,9 @@ defmodule PotokIde.Social.AppData do
         keys = AppFiles.delete_for_values(get_config(group, alt), ids)
 
         {count, _rows} =
-          group |> collection_query(alt, collection) |> Repo.delete_all()
+          group
+          |> collection_query(alt, collection)
+          |> Repo.delete_all(timeout: History.bulk_timeout())
 
         {count, keys}
       end)
@@ -563,7 +568,7 @@ defmodule PotokIde.Social.AppData do
   (`ValueScoring.grade/4`). Not a change of the value, so its revision stays.
   """
   def grade(%Profile{} = profile, %Group{} = group, alt, id, patch) when is_map(patch) do
-    Repo.transaction(fn ->
+    History.transaction([actor: profile], fn ->
       access = Access.for_profile(profile, Repo.get!(Group, group.id))
 
       unless ValueRules.manage?(access), do: Repo.rollback(:not_permitted)
@@ -624,7 +629,7 @@ defmodule PotokIde.Social.AppData do
       |> select([v], {v.id, v.data, v.managed})
       |> Repo.all()
 
-    Repo.transaction(fn ->
+    History.transaction([actor: nil, via: :regrade], fn ->
       Enum.each(batch, fn {id, data, managed} ->
         from(v in Value, where: v.id == ^id)
         |> Repo.update_all(

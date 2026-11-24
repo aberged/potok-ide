@@ -17,9 +17,10 @@ defmodule PotokIde.Processes.GroupEntities do
 
   import Ecto.Query, warn: false
 
+  alias PotokIde.History
   alias PotokIde.Processes.GroupEntity
   alias PotokIde.Repo
-  alias PotokIde.Social.{Access, AppData, AppProcess, Group, ValueRules}
+  alias PotokIde.Social.{Access, AppData, AppProcess, Group, Profile, ValueRules}
 
   @max_entities 50
 
@@ -46,11 +47,12 @@ defmodule PotokIde.Processes.GroupEntities do
     do: GroupEntity.changeset(entity, attrs, others(entities, entity))
 
   @doc """
-  Defines a new entity of the group. Returns `{:ok, entity}`, `{:error,
-  changeset}`, or `{:error, :not_permitted | :too_many}`.
+  Defines a new entity of the group, as `editor` (`PotokIde.History`). Returns
+  `{:ok, entity}`, `{:error, changeset}`, or `{:error, :not_permitted |
+  :too_many}`.
   """
-  def create(%Group{} = group, %Access{} = access, attrs) when is_map(attrs) do
-    writing(group, access, fn entities ->
+  def create(%Group{} = group, %Access{} = access, attrs, editor \\ nil) when is_map(attrs) do
+    writing(group, access, editor, fn entities ->
       if length(entities) >= @max_entities, do: Repo.rollback(:too_many)
 
       %GroupEntity{group_id: group.id}
@@ -63,9 +65,15 @@ defmodule PotokIde.Processes.GroupEntities do
   Changes the entity as its editor saw it: a change made from a copy someone
   has changed since comes back as an error on `:lock_version`.
   """
-  def update(%Group{} = group, %Access{} = access, %GroupEntity{} = entity, attrs)
+  def update(
+        %Group{} = group,
+        %Access{} = access,
+        %GroupEntity{} = entity,
+        attrs,
+        editor \\ nil
+      )
       when is_map(attrs) do
-    writing(group, access, fn entities ->
+    writing(group, access, editor, fn entities ->
       if entity.group_id != group.id, do: Repo.rollback(:not_found)
 
       entity
@@ -79,8 +87,10 @@ defmodule PotokIde.Processes.GroupEntities do
   Deletes an entity of the group, unless something holds it: `{:error,
   {:in_use, names}}` then.
   """
-  def delete(%Group{} = group, %Access{} = access, id) when is_integer(id) do
-    writing(group, access, fn entities ->
+  def delete(group, access, id, editor \\ nil)
+
+  def delete(%Group{} = group, %Access{} = access, id, editor) when is_integer(id) do
+    writing(group, access, editor, fn entities ->
       entity = Enum.find(entities, &(&1.id == id)) || Repo.rollback(:not_found)
 
       case in_use(entity, entities) ++ drawn_with(group, entity) do
@@ -90,7 +100,7 @@ defmodule PotokIde.Processes.GroupEntities do
     end)
   end
 
-  def delete(_group, _access, _id), do: {:error, :not_found}
+  def delete(_group, _access, _id, _editor), do: {:error, :not_found}
 
   @doc """
   The group's entities as a graph keeps them (`Processes.Check`), by id as
@@ -143,10 +153,13 @@ defmodule PotokIde.Processes.GroupEntities do
 
   defp others(entities, %GroupEntity{id: id}), do: Enum.reject(entities, &(&1.id == id))
 
+  defp signature(%Profile{} = editor), do: [actor: editor]
+  defp signature(nil), do: []
+
   # Runs `fun` on the group's entities, for an editor, under the group's lock.
-  defp writing(%Group{} = group, %Access{} = access, fun) do
+  defp writing(%Group{} = group, %Access{} = access, editor, fun) do
     if ValueRules.manage?(access) do
-      Repo.transaction(fn ->
+      History.transaction(signature(editor), fn ->
         Repo.query!("SELECT pg_advisory_xact_lock($1, $2)", [
           7_104,
           :erlang.phash2(group.id, 2_147_483_647)

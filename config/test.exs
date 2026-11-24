@@ -108,6 +108,12 @@ config :potok_ide, PotokIde.Repo,
   # never meets this way.
   queue_target: 5_000
 
+# `HISTORY_STRICT=1 mix test` fails every write the history follows that says
+# neither who made it nor why (`PotokIde.History.signed/2`).
+if System.get_env("HISTORY_STRICT") do
+  config :potok_ide, PotokIde.Repo, parameters: ["potok.history_strict": "on"]
+end
+
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
 config :potok_ide, PotokIdeWeb.Endpoint,

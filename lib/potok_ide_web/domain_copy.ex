@@ -320,6 +320,42 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("GroupAccessChange", "data"),
     do: dgettext("domain_map", "what it was, in a few values")
 
+  defp own_field("GroupChange", "subject_type"), do: dgettext("domain_map", "kind of thing")
+  defp own_field("GroupChange", "subject_id"), do: dgettext("domain_map", "what changed")
+
+  defp own_field("GroupChange", "op"),
+    do: dgettext("domain_map", "made, changed or deleted")
+
+  defp own_field("GroupChange", "fields"), do: dgettext("domain_map", "what of it changed")
+  defp own_field("GroupChange", "before"), do: dgettext("domain_map", "what it was before")
+  defp own_field("GroupChange", "actor_id"), do: dgettext("domain_map", "who did it")
+  defp own_field("GroupChange", "creator_id"), do: dgettext("domain_map", "whose it is")
+
+  defp own_field("GroupChange", "alt_description_id"),
+    do: dgettext("domain_map", "description of the app")
+
+  defp own_field("GroupChange", "collection"), do: dgettext("domain_map", "collection")
+
+  defp own_field("GroupChange", "anonymous"),
+    do: dgettext("domain_map", "the author is not shown")
+
+  defp own_field("GroupChange", "keys_before"),
+    do: dgettext("domain_map", "roles that saw it before")
+
+  defp own_field("GroupChange", "keys_after"),
+    do: dgettext("domain_map", "roles that see it after")
+
+  defp own_field("GroupChange", "cause"), do: dgettext("domain_map", "what it came of")
+  defp own_field("GroupChange", "op_id"), do: dgettext("domain_map", "the act it is part of")
+  defp own_field("GroupChange", "listed"), do: dgettext("domain_map", "stands for the act")
+  defp own_field("GroupChange", "at"), do: dgettext("domain_map", "when")
+
+  defp own_field("GroupChange", "last_at"),
+    do: dgettext("domain_map", "last change of the burst at")
+
+  defp own_field("GroupChange", "purged_at"), do: dgettext("domain_map", "emptied at")
+  defp own_field("GroupChange", "purged_by_id"), do: dgettext("domain_map", "who emptied it")
+
   defp own_field("GroupMemberRole", "profile_id"), do: dgettext("domain_map", "member")
   defp own_field("GroupMemberRole", "role_key"), do: dgettext("domain_map", "role")
 
@@ -755,6 +791,7 @@ defmodule PotokIdeWeb.DomainCopy do
   def entity_name("GroupRoleRequest"), do: dgettext("domain_map", "Request for roles")
   def entity_name("GroupRequestDecision"), do: dgettext("domain_map", "Decision on a request")
   def entity_name("GroupAccessChange"), do: dgettext("domain_map", "Change of access")
+  def entity_name("GroupChange"), do: dgettext("domain_map", "Change in a group")
   def entity_name("CostHour"), do: dgettext("domain_map", "Hour of costs")
   def entity_name("Invoice"), do: dgettext("domain_map", "Invoice")
 
@@ -1078,6 +1115,13 @@ defmodule PotokIdeWeb.DomainCopy do
     )
   end
 
+  defp entity_description("GroupChange", _edges) do
+    dgettext(
+      "domain_map",
+      "One change of what a group keeps: its description and settings, an app's record, a drawn process, an entity or a field, a poll, an event, a template, a shortcut, a sub-group. The database writes it in the same transaction as the change, with what it was before, so nothing passes it by; the app adds who did it. Of a message, a reaction and a notice it keeps only that it was changed or deleted, never the text. Votes are not followed at all. Members read it by the rules of the thing itself."
+    )
+  end
+
   defp entity_description("GroupRequestDecision", _edges) do
     dgettext(
       "domain_map",
@@ -1247,6 +1291,10 @@ defmodule PotokIdeWeb.DomainCopy do
 
   def check_text("group_access_changes_role_check") do
     dgettext("domain_map", "A change of a role names the role.")
+  end
+
+  def check_text("group_changes_purged_check") do
+    dgettext("domain_map", "A change that was emptied no longer holds what it was before.")
   end
 
   def check_text("group_role_requests_role_keys_check") do
@@ -1865,6 +1913,14 @@ defmodule PotokIdeWeb.DomainCopy do
           dgettext(
             "domain_map",
             "Each <GroupMemberRole>role</GroupMemberRole> given or taken, by an admin, a decision of a <Poll>poll</Poll> or an approved request, each change of a <GroupRole>role</GroupRole> of the statute or of its permissions, a <GroupManifest>manifest</GroupManifest> made or dropped, each setting of a <Group>group</Group> that lets people in, who sees an <GroupAltDescription>alternative description</GroupAltDescription>, and each member admitted, removed, blocked or gone of their own accord, with the roles they held, is written as a <GroupAccessChange>change of access</GroupAccessChange>, in the same step as the change, with who did it. What follows from these by itself, such as members coming into an inheriting sub-group, is not written, nor are invitations. Every member of the group reads the changes, and a <GroupBlock>block</GroupBlock> only those who may remove members."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "Every change in a group stays on record"),
+        text:
+          dgettext(
+            "domain_map",
+            "The database itself writes a <GroupChange>change in a group</GroupChange> for each thing a <Group>group</Group> keeps that is made, changed or deleted: its own description and settings, <GroupAltDescription>alternative descriptions</GroupAltDescription>, <GroupTemplate>templates</GroupTemplate>, the records of its apps, drawn <AppProcess>processes</AppProcess>, <GroupEntity>entities</GroupEntity> and <GroupField>fields</GroupField>, <Poll>polls</Poll>, <Event>events</Event> and <GroupShortcut>shortcuts</GroupShortcut>, with what it was before, in the same step, whichever way the change came. Who did it and why, a decision of a poll, a step of a process or a deadline, the app adds. Of a <Value>value</Value> in the chat, a <ValueReaction>reaction</ValueReaction> and a <GroupNotice>notice</GroupNotice> only the fact stays: who changed or deleted it and when, never the text or the emoji. A <PollBallot>ballot</PollBallot>, the number of votes and the secret part of an app's config are never written, nor is a group's picture, and the author of an anonymous record stays one. Changes one person makes to the same description, process or config within five minutes are one change. Members read it by the rules of the thing today and by those of that time: whoever did not see an alternative description then does not see what it was. Direct conversations keep no history. It starts with the first change after it was introduced, and goes with the group."
           )
       },
       %{

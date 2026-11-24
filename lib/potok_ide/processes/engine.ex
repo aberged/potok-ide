@@ -102,7 +102,7 @@ defmodule PotokIde.Processes.Engine do
 
   require Logger
 
-  alias PotokIde.{Polls, RateLimit, Repo}
+  alias PotokIde.{History, Polls, RateLimit, Repo}
   alias PotokIde.Polls.{Effects, Poll}
 
   alias PotokIde.Processes.{
@@ -533,11 +533,13 @@ defmodule PotokIde.Processes.Engine do
             hold(instance, retry_after_ms)
 
           true ->
-            execute(instance)
+            History.within([process: id], fn -> execute(instance) end)
         end
 
       %ValueProcess{status: :waiting, wake_at: %DateTime{} = at} = instance ->
-        if DateTime.compare(at, now()) == :gt, do: :skip, else: wake(instance)
+        if DateTime.compare(at, now()) == :gt,
+          do: :skip,
+          else: History.within([process: id], fn -> wake(instance) end)
 
       _held_gone_or_still ->
         :skip

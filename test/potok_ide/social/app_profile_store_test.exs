@@ -105,7 +105,7 @@ defmodule PotokIde.Social.AppProfileStoreTest do
     assert AppProfileStore.list(reader, group, alt) == []
     assert [_] = AppProfileStore.list(reader, group, nil)
 
-    {:ok, _} = Social.remove_group(Repo.get!(Group, group.id))
+    {:ok, _} = Social.remove_group(Repo.get!(Group, group.id), off: true)
     assert Repo.aggregate(AppProfileEntry, :count) == 0
   end
 

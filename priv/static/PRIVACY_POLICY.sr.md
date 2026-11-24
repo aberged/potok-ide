@@ -47,6 +47,7 @@ Kada neko pozove imejl adresu koja još nema nalog, Potok za nju otvara nepotvr�
 - Glasanja i glasove: kod tajnog glasanja čuvamo samo to da je profil glasao, a ne i za šta; spisak glasača može da preuzme ko po pravilima glasanja vidi pojedinosti
 - Podatke koje aplikacije grupe upisuju, kao odgovore na forme. Kada je odgovor „anoniman“, drugi ne vide ko ga je poslao, ali server to i dalje zna.
 - Tok procesa grupe: ko ih je pokrenuo, šta su upisali i šta čekaju. Podaci procesa koji su završeni pre više od 30 dana se brišu, a ostaje zapis o tome kako su se završili.
+- Istoriju grupe: ko je i kada nešto u njoj napravio, izmenio ili obrisao, i kakvo je to bilo pre izmene (opisi, podešavanja, procesi, polja, zapisi aplikacija, glasanja i događaji). Od poruka, reakcija i obaveštenja čuvamo samo da su izmenjeni, dodati ili obrisani, nikad tekst. Ko je za šta glasao ne ulazi u istoriju. Vide je članovi grupe, po istim pravilima po kojima vide i same stvari; razgovori u četiri oka nemaju istoriju.
 - Ličnu memoriju aplikacija: ono što aplikacija ili sajt u opisu grupe čuva samo za vas, recimo dokle je stiglo vaše čitanje. Ne vide je ni urednici grupe, a vidite je i brišete u podešavanjima naloga.
 
 ### Fajlovi
@@ -126,6 +127,7 @@ Potok koristi samo kolačiće koji vas drže prijavljenim: kolačić sesije i, a
 - Push obaveštenja koja čekaju na isporuku brišemo dan posle slanja.
 - Pregled linka pamtimo 6 sati.
 - Podatke procesa brišemo 30 dana posle njihovog završetka.
+- Istorija grupe ostaje dok postoji grupa. Od jedne stvari čuvamo najviše poslednjih 200 starih verzija. Administrator ih može isprazniti i ranije, a stare verzije zapisa koji ste upisali u aplikaciju možete isprazniti i sami; ostaje samo to da je izmene bilo.
 - Nepotvrđen nalog otvoren pozivnicom brišemo posle 90 dana.
 - Rezervne kopije baze podataka pravi pružalac hostinga i čuva ih ograničeno vreme.
 
@@ -133,8 +135,8 @@ Potok koristi samo kolačiće koji vas drže prijavljenim: kolačić sesije i, a
 
 Nalog brišete u podešavanjima naloga, u delu Nalog, ili na https://potok.rs/brisanje-naloga, gde unesete adresu i dobijete link koji važi sat vremena. Pre brisanja vidite šta nestaje, a šta ostaje.
 
-- **Nestaju:** nalog, njegove prijave i uređaji, vaša članstva i uloge, praćenja, reakcije, tagovi, pozivnice i lična memorija aplikacija, kao i grupe u kojima ste jedini član.
-- **Ostaju:** poruke, fajlovi, glasanja, događaji i obaveštenja koje ste objavili u grupama, pod imenom „Obrisan korisnik“, bez vašeg korisničkog imena, slike, opisa i detalja. Profil koji delite sa drugim nalozima ostaje njima.
+- **Nestaju:** nalog, njegove prijave i uređaji, vaša članstva i uloge, praćenja, reakcije, tagovi, pozivnice i lična memorija aplikacija, istorija vaših reakcija i stare verzije zapisa koje ste upisali u aplikacije, kao i grupe u kojima ste jedini član.
+- **Ostaju:** poruke, fajlovi, glasanja, događaji i obaveštenja koje ste objavili u grupama, i u istoriji grupe to da ste u njoj nešto izmenili, pod imenom „Obrisan korisnik“, bez vašeg korisničkog imena, slike, opisa i detalja. Profil koji delite sa drugim nalozima ostaje njima.
 
 Grupa nikad ne ostaje bez administratora: ako ste jedini administrator grupe u kojoj ima i drugih ljudi, pre brisanja nekog drugog postavite za administratora. Posle brisanja na vašu adresu stiže još jedan, poslednji imejl.
 

@@ -17,6 +17,7 @@ defmodule PotokIde.Social.AppScope do
 
   import Ecto.Query, warn: false
 
+  alias PotokIde.History
   alias PotokIde.Social.{AppProcess, AppProfileEntry, GroupAltDescription, Value}
 
   @doc """
@@ -25,6 +26,20 @@ defmodule PotokIde.Social.AppScope do
   unique keys of processes and personal memory would clash.
   """
   def move(repo, group_id, from, to) when is_integer(group_id) do
+    :ok = refile(repo, group_id, from, to)
+    told(group_id, from, to)
+  end
+
+  # The history says the app moved, once; what it kept changes hands unsaid.
+  defp told(group_id, from, to) do
+    History.record!(group_id, "app", to || from, :changed,
+      fields: ["moved"],
+      before: %{"from" => from, "to" => to},
+      alt_description_id: to
+    )
+  end
+
+  defp refile(repo, group_id, from, to) do
     repo.update_all(scoped(Value, group_id, from) |> where([v], v.is_data == true),
       set: [alt_description_id: to]
     )
@@ -51,7 +66,7 @@ defmodule PotokIde.Social.AppScope do
       []
     )
 
-    :ok
+    History.move_app(repo, group_id, from, to)
   end
 
   @doc """
@@ -67,11 +82,11 @@ defmodule PotokIde.Social.AppScope do
         position: -1
       })
 
-    :ok = move(repo, group_id, a, parking.id)
-    :ok = move(repo, group_id, b, a)
-    :ok = move(repo, group_id, parking.id, b)
+    :ok = refile(repo, group_id, a, parking.id)
+    :ok = refile(repo, group_id, b, a)
+    :ok = refile(repo, group_id, parking.id, b)
     repo.delete!(parking)
-    :ok
+    told(group_id, b, a)
   end
 
   defp scoped(schema, group_id, nil),

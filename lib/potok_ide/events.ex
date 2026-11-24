@@ -38,6 +38,7 @@ defmodule PotokIde.Events do
     Response
   }
 
+  alias PotokIde.History
   alias PotokIde.PlainText
   alias PotokIde.PushNotifications.Dispatch
   alias PotokIde.Repo
@@ -436,7 +437,7 @@ defmodule PotokIde.Events do
         {:error, :cancelled}
 
       true ->
-        Repo.transaction(fn ->
+        History.transaction([actor: actor], fn ->
           locked = lock_event!(event.id)
 
           changeset =
@@ -514,7 +515,7 @@ defmodule PotokIde.Events do
           next_reminder_at: nil,
           sequence: event.sequence + 1
         )
-        |> Repo.update()
+        |> History.update(actor: actor)
         |> case do
           {:ok, cancelled} ->
             cancelled = %{cancelled | group: group, creator: event.creator}
@@ -564,7 +565,7 @@ defmodule PotokIde.Events do
         {:error, :not_found}
 
       true ->
-        Repo.transaction(fn ->
+        History.transaction([actor: actor], fn ->
           locked = lock_event!(event.id)
 
           locked

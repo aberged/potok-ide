@@ -21,6 +21,7 @@ defmodule PotokIde.Polls do
 
   alias Phoenix.PubSub
   alias PotokIde.Accounts.Account
+  alias PotokIde.History
   alias PotokIde.PlainText
   alias PotokIde.Polls.{Effects, Notifications, Outcome, Poll, PollBallot, PollOption, Rules}
   alias PotokIde.Processes
@@ -569,16 +570,15 @@ defmodule PotokIde.Polls do
         true ->
           attrs = attrs |> only_if_published(access, group) |> Effects.keep_current(locked)
 
+          before = Repo.preload(locked, :options)
+
           with {:ok, changeset} <-
-                 effect_changeset(
-                   Repo.preload(locked, :options),
-                   attrs,
-                   time_zone,
-                   access,
-                   group,
-                   nil
-                 ) do
-            Repo.update(changeset)
+                 effect_changeset(before, attrs, time_zone, access, group, nil),
+               {:ok, updated} <- Repo.update(changeset) do
+            if Enum.map(updated.options, & &1.text) != Enum.map(before.options, & &1.text),
+              do: record_options(before, before.options)
+
+            {:ok, updated}
           end
       end
     end)
@@ -597,8 +597,12 @@ defmodule PotokIde.Polls do
   defp rewrite_announcement(_old, %Poll{value_id: nil}), do: :ok
 
   defp rewrite_announcement(_old, %Poll{value_id: value_id} = updated) do
-    from(v in Value, where: v.id == ^value_id)
-    |> Repo.update_all(set: [content: announcement_content(updated)])
+    # The history has the poll's change; nobody edited a message.
+    {:ok, _} =
+      History.off(fn ->
+        from(v in Value, where: v.id == ^value_id)
+        |> Repo.update_all(set: [content: announcement_content(updated)])
+      end)
 
     :ok
   end
@@ -780,7 +784,14 @@ defmodule PotokIde.Polls do
       if not is_nil(vote_block) or not view.can_add_option? do
         {:error, :not_permitted}
       else
-        insert_option(locked, profile, attrs)
+        # Nobody sees who added an answer, and the history does not say.
+        with {:ok, _poll} = added <- insert_option(locked, profile, attrs) do
+          History.within([actor: nil, via: :member_option], fn ->
+            record_options(locked, locked.options)
+          end)
+
+          added
+        end
       end
     end)
     |> refreshed()
@@ -839,11 +850,30 @@ defmodule PotokIde.Polls do
         is_nil(option) -> {:error, :not_found}
         option.votes_count > 0 -> {:error, :has_votes}
         length(locked.options) <= Poll.min_options() -> {:error, :too_few_options}
-        true -> option |> Repo.delete() |> with_poll(locked)
+        true -> delete_locked_option(locked, option)
       end
     end)
     |> refreshed()
   end
+
+  defp delete_locked_option(%Poll{} = poll, option) do
+    with {:ok, _deleted} <- Repo.delete(option) do
+      record_options(poll, poll.options)
+      {:ok, poll}
+    end
+  end
+
+  # The answers as they were, for the history: their words, or whose a
+  # candidate's is. Never how many chose them.
+  defp record_options(%Poll{} = poll, options) do
+    History.record!(poll.group_id, "poll", poll.id, :changed,
+      fields: ["options"],
+      before: %{"options" => Enum.map(options, &option_words/1)}
+    )
+  end
+
+  defp option_words(%PollOption{profile_id: nil, text: text}), do: %{"text" => text}
+  defp option_words(%PollOption{profile_id: profile_id}), do: %{"profile_id" => profile_id}
 
   defp with_poll({:ok, _option}, poll), do: {:ok, poll}
   defp with_poll(error, _poll), do: error
@@ -893,7 +923,12 @@ defmodule PotokIde.Polls do
     eligible = eligible_count(poll, group)
     {outcome, winner_id} = Outcome.decide(poll, options, poll.voters_count, eligible || 0)
     winner = Enum.find(options, &(&1.id == winner_id))
-    {effect_status, announcements} = Effects.apply_locked(poll, group, outcome, winner)
+    # Whoever or whatever ended the voting, what comes of it is the decision's.
+    {effect_status, announcements} =
+      History.within([actor: nil, poll: poll.id], fn ->
+        Effects.apply_locked(poll, group, outcome, winner)
+      end)
+
     announcements = announcements ++ wake_process(poll, closed_at)
 
     closed =
@@ -1004,7 +1039,7 @@ defmodule PotokIde.Polls do
         {:error, :decision}
 
       Rules.manage?(poll, Access.for_profile(actor, group), actor) ->
-        delete_poll_and_value(poll)
+        delete_poll_and_value(poll, actor)
 
       true ->
         {:error, :not_permitted}
@@ -1020,22 +1055,22 @@ defmodule PotokIde.Polls do
   def decision?(%Poll{effect: nil}), do: false
   def decision?(%Poll{} = poll), do: poll.voters_count > 0 or not is_nil(poll.closed_at)
 
-  defp delete_poll_and_value(%Poll{} = poll) do
+  defp delete_poll_and_value(%Poll{} = poll, actor) do
     case poll.value_id && Repo.get(Value, poll.value_id) do
       %Value{} = value ->
         # Takes the poll with it, and tells open pages.
-        Social.remove_value(value)
+        Social.remove_value(value, actor: actor)
         {:ok, poll}
 
       _no_value ->
-        Repo.delete!(poll)
+        {:ok, _deleted} = History.delete(poll, actor: actor)
         broadcast_deleted(poll)
         {:ok, poll}
     end
   end
 
   defp with_locked_poll(%Poll{id: poll_id}, %Profile{} = profile, fun) do
-    Repo.transaction(fn ->
+    History.transaction([actor: profile], fn ->
       poll = Repo.one(locked_poll(poll_id)) || Repo.rollback(:not_found)
       group = Repo.get!(Group, poll.group_id)
 

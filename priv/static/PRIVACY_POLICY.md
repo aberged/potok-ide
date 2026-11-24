@@ -47,6 +47,7 @@ When someone invites an email address that has no account yet, Potok opens an un
 - Polls and votes: in a secret poll we keep only that a profile voted, not what for; the list of voters can be downloaded by whoever the poll's rules let see the details
 - Data a group's apps write, such as form responses. When a response is "anonymous", others do not see who sent it, but the server still knows.
 - The course of a group's processes: who started them, what they wrote and what they wait for. The data of processes that ended more than 30 days ago is deleted, and a record of how they ended stays.
+- The history of a group: who made, changed or deleted something in it and when, and what it was before the change (descriptions, settings, processes, fields, the records of apps, polls and events). Of messages, reactions and notices we keep only that they were changed, added or deleted, never the text. Who voted for what is not part of the history. Members of the group see it by the same rules by which they see the things themselves; direct conversations have no history.
 - The personal memory of apps: what an app or a site in a group's description keeps for you alone, such as how far you read. Not even the group's editors see it, and you see and delete it in the account settings.
 
 ### Files
@@ -126,6 +127,7 @@ Potok uses only cookies that keep you logged in: the session cookie and, if you 
 - Push notifications waiting for delivery are deleted a day after they are sent.
 - A link preview is kept for 6 hours.
 - The data of processes is deleted 30 days after they end.
+- The history of a group stays as long as the group. Of one thing we keep at most the last 200 old versions. An admin can empty them earlier, and you can empty those of a record you wrote into an app yourself; what stays is only that there was a change.
 - An unconfirmed account opened by an invitation is deleted after 90 days.
 - Backups of the database are made by the hosting provider and kept for a limited time.
 
@@ -133,8 +135,8 @@ Potok uses only cookies that keep you logged in: the session cookie and, if you 
 
 You delete your account in the account settings, in the Account part, or at https://potok.rs/brisanje-naloga, where you enter your address and get a link that works for an hour. Before deleting you see what goes and what stays.
 
-- **Gone:** the account, its sign-ins and devices, your memberships and roles, follows, reactions, tags, invitations and the personal memory of apps, and the groups where you are the only member.
-- **Stays:** the messages, files, polls, events and notices you posted in groups, under the name "Deleted user", without your username, picture, description or details. A profile you share with other accounts stays theirs.
+- **Gone:** the account, its sign-ins and devices, your memberships and roles, follows, reactions, tags, invitations and the personal memory of apps, the history of your reactions and the old versions of the records you wrote into apps, and the groups where you are the only member.
+- **Stays:** the messages, files, polls, events and notices you posted in groups, and in the history of a group that you changed something in it, under the name "Deleted user", without your username, picture, description or details. A profile you share with other accounts stays theirs.
 
 A group never loses its admin: if you are the only admin of a group that has other people in it, make someone else an admin before deleting. After the deletion, one last email comes to your address.
 

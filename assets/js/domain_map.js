@@ -103,6 +103,7 @@ const TABLES = {
     GroupRoleRequest: [COLUMN[1], 860],
     GroupRequestDecision: [COLUMN[2], 860],
     GroupAccessChange: [COLUMN[1], 932],
+    GroupChange: [COLUMN[2], 932],
   },
   clusters: {
     account: [16, 14, 192, 302],

@@ -10,6 +10,7 @@ defmodule PotokIde.Polls.Deadlines do
 
   import Ecto.Query
 
+  alias PotokIde.History
   alias PotokIde.Polls
   alias PotokIde.Polls.{Notifications, Poll}
   alias PotokIde.Repo
@@ -37,7 +38,11 @@ defmodule PotokIde.Polls.Deadlines do
           lock: "FOR UPDATE SKIP LOCKED"
         )
         |> Repo.all()
-        |> Enum.map(&Polls.close_locked(&1, Repo.get!(Group, &1.group_id), &1.closes_at))
+        |> Enum.map(fn poll ->
+          History.within([actor: nil, via: :deadline], fn ->
+            Polls.close_locked(poll, Repo.get!(Group, poll.group_id), poll.closes_at)
+          end)
+        end)
       end)
 
     closed = Enum.map(results, &elem(&1, 0))

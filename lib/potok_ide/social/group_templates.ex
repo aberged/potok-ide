@@ -13,6 +13,7 @@ defmodule PotokIde.Social.GroupTemplates do
 
   import Ecto.Query, warn: false
 
+  alias PotokIde.History
   alias PotokIde.Repo
   alias PotokIde.Social
   alias PotokIde.Social.{Access, Group, GroupTemplate, Profile}
@@ -100,13 +101,18 @@ defmodule PotokIde.Social.GroupTemplates do
   def update(%Profile{} = editor, %Group{} = group, %GroupTemplate{} = template, attrs) do
     with :ok <- may_edit(editor, group),
          :ok <- own(group, template) do
-      template
-      |> GroupTemplate.changeset(attrs)
-      |> Ecto.Changeset.put_change(:rev, template.rev + 1)
-      |> Repo.update(
-        stale_error_field: :name,
-        stale_error_message: dgettext("errors", "This template was deleted meanwhile.")
-      )
+      changeset =
+        template
+        |> GroupTemplate.changeset(attrs)
+        |> Ecto.Changeset.put_change(:rev, template.rev + 1)
+
+      [actor: editor]
+      |> History.signed(fn ->
+        Repo.update(changeset,
+          stale_error_field: :name,
+          stale_error_message: dgettext("errors", "This template was deleted meanwhile.")
+        )
+      end)
       |> announce(group)
     end
   end
@@ -115,7 +121,7 @@ defmodule PotokIde.Social.GroupTemplates do
   def delete(%Profile{} = editor, %Group{} = group, %GroupTemplate{} = template) do
     with :ok <- may_edit(editor, group),
          :ok <- own(group, template) do
-      template |> Repo.delete(allow_stale: true) |> announce(group)
+      template |> History.delete([actor: editor], allow_stale: true) |> announce(group)
     end
   end
 

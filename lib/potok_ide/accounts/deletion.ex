@@ -22,13 +22,16 @@ defmodule PotokIde.Accounts.Deletion do
       settings, the tags it owns and those put on it, invitations it sent or
       got, join requests, account invitations it sent (they hold the
       addresses of people who never signed up), blocks of it, the hidden
-      values that ask an app for pushes, and the personal memory of apps
-      (`PotokIde.Social.AppProfileStore`);
-    * emptied: who added a tag, who blocked someone, who invited an account;
+      values that ask an app for pushes, the personal memory of apps
+      (`PotokIde.Social.AppProfileStore`), and the history of its reactions
+      (`PotokIde.History`);
+    * emptied: who added a tag, who blocked someone, who invited an account,
+      the old versions of the records it wrote into apps;
     * kept: values (an app's and "anonymous" ones too), files, polls and
       ballots (the ballot loses only its account, so no count changes),
       events, notices, shortcuts, descriptions, groups it made, processes it
-      owns or started, approvals it gave.
+      owns or started, approvals it gave, and in the history of a group that
+      it changed something there.
 
   A group never loses its last admin, so a group where a deleted profile is
   the only admin who is a person, with other people in it or with sub-groups,
@@ -45,6 +48,7 @@ defmodule PotokIde.Accounts.Deletion do
   require Logger
 
   alias PotokIde.Accounts.{Account, AccountToken}
+  alias PotokIde.History
   alias PotokIde.Repo
   alias PotokIde.Social
   alias PotokIde.Social.{Access, AccountProfile, Group, GroupRole, Profile}
@@ -96,9 +100,10 @@ defmodule PotokIde.Accounts.Deletion do
       {:error, {:blocked, preview.blocking}}
     else
       ids = Enum.map(preview.tombstones, & &1.id)
-      Enum.each(leaves_first(preview.deleted_groups), &Social.remove_group/1)
+      # The account leaves no history of its own going.
+      Enum.each(leaves_first(preview.deleted_groups), &Social.remove_group(&1, off: true))
 
-      Repo.transaction(fn -> delete_now(account, ids) end)
+      History.off(fn -> delete_now(account, ids) end)
       |> case do
         {:ok, {email, tokens, touched}} ->
           after_commit(ids, touched)
@@ -325,6 +330,8 @@ defmodule PotokIde.Accounts.Deletion do
       from(r in table, where: field(r, ^column) in type(^ids, {:array, :integer}))
       |> Repo.delete_all()
     end
+
+    History.forget_profiles(ids)
 
     from(v in "values",
       where: v.collection == "notify" and v.creator_id in type(^ids, {:array, :integer})

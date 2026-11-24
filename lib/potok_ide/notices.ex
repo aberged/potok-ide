@@ -46,6 +46,7 @@ defmodule PotokIde.Notices do
 
   alias Phoenix.PubSub
   alias PotokIde.CountMark
+  alias PotokIde.History
   alias PotokIde.LinkPreviews
   alias PotokIde.Notices.{GroupFollow, GroupNotice, GroupNoticeReceipt, Notifications}
   alias PotokIde.PushNotifications.Dispatch
@@ -353,7 +354,7 @@ defmodule PotokIde.Notices do
     with %GroupNotice{} = notice <- Repo.get_by(GroupNotice, id: notice_id, group_id: group.id),
          true <- can_delete?(profile, access, group, notice) do
       {:ok, receipts} =
-        Repo.transaction(fn ->
+        History.transaction([actor: profile], fn ->
           {_count, receipts} =
             Repo.delete_all(
               from(r in GroupNoticeReceipt,

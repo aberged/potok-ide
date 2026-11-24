@@ -495,7 +495,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
         attributes = for name <- names, do: %{"name" => name, "type" => "text"}
         attrs = %{"name" => fresh_entity_name(editor), "attributes" => attributes}
 
-        case GroupEntities.create(group, access, attrs) do
+        case GroupEntities.create(group, access, attrs, socket.assigns.current_profile) do
           {:ok, entity} ->
             {:noreply,
              socket

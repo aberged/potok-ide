@@ -10,6 +10,7 @@ defmodule PotokIde.Social do
 
   alias Ecto.Multi
   alias PotokIde.CountMark
+  alias PotokIde.History
   alias PotokIde.LinkPreviews
   alias PotokIde.Notices
   alias PotokIde.Presence
@@ -1096,7 +1097,7 @@ defmodule PotokIde.Social do
       |> Multi.run(:history, fn repo, %{group: updated_group} ->
         {:ok, record_settings(repo, editor, group, updated_group, %{})}
       end)
-      |> Repo.transaction()
+      |> History.transaction(actor: editor)
       |> case do
         {:ok, %{group: updated_group, inheritance: changes}} ->
           broadcast_group_updated(updated_group)
@@ -1167,7 +1168,7 @@ defmodule PotokIde.Social do
 
       true ->
         {:ok, _} =
-          Repo.transaction(fn ->
+          History.transaction([actor: actor], fn ->
             {count, _rows} =
               Repo.update_all(from(g in Group, where: g.id == ^group.id and not g.elects_admins),
                 set: [elects_admins: true, updated_at: DateTime.utc_now(:second)]
@@ -1198,7 +1199,7 @@ defmodule PotokIde.Social do
         {:error, :not_permitted}
 
       true ->
-        Repo.transaction(fn ->
+        History.transaction([actor: actor], fn ->
           case group |> Group.join_changeset(attrs) |> Repo.update() do
             {:ok, updated} ->
               if updated.join_mode != group.join_mode or updated.join_poll != group.join_poll do
@@ -1289,7 +1290,7 @@ defmodule PotokIde.Social do
   def change_group_preset(%Profile{} = editor, %Group{} = group, key, park_name)
       when is_binary(park_name) do
     with :ok <- ensure_permission(editor, group, :edit_group) do
-      Repo.transaction(fn ->
+      History.transaction([actor: editor, via: :kind], fn ->
         locked =
           from(g in Group, where: g.id == ^group.id, lock: "FOR UPDATE")
           |> Repo.one!()
@@ -1315,6 +1316,9 @@ defmodule PotokIde.Social do
             {:ok, updated} -> updated
             {:error, reason} -> Repo.rollback(reason)
           end
+
+        # What stood there is its editors' alone from now on, as it was before too.
+        if parked, do: History.close_description(updated, parked.visible_role_keys)
 
         {feed, created} =
           case plan.feed do
@@ -1429,7 +1433,7 @@ defmodule PotokIde.Social do
   def refresh_app(%Profile{} = editor, %Group{} = group, alt \\ nil) do
     with :ok <- ensure_permission(editor, group, :edit_group),
          :ok <- ensure_own_alt_description(group, alt) do
-      Repo.transaction(fn ->
+      History.transaction([actor: editor, via: :refresh], fn ->
         locked = repo_lock_group!(group)
 
         {updated_group, updated_alt, app} =
@@ -1574,7 +1578,7 @@ defmodule PotokIde.Social do
       |> Multi.run(:history, fn repo, %{group: withdrawn} ->
         {:ok, record_settings(repo, editor, group, withdrawn, %{withdrawn: true})}
       end)
-      |> Repo.transaction()
+      |> History.transaction(actor: editor)
       |> case do
         {:ok, %{group: withdrawn, inheritance: changes}} ->
           broadcast_group_updated(withdrawn)
@@ -1674,7 +1678,7 @@ defmodule PotokIde.Social do
 
       group
       |> Group.update_changeset(attrs)
-      |> Repo.update()
+      |> History.update(actor: editor)
       |> case do
         {:ok, updated_group} ->
           broadcast_group_description_updated(updated_group)
@@ -1804,7 +1808,7 @@ defmodule PotokIde.Social do
       |> Multi.run(:history, fn repo, %{alt_description: created} ->
         {:ok, record_alt_visibility(repo, editor, group, %GroupAltDescription{}, created)}
       end)
-      |> Repo.transaction()
+      |> History.transaction(actor: editor)
       |> case do
         {:ok, %{alt_description: alt_description}} ->
           broadcast_alt_descriptions_updated(group)
@@ -1824,7 +1828,7 @@ defmodule PotokIde.Social do
       ) do
     with :ok <- ensure_permission(editor, group, :edit_group),
          :ok <- ensure_own_alt_description(group, alt_description) do
-      Repo.transaction(fn ->
+      History.transaction([actor: editor], fn ->
         case alt_description |> GroupAltDescription.changeset(attrs) |> Repo.update() do
           {:ok, updated} ->
             record_alt_visibility(Repo, editor, group, alt_description, updated)
@@ -1874,7 +1878,12 @@ defmodule PotokIde.Social do
       ) do
     with :ok <- ensure_permission(editor, group, :edit_group),
          :ok <- ensure_own_alt_description(group, alt_description) do
-      {:ok, deleted} = Repo.delete(alt_description, allow_stale: true)
+      {:ok, deleted} =
+        History.delete(alt_description, [actor: editor],
+          allow_stale: true,
+          timeout: History.bulk_timeout()
+        )
+
       broadcast_alt_descriptions_updated(group)
       {:ok, deleted}
     end
@@ -2025,7 +2034,7 @@ defmodule PotokIde.Social do
         AppData.lock_app(group, alt.id)
         {:ok, AppScope.swap(repo, group.id, nil, alt.id)}
       end)
-      |> Repo.transaction()
+      |> History.transaction(actor: editor)
       |> case do
         {:ok, %{updated_group: updated_group, updated_alt_description: updated}} ->
           broadcast_alt_descriptions_updated(group)
@@ -2066,7 +2075,7 @@ defmodule PotokIde.Social do
         {:error, :group_has_children}
 
       true ->
-        remove_group(group)
+        remove_group(group, actor: profile)
     end
   end
 
@@ -2074,9 +2083,9 @@ defmodule PotokIde.Social do
   Deletes a group that has no sub-groups, with its files, without asking who
   may: `delete_group/2` asks first, and `PotokIde.Accounts.Deletion` decides it
   for the groups that go with a deleted account. Callers make sure it has no
-  sub-groups.
+  sub-groups, and say who does it (`PotokIde.History`).
   """
-  def remove_group(%Group{} = group) do
+  def remove_group(%Group{} = group, signature) when is_list(signature) do
     parent_id = group.parent_id
     # Its shortcuts go with it, so the groups that hold them are read first.
     shortcut_parent_ids = shortcut_parent_ids(group.id)
@@ -2089,7 +2098,7 @@ defmodule PotokIde.Social do
       from(a in ValueAttachment, where: a.group_id == ^group.id, select: a.storage_key)
     )
     |> Multi.delete(:group, group)
-    |> Repo.transaction()
+    |> History.transaction(signature)
     |> case do
       {:ok, %{group: deleted_group, attachments: {_count, storage_keys}}} ->
         Storage.delete_later(storage_keys)
@@ -2199,7 +2208,7 @@ defmodule PotokIde.Social do
         {:error, :not_permitted}
 
       %{shortcut: shortcut} ->
-        {:ok, deleted} = Repo.delete(shortcut)
+        {:ok, deleted} = History.delete(shortcut, actor: profile)
         target = Repo.get(Group, deleted.target_id)
         if target, do: broadcast_child_group_changed(deleted.parent_id, target, :deleted)
         {:ok, deleted}
@@ -3959,7 +3968,7 @@ defmodule PotokIde.Social do
     |> limit_outsider(access)
     |> put_mentions(profile, group)
     |> reset_link_preview(value)
-    |> Repo.update()
+    |> History.update(actor: profile)
     |> case do
       {:ok, updated_value} ->
         # Someone an edit mentions in a thread comes in, as with a new one.
@@ -3996,7 +4005,7 @@ defmodule PotokIde.Social do
         {:error, :decision}
 
       true ->
-        remove_value(value)
+        remove_value(value, actor: profile)
     end
   end
 
@@ -4012,9 +4021,10 @@ defmodule PotokIde.Social do
 
   @doc """
   Deletes a value for whoever already may: `delete_value/2`, or a poll deleted
-  with its message. A poll the value carries goes with it.
+  with its message. A poll the value carries goes with it. `signature` says who
+  did it (`PotokIde.History`).
   """
-  def remove_value(%Value{} = value) do
+  def remove_value(%Value{} = value, signature) when is_list(signature) do
     # Read before the delete: `values.parent_id` is nilified with it, and the
     # poll is deleted with it.
     reply_ids = reply_ids(value)
@@ -4041,7 +4051,7 @@ defmodule PotokIde.Social do
       set_group_last_value_at(repo, value.group_id, latest)
       {:ok, latest}
     end)
-    |> Repo.transaction()
+    |> History.transaction(signature)
     |> case do
       {:ok,
        %{
@@ -4511,12 +4521,14 @@ defmodule PotokIde.Social do
   def delete_group_data_values(%Profile{} = actor, %Group{} = group, alt_description \\ nil) do
     with :ok <- ensure_permission(actor, group, :edit_group),
          :ok <- ensure_own_alt_description(group, alt_description) do
-      {deleted_count, _} =
-        from(v in Value,
-          where: v.group_id == ^group.id and v.is_data == true
-        )
-        |> filter_data_value_scope({:app, alt_description && alt_description.id})
-        |> Repo.delete_all()
+      {:ok, {deleted_count, _}} =
+        History.transaction([actor: actor], fn ->
+          from(v in Value,
+            where: v.group_id == ^group.id and v.is_data == true
+          )
+          |> filter_data_value_scope({:app, alt_description && alt_description.id})
+          |> Repo.delete_all(timeout: History.bulk_timeout())
+        end)
 
       if deleted_count > 0 do
         broadcast_group_updated(group)
@@ -4735,7 +4747,7 @@ defmodule PotokIde.Social do
          )}
       end)
       |> Multi.run(:inheritance, fn repo, _changes ->
-        {:ok, MemberInheritance.forget_roles(repo, group_ids, [role.key])}
+        {:ok, forget_inherited_roles(repo, group_ids, [role.key])}
       end)
       |> Multi.run(:requests, fn repo, _changes ->
         {:ok, forget_requested_roles(repo, group_ids, [role.key])}
@@ -4821,7 +4833,7 @@ defmodule PotokIde.Social do
         gone_keys = Enum.map(manifest.roles, & &1.key) -- kept_keys
         AccessHistory.record!(Repo, group, :manifest_dropped, actor: actor.id)
         forget_requested_roles(Repo, group_ids, gone_keys)
-        MemberInheritance.forget_roles(Repo, group_ids, gone_keys)
+        forget_inherited_roles(Repo, group_ids, gone_keys)
       end)
       |> case do
         {:ok, inheritance} ->
@@ -4833,6 +4845,14 @@ defmodule PotokIde.Social do
           {:error, reason}
       end
     end
+  end
+
+  # In the history of the sub-groups it is the group above that did it, and not
+  # a person their members may not know.
+  defp forget_inherited_roles(repo, group_ids, keys) do
+    History.within([actor: nil, via: :parent], fn ->
+      MemberInheritance.forget_roles(repo, group_ids, keys)
+    end)
   end
 
   # Roles gone from a statute are no longer asked for: the requests that wait

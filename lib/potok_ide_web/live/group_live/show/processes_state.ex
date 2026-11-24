@@ -345,7 +345,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
 
     result =
       case Integer.parse(to_string(id)) do
-        {id, ""} -> GroupFields.delete(group, access, id)
+        {id, ""} -> GroupFields.delete(group, access, id, socket.assigns.current_profile)
         _invalid -> {:error, :not_found}
       end
 
@@ -369,7 +369,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
   def handle_event("processes_declare_field", %{"field" => attrs}, socket) when is_map(attrs) do
     %{group: group, access: access} = socket.assigns
 
-    case GroupFields.declare(group, access, attrs) do
+    case GroupFields.declare(group, access, attrs, socket.assigns.current_profile) do
       {:ok, _field} ->
         {:noreply, socket |> put_flash(:info, gettext("The field is added.")) |> load()}
 
@@ -379,11 +379,11 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
   end
 
   def handle_event("processes_retype_field", %{"field_id" => id} = params, socket) do
-    %{group: group, access: access} = socket.assigns
+    %{group: group, access: access, current_profile: profile} = socket.assigns
 
     result =
       case Integer.parse(to_string(id)) do
-        {id, ""} -> GroupFields.retype(group, access, id, %{"type" => params["type"]})
+        {id, ""} -> GroupFields.retype(group, access, id, %{"type" => params["type"]}, profile)
         _invalid -> {:error, :not_found}
       end
 
@@ -401,7 +401,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
 
     result =
       case Integer.parse(to_string(id)) do
-        {id, ""} -> GroupFields.clear(group, access, id)
+        {id, ""} -> GroupFields.clear(group, access, id, socket.assigns.current_profile)
         _invalid -> {:error, :not_found}
       end
 
@@ -459,13 +459,14 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
   end
 
   def handle_event("processes_entity_save", %{"entity" => params}, socket) do
-    %{group: group, access: access, processes_entity: state} = socket.assigns
+    %{group: group, access: access, current_profile: profile, processes_entity: state} =
+      socket.assigns
 
     result =
       case state do
         nil -> nil
-        %{entity: %GroupEntity{id: nil}} -> GroupEntities.create(group, access, params)
-        %{entity: entity} -> GroupEntities.update(group, access, entity, params)
+        %{entity: %GroupEntity{id: nil}} -> GroupEntities.create(group, access, params, profile)
+        %{entity: entity} -> GroupEntities.update(group, access, entity, params, profile)
       end
 
     case result do
@@ -493,7 +494,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
 
     result =
       case Integer.parse(to_string(id)) do
-        {id, ""} -> GroupEntities.delete(group, access, id)
+        {id, ""} -> GroupEntities.delete(group, access, id, socket.assigns.current_profile)
         _invalid -> {:error, :not_found}
       end
 
