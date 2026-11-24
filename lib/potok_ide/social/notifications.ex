@@ -223,7 +223,7 @@ defmodule PotokIde.Social.Notifications do
 
   # Notification badges and icons cannot be SVG, which the avatar URL serves
   # by default.
-  defp avatar_url(%Profile{id: profile_id}), do: "/avatar/profile/#{profile_id}?format=png"
+  defp avatar_url(%Profile{} = profile), do: PotokIdeWeb.Avatars.profile_badge_url(profile)
 
   @doc """
   What became of a request in `group`, for whoever asked, in one push:

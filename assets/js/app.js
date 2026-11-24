@@ -2158,9 +2158,8 @@ window.addEventListener("phx:current_profile_updated", ({detail}) => {
       brandInitials.classList.add("hidden")
     }
   } else {
-    if (brandAvatar && detail.id) {
-      brandAvatar.src = `/avatar/profile/${detail.id}`
-      brandAvatar.classList.remove("hidden")
+    if (brandAvatar) {
+      brandAvatar.classList.add("hidden")
     }
 
     if (brandInitials) {

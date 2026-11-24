@@ -232,8 +232,9 @@ Avatar behavior:
 
 * Profile avatars are resolved from `profile_picture_url` only when it is a non-empty string.
 * When a profile has no avatar URL (or an empty URL), the app uses `GET /avatar/profile/:id` to render initials.
+* An address of a profile's picture carries a signature (`s`, `PotokIdeWeb.Avatars`); without it the route answers with the same drawing of nobody for any id.
 * Group avatars are served from `GET /avatar/group/:id` the same way, from `group_picture_url` or the group's initials.
-* The nav bar updates this avatar source during profile switches through the `phx:current_profile_updated` event so changing from a profile with a URL to one without a URL immediately falls back to `/avatar/profile/:id`.
+* The nav bar updates this avatar source during profile switches through the `phx:current_profile_updated` event which always carries the signed address, so changing from a profile with a URL to one without a URL immediately shows its initials.
 * Push-notification avatar fields follow the same fallback route strategy and are converted to absolute URLs before sending FCM payloads.
 
 ## Quick Start

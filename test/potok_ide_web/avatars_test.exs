@@ -1,7 +1,12 @@
 defmodule PotokIdeWeb.AvatarsTest do
   use ExUnit.Case, async: true
 
-  alias PotokIde.Social.Group
+  alias PotokIde.Events.Event
+  alias PotokIde.Events.Notifications, as: EventNotifications
+  alias PotokIde.Polls.Notifications, as: PollNotifications
+  alias PotokIde.Polls.Poll
+  alias PotokIde.Social.{Group, Profile}
+  alias PotokIde.Social.Notifications, as: SocialNotifications
   alias PotokIdeWeb.Avatars
   alias PotokIdeWeb.GroupLive.Show.Components
 
@@ -19,6 +24,37 @@ defmodule PotokIdeWeb.AvatarsTest do
     refute Avatars.group_signature?(13, signature(url))
     refute Avatars.group_signature?(12, nil)
     assert signature(Avatars.group_badge_url(%{id: 12})) == signature(url)
+  end
+
+  test "a profile's address carries a signature of its own, not a group's" do
+    url = Avatars.profile_avatar_url(%{id: 12, updated_at: ~U[2026-11-12 10:00:00Z]})
+
+    v = DateTime.to_unix(~U[2026-11-12 10:00:00Z])
+    assert url =~ ~r"\A/avatar/profile/12\?v=#{v}&s=[\w-]{16}\z"
+    assert Avatars.profile_signature?(12, signature(url))
+    refute Avatars.profile_signature?(13, signature(url))
+    refute Avatars.profile_signature?(12, nil)
+    refute Avatars.profile_signature?(12, ["a"])
+    refute Avatars.group_signature?(12, signature(url))
+    refute Avatars.profile_signature?(12, signature(Avatars.group_avatar_url(%{id: 12})))
+    assert signature(Avatars.profile_badge_url(%{id: 12})) == signature(url)
+  end
+
+  test "pushes show a profile by a signed address" do
+    profile = %Profile{id: 12, username: "ana"}
+    group = %Group{id: 5, name: "Zgrada"}
+    event = %Event{id: 3, group_id: 5, title: "Sastanak"}
+    poll = %Poll{id: 4, question: "Da li?", value_id: 9, group_id: 5}
+    badge = Avatars.profile_badge_url(profile)
+
+    for built <- [
+          SocialNotifications.group_invitation(profile, group),
+          EventNotifications.cancelled(profile, group, event),
+          PollNotifications.created(profile, group, poll)
+        ],
+        {_locale, payload} <- built["payloads"] do
+      assert payload.badge == badge
+    end
   end
 
   test "signs only the pictures of the groups it is given" do

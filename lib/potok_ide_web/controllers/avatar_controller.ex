@@ -19,14 +19,18 @@ defmodule PotokIdeWeb.AvatarController do
   @image_csp "default-src 'none'; style-src 'unsafe-inline'; sandbox"
   @image_type ~r/\Aimage\/[a-z0-9.+-]+\z/
 
-  def profile(conn, %{"id" => id}) do
-    id
-    |> parse_id()
-    |> case do
-      {:ok, id} -> Social.get_profile_avatar_source(id)
-      :error -> nil
+  # A profile's picture is sent only by an address Potok signed for someone
+  # who sees the profile (`Avatars`). Any other gets the same drawing of
+  # nobody, whether there is such a profile or not: an address without a
+  # signature may be an old one an app kept, so it is no error.
+  def profile(conn, %{"id" => id} = params) do
+    with {:ok, id} <- parse_id(id),
+         true <- Avatars.profile_signature?(id, params["s"]),
+         %{} = source <- Social.get_profile_avatar_source(id) do
+      serve_avatar(source, conn)
+    else
+      _nobody -> send_nobody(conn)
     end
-    |> serve_avatar(conn)
   end
 
   # A group guests cannot see is answered as one that does not exist, unless
@@ -87,6 +91,24 @@ defmodule PotokIdeWeb.AvatarController do
   end
 
   defp send_initials(conn, name), do: send_image(conn, initials_svg(name), "image/svg+xml")
+
+  @nobody_svg """
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+    <rect width="192" height="192" rx="96" fill="#d4d4d8"/>
+    <circle cx="96" cy="76" r="32" fill="#a1a1aa"/>
+    <path d="M36 160a60 52 0 0 1 120 0a96 96 0 0 1-120 0z" fill="#a1a1aa"/>
+  </svg>
+  """
+
+  # A push notification cannot show SVG, and gets Potok's icon instead.
+  defp send_nobody(%{params: %{"format" => "png"}} = conn) do
+    case default_avatar_png() do
+      {:ok, png} -> send_image(conn, png, "image/png")
+      :error -> send_image(conn, @nobody_svg, "image/svg+xml")
+    end
+  end
+
+  defp send_nobody(conn), do: send_image(conn, @nobody_svg, "image/svg+xml")
 
   defp send_image(conn, image_data, mime_type) do
     conn

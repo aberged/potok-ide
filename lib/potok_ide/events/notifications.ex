@@ -110,5 +110,5 @@ defmodule PotokIde.Events.Notifications do
     do: "/groups/#{event.group_id}/calendar?event=#{event.id}&on=#{date}"
 
   # Same route as the badges of the other notifications (see `Social`).
-  defp badge(%Profile{id: profile_id}), do: "/avatar/profile/#{profile_id}?format=png"
+  defp badge(%Profile{} = profile), do: PotokIdeWeb.Avatars.profile_badge_url(profile)
 end

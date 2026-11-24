@@ -30,7 +30,7 @@ defmodule PotokIde.Polls.Notifications do
         body: poll.question,
         tag: tag(poll),
         url: url(poll),
-        badge: "/avatar/profile/#{creator.id}?format=png"
+        badge: PotokIdeWeb.Avatars.profile_badge_url(creator)
       }
     end)
   end

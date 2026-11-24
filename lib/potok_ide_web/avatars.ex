@@ -7,20 +7,35 @@ defmodule PotokIdeWeb.Avatars do
   `updated_at` timestamp is appended as a cache buster so a changed picture
   shows up immediately.
 
-  A group's address also carries a signature (`s`): the controller sends the
-  picture of a group guests cannot see only with it, so that an id alone
-  tells nobody whether a private group exists, what it is called or what its
-  picture is. Potok signs the addresses it shows to those who see the group,
-  and a push notification's, which a phone fetches with no session.
+  Every address also carries a signature (`s`). The controller sends the
+  picture of a group guests cannot see only with it, and of a profile always,
+  so that an id alone tells nobody whether a private group or a profile
+  exists, what it is called or what its picture is. Potok signs the addresses
+  it shows to those who see the group or the profile, and a push
+  notification's, which a phone fetches with no session.
   """
 
   @group_salt "group avatar"
+  @profile_salt "profile avatar"
 
   def profile_avatar_url(%{id: id} = profile) when is_integer(id) do
-    "/avatar/profile/#{id}" <> version_query(profile)
+    "/avatar/profile/#{id}?" <>
+      URI.encode_query(version(profile) ++ [s: signature(@profile_salt, id)])
   end
 
   def profile_avatar_url(_), do: nil
+
+  @doc "The profile's picture as a PNG, for push notifications, which cannot show SVG."
+  def profile_badge_url(%{id: id}) when is_integer(id) do
+    "/avatar/profile/#{id}?" <>
+      URI.encode_query(format: "png", s: signature(@profile_salt, id))
+  end
+
+  @doc "Whether `signature` is the one Potok gives out with the profile's picture."
+  def profile_signature?(id, signature) when is_integer(id) and is_binary(signature),
+    do: Plug.Crypto.secure_compare(signature(@profile_salt, id), signature)
+
+  def profile_signature?(_id, _signature), do: false
 
   def group_avatar_url(%{id: id} = group) when is_integer(id) do
     "/avatar/group/#{id}?" <> URI.encode_query(version(group) ++ [s: group_signature(id)])
@@ -67,11 +82,13 @@ defmodule PotokIdeWeb.Avatars do
     end
   end
 
+  defp group_signature(id), do: signature(@group_salt, id)
+
   # Not secret enough to expire: the address of a picture someone was shown
   # once keeps working, as a copy of the picture would.
-  defp group_signature(id) do
+  defp signature(salt, id) do
     PotokIdeWeb.Endpoint.config(:secret_key_base)
-    |> Plug.Crypto.KeyGenerator.generate(@group_salt, cache: Plug.Crypto.Keys)
+    |> Plug.Crypto.KeyGenerator.generate(salt, cache: Plug.Crypto.Keys)
     |> then(&:crypto.mac(:hmac, :sha256, &1, Integer.to_string(id)))
     |> binary_part(0, 12)
     |> Base.url_encode64(padding: false)
@@ -83,11 +100,4 @@ defmodule PotokIdeWeb.Avatars do
     do: [v: updated_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()]
 
   defp version(_), do: []
-
-  defp version_query(item) do
-    case version(item) do
-      [v: v] -> "?v=#{v}"
-      [] -> ""
-    end
-  end
 end

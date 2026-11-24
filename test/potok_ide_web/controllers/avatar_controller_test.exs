@@ -18,20 +18,57 @@ defmodule PotokIdeWeb.AvatarControllerTest do
   end
 
   describe "GET /avatar/profile/:id" do
-    test "returns 404 for non-existent profile", %{conn: conn} do
-      conn = get(conn, ~p"/avatar/profile/99999")
-      assert response(conn, 404)
+    test "without Potok's signature any id shows the same nobody", %{conn: conn, profile: profile} do
+      other = Avatars.profile_avatar_url(%{id: profile.id + 1}) |> URI.parse()
+      other_signature = URI.decode_query(other.query)["s"]
+
+      {:ok, pictured} =
+        profile
+        |> Social.Profile.changeset(%{profile_picture_url: "https://example.com/a.png"})
+        |> Repo.update()
+
+      responses =
+        for path <- [
+              "/avatar/profile/#{pictured.id}",
+              "/avatar/profile/#{pictured.id}?s=wrong",
+              "/avatar/profile/#{pictured.id}?s=#{other_signature}",
+              "/avatar/profile/#{pictured.id}?s[]=a",
+              "/avatar/profile/999999999",
+              "/avatar/profile/not-a-number",
+              # A group's signature is no profile's.
+              "/avatar/profile/#{pictured.id}?" <>
+                (Avatars.group_avatar_url(%{id: pictured.id}) |> URI.parse()).query
+            ] do
+          conn = get(conn, path)
+
+          {response(conn, 200), get_resp_header(conn, "content-type"),
+           get_resp_header(conn, "cache-control"), get_resp_header(conn, "location")}
+        end
+
+      assert [{svg, ["image/svg+xml"], _cache, []}] = Enum.uniq(responses)
+      assert svg =~ "<svg"
+      refute svg =~ "<text"
+
+      for id <- [pictured.id, 999_999_999] do
+        assert <<0x89, "PNG", _rest::binary>> =
+                 conn |> get("/avatar/profile/#{id}?format=png") |> response(200)
+      end
+    end
+
+    test "a signed address of a profile that is gone shows nobody", %{conn: conn} do
+      conn = get(conn, Avatars.profile_avatar_url(%{id: 999_999_999}))
+      assert response(conn, 200) =~ "<svg"
     end
 
     test "returns initials avatar when profile has no avatar", %{conn: conn, profile: profile} do
-      conn = get(conn, ~p"/avatar/profile/#{profile.id}")
+      conn = get(conn, Avatars.profile_avatar_url(profile))
       assert response(conn, 200)
       [content_type] = get_resp_header(conn, "content-type")
       assert content_type in ["image/png", "image/svg+xml"]
     end
 
     test "draws initials as SVG unless PNG is asked for", %{conn: conn, profile: profile} do
-      conn = get(conn, ~p"/avatar/profile/#{profile.id}")
+      conn = get(conn, Avatars.profile_avatar_url(profile))
 
       assert response(conn, 200) =~ "<svg"
       assert get_resp_header(conn, "content-type") == ["image/svg+xml"]
@@ -39,7 +76,7 @@ defmodule PotokIdeWeb.AvatarControllerTest do
       assert csp =~ "default-src 'none'"
 
       # Push notifications ask for PNG; without ImageMagick it falls back to SVG.
-      png_conn = get(build_conn(), ~p"/avatar/profile/#{profile.id}?format=png")
+      png_conn = get(build_conn(), Avatars.profile_badge_url(profile))
       assert response(png_conn, 200)
       [content_type] = get_resp_header(png_conn, "content-type")
       assert content_type in ["image/png", "image/svg+xml"]
@@ -58,7 +95,7 @@ defmodule PotokIdeWeb.AvatarControllerTest do
       changeset = Social.Profile.changeset(profile, %{profile_picture_url: data_url})
       {:ok, updated_profile} = Repo.update(changeset)
 
-      conn = get(conn, ~p"/avatar/profile/#{updated_profile.id}")
+      conn = get(conn, Avatars.profile_avatar_url(updated_profile))
 
       assert response(conn, 200)
       assert get_resp_header(conn, "content-type") == ["image/png"]
@@ -80,7 +117,7 @@ defmodule PotokIdeWeb.AvatarControllerTest do
       changeset = Social.Profile.changeset(profile, %{profile_picture_url: data_url})
       {:ok, updated_profile} = Repo.update(changeset)
 
-      conn = get(conn, ~p"/avatar/profile/#{updated_profile.id}")
+      conn = get(conn, Avatars.profile_avatar_url(updated_profile))
 
       assert response(conn, 200)
       assert get_resp_header(conn, "cache-control") == ["public, max-age=86400"]
@@ -98,7 +135,7 @@ defmodule PotokIdeWeb.AvatarControllerTest do
       changeset = Social.Profile.changeset(profile, %{profile_picture_url: data_url})
       {:ok, updated_profile} = Repo.update(changeset)
 
-      conn = get(conn, ~p"/avatar/profile/#{updated_profile.id}")
+      conn = get(conn, Avatars.profile_avatar_url(updated_profile))
 
       assert response(conn, 200)
       assert get_resp_header(conn, "content-type") == ["image/gif"]
@@ -120,7 +157,7 @@ defmodule PotokIdeWeb.AvatarControllerTest do
           |> Social.Profile.changeset(%{profile_picture_url: data_url})
           |> Repo.update()
 
-        conn = get(conn, ~p"/avatar/profile/#{profile.id}")
+        conn = get(conn, Avatars.profile_avatar_url(profile))
 
         assert response(conn, 200) =~ "<svg"
         refute conn.resp_body =~ "alert"
@@ -137,7 +174,7 @@ defmodule PotokIdeWeb.AvatarControllerTest do
           |> Social.Profile.changeset(%{profile_picture_url: data_url})
           |> Repo.update()
 
-        conn = get(conn, ~p"/avatar/profile/#{profile.id}")
+        conn = get(conn, Avatars.profile_avatar_url(profile))
 
         assert response(conn, 200) == "picture"
         assert get_resp_header(conn, "content-type") == [sent]
@@ -154,7 +191,7 @@ defmodule PotokIdeWeb.AvatarControllerTest do
         })
         |> Repo.update()
 
-      conn = get(conn, ~p"/avatar/profile/#{profile.id}")
+      conn = get(conn, Avatars.profile_avatar_url(profile))
 
       assert response(conn, 200) == svg
       assert get_resp_header(conn, "content-type") == ["image/svg+xml"]
@@ -169,7 +206,7 @@ defmodule PotokIdeWeb.AvatarControllerTest do
       changeset = Social.Profile.changeset(profile, %{profile_picture_url: invalid_data_url})
       {:ok, updated_profile} = Repo.update(changeset)
 
-      conn = get(conn, ~p"/avatar/profile/#{updated_profile.id}")
+      conn = get(conn, Avatars.profile_avatar_url(updated_profile))
 
       assert response(conn, 200)
       [content_type] = get_resp_header(conn, "content-type")
@@ -182,14 +219,9 @@ defmodule PotokIdeWeb.AvatarControllerTest do
 
       {:ok, updated_profile} = Repo.update(changeset)
 
-      conn = get(conn, ~p"/avatar/profile/#{updated_profile.id}")
+      conn = get(conn, Avatars.profile_avatar_url(updated_profile))
       assert redirected_to(conn) == "https://example.com/a.png"
       assert get_resp_header(conn, "cache-control") == ["public, max-age=86400"]
-    end
-
-    test "returns 404 for a malformed id", %{conn: conn} do
-      conn = get(conn, ~p"/avatar/profile/not-a-number")
-      assert response(conn, 404)
     end
   end
 
