@@ -31,13 +31,24 @@ defmodule PotokIde.History.State do
     fields =
       case change.op do
         :changed -> change.fields
-        :deleted -> Map.keys(change.before || %{}) -- ["inserted_at"]
+        :deleted -> shown_of_deleted(change)
         :created -> Tracked.kept(change.subject_type)
       end
 
     for field <- Enum.sort(fields) do
       {field, before(reader, change, field), later(reader, change, field)}
     end
+  end
+
+  # What a deleted thing held, without what only Potok needs to put it back.
+  defp shown_of_deleted(%GroupChange{subject_type: "record", before: %{"content" => "data:"}}),
+    do: ["data", "managed"]
+
+  defp shown_of_deleted(%GroupChange{subject_type: "record"}), do: ["content", "data", "managed"]
+
+  defp shown_of_deleted(%GroupChange{subject_type: type, before: before}) do
+    extra = if is_map(before) and Map.has_key?(before, "options"), do: ["options"], else: []
+    Tracked.kept(type) ++ extra
   end
 
   defp before(_reader, %GroupChange{op: :created}, _field), do: :none

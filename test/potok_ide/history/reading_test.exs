@@ -326,7 +326,9 @@ defmodule PotokIde.History.ReadingTest do
 
       for days <- 0..3 do
         moment = DateTime.add(~U[2026-01-01 00:00:00Z], -days, :day)
-        refute inspect(State.at(reader(ctx, ctx.member), "description", alt.id, moment)) =~ "tajna"
+
+        refute inspect(State.at(reader(ctx, ctx.member), "description", alt.id, moment)) =~
+                 "tajna"
       end
     end
 

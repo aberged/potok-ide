@@ -59,13 +59,27 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
 
   @doc """
   Takes the open drawing from the URL into assigns, without loading it:
-  `?process=new` or `?process=12`.
+  `?process=new` or `?process=12`, with `&version=` a change of it whose
+  drawing from before it opens, unsaved (`PotokIde.History`).
   """
   def assign_params(socket, params),
-    do: assign(socket, :processes_param, parse_param(params["process"]))
+    do:
+      assign(socket,
+        processes_param: parse_param(params["process"]),
+        processes_version: parse_version(params["version"])
+      )
 
   def params_changed?(socket, params),
-    do: parse_param(params["process"]) != socket.assigns.processes_param
+    do:
+      parse_param(params["process"]) != socket.assigns.processes_param or
+        parse_version(params["version"]) != socket.assigns.processes_version
+
+  defp parse_version(version) do
+    case parse_param(version) do
+      id when is_integer(id) -> id
+      _none -> nil
+    end
+  end
 
   def handle_params(socket, params) do
     socket |> assign_params(params) |> ensure_editor()
@@ -86,11 +100,19 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
   # loads again on other people's changes, and a drawing under way stays.
   defp ensure_editor(socket) do
     param = socket.assigns.processes_param
+    version = socket.assigns.processes_version
 
     case socket.assigns.process_editor do
-      %{id: nil} when param == :new -> socket
-      %{id: id} when is_integer(id) and id == param -> socket
-      _other -> ProcessEditorState.open(socket, param)
+      %{id: nil} when param == :new ->
+        socket
+
+      %{id: id} = editor when is_integer(id) and id == param ->
+        if Map.get(editor, :version) == version,
+          do: socket,
+          else: ProcessEditorState.open(socket, param, version)
+
+      _other ->
+        ProcessEditorState.open(socket, param, version)
     end
   end
 

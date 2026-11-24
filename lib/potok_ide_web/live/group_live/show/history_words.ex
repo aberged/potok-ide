@@ -64,6 +64,30 @@ defmodule PotokIdeWeb.GroupLive.Show.HistoryWords do
   defp sentence(%GroupChange{cause: %{"via" => "parent"}}, _names),
     do: gettext("The roles of the group above changed, and with them those this one inherits by.")
 
+  defp sentence(
+         %GroupChange{subject_type: "record", cause: %{"restored" => _, "count" => count}} = row,
+         _names
+       ) do
+    case row.collection do
+      nil ->
+        ngettext(
+          "%{actor} puts back %{count} record of an app.",
+          "%{actor} puts back %{count} records of an app.",
+          count,
+          actor: @mark
+        )
+
+      where ->
+        ngettext(
+          "%{actor} puts back %{count} record of “%{where}”.",
+          "%{actor} puts back %{count} records of “%{where}”.",
+          count,
+          actor: @mark,
+          where: where
+        )
+    end
+  end
+
   defp sentence(%GroupChange{cause: %{"restored" => _}} = row, names) do
     gettext("%{actor} puts back an earlier version: %{what}.",
       actor: @mark,

@@ -205,6 +205,26 @@ defmodule PotokIde.Processes.GroupFields do
     end
   end
 
+  @doc """
+  Gives a field the `value`, `type` and `options` it had (`PotokIde.History`),
+  those of them that `attrs` name, while the value fits the type.
+  """
+  def put_back(%Group{} = group, %Access{} = access, id, attrs, editor) when is_map(attrs) do
+    with true <- ValueRules.manage?(access) || {:error, :not_permitted},
+         %GroupField{} = field <-
+           Repo.get_by(GroupField, id: id, group_id: group.id) || {:error, :not_found},
+         {:ok, type, options} <-
+           typed(%{
+             "type" => attrs["type"] || field.type,
+             "options" => attrs["options"] || field.options
+           }),
+         {:ok, value} <- fitting(definition(type, options), attrs["value"] || field.value) do
+      field
+      |> Ecto.Changeset.change(type: type, options: options, value: value)
+      |> History.update(signature(editor))
+    end
+  end
+
   @doc "Empties a field, for the app's editors."
   def clear(%Group{} = group, %Access{} = access, id, editor \\ nil) when is_integer(id) do
     with true <- ValueRules.manage?(access) || {:error, :not_permitted},

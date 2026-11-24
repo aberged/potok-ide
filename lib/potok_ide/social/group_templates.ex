@@ -75,7 +75,7 @@ defmodule PotokIde.Social.GroupTemplates do
   @doc "Adds a template after the group's others."
   def create(%Profile{} = editor, %Group{} = group, attrs) do
     with :ok <- may_edit(editor, group) do
-      Repo.transaction(fn ->
+      History.transaction([actor: editor], fn ->
         lock(group)
 
         {count, position} =

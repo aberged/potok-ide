@@ -5,6 +5,8 @@ defmodule PotokIdeWeb.GroupLive.Show.HistoryDiff do
   on what is too much to read anyway, such as an app of 300 KB.
   """
 
+  use Gettext, backend: PotokIdeWeb.Gettext
+
   @context 2
   @max_bytes 60_000
   @max_lines 600
@@ -110,6 +112,8 @@ defmodule PotokIdeWeb.GroupLive.Show.HistoryDiff do
   defp flat(nil, []), do: %{}
   defp flat(value, _path) when value in [nil, %{}, []], do: %{}
   defp flat(value, path) when is_binary(value), do: %{path => value}
+  defp flat(true, path), do: %{path => gettext("yes")}
+  defp flat(false, path), do: %{path => gettext("no")}
   defp flat(value, path), do: %{path => to_string(value)}
 
   # A thing with a name goes by it, so one put before it does not move the rest.

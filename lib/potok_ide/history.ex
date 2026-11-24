@@ -43,6 +43,7 @@ defmodule PotokIde.History do
     * `:actor` - a profile or its id; nil says nobody did it (a deadline, a
       decision), which then needs one of the rest to say what did
     * `:via` - how, an atom: `:system`, `:refresh`, `:kind`, `:regrade`…
+    * `:count` - of how many things the change tells
     * `:poll`, `:process`, `:restored` - the id of the poll that decided it,
       the run that did it, the change that was put back
 
@@ -75,6 +76,22 @@ defmodule PotokIde.History do
       |> Repo.transaction()
     after
       # A multi that failed never came to `:unsigned`.
+      forget(before)
+    end
+  end
+
+  @doc """
+  Runs `fun`, whose own signatures then say this too. It opens no transaction,
+  so what `fun` tells the pages it tells after its own has committed.
+  """
+  def also(signature, fun) when is_list(signature) and is_function(fun, 0) do
+    before = Process.get(@key)
+    context = before || %{op: new_op()}
+    Process.put(@key, Map.merge(context, Map.new(signature, &part/1)))
+
+    try do
+      fun.()
+    after
       forget(before)
     end
   end
@@ -142,13 +159,15 @@ defmodule PotokIde.History do
     previous = Process.get(@key)
 
     context =
-      (previous || %{op: :rand.uniform(9_000_000_000_000_000)})
+      (previous || %{op: new_op()})
       |> Map.merge(Map.new(signature, &part/1))
 
     set(Jason.encode!(context))
     Process.put(@key, context)
     previous
   end
+
+  defp new_op, do: :rand.uniform(9_000_000_000_000_000)
 
   defp restore(nil) do
     set("")
@@ -173,7 +192,7 @@ defmodule PotokIde.History do
   defp part({:off, true}), do: {:off, true}
   defp part({:via, via}) when is_atom(via), do: {:via, via}
 
-  defp part({key, id}) when key in [:poll, :process, :restored] and is_integer(id),
+  defp part({key, id}) when key in [:poll, :process, :restored, :count] and is_integer(id),
     do: {key, id}
 
   @doc "When the history began: what changed before is not in it."
@@ -201,8 +220,8 @@ defmodule PotokIde.History do
 
   @doc """
   Writes a change the triggers cannot tell, in the caller's transaction and
-  with its signature: `:fields` and `:before` as they are in
-  `PotokIde.History.GroupChange`.
+  with its signature: `:fields`, `:before`, `:alt_description_id` and
+  `:collection` as they are in `PotokIde.History.GroupChange`.
   """
   def record!(group_or_id, type, subject_id, op, opts \\ []) do
     group_id =
@@ -213,7 +232,7 @@ defmodule PotokIde.History do
 
     Repo.query!(
       """
-      SELECT history_write($1, $2, $3, $4, $5, $6, NULL, NULL, $7, NULL, false, NULL, NULL, false)
+      SELECT history_write($1, $2, $3, $4, $5, $6, NULL, NULL, $7, $8, false, NULL, NULL, false)
       """,
       [
         group_id,
@@ -222,7 +241,8 @@ defmodule PotokIde.History do
         to_string(op),
         opts[:fields] || [],
         opts[:before],
-        opts[:alt_description_id]
+        opts[:alt_description_id],
+        opts[:collection]
       ]
     )
 

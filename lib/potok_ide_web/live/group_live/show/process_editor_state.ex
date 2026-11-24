@@ -32,6 +32,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   import Phoenix.Component, only: [assign: 2, assign: 3, to_form: 2]
   import Phoenix.LiveView, only: [push_event: 3, push_patch: 2, put_flash: 3]
 
+  alias PotokIde.History.{Feed, GroupChange, Reader, State}
+
   alias PotokIde.Processes.{
     Check,
     Graph,
@@ -57,9 +59,11 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   ## Opening and closing
 
   @doc "Opens the editor on `:new`, on the process `id`, or closes it on nil."
-  def open(socket, nil), do: init(socket)
+  def open(socket, param, version \\ nil)
 
-  def open(socket, :new) do
+  def open(socket, nil, _version), do: init(socket)
+
+  def open(socket, :new, _version) do
     %{group: group, access: access} = socket.assigns
 
     case {ValueRules.manage?(access), DrawnProcesses.apps(group)} do
@@ -119,12 +123,13 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
     end
   end
 
-  def open(socket, id) when is_integer(id) do
+  def open(socket, id, version) when is_integer(id) do
     %{group: group, access: access} = socket.assigns
     manage? = ValueRules.manage?(access)
 
     case Repo.get_by(AppProcess, id: id, group_id: group.id) do
       %AppProcess{drawn: true} = row when row.active or manage? ->
+        {row, earlier?} = earlier(row, version, socket)
         drawing = drawing(row, manage?, socket)
 
         editor = %{
@@ -142,7 +147,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           graph: drawing.graph,
           layout: drawing.layout,
           revision: row.lock_version,
-          dirty?: drawing.upgraded?,
+          version: version,
+          dirty?: drawing.upgraded? or (earlier? and manage?),
           upgraded?: drawing.upgraded?,
           # Saved with things as they were: saving it again brings it in step.
           stale?: manage? and DrawnProcesses.stale?(row, group),
@@ -229,6 +235,36 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
   defp close_url(socket),
     do: socket |> init() |> push_patch(to: ~p"/groups/#{socket.assigns.group.id}/processes")
+
+  # The process as it was before the change `version` of it, when the viewer
+  # may read that of its history: its drawing, name and how it starts. What it
+  # is switched to, and the revision a save starts from, are today's.
+  defp earlier(%AppProcess{} = row, nil, _socket), do: {row, false}
+
+  defp earlier(%AppProcess{id: id} = row, version, socket) do
+    %{group: group, access: access, current_profile: profile} = socket.assigns
+
+    with true <- access.member?,
+         reader = Reader.new(group, access, profile, own: false),
+         %GroupChange{subject_type: "process", subject_id: ^id} = change <-
+           Feed.get(reader, version),
+         before = DateTime.add(change.at, -1, :microsecond),
+         {:ok, %{"graph" => %{} = graph} = was} <- State.at(reader, "process", id, before) do
+      {%{
+         row
+         | graph: graph,
+           layout: if(is_map(was["layout"]), do: was["layout"], else: row.layout),
+           name: if(is_binary(was["name"]), do: was["name"], else: row.name),
+           trigger_config:
+             if(is_map(was["trigger_config"]),
+               do: was["trigger_config"],
+               else: row.trigger_config
+             )
+       }, true}
+    else
+      _not_to_be_had -> {row, false}
+    end
+  end
 
   # The drawing of a saved process as its editor draws on it: in today's
   # language (`Graph.upgrade/1`), with its steps where they stood. One kept

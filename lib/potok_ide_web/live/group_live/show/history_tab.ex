@@ -10,12 +10,16 @@ defmodule PotokIdeWeb.GroupLive.Show.HistoryTab do
 
   alias PotokIde.History.{Feed, GroupChange}
   alias PotokIde.Social.Profile
-  alias PotokIdeWeb.GroupLive.Show.{Components, HistoryDiff, HistoryWords}
+  alias PotokIdeWeb.GroupLive.Show.{Components, HistoryDiff, HistorySnapshot, HistoryWords}
 
   attr :group, :map, required: true
   attr :access, :any, required: true
   attr :history, :map, default: nil, doc: "what `HistoryState` holds, nil until the tab is open"
   attr :entries, :any, required: true, doc: "the stream of entries"
+
+  attr :at, :any,
+    default: nil,
+    doc: "the moment the address asks for, as the viewer's clock has it"
 
   def panel(assigns) do
     ~H"""
@@ -30,7 +34,15 @@ defmodule PotokIdeWeb.GroupLive.Show.HistoryTab do
           </:subtitle>
         </.page_header>
 
-        <%= if @history do %>
+        <HistorySnapshot.picker :if={@history} group={@group} history={@history} at={@at} />
+
+        <HistorySnapshot.panel
+          :if={@history && @history.snapshot}
+          group={@group}
+          history={@history}
+        />
+
+        <%= if @history && is_nil(@history.snapshot) do %>
           <div id="history-filters" class="mb-3 space-y-2">
             <div
               id="history-kinds"
@@ -208,7 +220,11 @@ defmodule PotokIdeWeb.GroupLive.Show.HistoryTab do
   # One change
   # ---------
 
-  attr :open, :map, default: nil, doc: "`%{change, text, sides, may_empty?}` while one is open"
+  attr :open, :map,
+    default: nil,
+    doc:
+      "while one is open: `%{mode: :change, change, text, sides, may_empty?}`, or `%{mode: :state, text, moment, values}`"
+
   attr :manifest, :any, required: true
 
   @doc "What a change made of a thing, side by side or line by line."
@@ -242,7 +258,11 @@ defmodule PotokIdeWeb.GroupLive.Show.HistoryTab do
               <h2 id="history-dialog-title" class="text-base font-semibold [overflow-wrap:anywhere]">
                 {@open.text}
               </h2>
-              <p class="text-xs text-base-content/60">
+              <p :if={@open.mode == :state} class="text-xs text-base-content/60">
+                {gettext("As it was on")}
+                <Components.local_time id="history-dialog-moment" datetime={@open.moment} />
+              </p>
+              <p :if={@open.mode == :change} class="text-xs text-base-content/60">
                 <Components.local_time id="history-dialog-at" datetime={@open.change.at} />
                 <%= if @open.change.last_at do %>
                   –
@@ -262,7 +282,18 @@ defmodule PotokIdeWeb.GroupLive.Show.HistoryTab do
               label={gettext("Close")}
             />
           </header>
-          <div id="history-sides" class="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
+          <div
+            :if={@open.mode == :state}
+            id="history-values"
+            class="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4"
+          >
+            <HistorySnapshot.values values={@open.values} manifest={@manifest} />
+          </div>
+          <div
+            :if={@open.mode == :change}
+            id="history-sides"
+            class="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4"
+          >
             <p
               :if={@open.change.purged_at}
               id="history-emptied"
@@ -270,12 +301,25 @@ defmodule PotokIdeWeb.GroupLive.Show.HistoryTab do
             >
               {emptied_text(@open.change)}
             </p>
+            <p
+              :if={@open.change.op == :deleted and is_integer(@open.change.cause["count"])}
+              id="history-one-of"
+              class="rounded-xl bg-base-200 px-3 py-2 text-sm text-base-content/70"
+            >
+              {gettext("One of the %{count}:", count: @open.change.cause["count"])}
+            </p>
+            <%!-- What is gone has no other side. --%>
+            <HistorySnapshot.values
+              :if={@open.change.op == :deleted}
+              values={for {field, before, _now} <- @open.sides, do: {field, held(before)}}
+              manifest={@manifest}
+            />
             <.side
               :for={{field, before, now} <- @open.sides}
+              :if={@open.change.op != :deleted}
               field={field}
               before={before}
               now={now}
-              op={@open.change.op}
               manifest={@manifest}
             />
             <p :if={@open.sides == []} id="history-sides-empty" class="text-sm text-base-content/60">
@@ -283,7 +327,7 @@ defmodule PotokIdeWeb.GroupLive.Show.HistoryTab do
             </p>
           </div>
           <footer
-            :if={@open.may_empty? or @open.subject?}
+            :if={@open.mode == :change and (@open.may_empty? or @open.subject? or @open.restore)}
             class="flex flex-wrap items-center gap-2 border-t border-base-300/60 bg-base-200/40 px-5 pt-3 pb-[calc(0.75rem+var(--app-safe-area-bottom))] sm:pb-3"
           >
             <.button
@@ -315,6 +359,31 @@ defmodule PotokIdeWeb.GroupLive.Show.HistoryTab do
             >
               {gettext("All changes of this")}
             </.button>
+            <.button
+              :if={@open.restore == :here}
+              id="history-restore"
+              type="button"
+              phx-click="history_restore"
+              phx-value-id={@open.change.id}
+              data-confirm={restore_confirm(@open.change)}
+              variant="primary"
+              size="sm"
+            >
+              <.icon name="hero-arrow-uturn-left" class="size-4" />
+              {if @open.change.op == :deleted,
+                do: gettext("Put it back"),
+                else: gettext("Put this version back")}
+            </.button>
+            <.button
+              :if={@open.restore == :editor}
+              id="history-restore-editor"
+              patch={"/groups/#{@open.change.group_id}/processes?process=#{@open.change.subject_id}&version=#{@open.change.id}"}
+              variant="primary"
+              size="sm"
+            >
+              <.icon name="hero-pencil-square" class="size-4" />
+              {gettext("Open this drawing")}
+            </.button>
           </footer>
         </section>
       </div>
@@ -339,6 +408,25 @@ defmodule PotokIdeWeb.GroupLive.Show.HistoryTab do
     """
   end
 
+  defp restore_confirm(%GroupChange{op: :deleted, cause: %{"count" => count}}),
+    do:
+      ngettext(
+        "Put %{count} record back, as it was? Files it named are gone for good.",
+        "Put %{count} records back, as they were? Files they named are gone for good.",
+        count
+      )
+
+  defp restore_confirm(%GroupChange{op: :deleted, subject_type: "description"}),
+    do:
+      gettext(
+        "Put this description back, with the records of its app? Files they named are gone for good."
+      )
+
+  defp restore_confirm(%GroupChange{op: :deleted}), do: gettext("Put this back as it was?")
+
+  defp restore_confirm(_change),
+    do: gettext("Put back what it was before this change? What it is now stays in the history.")
+
   defp emptied_text(%GroupChange{purged_by: %Profile{} = profile}),
     do: gettext("%{name} emptied the old versions.", name: Profile.display_name(profile))
 
@@ -347,7 +435,6 @@ defmodule PotokIdeWeb.GroupLive.Show.HistoryTab do
   attr :field, :string, required: true
   attr :before, :any, required: true
   attr :now, :any, required: true
-  attr :op, :atom, required: true
   attr :manifest, :any, required: true
 
   defp side(assigns) do
@@ -369,15 +456,7 @@ defmodule PotokIdeWeb.GroupLive.Show.HistoryTab do
         <% {:lines, lines} -> %>
           <div class="overflow-x-auto rounded-xl border border-base-300/70 font-mono text-xs leading-5">
             <div class="min-w-fit">
-              <p
-                :for={line <- lines}
-                class={[
-                  "px-3 whitespace-pre-wrap [overflow-wrap:anywhere]",
-                  line_class(line)
-                ]}
-              >
-                {line_text(line)}
-              </p>
+              <.line :for={line <- lines} line={line} />
             </div>
           </div>
         <% {:paths, {rows, more?}} -> %>
@@ -406,6 +485,15 @@ defmodule PotokIdeWeb.GroupLive.Show.HistoryTab do
     """
   end
 
+  attr :line, :any, required: true
+
+  # Kept on one line, as its spaces are part of what is compared.
+  defp line(assigns) do
+    ~H"""
+    <p class={["px-3 whitespace-pre-wrap [overflow-wrap:anywhere]", line_class(@line)]} phx-no-format>{line_text(@line)}</p>
+    """
+  end
+
   attr :rows, :list, required: true
   attr :field, :string, required: true
   attr :manifest, :any, required: true
@@ -416,7 +504,10 @@ defmodule PotokIdeWeb.GroupLive.Show.HistoryTab do
       <div :for={{path, before, now} <- @rows} class="rounded-xl bg-base-200/60 px-3 py-2 text-sm">
         <dt :if={path} class="text-xs text-base-content/60 [overflow-wrap:anywhere]">{path}</dt>
         <dd class="flex flex-wrap items-baseline gap-x-2 [overflow-wrap:anywhere]">
-          <span class="text-base-content/60 line-through decoration-base-content/30">
+          <span class={[
+            "text-base-content/60",
+            before not in [nil, "—"] && "line-through decoration-base-content/30"
+          ]}>
             {before || "—"}
           </span>
           <.icon name="hero-arrow-right-mini" class="size-3.5 shrink-0 self-center opacity-60" />
@@ -449,6 +540,10 @@ defmodule PotokIdeWeb.GroupLive.Show.HistoryTab do
     end
   end
 
+  defp held({:value, value}), do: value
+  defp held(:none), do: nil
+  defp held(gone), do: gone
+
   defp plain_value({:value, value}), do: value
   defp plain_value(_none), do: nil
 
@@ -465,8 +560,8 @@ defmodule PotokIdeWeb.GroupLive.Show.HistoryTab do
 
   defp line_class(:gap), do: "bg-base-200/60 text-center text-base-content/50"
   defp line_class({:same, _}), do: "text-base-content/70"
-  defp line_class({:removed, _}), do: "bg-error/10 text-error"
-  defp line_class({:added, _}), do: "bg-success/10 text-success"
+  defp line_class({:removed, _}), do: "bg-rose-500/10 text-rose-700 dark:text-rose-300"
+  defp line_class({:added, _}), do: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
 
   defp line_text(:gap), do: "⋯"
   defp line_text({:same, line}), do: "  " <> line
@@ -477,8 +572,8 @@ defmodule PotokIdeWeb.GroupLive.Show.HistoryTab do
   defp step_icon(:removed), do: "hero-minus-circle"
   defp step_icon(:changed), do: "hero-pencil-square"
 
-  defp step_class(:added), do: "text-success"
-  defp step_class(:removed), do: "text-error"
+  defp step_class(:added), do: "text-emerald-600 dark:text-emerald-400"
+  defp step_class(:removed), do: "text-rose-600 dark:text-rose-400"
   defp step_class(:changed), do: "text-base-content/60"
 
   defp step_text(:added, label), do: gettext("Step added: %{label}", label: label)

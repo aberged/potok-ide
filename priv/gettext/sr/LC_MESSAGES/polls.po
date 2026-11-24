@@ -525,6 +525,7 @@ msgstr "Glasanje"
 #: lib/potok_ide_web/live/group_live/show/access_catalog.ex:152
 #: lib/potok_ide_web/live/group_live/show/create_menu.ex:264
 #: lib/potok_ide_web/live/group_live/show/group_menu.ex:57
+#: lib/potok_ide_web/live/group_live/show/history_snapshot.ex:336
 #: lib/potok_ide_web/live/group_live/show/polls_tab.ex:32
 #, elixir-autogen, elixir-format
 msgid "Polls"

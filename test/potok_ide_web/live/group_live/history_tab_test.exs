@@ -103,8 +103,8 @@ defmodule PotokIdeWeb.GroupLive.HistoryTabTest do
     open_change(lv, change!("group"))
 
     assert has_element?(lv, "#history-dialog #history-side-description[data-shape='lines']")
-    assert has_element?(lv, "#history-side-description .text-error", "drugi red")
-    assert has_element?(lv, "#history-side-description .text-success", "izmenjen red")
+    assert has_element?(lv, "#history-side-description .bg-rose-500\\/10", "drugi red")
+    assert has_element?(lv, "#history-side-description .bg-emerald-500\\/10", "izmenjen red")
 
     lv |> element("#history-dialog-close") |> render_click()
     refute has_element?(lv, "#history-dialog")
@@ -298,5 +298,207 @@ defmodule PotokIdeWeb.GroupLive.HistoryTabTest do
     # Events that come late change nothing.
     render_hook(lv, "history_filter", %{"filter" => "talk"})
     refute has_element?(lv, "#group-panel-history")
+  end
+
+  describe "putting back" do
+    test "an editor puts an earlier description back, a member does not", ctx do
+      describe!(ctx, "novi opis")
+      change = change!("group")
+
+      {:ok, lv, _html} = open(ctx.member_account, ctx.group)
+      open_change(lv, change)
+      refute has_element?(lv, "#history-restore")
+      render_hook(lv, "history_restore", %{"id" => change.id})
+      assert Repo.get!(Group, ctx.group.id).description == "novi opis"
+
+      {:ok, lv, _html} = open(ctx.owner_account, ctx.group, "?as=everyone")
+      open_change(lv, change)
+      refute has_element?(lv, "#history-restore")
+
+      {:ok, lv, _html} = open(ctx.owner_account, ctx.group)
+      open_change(lv, change)
+      lv |> element("#history-restore") |> render_click()
+      assert Repo.get!(Group, ctx.group.id).description == "prvi red\ndrugi red"
+      refute has_element?(lv, "#history-dialog")
+      assert has_element?(lv, "#history-list", "puts back an earlier version: the description")
+    end
+
+    test "an earlier drawing opens in the editor, unsaved", ctx do
+      graph = fn label ->
+        %{
+          "v" => 2,
+          "nodes" => [
+            %{"id" => "start", "type" => "startEvent"},
+            %{"id" => "kraj", "type" => "endEvent", "label" => label}
+          ],
+          "flows" => [%{"from" => "start", "to" => "kraj"}]
+        }
+      end
+
+      alias PotokIde.Social.DrawnProcesses
+
+      {:ok, process} =
+        DrawnProcesses.create(ctx.owner, ctx.group, %{
+          "name" => "Prijava",
+          "graph" => graph.("Stari kraj"),
+          "trigger" => "manual",
+          "trigger_config" => %{"roles" => ["everyone"]}
+        })
+
+      {:ok, _} =
+        DrawnProcesses.update(
+          ctx.owner,
+          ctx.group,
+          process.id,
+          %{"name" => "Prijava", "graph" => graph.("Novi kraj")},
+          process.lock_version
+        )
+
+      change = change!("process")
+      {:ok, lv, _html} = open(ctx.owner_account, ctx.group)
+      open_change(lv, change)
+      assert has_element?(lv, "#history-side-graph[data-shape='steps']", "Novi kraj")
+      lv |> element("#history-restore-editor") |> render_click()
+      path = "/groups/#{ctx.group.id}/processes?process=#{process.id}&version=#{change.id}"
+      assert_patch(lv, path)
+      assert has_element?(lv, "#process-editor", "Stari kraj")
+      refute has_element?(lv, "#process-editor", "Novi kraj")
+
+      # Nothing is changed until it is saved.
+      kept = Repo.get!(PotokIde.Social.AppProcess, process.id).graph
+      assert Enum.any?(kept["nodes"], &(&1["label"] == "Novi kraj"))
+
+      # A change of another process says nothing of this one.
+      {:ok, other} =
+        DrawnProcesses.create(ctx.owner, ctx.group, %{
+          "name" => "Druga",
+          "graph" => graph.("Tuđi kraj"),
+          "trigger" => "manual",
+          "trigger_config" => %{"roles" => ["everyone"]}
+        })
+
+      {:ok, lv, _html} =
+        build_conn()
+        |> log_in_account(ctx.owner_account)
+        |> live(
+          "/groups/#{ctx.group.id}/processes?process=#{process.id}&version=#{change!("process", :created).id}"
+        )
+
+      assert other.id
+      assert has_element?(lv, "#process-editor", "Novi kraj")
+    end
+  end
+
+  describe "the group as it was" do
+    # What happened so far moves an hour back; the minute half an hour ago
+    # stands between it and what comes next.
+    defp an_hour_later! do
+      # The history of a test begins as its database was made.
+      :persistent_term.put({PotokIde.History, :since}, ~U[2026-01-01 00:00:00Z])
+
+      for table <- ~w(group_alt_descriptions values groups) do
+        Repo.query!(~s(UPDATE "#{table}" SET inserted_at = inserted_at - interval '1 hour'))
+      end
+
+      Repo.query!("UPDATE group_changes SET at = at - interval '1 hour'")
+
+      DateTime.utc_now()
+      |> DateTime.add(-30, :minute)
+      |> DateTime.to_naive()
+      |> NaiveDateTime.to_iso8601()
+      |> String.slice(0, 16)
+    end
+
+    test "opens at an address, each thing as it was then", ctx do
+      {:ok, alt} =
+        Social.create_alt_description(ctx.owner, ctx.group, %{
+          "name" => "Pravila",
+          "description" => "*stara* pravila"
+        })
+
+      {:ok, _} =
+        AppData.save_config(
+          ctx.owner,
+          ctx.group,
+          nil,
+          %{"rules" => %{"molbe" => %{"read" => ["everyone"]}}},
+          0
+        )
+
+      {:ok, record, _} =
+        AppData.insert(ctx.member, ctx.member_account, ctx.group, nil, "molbe", %{
+          "ime" => "Stari zapis"
+        })
+
+      at = an_hour_later!()
+      describe!(ctx, "sadašnji opis")
+      {:ok, _} = Social.update_alt_description(ctx.owner, ctx.group, alt, %{"name" => "Nova"})
+      {:ok, _} = AppData.delete(ctx.owner, ctx.group, nil, record.id)
+
+      {:ok, lv, _html} = open(ctx.member_account, ctx.group, "?at=#{at}")
+      assert has_element?(lv, "#history-snapshot")
+      refute has_element?(lv, "#history-list")
+      assert has_element?(lv, "#history-snapshot-text", "drugi red")
+      refute has_element?(lv, "#history-snapshot-text", "sadašnji opis")
+      assert has_element?(lv, "#history-snapshot-note")
+
+      lv |> element("#history-thing-description-#{alt.id}", "Pravila") |> render_click()
+      assert has_element?(lv, "#history-values-description em", "stara")
+      refute has_element?(lv, "#history-empty-versions")
+      lv |> element("#history-dialog-close") |> render_click()
+
+      lv |> element("#history-snapshot-records button", "molbe") |> render_click()
+      assert has_element?(lv, "#history-record-#{record.id}", "Stari zapis")
+      lv |> element("#history-record-#{record.id}") |> render_click()
+      assert has_element?(lv, "#history-value-data", "Stari zapis")
+      lv |> element("#history-dialog-close") |> render_click()
+
+      lv |> element("#history-at-clear") |> render_click()
+      assert_patch(lv, "/groups/#{ctx.group.id}/history")
+      assert has_element?(lv, "#history-list", "deletes a record of")
+    end
+
+    test "the form leads to the address of the moment", ctx do
+      at = an_hour_later!()
+      {:ok, lv, _html} = open(ctx.member_account, ctx.group)
+      lv |> element("#history-at-form") |> render_change(%{"at" => at})
+      assert_patch(lv, "/groups/#{ctx.group.id}/history?at=#{at}")
+      assert has_element?(lv, "#history-snapshot")
+    end
+
+    test "a day from before the history says so", ctx do
+      an_hour_later!()
+      {:ok, lv, _html} = open(ctx.member_account, ctx.group, "?at=2020-01-01T10:00")
+      assert has_element?(lv, "#history-before-since")
+    end
+
+    test "an app of that time does not run", ctx do
+      {:ok, _} =
+        Social.update_group(ctx.owner, ctx.group, %{
+          "uses_api" => true,
+          "description" => "<script>window.x = 1</script><p>app</p>"
+        })
+
+      at = an_hour_later!()
+      describe!(ctx, "<p>nova</p>")
+      {:ok, lv, _html} = open(ctx.member_account, ctx.group, "?at=#{at}")
+      assert has_element?(lv, "#history-snapshot-text", "An app")
+      refute render(lv) =~ "window.x"
+    end
+
+    test "a thing the viewer may not see does not open", ctx do
+      {:ok, alt} =
+        Social.create_alt_description(ctx.owner, ctx.group, %{
+          "name" => "Admini",
+          "description" => "1",
+          "visible_role_keys" => ["admin"]
+        })
+
+      at = an_hour_later!()
+      {:ok, lv, _html} = open(ctx.member_account, ctx.group, "?at=#{at}")
+      refute has_element?(lv, "#history-thing-description-#{alt.id}")
+      render_hook(lv, "history_thing", %{"type" => "description", "id" => alt.id})
+      refute has_element?(lv, "#history-dialog")
+    end
   end
 end

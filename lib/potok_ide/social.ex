@@ -1889,6 +1889,55 @@ defmodule PotokIde.Social do
     end
   end
 
+  @doc """
+  Puts a deleted alternative description back, as it was (`PotokIde.History`),
+  under its own id, after the others. Who saw it then sees it again.
+  """
+  def restore_alt_description(%Profile{} = editor, %Group{} = group, id, creator_id, attrs)
+      when is_integer(id) and is_map(attrs) do
+    with :ok <- ensure_permission(editor, group, :edit_group) do
+      History.transaction([actor: editor], fn ->
+        {:ok, _} = lock_group(Repo, group)
+
+        {count, position} =
+          Repo.one(
+            from(d in GroupAltDescription,
+              where: d.group_id == ^group.id,
+              select: {count(), max(d.position)}
+            )
+          )
+
+        if count >= @max_alt_descriptions, do: Repo.rollback(:too_many_alt_descriptions)
+
+        %GroupAltDescription{
+          id: id,
+          group_id: group.id,
+          creator_id: creator_id,
+          position: (position || -1) + 1
+        }
+        |> GroupAltDescription.changeset(attrs)
+        |> Ecto.Changeset.unique_constraint(:id, name: :group_alt_descriptions_pkey)
+        |> Repo.insert()
+        |> case do
+          {:ok, alt} ->
+            record_alt_visibility(Repo, editor, group, %GroupAltDescription{}, alt)
+            alt
+
+          {:error, reason} ->
+            Repo.rollback(reason)
+        end
+      end)
+      |> case do
+        {:ok, alt} ->
+          broadcast_alt_descriptions_updated(group)
+          {:ok, alt}
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+    end
+  end
+
   @doc "Swaps an alternative description with its neighbour in `direction`."
   def move_alt_description(
         %Profile{} = editor,

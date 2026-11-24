@@ -1002,6 +1002,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 group={@group}
                 access={@access}
                 history={@history}
+                at={@history_at}
                 entries={@streams.history_entries}
               />
             </div>

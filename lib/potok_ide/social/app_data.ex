@@ -39,6 +39,7 @@ defmodule PotokIde.Social.AppData do
     AppFiles,
     AppProcesses,
     Group,
+    GroupAltDescription,
     GroupMutes,
     Identity,
     Notifications,
@@ -411,6 +412,115 @@ defmodule PotokIde.Social.AppData do
         {:error, reason}
     end
   end
+
+  # A few are told one by one; of more the app reads its list again.
+  @told_one_by_one 50
+
+  @doc """
+  Puts deleted values back as they were (`PotokIde.History.GroupChange`s of
+  their deletion, with the old values), in the name of `profile`, whom the
+  caller let: under their own ids, with their authors and times. One that is
+  back already stays as it is. No process starts and nobody is told, but the
+  apps that are open. Returns how many came back, and how many files they
+  name that are gone.
+  """
+  def put_back(%Profile{} = profile, %Group{} = group, changes) when is_list(changes) do
+    rows =
+      for %{before: %{} = before, creator_id: creator_id} = change <- changes,
+          is_integer(creator_id) do
+        %{
+          id: change.subject_id,
+          group_id: group.id,
+          alt_description_id: change.alt_description_id,
+          collection: change.collection,
+          anonymous: change.anonymous,
+          creator_id: creator_id,
+          is_data: true,
+          content: before["content"] || "data:",
+          content_format: if(before["content_format"] == "html", do: :html, else: :markdown),
+          data: before["data"],
+          managed: before["managed"],
+          lock_version: before["lock_version"] || 0,
+          inserted_at: moment(before["inserted_at"]),
+          updated_at: moment(before["updated_at"] || before["inserted_at"])
+        }
+      end
+
+    {:ok, values} =
+      History.transaction([actor: profile], fn ->
+        values = History.within([via: :bulk], fn -> insert_back(rows) end)
+        tell_history(group, values)
+        values
+      end)
+
+    tell_back(group, values)
+    %{records: length(values), lost_files: lost_files(values)}
+  end
+
+  defp insert_back(rows) do
+    rows
+    |> Enum.chunk_every(500)
+    |> Enum.flat_map(fn chunk ->
+      {_count, values} =
+        Repo.insert_all(Value, chunk,
+          on_conflict: :nothing,
+          returning: true,
+          timeout: History.bulk_timeout()
+        )
+
+      values
+    end)
+  end
+
+  # Once for each collection, with how many came back.
+  defp tell_history(group, values) do
+    for {{alt_id, collection}, list} <-
+          Enum.group_by(values, &{&1.alt_description_id, &1.collection}) do
+      History.within([count: length(list)], fn ->
+        History.record!(group, "record", hd(list).id, :created,
+          alt_description_id: alt_id,
+          collection: collection
+        )
+      end)
+    end
+  end
+
+  defp moment(text) when is_binary(text) do
+    text
+    |> NaiveDateTime.from_iso8601!()
+    |> DateTime.from_naive!("Etc/UTC")
+    |> DateTime.truncate(:second)
+  end
+
+  defp moment(_none), do: DateTime.utc_now(:second)
+
+  defp tell_back(group, values) do
+    values = Enum.filter(values, & &1.collection)
+
+    for {{alt_id, collection}, list} <-
+          Enum.group_by(values, &{&1.alt_description_id, &1.collection}) do
+      if collection != @config and length(list) <= @told_one_by_one do
+        rule = rule(get_config(group, alt_id && %GroupAltDescription{id: alt_id}), collection)
+
+        for value <- Repo.preload(list, :creator),
+            do: broadcast_value(group, :created, value, rule)
+      else
+        broadcast(group, :regraded, %{alt_id: alt_id, collection: collection})
+      end
+    end
+  end
+
+  # The files a value names that went with it: their bytes are not kept.
+  defp lost_files(values) do
+    named = values |> Enum.flat_map(&file_ids(&1.data)) |> Enum.uniq()
+    there = Repo.all(from(v in Value, where: v.id in ^named, select: v.id))
+    length(named -- there)
+  end
+
+  defp file_ids(%{"file" => id}) when is_integer(id), do: [id]
+  defp file_ids(%{} = map), do: map |> Map.values() |> Enum.flat_map(&file_ids/1)
+  defp file_ids(list) when is_list(list), do: Enum.flat_map(list, &file_ids/1)
+  defp file_ids(_value), do: []
 
   @doc "Deletes every value of one collection of the app: for its editors. Returns how many."
   def delete_collection(%Profile{} = profile, %Group{} = group, alt, collection) do

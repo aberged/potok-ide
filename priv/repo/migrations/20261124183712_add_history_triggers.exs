@@ -276,8 +276,9 @@ defmodule PotokIde.Repo.Migrations.AddHistoryTriggers do
         p_group, p_type, p_subject, p_op, COALESCE(p_fields, '{}'), p_before, who, p_creator,
         p_alt, p_collection, p_anonymous, p_keys_before, p_keys_after, why,
         (context ->> 'op')::bigint,
-        -- What Potok does by itself is kept for what things were, and not told.
-        COALESCE(why ->> 'via', '') NOT IN ('system', 'regrade'), now_at
+        -- What Potok does by itself is kept for what things were, and not told;
+        -- of what is put back in bulk the app tells once.
+        COALESCE(why ->> 'via', '') NOT IN ('system', 'regrade', 'bulk'), now_at
       );
     END
     $$
