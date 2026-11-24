@@ -57,7 +57,7 @@ Sajt se javlja pri učitavanju svake svoje stranice, a SDK mu odgovara istim por
 
 | Poziv | `params` | Odgovor |
 |---|---|---|
-| `current_profile` | – | `{ok: true, profile}` |
+| `current_profile` | – | `{ok: true, profile}`; u `profile.details` i `profile.description` je samo ono što smeju da vide članovi grupe, a `description` je `null` kad ne smeju |
 | `get_group` | – | `{ok: true, group}` |
 | `list_values` | kao `listValues`, sa imenima sa donjom crtom (`limit`, `order_dir`, `after_id`…) | `{ok: true, values, has_more, total}` |
 | `insert_value` | `{data: "<JSON kao tekst>", content_format: "markdown"}` | `{ok: true, value}` |

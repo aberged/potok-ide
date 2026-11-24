@@ -279,6 +279,35 @@ defmodule PotokIde.Social.ProfileDetails do
     |> Repo.all()
   end
 
+  @doc """
+  What an app of `group` gets of the profile that uses it, with `access`
+  there: its details as `%{key => value}` and whether it may read the
+  description. An app is code of the group's editors, so it gets no more
+  than the group's members see, however much the profile itself sees: what
+  is for everyone signed in, and of the rest only what is for this very
+  group (`:groups`) or for all the profile's groups, of which this is one.
+  What is for the profile alone never reaches an app.
+  """
+  def for_app(%Profile{} = profile, %Group{} = group, %Access{} = access) do
+    here? = access.member? and plain_group?(group)
+
+    details =
+      for field <- list_fields(profile),
+          app_sees?(field.audience, field.group_ids, group, here?),
+          into: %{},
+          do: {field.key, field.value}
+
+    description? =
+      app_sees?(profile.description_audience, profile.description_group_ids, group, here?)
+
+    %{details: details, description?: description?}
+  end
+
+  defp app_sees?(:signed_in, _group_ids, _group, _here?), do: true
+  defp app_sees?(:shared_groups, _group_ids, _group, here?), do: here?
+  defp app_sees?(:groups, group_ids, group, here?), do: here? and group.id in group_ids
+  defp app_sees?(:only_me, _group_ids, _group, _here?), do: false
+
   # The shared groups each of `profile_ids` is in with the viewer.
   defp shared_ids_many(_viewer, []), do: %{}
 

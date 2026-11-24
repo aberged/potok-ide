@@ -107,7 +107,7 @@ Ljudi bez naloga i usluge koje prikazuju preglede deljenih linkova vide naziv, s
 
 - Kada pošaljete link u poruci ili obaveštenju, server Potoka otvori tu stranicu (kao `PotokBot`) da napravi pregled linka i pamti ga 6 sati. Sliku iz pregleda pregledač onih koji gledaju razgovor učitava direktno sa tog sajta.
 - Slike sa drugih sajtova u opisima grupa i slike profila zadate adresom učitavaju se direktno sa tih sajtova.
-- Aplikacije i sajtove u opisima grupa prave urednici grupa. Oni mogu da učitavaju sadržaj sa drugih sajtova, a sajt u opisu grupe može da poziva samo one funkcije koje mu opis dozvoli, sa vašim pravima u grupi.
+- Aplikacije i sajtove u opisima grupa prave urednici grupa. Oni mogu da učitavaju sadržaj sa drugih sajtova, a sajt u opisu grupe može da poziva samo one funkcije koje mu opis dozvoli, sa vašim pravima u grupi. Od detalja i opisa vašeg profila dobijaju samo ono što smeju da vide članovi te grupe.
 
 ### Ostali slučajevi
 
@@ -134,7 +134,7 @@ Potok koristi samo kolačiće koji vas drže prijavljenim: kolačić sesije i, a
 Nalog brišete u podešavanjima naloga, u delu Nalog, ili na https://potok.rs/brisanje-naloga, gde unesete adresu i dobijete link koji važi sat vremena. Pre brisanja vidite šta nestaje, a šta ostaje.
 
 - **Nestaju:** nalog, njegove prijave i uređaji, vaša članstva i uloge, praćenja, reakcije, tagovi, pozivnice i lična memorija aplikacija, kao i grupe u kojima ste jedini član.
-- **Ostaju:** poruke, fajlovi, glasanja, događaji i obaveštenja koje ste objavili u grupama, pod imenom „Obrisan korisnik“, bez vašeg korisničkog imena, slike i opisa. Profil koji delite sa drugim nalozima ostaje njima.
+- **Ostaju:** poruke, fajlovi, glasanja, događaji i obaveštenja koje ste objavili u grupama, pod imenom „Obrisan korisnik“, bez vašeg korisničkog imena, slike, opisa i detalja. Profil koji delite sa drugim nalozima ostaje njima.
 
 Grupa nikad ne ostaje bez administratora: ako ste jedini administrator grupe u kojoj ima i drugih ljudi, pre brisanja nekog drugog postavite za administratora. Posle brisanja na vašu adresu stiže još jedan, poslednji imejl.
 

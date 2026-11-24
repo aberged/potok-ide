@@ -1644,7 +1644,7 @@ defmodule PotokIdeWeb.DomainCopy do
           text:
             dgettext(
               "domain_map",
-              "It gets the viewer's <Profile>profile</Profile> and their <GroupRole>roles</GroupRole> in the group, so it can show different things to different members."
+              "It gets the viewer's <Profile>profile</Profile> and their <GroupRole>roles</GroupRole> in the group, so it can show different things to different members. Of the profile's <ProfileField>details</ProfileField> and description it gets only what the group's members see, never what the profile keeps for itself."
             )
         },
         %{

@@ -356,8 +356,8 @@ msgstr "Прати светлу или тамну тему, а подешава�
 
 #: lib/potok_ide_web/domain_copy.ex:1645
 #, elixir-autogen, elixir-format
-msgid "It gets the viewer's <Profile>profile</Profile> and their <GroupRole>roles</GroupRole> in the group, so it can show different things to different members."
-msgstr "Добија <Profile>профил</Profile> гледаоца и његове <GroupRole>улоге</GroupRole> у групи, па различитим члановима може да покаже различите ствари."
+msgid "It gets the viewer's <Profile>profile</Profile> and their <GroupRole>roles</GroupRole> in the group, so it can show different things to different members. Of the profile's <ProfileField>details</ProfileField> and description it gets only what the group's members see, never what the profile keeps for itself."
+msgstr "Добија <Profile>профил</Profile> гледаоца и његове <GroupRole>улоге</GroupRole> у групи, па различитим члановима може да покаже различите ствари. Од <ProfileField>детаља</ProfileField> и описа профила добија само оно што виде чланови групе, а никад оно што профил чува за себе."
 
 #: lib/potok_ide_web/domain_copy.ex:753
 #, elixir-autogen, elixir-format

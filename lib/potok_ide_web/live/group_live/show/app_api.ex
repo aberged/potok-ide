@@ -84,6 +84,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     GroupPresets,
     GroupTemplate,
     GroupTemplates,
+    ProfileDetails,
     ValueAttachment,
     ValueRules
   }
@@ -476,8 +477,8 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   end
 
   defp run("current_profile", _params, socket) do
-    {%{ok: true, profile: profile_payload(socket.assigns.current_profile, socket.assigns.access)},
-     socket}
+    %{current_profile: profile, group: group, access: access} = socket.assigns
+    {%{ok: true, profile: profile_payload(profile, group, access)}, socket}
   end
 
   defp run(method, _params, %{assigns: %{current_profile: nil}} = socket)
@@ -2267,18 +2268,24 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     })
   end
 
-  defp profile_payload(nil, _access), do: nil
+  defp profile_payload(nil, _group, _access), do: nil
 
-  # `roles` are the role names (handles) the profile holds in the group.
-  defp profile_payload(profile, %Access{} = access) do
+  # `roles` are the role names (handles) the profile holds in the group. The
+  # details and the description are those the group's members see
+  # (`ProfileDetails.for_app/3`).
+  defp profile_payload(profile, group, %Access{} = access) do
     roles = if access.manifest, do: access.manifest.roles, else: []
+
+    %{details: details, description?: description?} =
+      ProfileDetails.for_app(profile, group, access)
 
     %{
       id: profile.id,
       username: profile.username,
       profile_picture_url: Avatars.profile_avatar_url(profile),
-      description: profile.description,
+      description: if(description?, do: profile.description),
       description_format: profile.description_format,
+      details: details,
       sharing: profile.sharing,
       inserted_at: profile.inserted_at,
       updated_at: profile.updated_at,

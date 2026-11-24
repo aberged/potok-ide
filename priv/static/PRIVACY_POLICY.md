@@ -107,7 +107,7 @@ People without an account and services that show previews of shared links see th
 
 - When you send a link in a message or a notice, Potok's server opens that page (as `PotokBot`) to make a preview of the link and keeps it for 6 hours. The picture in the preview is loaded by the browsers of those who view the chat directly from that site.
 - Pictures from other sites in group descriptions and profile pictures given by an address are loaded directly from those sites.
-- Apps and sites in group descriptions are made by the groups' editors. They may load content from other sites, and a site in a group's description may call only the functions the description allows it, with your rights in the group.
+- Apps and sites in group descriptions are made by the groups' editors. They may load content from other sites, and a site in a group's description may call only the functions the description allows it, with your rights in the group. Of your profile's details and description they get only what that group's members may see.
 
 ### Other cases
 
@@ -134,7 +134,7 @@ Potok uses only cookies that keep you logged in: the session cookie and, if you 
 You delete your account in the account settings, in the Account part, or at https://potok.rs/brisanje-naloga, where you enter your address and get a link that works for an hour. Before deleting you see what goes and what stays.
 
 - **Gone:** the account, its sign-ins and devices, your memberships and roles, follows, reactions, tags, invitations and the personal memory of apps, and the groups where you are the only member.
-- **Stays:** the messages, files, polls, events and notices you posted in groups, under the name "Deleted user", without your username, picture or description. A profile you share with other accounts stays theirs.
+- **Stays:** the messages, files, polls, events and notices you posted in groups, under the name "Deleted user", without your username, picture, description or details. A profile you share with other accounts stays theirs.
 
 A group never loses its admin: if you are the only admin of a group that has other people in it, make someone else an admin before deleting. After the deletion, one last email comes to your address.
 
