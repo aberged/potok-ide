@@ -233,6 +233,8 @@ defmodule PotokIdeWeb.Router do
         {PotokIdeWeb.ProfileAuth, :require_profile}
       ] do
       live "/profiles/:id/direct", ProfileLive.Direct, :show
+      # A profile's card, by its name: what it shows depends on the current profile.
+      live "/u/:username", ProfileLive.Card, :show
       live "/groups", GroupLive.Root, :show
       live "/share", ShareLive, :index
       live "/groups/:id/:tab", GroupLive.Show, :show

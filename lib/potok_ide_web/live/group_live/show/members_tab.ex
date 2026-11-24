@@ -166,7 +166,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
                     <Components.profile_identity
                       profile={request.requester}
                       current_profile={@current_profile}
-                      direct_group_link={true}
+                      card={:dialog}
                     />
                     <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-base-content/65">
                       <span>{gettext("asks to join")}</span>
@@ -242,7 +242,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
                     <Components.profile_identity
                       profile={request.profile}
                       current_profile={@current_profile}
-                      direct_group_link={true}
+                      card={:dialog}
                     />
                     <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-base-content/65">
                       <span>{gettext("asks for roles")}</span>
@@ -311,7 +311,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
                 <Components.profile_identity
                   profile={block.profile}
                   current_profile={@current_profile}
-                  direct_group_link={true}
+                  card={:dialog}
                 />
               </div>
 
@@ -376,7 +376,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
                  inherited?: inherited?,
                  inherited_role_keys: inherited_role_keys,
                  decided: decided
-               }} <- @members
+               } = entry} <- @members
             }
             id={dom_id}
             class="rounded-2xl border border-base-300/60 bg-base-100/70 px-2 py-1 shadow-sm"
@@ -385,11 +385,12 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
               <div class="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
                 <Components.profile_identity
                   profile={member}
+                  subtitle={entry[:full_name]}
                   me={member.id == @current_profile.id}
                   presence_profile_id={member.id}
                   presence_badge_id={"group-member-presence-#{member.id}"}
                   current_profile={@current_profile}
-                  direct_group_link={true}
+                  card={:dialog}
                 />
                 <span
                   :if={inherited?}

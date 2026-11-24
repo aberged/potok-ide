@@ -89,7 +89,7 @@ Lične podatke obrađujemo na osnovu:
 
 ### Drugi korisnici
 
-Ono što objavite u grupi vide oni kojima to uloge u grupi dozvoljavaju. Vaš profil, članstva i objave vide se u grupama i funkcijama za saradnju koje koristite. Detalje i opis profila vidi samo onaj kome ste ih za svaki od njih namenili. Javne grupe vidi svako ko je prijavljen.
+Ono što objavite u grupi vide oni kojima to uloge u grupi dozvoljavaju. Vaš profil, članstva i objave vide se u grupama i funkcijama za saradnju koje koristite. Detalje i opis profila vidi samo onaj kome ste ih za svaki od njih namenili. Kada nekoga pozovete u grupu ili zatražite da uđete u nju, pozvani, odnosno oni koji o zahtevu odlučuju, vide vaše detalje kao članovi te grupe. Javne grupe vidi svako ko je prijavljen.
 
 ### Svako ko ima link
 

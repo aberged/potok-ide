@@ -20,7 +20,8 @@ defmodule PotokIde.Social.ProfileDetails do
   import Ecto.Query, warn: false
 
   alias PotokIde.Repo
-  alias PotokIde.Social.{Group, GroupMembership, Profile, ProfileFacts, ProfileField}
+  alias PotokIde.Social.{Access, Group, GroupMembership, Profile, ProfileFacts, ProfileField}
+  alias PotokIde.Tags
 
   @max_group_choices 500
   @key [:profile_id, :key]
@@ -118,6 +119,180 @@ defmodule PotokIde.Social.ProfileDetails do
         true -> repo.insert!(changeset, on_conflict: {:replace, @replaced}, conflict_target: @key)
       end
     end)
+  end
+
+  @max_card_groups 12
+
+  @doc """
+  What `viewer` (the current profile of `account`) sees on the card of
+  `target`: its visible fields, whether it reads the description, the tags
+  the viewer sees on it, up to #{@max_card_groups} of the groups both are in, and
+  whether the viewer may write to it. Who may open the card at all is the
+  caller's to say (`card_in_group?/3`, `PotokIde.Social.Discovery`).
+  """
+  def card(account, viewer, %Profile{} = target) do
+    facts = ProfileFacts.load(account, viewer, target)
+
+    %{
+      profile: target,
+      facts: facts,
+      fields: target |> list_fields() |> visible_fields(facts),
+      description?: description_visible?(target, facts),
+      tags: card_tags(viewer, target),
+      shared_groups: shared_groups(facts),
+      can_message?: can_message?(facts, viewer)
+    }
+  end
+
+  # Whether the viewer may open a direct conversation with the profile from
+  # its card: a person, and someone else's.
+  defp can_message?(%ProfileFacts{kind: :person, holder?: false}, %Profile{kind: :person}),
+    do: true
+
+  defp can_message?(_facts, _viewer), do: false
+
+  defp card_tags(nil, _target), do: []
+
+  defp card_tags(%Profile{} = viewer, %Profile{id: id}) do
+    viewer |> Tags.tags_for(:profile, [id]) |> Map.get(id, [])
+  end
+
+  defp shared_groups(%ProfileFacts{holder?: true}), do: []
+
+  # A sub-group that takes in all of its parent's members says nothing more
+  # when the parent is shared too, like a map's places.
+  defp shared_groups(%ProfileFacts{shared_group_ids: shared}) do
+    ids = MapSet.to_list(shared)
+
+    from(g in Group,
+      where: g.id in ^ids,
+      where:
+        not (g.inherits_members and g.inherit_role_keys == ^[] and
+               g.parent_id in ^ids),
+      order_by: [asc: fragment("lower(?)", g.name), asc: g.id],
+      limit: @max_card_groups,
+      select: %{id: g.id, name: g.name}
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Whether the card of `target` opens on the page of `group` for a viewer
+  with `access`, whatever the profile lets others find: the group shows the
+  profile there already. That is a member to a member, an author of a
+  message to whoever reads the chat (a public group's open chat too),
+  someone asking to join to whoever decides it, and someone blocked to
+  whoever may remove members.
+  """
+  def card_in_group?(%Access{} = access, %Group{id: group_id} = group, %Profile{
+        kind: :person,
+        id: id
+      }) do
+    sql = """
+    SELECT
+      EXISTS(SELECT 1 FROM group_memberships WHERE group_id = $1 AND profile_id = $2),
+      EXISTS(SELECT 1 FROM values
+             WHERE group_id = $1 AND creator_id = $2 AND NOT is_data),
+      EXISTS(SELECT 1 FROM group_join_requests WHERE group_id = $1 AND requester_id = $2),
+      EXISTS(SELECT 1 FROM group_blocks WHERE group_id = $1 AND profile_id = $2)
+    """
+
+    %{rows: [[member?, author?, asking?, blocked?]]} =
+      Repo.query!(sql, [group_id, id], cache_statement: "profile_card_in_group_v1")
+
+    (access.member? and member?) or (Access.can_read_chat?(access, group) and author?) or
+      (Access.can?(access, :manage_join_requests) and asking?) or
+      (Access.can?(access, :remove_members) and blocked?)
+  end
+
+  def card_in_group?(_access, _group, _target), do: false
+
+  @doc """
+  The full names the viewer sees of `profile_ids`, members of `group` (the
+  page they are listed on), as `%{profile_id => "First Last"}`; a profile
+  whose names the viewer sees neither of is left out. Two queries at most: in
+  a shared group the viewer is a member of, every member shares it, so only
+  names shown to picked groups other than this one need the groups both are
+  in.
+  """
+  def names_for(account, %Profile{} = viewer, profile_ids, %Group{} = group, %Access{} = access)
+      when is_list(profile_ids) do
+    rows = name_rows(account, profile_ids)
+    here? = access.member? and plain_group?(group)
+
+    {decided, open} =
+      Enum.split_with(rows, fn row ->
+        row.held? or row.profile_id == viewer.id or row.audience in [:only_me, :signed_in] or
+          (here? and (row.audience == :shared_groups or group.id in row.group_ids))
+      end)
+
+    shared = shared_ids_many(viewer, open |> Enum.map(& &1.profile_id) |> Enum.uniq())
+
+    visible =
+      Enum.filter(decided, fn row ->
+        row.held? or row.profile_id == viewer.id or row.audience != :only_me
+      end) ++
+        Enum.filter(open, fn row ->
+          in_groups = Map.get(shared, row.profile_id, MapSet.new())
+
+          case row.audience do
+            :shared_groups -> MapSet.size(in_groups) > 0
+            :groups -> Enum.any?(row.group_ids, &MapSet.member?(in_groups, &1))
+          end
+        end)
+
+    visible
+    |> Enum.group_by(& &1.profile_id)
+    |> Map.new(fn {profile_id, rows} ->
+      keys = Map.new(rows, &{&1.key, &1.value})
+      {profile_id, Enum.join(Enum.reject([keys[:first_name], keys[:last_name]], &is_nil/1), " ")}
+    end)
+  end
+
+  defp name_rows(_account, []), do: []
+
+  defp name_rows(account, profile_ids) do
+    # No account holds an id of 0.
+    account_id = if account, do: account.id, else: 0
+
+    from(f in ProfileField,
+      left_join: ap in "accounts_profiles",
+      on: ap.profile_id == f.profile_id and ap.account_id == ^account_id,
+      where: f.profile_id in ^profile_ids and f.key in [:first_name, :last_name],
+      select: %{
+        profile_id: f.profile_id,
+        key: f.key,
+        value: f.value,
+        audience: f.audience,
+        group_ids: f.group_ids,
+        held?: not is_nil(ap.profile_id)
+      }
+    )
+    |> Repo.all()
+  end
+
+  # The shared groups each of `profile_ids` is in with the viewer.
+  defp shared_ids_many(_viewer, []), do: %{}
+
+  defp shared_ids_many(%Profile{id: viewer_id}, profile_ids) do
+    sql = """
+    SELECT t.profile_id, array_agg(t.group_id)
+    FROM group_memberships t
+    JOIN group_memberships v ON v.group_id = t.group_id AND v.profile_id = $1
+    JOIN groups g ON g.id = t.group_id
+    WHERE t.profile_id = ANY($2) AND #{ProfileFacts.plain_group_sql("g")}
+    GROUP BY t.profile_id
+    """
+
+    %{rows: rows} =
+      Repo.query!(sql, [viewer_id, profile_ids], cache_statement: "profile_shared_ids_many_v1")
+
+    Map.new(rows, fn [profile_id, ids] -> {profile_id, MapSet.new(ids)} end)
+  end
+
+  defp plain_group?(%Group{} = group) do
+    not group.is_root and not group.is_direct and is_nil(group.parent_value_id) and
+      is_nil(group.external_key)
   end
 
   @doc """

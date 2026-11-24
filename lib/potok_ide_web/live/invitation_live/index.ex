@@ -114,11 +114,19 @@ defmodule PotokIdeWeb.InvitationLive.Index do
                     />
                     <div class="text-sm text-base-content/70">
                       {gettext("Invited by:")}
-                      <Components.highlighted_text
-                        text={inv.inviter.username}
-                        query={@invitations_search_query}
-                        class="font-semibold"
-                      />
+                      <%!-- The invited sees the inviter's card as a member
+                           of the group would (`ProfileFacts`). --%>
+                      <.link
+                        id={"invitation-inviter-#{inv.id}"}
+                        navigate={~p"/u/#{inv.inviter.username}"}
+                        class="underline-offset-2 transition-colors hover:text-primary hover:underline"
+                      >
+                        <Components.highlighted_text
+                          text={inv.inviter.username}
+                          query={@invitations_search_query}
+                          class="font-semibold"
+                        />
+                      </.link>
                       <Components.local_time
                         id={"invitation-inserted-at-#{inv.id}"}
                         datetime={inv.inserted_at}

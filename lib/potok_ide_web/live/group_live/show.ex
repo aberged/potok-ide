@@ -22,6 +22,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     GroupRoutes,
     PinnedGroups,
     Profile,
+    ProfileDetails,
     Value,
     ValueAttachment,
     ValueRules
@@ -78,6 +79,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   alias PotokIdeWeb.NoticeComponents
   alias PotokIdeWeb.PostTemplates
   alias PotokIdeWeb.ProfileAuth
+  alias PotokIdeWeb.ProfileCard
   alias PotokIdeWeb.PublicPreview
   alias PotokIdeWeb.RateLimited
   alias PotokIdeWeb.{TagComponents, TagEditor}
@@ -1003,7 +1005,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
       <KindMenu.dialog menu={@group_kind_menu} />
       <PollForm.dialog state={@poll_form} />
       <RequestDialogs.ask_dialog state={@request_dialog} />
-      <RequestDialogs.decide_dialog state={@decision_dialog} current_profile={@current_profile} />
+      <RequestDialogs.decide_dialog
+        state={@decision_dialog}
+        current_profile={@current_profile}
+        card={:dialog}
+      />
+      <ProfileCard.dialog card={@profile_card} />
       <ProcessForm.dialog state={@process_form} />
       <ProcessesTab.start_dialog start={@processes_start} />
       <ValueSearch.dialog
@@ -1173,6 +1180,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:pending_join_requests_count, 0)
          |> assign(:request_dialog, nil)
          |> assign(:decision_dialog, nil)
+         |> assign(:profile_card, nil)
          |> assign(:group_tags, [])
          |> assign(:group_reactions, [])
          |> assign(:can_react_to_group, false)
@@ -2065,6 +2073,44 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_event("request_decision_close", _params, socket),
     do: {:noreply, assign(socket, :decision_dialog, nil)}
+
+  # A profile's card, for a member, an author in the chat, someone asking to
+  # join or someone blocked here (`ProfileDetails.card_in_group?/3`). Any
+  # other id opens nothing, as if there were no such profile.
+  def handle_event("open_profile_card", %{"id" => id}, socket) do
+    %{group: group, access: access, current_profile: viewer} = socket.assigns
+
+    with {id, ""} <- Integer.parse(to_string(id)),
+         %Profile{} = target <- Social.get_profile(id),
+         true <- ProfileDetails.card_in_group?(access, group, target) do
+      card = ProfileDetails.card(socket.assigns.current_scope.account, viewer, target)
+      {:noreply, assign(socket, :profile_card, card)}
+    else
+      _none -> {:noreply, socket}
+    end
+  end
+
+  def handle_event("profile_card_close", _params, socket),
+    do: {:noreply, assign(socket, :profile_card, nil)}
+
+  def handle_event("profile_card_message", _params, socket) do
+    case socket.assigns.profile_card do
+      %{can_message?: true, profile: target} ->
+        case Social.get_or_create_direct_group(socket.assigns.current_profile, target) do
+          {:ok, direct} ->
+            {:noreply, push_navigate(socket, to: ~p"/groups/#{direct.id}/values")}
+
+          {:error, _reason} ->
+            {:noreply,
+             socket
+             |> assign(:profile_card, nil)
+             |> put_flash(:error, gettext("Unable to open a direct group right now."))}
+        end
+
+      _closed ->
+        {:noreply, socket}
+    end
+  end
 
   def handle_event("request_decide", %{"decision" => params}, socket) do
     %{group: group, current_profile: profile, decision_dialog: state} = socket.assigns
@@ -6274,7 +6320,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
           offset: pagination.loaded_count,
           role: socket.assigns.members_role
         )
-        |> member_entries(socket.assigns.group, socket.assigns.current_profile)
+        |> member_entries(socket.assigns.group, socket)
 
       socket
       |> assign(
@@ -6537,7 +6583,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       entries =
         group
         |> Social.list_group_members(limit: reload_limit(pagination), role: role)
-        |> member_entries(group, socket.assigns.current_profile)
+        |> member_entries(group, socket)
 
       socket
       |> assign(
@@ -6771,13 +6817,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp load_more_files(socket), do: socket
 
   # Members are streamed with their role keys in the group, what they hold
-  # through the parent, which the group itself cannot take away, and the
-  # tags the viewer sees on them.
-  defp member_entries(profiles, group, viewer) do
+  # through the parent, which the group itself cannot take away, the tags
+  # the viewer sees on them and the names they show the viewer.
+  defp member_entries(profiles, group, socket) do
+    %{current_profile: viewer, access: access, current_scope: scope} = socket.assigns
     profile_ids = Enum.map(profiles, & &1.id)
     keys_by_profile = Access.role_keys_by_profile(group, profile_ids)
     inherited = Access.inherited_by_profile(group, profile_ids)
     decided = Access.decided_by_profile(group, profile_ids)
+    names = ProfileDetails.names_for(scope.account, viewer, profile_ids, group, access)
 
     profiles
     |> Tags.put_tags(viewer, :profile)
@@ -6788,7 +6836,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
         role_keys: Map.get(keys_by_profile, profile.id, []),
         inherited?: Map.has_key?(inherited, profile.id),
         inherited_role_keys: Map.get(inherited, profile.id, []),
-        decided: Map.get(decided, profile.id, %{})
+        decided: Map.get(decided, profile.id, %{}),
+        full_name: Map.get(names, profile.id)
       }
     end)
   end
@@ -6805,7 +6854,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
           assign_group_processes(socket)
 
         profile ->
-          [entry] = member_entries([profile], group, socket.assigns.current_profile)
+          [entry] = member_entries([profile], group, socket)
           role = socket.assigns.members_role
 
           if is_nil(role) or role in entry.role_keys,

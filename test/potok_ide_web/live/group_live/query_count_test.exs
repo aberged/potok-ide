@@ -7,7 +7,9 @@ defmodule PotokIdeWeb.GroupLive.QueryCountTest do
 
   alias PotokIde.Accounts
   alias PotokIde.Polls
+  alias PotokIde.Repo
   alias PotokIde.Social
+  alias PotokIde.Social.ProfileField
 
   # Every page view runs these on the database (they were 9 for the first
   # HTML, 13 for the root page and ~27 for a chat page). Raise a bound only
@@ -387,6 +389,55 @@ defmodule PotokIdeWeb.GroupLive.QueryCountTest do
 
     assert few <= @max_access_page_queries
     assert many == few
+  end
+
+  test "the members' names cost the members tab the same, however many members", %{
+    conn: conn,
+    group: small,
+    profile: profile
+  } do
+    {:ok, big} =
+      Social.create_group(profile, Social.get_root_group!(), %{
+        "name" => "query-count-names",
+        "description" => "",
+        "description_format" => :markdown,
+        "is_public" => false
+      })
+
+    # A name for all the groups is decided on the page; one for picked groups
+    # this one is not among needs the groups both are in.
+    for {group, count} <- [{small, 2}, {big, 8}], number <- 1..count do
+      {_conn, member} =
+        member_conn("qcn#{if(group == small, do: "s", else: "b")}#{number}", group, profile)
+
+      Repo.insert!(%ProfileField{
+        profile_id: member.id,
+        key: :first_name,
+        value: "Ime#{number}",
+        audience: :shared_groups
+      })
+
+      Repo.insert!(%ProfileField{
+        profile_id: member.id,
+        key: :last_name,
+        value: "Prezime#{number}",
+        audience: :groups,
+        group_ids: [if(group == small, do: big.id, else: small.id)]
+      })
+    end
+
+    [few, many] =
+      for group <- [small, big] do
+        path = ~p"/groups/#{group.id}/members"
+        _ = page_queries(conn, path)
+        {_dead, live} = page_queries(conn, path)
+        live
+      end
+
+    assert many == few
+
+    {:ok, lv, _html} = live(conn, ~p"/groups/#{big.id}/members")
+    assert render(lv) =~ "Ime1"
   end
 
   test "a value reads no more rows in a bigger group", %{group: group, profile: profile} do

@@ -134,7 +134,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
                 text_class="text-sm"
                 title={gettext("Requester")}
                 current_profile={@current_profile}
-                direct_group_link={true}
+                card={:page}
               />
               <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-base-content/70">
                 <span class="inline-flex items-center rounded-full bg-sky-500/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-sky-700 dark:text-sky-300">
@@ -215,7 +215,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
                 text_class="text-sm"
                 title={gettext("Asks for roles")}
                 current_profile={@current_profile}
-                direct_group_link={true}
+                card={:page}
               />
               <.request_details
                 id={"approval-role-request-#{request.id}"}
@@ -370,7 +370,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
                     text_class="text-sm"
                     title={gettext("Requester")}
                     current_profile={@current_profile}
-                    direct_group_link={true}
+                    card={:page}
                   />
                   <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-base-content/70">
                     <span class="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-700 dark:text-emerald-300">
@@ -451,7 +451,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
                     text_class="text-sm"
                     title={gettext("Approved by")}
                     current_profile={@current_profile}
-                    direct_group_link={true}
+                    card={:page}
                   />
                   <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-base-content/70">
                     <span class={[
@@ -644,7 +644,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
           text_class="text-sm"
           title={gettext("Decided by")}
           current_profile={@current_profile}
-          direct_group_link={true}
+          card={:page}
         />
         <p
           :if={decision.reason}

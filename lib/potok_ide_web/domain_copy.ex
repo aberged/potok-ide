@@ -1787,7 +1787,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "A <Profile>profile</Profile> may tell its first and last name, occupation, place, phone, contact email and links, each a <ProfileField>detail</ProfileField> of its own, and its description. Each says who sees it: only the accounts that hold the profile, members of the <Group>groups</Group> it picks, anyone who is in a group with it, or anyone signed in. A group counts when both are its members, inherited too, except the root, where everyone is, direct conversations, which anyone may open, threads and an app's records. A picked group the profile leaves stops counting. Details are read on their own, never with the profile, and go with a deleted account."
+            "A <Profile>profile</Profile> may tell its first and last name, occupation, place, phone, contact email and links, each a <ProfileField>detail</ProfileField> of its own, and its description. Each says who sees it: only the accounts that hold the profile, members of the <Group>groups</Group> it picks, anyone who is in a group with it, or anyone signed in. A group counts when both are its members, inherited too, except the root, where everyone is, direct conversations, which anyone may open, threads and an app's records. A picked group the profile leaves stops counting. A profile's card shows each viewer only what is theirs to see, and whoever the profile invites into a group, or whoever decides its request to join one, sees it as a member of that group would. Details are read on their own, never with the profile, and go with a deleted account."
           )
       },
       %{

@@ -152,6 +152,10 @@ U kartici Detalji upisuješ ime i prezime, zanimanje ili organizaciju, mesto, te
 
 ![Detalji profila: ime i prezime za sve grupe, telefon samo za zgradu](profil-detalji)
 
+Karticu profila otvaraš dodirom na člana u kartici Članovi ili na ime autora poruke. Na njoj su slika i korisničko ime, detalji i opis koje ti taj profil pokazuje, tvoji tagovi i grupe u kojima ste oboje, i dugme **Pošalji poruku**. Ista kartica je i na adresi `/u/korisničko-ime`, a na stranici Pozivnice do nje vodi ime onoga ko te poziva. Kad nekoga pozoveš u grupu, ili tražiš da uđeš u nju, pozvani i oni koji odlučuju o zahtevu vide tvoje detalje kao članovi te grupe.
+
+![Kartica profila: ime, zanimanje, mesto i zajedničke grupe](kartica-profila)
+
 Deljeni profil deliš sa drugim profilom: u delu Deljenje upišeš njegovo korisničko ime. Poziv se vidi na stranici Profili dok je pozvani profil trenutni, a kad ga prihvati, oba naloga koriste deljeni profil.
 
 ![Profili: trenutni, podrazumevani i deljeni profil savet-cvetna](profili) ![Uređivanje profila: ime, slika, detalji, opis, deljenje i tagovi](profil-uredi)
@@ -250,7 +254,7 @@ Vrstu grupe menjaš u Uredi grupu → Osnovno, dugmetom Promeni. Nova vrsta dono
 
 ## Članovi i uloge {:#clanovi}
 
-Kartica Članovi pokazuje sve članove, njihove uloge i ko je na mreži. Odatle se odlučuje o [zahtevima za pristup i za uloge](#zahtevi), dodeljuju uloge, [uklanjaju članovi](#uklanjanje) i skidaju [blokade](#blokiranje). Nasleđeni članovi su označeni, a dodirom na člana otvaraš razgovor u četiri oka. Uloga koju je dala odluka glasanja ima oznaku **izabran**, koja vodi na to glasanje. Dugmetom **Uloga** spisak sužavaš na one koji imaju jednu ulogu, i tada piše koliko ih je.
+Kartica Članovi pokazuje sve članove, njihove uloge i ko je na mreži. Odatle se odlučuje o [zahtevima za pristup i za uloge](#zahtevi), dodeljuju uloge, [uklanjaju članovi](#uklanjanje) i skidaju [blokade](#blokiranje). Nasleđeni članovi su označeni, a ispod korisničkog imena piše ime i prezime, ako ti ih član pokazuje. Dodirom na člana otvaraš [njegovu karticu](#profili), sa dugmetom za poruku u četiri oka. Uloga koju je dala odluka glasanja ima oznaku **izabran**, koja vodi na to glasanje. Dugmetom **Uloga** spisak sužavaš na one koji imaju jednu ulogu, i tada piše koliko ih je.
 
 Pozvati možeš profil po korisničkom imenu ili nekoga po imejlu: ako još nema nalog, dobija pozivnicu za Potok, a kad sa njenog linka napravi profil, odmah je član grupe. Profili se predlažu od trećeg slova imena. Pozivnica važi 30 dana: pozvani je prihvata ili briše na stranici Pozivnice, a posle toga ističe i možeš ponovo da ga pozoveš. Pozivnicu za svoj jedinstveni profil možeš da prihvatiš i drugim svojim jedinstvenim profilom, ili novim koji tu napraviš: **Prihvati drugim profilom**. Taj profil ulazi u grupu i postaje trenutni, a onaj ko te je pozvao vidi koji je profil ušao.
 

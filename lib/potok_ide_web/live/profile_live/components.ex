@@ -22,7 +22,7 @@ defmodule PotokIdeWeb.ProfileLive.Components do
   attr :title, :string, default: nil
   attr :subtitle, :string, default: nil
   attr :current_profile, :map, default: nil
-  attr :direct_group_link, :boolean, default: false
+  attr :card, :atom, default: nil, values: [nil, :dialog, :page]
 
   def profile_identity(assigns) do
     ~H"""
@@ -31,7 +31,7 @@ defmodule PotokIdeWeb.ProfileLive.Components do
       title={@title}
       subtitle={@subtitle}
       current_profile={@current_profile}
-      direct_group_link={@direct_group_link}
+      card={@card}
     />
     """
   end

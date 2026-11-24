@@ -140,6 +140,9 @@ defmodule PotokIdeWeb.HelpGuides do
         lib/potok_ide/social/group_access_change.ex
         lib/potok_ide_web/live/group_live/show/access_catalog.ex
         lib/potok_ide_web/live/group_live/show/access_preview.ex
+        lib/potok_ide/social/profile_field.ex
+        lib/potok_ide/social/profile_facts.ex
+        lib/potok_ide/social/profile_details.ex
         lib/potok_ide/social/group.ex
         lib/potok_ide/social.ex
       ),
@@ -154,6 +157,9 @@ defmodule PotokIdeWeb.HelpGuides do
         lib/potok_ide/social/group_access_change.ex
         lib/potok_ide_web/live/group_live/show/access_catalog.ex
         lib/potok_ide_web/live/group_live/show/access_preview.ex
+        lib/potok_ide/social/profile_field.ex
+        lib/potok_ide/social/profile_facts.ex
+        lib/potok_ide/social/profile_details.ex
       )
     }
   end

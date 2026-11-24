@@ -333,6 +333,11 @@ defmodule PotokIdeWeb.GroupLive.Show.RequestDialogs do
   attr :state, :map, default: nil, doc: "from `decide_state/3`, nil when closed"
   attr :current_profile, :map, required: true
 
+  attr :card, :atom,
+    default: :page,
+    values: [:dialog, :page],
+    doc: "how the name of who asks opens their card (`Components.profile_identity/1`)"
+
   def decide_dialog(assigns) do
     ~H"""
     <dialog
@@ -384,7 +389,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RequestDialogs do
               <Components.profile_identity
                 profile={@state.profile}
                 current_profile={@current_profile}
-                direct_group_link={true}
+                card={@card}
               />
               <blockquote
                 :if={@state.note}

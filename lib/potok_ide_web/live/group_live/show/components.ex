@@ -906,41 +906,42 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :presence_badge_id, :string, default: nil
   attr :sharing_badge_text_class, :string, default: "text-xs"
   attr :current_profile, :map, default: nil
-  attr :direct_group_link, :boolean, default: false
+
+  attr :card, :atom,
+    default: nil,
+    values: [nil, :dialog, :page],
+    doc:
+      "how the name opens the profile's card: `:dialog` on the group page (`open_profile_card`), `:page` at `/u/:username`"
+
+  @identity_content ~w(profile avatar_size text_class title subtitle me online? presence_profile_id presence_badge_id sharing_badge_text_class)a
 
   def profile_identity(assigns) do
+    assigns =
+      assigns
+      |> assign(:content, Map.take(assigns, @identity_content))
+      |> assign(:card, card_mode(assigns.card, assigns.profile, assigns.current_profile))
+
     ~H"""
-    <.link
-      :if={profile_identity_clickable?(@profile, @current_profile, @direct_group_link)}
-      navigate={~p"/profiles/#{@profile.id}/direct"}
-      class="block rounded-2xl px-1 py-1 transition-colors hover:bg-base-100/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-    >
-      <.profile_identity_content
-        profile={@profile}
-        avatar_size={@avatar_size}
-        text_class={@text_class}
-        title={@title}
-        subtitle={@subtitle}
-        me={@me}
-        online?={@online?}
-        presence_profile_id={@presence_profile_id}
-        presence_badge_id={@presence_badge_id}
-        sharing_badge_text_class={@sharing_badge_text_class}
-      />
-    </.link>
-    <.profile_identity_content
-      :if={!profile_identity_clickable?(@profile, @current_profile, @direct_group_link)}
-      profile={@profile}
-      avatar_size={@avatar_size}
-      text_class={@text_class}
-      title={@title}
-      subtitle={@subtitle}
-      me={@me}
-      online?={@online?}
-      presence_profile_id={@presence_profile_id}
-      presence_badge_id={@presence_badge_id}
-      sharing_badge_text_class={@sharing_badge_text_class}
-    />
+    <%= case @card do %>
+      <% :dialog -> %>
+        <button
+          type="button"
+          phx-click="open_profile_card"
+          phx-value-id={@profile.id}
+          class="block cursor-pointer rounded-2xl px-1 py-1 text-left transition-colors hover:bg-base-100/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+        >
+          <.profile_identity_content {@content} />
+        </button>
+      <% :page -> %>
+        <.link
+          navigate={~p"/u/#{@profile.username}"}
+          class="block rounded-2xl px-1 py-1 transition-colors hover:bg-base-100/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+        >
+          <.profile_identity_content {@content} />
+        </.link>
+      <% nil -> %>
+        <.profile_identity_content {@content} />
+    <% end %>
     """
   end
 
@@ -1062,11 +1063,14 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
   defp process_app_path(%Value{}), do: nil
 
-  # Nobody writes to the process of an app directly.
-  defp profile_identity_clickable?(profile, current_profile, direct_group_link?) do
-    direct_group_link? and not Profile.process?(profile) and
-      match?(%{id: current_profile_id} when current_profile_id != profile.id, current_profile)
-  end
+  # A person's card opens for someone else; a process or a deleted
+  # profile has none.
+  defp card_mode(nil, _profile, _current_profile), do: nil
+
+  defp card_mode(mode, %Profile{kind: :person, id: id}, %{id: current_id}) when id != current_id,
+    do: mode
+
+  defp card_mode(_mode, _profile, _current_profile), do: nil
 
   attr :group, :map, required: true
   attr :avatar_size, :string, default: "size-11"
@@ -2040,6 +2044,8 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       |> assign(:expandable?, value_expandable?(assigns.value))
       |> assign(:avatar_url, profile_picture_url(assigns.value.creator))
       |> assign(:process?, Profile.process?(assigns.value.creator))
+      # Someone else's message opens its author's card.
+      |> assign(:card?, not mine? and match?(%Profile{kind: :person}, assigns.value.creator))
       |> assign(:process_app_path, process_app_path(assigns.value))
       |> assign(:reactions, assigns.value.reaction_summary)
       |> assign(:reply_parent, reply_parent(assigns.value))
@@ -2103,10 +2109,20 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         class="mb-3 w-full"
       />
       <div :if={!@mine?} class="chat-image avatar group-data-continued/value:invisible">
-        <div class={[
-          "relative flex size-8 items-center justify-center rounded-full border border-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm sm:size-10",
-          !@avatar_url && "bg-base-300"
-        ]}>
+        <.dynamic_tag
+          tag_name={if @card?, do: "button", else: "div"}
+          id={@card? && "value-author-avatar-#{@value.id}"}
+          type={@card? && "button"}
+          phx-click={@card? && "open_profile_card"}
+          phx-value-id={@card? && @value.creator_id}
+          aria-label={@card? && Profile.display_name(@value.creator)}
+          class={[
+            "relative flex size-8 items-center justify-center rounded-full border border-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm sm:size-10",
+            !@avatar_url && "bg-base-300",
+            @card? &&
+              "cursor-pointer transition hover:ring-2 hover:ring-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          ]}
+        >
           <img
             :if={@avatar_url}
             src={@avatar_url}
@@ -2117,7 +2133,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           <span :if={!@avatar_url and !@process?}>
             {profile_initials(initials_name(@value.creator))}
           </span>
-        </div>
+        </.dynamic_tag>
         <span
           id={"value-creator-presence-#{@value.id}"}
           class={[
@@ -2147,7 +2163,17 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           >
             {Profile.display_name(@value.creator)}
           </.link>
-          <span :if={!@process_app_path}>{Profile.display_name(@value.creator)}</span>
+          <button
+            :if={!@process_app_path and @card?}
+            id={"value-author-#{@value.id}"}
+            type="button"
+            phx-click="open_profile_card"
+            phx-value-id={@value.creator_id}
+            class="cursor-pointer font-semibold underline-offset-2 transition-colors hover:text-primary hover:underline"
+          >
+            {Profile.display_name(@value.creator)}
+          </button>
+          <span :if={!@process_app_path and !@card?}>{Profile.display_name(@value.creator)}</span>
         </span>
         <.process_badge :if={!@mine? and @process?} id={"value-process-#{@value.id}"} />
         <span

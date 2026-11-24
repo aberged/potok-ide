@@ -220,6 +220,11 @@
     "url": "/groups/{groups.mz}/members"
   },
   {
+    "name": "kartica-profila",
+    "as": "marko",
+    "url": "/u/ana"
+  },
+  {
     "name": "zahtev-pristup",
     "as": "luka",
     "url": "/groups/{groups.mz}",

@@ -89,7 +89,7 @@ We process personal data on the basis of:
 
 ### Other users
 
-What you post in a group is seen by those the group's roles allow. Your profile, memberships and posts are seen in the groups and collaboration features you use. A profile's details and description are seen only by those you meant each of them for. Public groups are seen by everyone who is logged in.
+What you post in a group is seen by those the group's roles allow. Your profile, memberships and posts are seen in the groups and collaboration features you use. A profile's details and description are seen only by those you meant each of them for. When you invite someone into a group or ask to join one, the invited, or those who decide the request, see your details as that group's members do. Public groups are seen by everyone who is logged in.
 
 ### Anyone with a link
 

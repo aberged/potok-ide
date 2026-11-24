@@ -410,7 +410,7 @@ defmodule PotokIdeWeb.TagLive.Index do
         me={@item.id == @current_profile.id}
         avatar_size="size-10"
         current_profile={@current_profile}
-        direct_group_link={@item.id != @current_profile.id}
+        card={:page}
       />
       <TagComponents.tag_chips
         id={"tagged-profile-tags-#{@item.id}"}
