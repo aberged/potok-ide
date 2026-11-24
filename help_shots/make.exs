@@ -37,7 +37,7 @@ put.(PotokIde.Storage, root: Path.join(work, "uploads"))
 Application.put_env(:potok_ide, PotokIde.MapTiles, [])
 # A browser looks: what a page moves to the body goes there (`config/test.exs`).
 Application.put_env(:potok_ide, :portals, true)
-Application.put_env(:potok_ide, PotokIde.Mailer, adapter: Swoosh.Adapters.Logger, level: :debug)
+put.(PotokIde.Mailer, adapter: Swoosh.Adapters.Logger, level: :debug)
 put.(PotokIdeWeb.Endpoint, server: true, http: [ip: {127, 0, 0, 1}, port: port])
 
 {public_key, private_key} = :crypto.generate_key(:ecdh, :prime256v1)

@@ -2219,7 +2219,8 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           class={[
             "pointer-events-none absolute -top-4 z-10 flex w-max items-center gap-0.5 rounded-full border border-base-300 bg-base-100 p-0.5 text-base-content opacity-0 shadow-md transition-opacity duration-100",
             "group-hover/value:pointer-events-auto group-hover/value:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100",
-            if(@mine?, do: "right-1", else: "left-1")
+            # Clear of the author's name above the bubble, which opens their card.
+            if(@mine?, do: "right-1", else: "left-[max(8.5rem,calc(100%-11rem))]")
           ]}
         >
           <.icon_button
