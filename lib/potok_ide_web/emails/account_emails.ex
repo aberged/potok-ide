@@ -297,7 +297,7 @@ defmodule PotokIdeWeb.AccountEmails do
       preheader: gettext("This address no longer has an account."),
       lead:
         gettext(
-          "The account of %{email} is deleted, with its sign-ins and devices. What you wrote in groups stays there under \"Deleted user\", with no name, picture or description of yours.",
+          "The account of %{email} is deleted, with its sign-ins and devices. What you wrote in groups stays there under \"Deleted user\", with no name, picture, description or details of yours.",
           email: to
         ),
       again: gettext("If someone invites this address again, a new account starts from nothing.")
