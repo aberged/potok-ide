@@ -252,7 +252,7 @@
     "name": "pozovi",
     "as": "ana",
     "url": "/groups/{groups.building}/invite_profile",
-    "steps": [{ "type": ["#group-panel-invite-profile input[type=text]", "mi"] }, { "pause": 900 }]
+    "steps": [{ "type": ["#group-panel-invite-profile input[type=text]", "mil"] }, { "pause": 900 }]
   },
   {
     "name": "uloge",

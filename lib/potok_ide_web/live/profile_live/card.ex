@@ -1,15 +1,18 @@
 defmodule PotokIdeWeb.ProfileLive.Card do
   @moduledoc """
   A profile's card at `/u/:username`, as the current profile sees it
-  (`PotokIde.Social.ProfileDetails.card/3`). An unknown name, a process and a
-  deleted profile all show the same "not found".
+  (`PotokIde.Social.ProfileDetails.card/3`), for whoever may find it by its
+  name (`PotokIde.Social.Discovery`). An unknown name, a profile hidden from
+  the viewer, a process and a deleted profile all show the same "not found".
+  Looking names up counts against the account's limit (`:profile_lookup`).
   """
 
   use PotokIdeWeb, :live_view
 
+  alias PotokIde.RateLimit
   alias PotokIde.Social
-  alias PotokIde.Social.{Profile, ProfileDetails}
-  alias PotokIdeWeb.ProfileCard
+  alias PotokIde.Social.{Discovery, Profile, ProfileDetails, ProfileFacts}
+  alias PotokIdeWeb.{ProfileCard, RateLimited}
 
   @impl true
   def render(assigns) do
@@ -53,10 +56,23 @@ defmodule PotokIdeWeb.ProfileLive.Card do
 
   @impl true
   def mount(%{"username" => username}, _session, socket) do
-    {:ok,
-     socket
-     |> assign(:page_title, username)
-     |> assign(:card, load_card(socket, username))}
+    socket = assign(socket, :page_title, username)
+
+    # The lookup counts once, on the page that stays.
+    if connected?(socket) do
+      case RateLimit.hit(:profile_lookup, socket.assigns.current_scope.account.id) do
+        :ok ->
+          {:ok, assign(socket, :card, load_card(socket, username))}
+
+        {:error, :rate_limited, retry_after} ->
+          {:ok,
+           socket
+           |> assign(:card, nil)
+           |> put_flash(:error, RateLimited.message(retry_after))}
+      end
+    else
+      {:ok, assign(socket, :card, load_card(socket, username))}
+    end
   end
 
   @impl true
@@ -78,16 +94,14 @@ defmodule PotokIdeWeb.ProfileLive.Card do
   end
 
   defp load_card(socket, username) do
-    case Social.get_profile_by_username(username) do
-      %Profile{kind: :person} = target ->
-        ProfileDetails.card(
-          socket.assigns.current_scope.account,
-          socket.assigns.current_profile,
-          target
-        )
+    %{current_scope: %{account: account}, current_profile: viewer} = socket.assigns
 
-      _none ->
-        nil
+    with %Profile{kind: :person} = target <- Social.get_profile_by_username(username),
+         facts = ProfileFacts.load(account, viewer, target),
+         true <- Discovery.may_find?(facts, target, :username) do
+      ProfileDetails.card(facts, viewer, target)
+    else
+      _hidden_or_none -> nil
     end
   end
 end

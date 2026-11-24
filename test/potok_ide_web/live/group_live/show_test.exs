@@ -729,11 +729,39 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
           profile_picture_url: "https://example.com/suggested-profile.png",
           description: "",
           description_format: :markdown,
+          sharing: :unique,
+          discovery: :everyone
+        })
+
+      # A stranger found only by name stays out; someone the inviter shares
+      # another group with comes in, whatever they chose.
+      {:ok, hidden_profile} =
+        Social.create_profile_for_account(account_fixture(), %{
+          username: "sug-hidden",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
           sharing: :unique
+        })
+
+      {:ok, friend_profile} =
+        Social.create_profile_for_account(account_fixture(), %{
+          username: "sug-friend",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique,
+          discovery: :shared_groups
         })
 
       owner_account = Accounts.get_account!(owner_account.id)
       group = create_child_group!(owner_profile, "invite-suggest-group")
+      other_group = create_child_group!(owner_profile, "invite-suggest-other")
+
+      {:ok, friend_invitation} =
+        Social.invite_profile_to_group(owner_profile, other_group, friend_profile)
+
+      {:ok, _} = Social.accept_group_invitation(friend_invitation, friend_profile)
 
       assert {:ok, member_invitation} =
                Social.invite_profile_to_group(owner_profile, group, member_profile)
@@ -773,6 +801,8 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       refute has_element?(lv, "#group-invite-suggestion-#{owner_profile.id}")
       refute has_element?(lv, "#group-invite-suggestion-#{member_profile.id}")
       refute has_element?(lv, "#group-invite-suggestion-#{pending_profile.id}")
+      assert has_element?(lv, "#group-invite-suggestion-#{friend_profile.id}")
+      refute has_element?(lv, "#group-invite-suggestion-#{hidden_profile.id}")
     end
 
     test "selecting an invite suggestion fills the invite input", %{conn: conn} do
@@ -794,7 +824,8 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
-          sharing: :unique
+          sharing: :unique,
+          discovery: :everyone
         })
 
       owner_account = Accounts.get_account!(owner_account.id)

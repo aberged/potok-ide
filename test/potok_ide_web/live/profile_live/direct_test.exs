@@ -27,7 +27,8 @@ defmodule PotokIdeWeb.ProfileLive.DirectTest do
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
-          sharing: :unique
+          sharing: :unique,
+          discovery: :everyone
         })
 
       current_account = Accounts.get_account!(current_account.id)
@@ -49,6 +50,36 @@ defmodule PotokIdeWeb.ProfileLive.DirectTest do
         |> Enum.sort()
 
       assert member_ids == Enum.sort([current_profile.id, other_profile.id])
+    end
+
+    test "a stranger's id finds nothing, unless the profile is open to everyone", %{conn: conn} do
+      current_account = account_fixture()
+
+      {:ok, _current_profile} =
+        Social.create_profile_for_account(current_account, %{
+          username: "dirhide-cur",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, other_profile} =
+        Social.create_profile_for_account(account_fixture(), %{
+          username: "dirhide-oth",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      assert {:error,
+              {:live_redirect, %{to: "/profiles", flash: %{"error" => "Profile not found."}}}} =
+               conn
+               |> log_in_account(Accounts.get_account!(current_account.id))
+               |> live(~p"/profiles/#{other_profile.id}/direct")
+
+      assert Social.list_child_groups(Social.get_root_group!()) == []
     end
 
     test "reuses an existing direct group", %{conn: conn} do

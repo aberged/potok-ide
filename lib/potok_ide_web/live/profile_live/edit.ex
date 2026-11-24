@@ -1,13 +1,14 @@
 defmodule PotokIdeWeb.ProfileLive.Edit do
   use PotokIdeWeb, :live_view
 
+  alias PotokIde.RateLimit
   alias PotokIde.Social
-  alias PotokIde.Social.{Profile, ProfileDetails}
+  alias PotokIde.Social.{Discovery, Profile, ProfileDetails, ProfileFacts}
   alias PotokIde.Tags
   alias PotokIde.Tags.Tag
   alias PotokIdeWeb.GroupLive.Show.Components, as: GroupComponents
   alias PotokIdeWeb.ProfileLive.Components, as: ProfileComponents
-  alias PotokIdeWeb.{TagComponents, TagEditor}
+  alias PotokIdeWeb.{RateLimited, TagComponents, TagEditor}
 
   # `ProfileComponents.form_sections/1`, the details and the tags, see
   # `sections/0`.
@@ -306,7 +307,10 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
          )}
 
       inviter ->
-        case Social.get_profile_by_username(username) do
+        case find_by_username(inviter_account, inviter, username) do
+          {:error, :rate_limited, retry_after} ->
+            {:noreply, put_flash(socket, :error, RateLimited.message(retry_after))}
+
           nil ->
             {:noreply, put_flash(socket, :error, gettext("No profile exists for that username."))}
 
@@ -415,6 +419,20 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
        do:
          changes != %{} or errors != [] or ProfileDetails.changed?(details) or
            not ProfileDetails.valid?(details)
+
+  # A name the inviter may not find (`Discovery`) answers as one nobody has;
+  # looking names up counts against the account's limit.
+  defp find_by_username(account, inviter, username) do
+    with :ok <- RateLimit.hit(:profile_lookup, account.id),
+         %Profile{} = invitee <- Social.get_profile_by_username(username),
+         true <-
+           Discovery.may_find?(ProfileFacts.load(account, inviter, invitee), invitee, :username) do
+      invitee
+    else
+      {:error, :rate_limited, _retry_after} = limited -> limited
+      _hidden_or_none -> nil
+    end
+  end
 
   defp public_tags(%Profile{id: id} = profile) do
     profile

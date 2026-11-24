@@ -2,6 +2,7 @@ defmodule PotokIdeWeb.ProfileLive.Direct do
   use PotokIdeWeb, :live_view
 
   alias PotokIde.Social
+  alias PotokIde.Social.{Discovery, Profile, ProfileFacts}
 
   @impl true
   def render(assigns) do
@@ -29,7 +30,7 @@ defmodule PotokIdeWeb.ProfileLive.Direct do
     current_profile = socket.assigns.current_profile
 
     socket =
-      case Social.get_profile(id) do
+      case findable(socket, id) do
         nil ->
           socket
           |> put_flash(:error, gettext("Profile not found."))
@@ -53,5 +54,20 @@ defmodule PotokIdeWeb.ProfileLive.Direct do
       end
 
     {:noreply, socket}
+  end
+
+  # A link carries only an id, so a stranger gets through only to a profile
+  # open to everyone or one it talks to already (`Discovery`); any other is
+  # not found.
+  defp findable(socket, id) do
+    %{current_scope: %{account: account}, current_profile: viewer} = socket.assigns
+
+    with %Profile{} = target <- Social.get_profile(id),
+         facts = ProfileFacts.load(account, viewer, target),
+         true <- facts.holder? or Discovery.may_find?(facts, target, :id) do
+      target
+    else
+      _hidden_or_none -> nil
+    end
   end
 end

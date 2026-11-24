@@ -15,7 +15,7 @@ defmodule PotokIdeWeb.ProfileLive.Components do
     {"basics", [:username, :profile_picture_url]},
     {"description",
      [:description, :description_format, :description_audience, :description_group_ids]},
-    {"sharing", [:sharing]}
+    {"sharing", [:sharing, :discovery]}
   ]
 
   attr :profile, :map, required: true
@@ -128,8 +128,68 @@ defmodule PotokIdeWeb.ProfileLive.Components do
         options={@sharing_options}
       />
     </GroupComponents.settings_card>
+
+    <GroupComponents.settings_card
+      id={"#{@id_prefix}-discovery"}
+      tab_id={"#{@id_prefix}-tab-sharing"}
+      active={@section == "sharing"}
+      icon="hero-magnifying-glass"
+      title={gettext("Who finds you")}
+      subtitle={gettext("Who may find this profile to invite it or write to it.")}
+      class="mt-4"
+    >
+      <fieldset id={"#{@id_prefix}-discovery-options"} class="space-y-2">
+        <legend class="sr-only">{gettext("Who finds you")}</legend>
+        <label
+          :for={discovery <- PotokIde.Social.Profile.discoveries()}
+          id={"#{@id_prefix}-discovery-#{discovery}"}
+          class={[
+            "flex cursor-pointer items-start gap-3 rounded-2xl border px-3 py-2.5 transition",
+            if(to_string(@form[:discovery].value) == to_string(discovery),
+              do: "border-primary/50 bg-primary/5",
+              else: "border-base-300/70 hover:border-base-300 hover:bg-base-200/40"
+            )
+          ]}
+        >
+          <input
+            type="radio"
+            name={@form[:discovery].name}
+            value={discovery}
+            checked={to_string(@form[:discovery].value) == to_string(discovery)}
+            class="radio radio-sm radio-primary mt-0.5"
+          />
+          <span class="min-w-0">
+            <span class="block text-sm font-semibold">{discovery_label(discovery)}</span>
+            <span class="block text-xs text-base-content/65">{discovery_hint(discovery)}</span>
+          </span>
+        </label>
+      </fieldset>
+    </GroupComponents.settings_card>
     """
   end
+
+  @doc "How a profile's discovery setting is named."
+  def discovery_label(:everyone), do: gettext("Everyone on Potok")
+
+  def discovery_label(:by_username),
+    do: gettext("Whoever knows your name or shares a group with you")
+
+  def discovery_label(:shared_groups), do: gettext("Only people in your groups")
+
+  defp discovery_hint(:everyone),
+    do: gettext("You also show among the suggestions when someone invites people to a group.")
+
+  defp discovery_hint(:by_username),
+    do:
+      gettext(
+        "The suggestions offer you only to people in your groups; others find you by your exact username."
+      )
+
+  defp discovery_hint(:shared_groups),
+    do:
+      gettext(
+        "Others cannot find you even by name, nor write to you first; they invite you by email."
+      )
 
   attr :form, :any, required: true, doc: "from `welcome_form/2`"
 

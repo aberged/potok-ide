@@ -180,6 +180,8 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("Profile", "notice_push"), do: dgettext("domain_map", "push of notices")
   defp own_field("Profile", "kind"), do: dgettext("domain_map", "person, process or deleted")
 
+  defp own_field("Profile", "discovery"), do: dgettext("domain_map", "who may find it")
+
   defp own_field("Profile", "description_audience"),
     do: dgettext("domain_map", "who reads the description")
 
@@ -1788,6 +1790,14 @@ defmodule PotokIdeWeb.DomainCopy do
           dgettext(
             "domain_map",
             "A <Profile>profile</Profile> may tell its first and last name, occupation, place, phone, contact email and links, each a <ProfileField>detail</ProfileField> of its own, and its description. Each says who sees it: only the accounts that hold the profile, members of the <Group>groups</Group> it picks, anyone who is in a group with it, or anyone signed in. A group counts when both are its members, inherited too, except the root, where everyone is, direct conversations, which anyone may open, threads and an app's records. A picked group the profile leaves stops counting. A profile's card shows each viewer only what is theirs to see, and whoever the profile invites into a group, or whoever decides its request to join one, sees it as a member of that group would. Details are read on their own, never with the profile, and go with a deleted account."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "Who can find a profile"),
+        text:
+          dgettext(
+            "domain_map",
+            "A <Profile>profile</Profile> chooses who may find it: everyone signed in, also among the suggestions when inviting and in a <Tag>tag</Tag>'s list; whoever knows its exact username or is in a <Group>group</Group> with it, as every profile starts; or only whoever is in a group with it, while anyone else invites it by email. The suggestions offer only people the inviter shares a group with and profiles open to everyone, never one <GroupBlock>blocked</GroupBlock> in the group. A hidden name answers as one nobody has, a link that carries only an id opens a direct conversation only with a profile open to everyone or one already talked to, and looking names up counts against the account's limit. On a group's page the group decides instead: whoever it shows there opens."
           )
       },
       %{

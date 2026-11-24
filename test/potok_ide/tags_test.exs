@@ -36,6 +36,12 @@ defmodule PotokIde.TagsTest do
     hd(Repo.preload(value, :attachments).attachments)
   end
 
+  defp everyone!(profile), do: set_discovery!(profile, :everyone)
+  defp hide!(profile), do: set_discovery!(profile, :shared_groups)
+
+  defp set_discovery!(profile, discovery),
+    do: Repo.update!(Ecto.Changeset.change(profile, discovery: discovery))
+
   defp names(tags_by_id, id), do: tags_by_id |> Map.get(id, []) |> Enum.map(& &1.name)
 
   describe "private tags" do
@@ -92,7 +98,7 @@ defmodule PotokIde.TagsTest do
         assert {:ok, _tag} = Tags.add_tag(member, kind, id, "mine", :private)
       end
 
-      # An outsider opens profiles and public groups only.
+      # An outsider opens public groups, and profiles it may find.
       assert {:error, :not_found} = Tags.add_tag(outsider, :value, value.id, "x", :private)
 
       assert {:error, :not_found} =
@@ -108,6 +114,9 @@ defmodule PotokIde.TagsTest do
       assert {:error, :not_permitted} =
                Tags.add_tag(outsider, :event, public_event.id, "x", :public)
 
+      # A profile it shares no group with only when open to everyone.
+      assert {:error, :not_found} = Tags.add_tag(outsider, :profile, owner.id, "x", :private)
+      everyone!(owner)
       assert {:ok, _tag} = Tags.add_tag(outsider, :profile, owner.id, "x", :private)
 
       assert {:error, :not_found} =
@@ -326,9 +335,14 @@ defmodule PotokIde.TagsTest do
       assert {[%{id: owner_id}], false} = Tags.list_tagged(member, :profile, [tag], group: group)
       assert owner_id == owner.id
       {_account, stranger} = account_with_profile!("tag-stranger")
+      everyone!(stranger)
       {:ok, ^tag} = Tags.add_tag(member, :profile, stranger.id, "x", :private)
       assert Tags.count_tagged(member, :profile, [tag], group: group) == 1
       assert Tags.count_tagged(member, :profile, [tag]) == 2
+
+      # One that shows only to its groups drops out of the list.
+      hide!(stranger)
+      assert Tags.count_tagged(member, :profile, [tag]) == 1
     end
 
     test "groups show when public or joined, files and events to members (and public events to all)",

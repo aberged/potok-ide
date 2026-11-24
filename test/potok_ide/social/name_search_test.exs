@@ -91,8 +91,13 @@ defmodule PotokIde.Social.NameSearchTest do
   end
 
   test "people to invite: none below three characters, % as itself", %{owner: owner} do
-    {_account, _ana} = account_with_profile!("wide-ana")
-    {_account, _percent} = account_with_profile!("wide-100pct")
+    # Open to everyone: the suggestions reach no other stranger.
+    {_account, ana} = account_with_profile!("wide-ana")
+    {_account, percent} = account_with_profile!("wide-100pct")
+
+    for profile <- [ana, percent],
+        do: Repo.update!(Ecto.Changeset.change(profile, discovery: :everyone))
+
     group = group_with_members!(owner, [], %{"name" => "wide-group"})
 
     assert Social.list_invitable_profiles_for_group(owner, group, "wi") == []

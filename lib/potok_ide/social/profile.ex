@@ -16,6 +16,8 @@ defmodule PotokIde.Social.Profile do
   @kinds [:person, :process, :deleted]
   # As `PotokIde.Social.ProfileField.audiences/0`.
   @audiences [:only_me, :groups, :shared_groups, :signed_in]
+  # Who may find it (`PotokIde.Social.Discovery`).
+  @discoveries [:everyone, :by_username, :shared_groups]
   # The name a deleted person's profile takes (`PotokIde.Accounts.Deletion`),
   # which nobody may pick.
   @deleted_username ~r/^obrisan-\d+$/
@@ -31,6 +33,7 @@ defmodule PotokIde.Social.Profile do
     field :description_audience, Ecto.Enum, values: @audiences, default: :only_me
     field :description_group_ids, {:array, :id}, default: []
     field :sharing, Ecto.Enum, values: @sharing_modes, default: :unique
+    field :discovery, Ecto.Enum, values: @discoveries, default: :by_username
     # A person's profile, or the one that signs what an app's process does
     # (`PotokIde.Social.AppProcesses`): no account holds it, nobody picks it,
     # and where people are listed, mentioned or invited it is left out.
@@ -80,9 +83,10 @@ defmodule PotokIde.Social.Profile do
       :description_format,
       :description_audience,
       :description_group_ids,
-      :sharing
+      :sharing,
+      :discovery
     ])
-    |> validate_required([:username, :description_format, :sharing])
+    |> validate_required([:username, :description_format, :sharing, :discovery])
     |> validate_length(:username, min: 2, max: @max_username_length)
     |> validate_format(:username, @username_format,
       message: "must contain only letters, numbers, _, ., and -"
@@ -144,6 +148,8 @@ defmodule PotokIde.Social.Profile do
       put_change(changeset, :description_group_ids, [])
     end
   end
+
+  def discoveries, do: @discoveries
 
   @doc "Whether the profile signs for an app's process rather than for a person."
   def process?(%__MODULE__{kind: :process}), do: true

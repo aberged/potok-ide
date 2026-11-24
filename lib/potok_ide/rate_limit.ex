@@ -62,6 +62,13 @@ defmodule PotokIde.RateLimit do
     # Searches of a group's messages, per profile on all its pages: the box
     # asks 300 ms after the last key, so even fast typing asks a few a second.
     value_search: {60, :timer.minutes(1)},
+    # Suggestions of profiles to invite, per profile: the box asks 200 ms
+    # after the last key.
+    profile_search: {60, :timer.minutes(1)},
+    # Profiles looked up by their exact name, per account (an account can
+    # make many profiles): invitations by name and the pages `/u/:username`.
+    # Enough for a day of inviting, too few to try names one after another.
+    profile_lookup: {120, :timer.hours(1)},
     # Notices one group sends its followers, each a push to every follower's
     # devices: a busy day of a local community fits, a loop does not.
     group_notice: {10, :timer.hours(1)},
@@ -97,6 +104,7 @@ defmodule PotokIde.RateLimit do
     :process_step,
     :process_manual_start,
     :group_request,
+    :profile_lookup,
     :app_create_place,
     :app_create_children,
     :tile_upstream,
@@ -120,6 +128,8 @@ defmodule PotokIde.RateLimit do
           | :app_guest_client
           | :root_map_view
           | :value_search
+          | :profile_search
+          | :profile_lookup
           | :group_notice
           | :tile_ip
           | :tile_upstream

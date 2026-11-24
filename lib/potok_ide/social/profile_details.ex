@@ -20,7 +20,17 @@ defmodule PotokIde.Social.ProfileDetails do
   import Ecto.Query, warn: false
 
   alias PotokIde.Repo
-  alias PotokIde.Social.{Access, Group, GroupMembership, Profile, ProfileFacts, ProfileField}
+
+  alias PotokIde.Social.{
+    Access,
+    Discovery,
+    Group,
+    GroupMembership,
+    Profile,
+    ProfileFacts,
+    ProfileField
+  }
+
   alias PotokIde.Tags
 
   @max_group_choices 500
@@ -128,11 +138,12 @@ defmodule PotokIde.Social.ProfileDetails do
   `target`: its visible fields, whether it reads the description, the tags
   the viewer sees on it, up to #{@max_card_groups} of the groups both are in, and
   whether the viewer may write to it. Who may open the card at all is the
-  caller's to say (`card_in_group?/3`, `PotokIde.Social.Discovery`).
+  caller's to say (`card_in_group?/3`, `PotokIde.Social.Discovery`), which
+  may hand over the facts it read already instead of the account.
   """
-  def card(account, viewer, %Profile{} = target) do
-    facts = ProfileFacts.load(account, viewer, target)
+  def card(account_or_facts, viewer, target)
 
+  def card(%ProfileFacts{} = facts, viewer, %Profile{} = target) do
     %{
       profile: target,
       facts: facts,
@@ -140,16 +151,13 @@ defmodule PotokIde.Social.ProfileDetails do
       description?: description_visible?(target, facts),
       tags: card_tags(viewer, target),
       shared_groups: shared_groups(facts),
-      can_message?: can_message?(facts, viewer)
+      can_message?:
+        match?(%Profile{kind: :person}, viewer) and Discovery.may_message?(facts, target)
     }
   end
 
-  # Whether the viewer may open a direct conversation with the profile from
-  # its card: a person, and someone else's.
-  defp can_message?(%ProfileFacts{kind: :person, holder?: false}, %Profile{kind: :person}),
-    do: true
-
-  defp can_message?(_facts, _viewer), do: false
+  def card(account, viewer, %Profile{} = target),
+    do: card(ProfileFacts.load(account, viewer, target), viewer, target)
 
   defp card_tags(nil, _target), do: []
 

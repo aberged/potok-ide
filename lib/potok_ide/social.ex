@@ -32,6 +32,7 @@ defmodule PotokIde.Social do
     AppData,
     AppProcesses,
     AppScope,
+    Discovery,
     Group,
     GroupAccountInvitation,
     GroupAltDescription,
@@ -5140,6 +5141,7 @@ defmodule PotokIde.Social do
       prefix_search_term = "#{normalized_search_term}%"
 
       from(p in Profile,
+        as: :profile,
         left_join: gm in GroupMembership,
         on: gm.profile_id == p.id and gm.group_id == ^group.id,
         left_join: gi in GroupInvitation,
@@ -5160,6 +5162,8 @@ defmodule PotokIde.Social do
         ],
         limit: ^limit
       )
+      |> Discovery.where_listable(inviter)
+      |> Discovery.where_not_blocked(group)
       |> Repo.all()
     end
   end

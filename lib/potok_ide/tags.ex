@@ -27,10 +27,12 @@ defmodule PotokIde.Tags do
 
   alias PotokIde.Social.{
     Access,
+    Discovery,
     Group,
     GroupMembership,
     NameSearch,
     Profile,
+    ProfileFacts,
     Value,
     ValueAttachment
   }
@@ -203,7 +205,10 @@ defmodule PotokIde.Tags do
   defp accessible?(profile, :group, %Group{} = group),
     do: not group.is_root and (group.is_public or Social.member_of_group?(profile, group))
 
-  defp accessible?(_profile, :profile, %Profile{}), do: true
+  # A profile as a link finds it (`Discovery`): its own, one sharing a group
+  # with it, one open to everyone or one it talks to.
+  defp accessible?(profile, :profile, %Profile{} = target),
+    do: Discovery.may_find?(ProfileFacts.load(nil, profile, target), target, :id)
 
   defp accessible?(profile, :event, %Event{} = event),
     do: is_nil(event.cancelled_at) and Events.visible?(profile, event)
@@ -483,8 +488,12 @@ defmodule PotokIde.Tags do
     )
   end
 
-  # People only: the process of an app is not tagged or found by tags.
-  defp base_query(:profile, _viewer_id), do: from(p in Profile, where: p.kind == :person)
+  # People only, and those the viewer finds in a list (`Discovery`): the
+  # process of an app is not tagged or found by tags.
+  defp base_query(:profile, viewer_id) do
+    from(p in Profile, as: :profile, where: p.kind == :person)
+    |> Discovery.where_listable(%Profile{id: viewer_id})
+  end
 
   defp base_query(:event, viewer_id) do
     from(e in Event,

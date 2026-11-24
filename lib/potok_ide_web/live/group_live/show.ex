@@ -21,8 +21,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
     GroupRole,
     GroupRoutes,
     PinnedGroups,
+    Discovery,
     Profile,
     ProfileDetails,
+    ProfileFacts,
     Value,
     ValueAttachment,
     ValueRules
@@ -3081,18 +3083,18 @@ defmodule PotokIdeWeb.GroupLive.Show do
         socket
       ) do
     identifier = String.trim(identifier || "")
+    profile = socket.assigns.current_profile
+
+    # Past the limit the box only stops suggesting.
+    suggestions =
+      if profile && RateLimit.hit(:profile_search, profile.id) == :ok,
+        do: invite_profile_suggestions(profile, socket.assigns.group, identifier),
+        else: []
 
     {:noreply,
      socket
      |> assign(:invite_form, invite_form(identifier))
-     |> assign(
-       :invite_profile_suggestions,
-       invite_profile_suggestions(
-         socket.assigns.current_profile,
-         socket.assigns.group,
-         identifier
-       )
-     )}
+     |> assign(:invite_profile_suggestions, suggestions)}
   end
 
   def handle_event("select_invite_profile", %{"username" => username}, socket) do
@@ -6034,20 +6036,25 @@ defmodule PotokIdeWeb.GroupLive.Show do
         {:error, :invalid_email}
 
       true ->
-        invite_group_by_username(current_profile, group, identifier)
+        invite_group_by_username(current_profile, account_id, group, identifier)
     end
   end
 
-  defp invite_group_by_username(current_profile, group, username) do
-    case Social.get_profile_by_username(username) do
-      %{} = invitee_profile ->
-        case Social.invite_profile_to_group(current_profile, group, invitee_profile) do
-          {:ok, _invitation} -> {:ok, gettext("Invitation sent.")}
-          error -> error
-        end
-
-      nil ->
-        {:error, :profile_not_found}
+  # A name the inviter may not find (`Discovery`) answers as one nobody has,
+  # before anything else is told; looking names up counts against the
+  # account's limit.
+  defp invite_group_by_username(current_profile, account_id, group, username) do
+    with :ok <- RateLimit.hit(:profile_lookup, account_id),
+         %Profile{} = invitee <- Social.get_profile_by_username(username),
+         facts = ProfileFacts.load(%Account{id: account_id}, current_profile, invitee),
+         true <- Discovery.may_find?(facts, invitee, :username) do
+      case Social.invite_profile_to_group(current_profile, group, invitee) do
+        {:ok, _invitation} -> {:ok, gettext("Invitation sent.")}
+        error -> error
+      end
+    else
+      {:error, :rate_limited, retry_after} -> {:error, :rate_limited, retry_after}
+      _hidden_or_none -> {:error, :profile_not_found}
     end
   end
 
