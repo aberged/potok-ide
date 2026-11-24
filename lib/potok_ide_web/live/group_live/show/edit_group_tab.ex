@@ -421,6 +421,16 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
             title={gettext("Description")}
             subtitle={gettext("The text or app on the group's home page.")}
           >
+            <p class="mb-3">
+              <.link
+                id="group-description-versions"
+                patch={~p"/groups/#{@group.id}/history?of=group-#{@group.id}"}
+                class="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+              >
+                <.icon name="hero-clock" class="size-4" />
+                {gettext("Earlier versions")}
+              </.link>
+            </p>
             <.input
               field={@edit_group_form[:description_name]}
               label={gettext("Name next to the alternative descriptions")}
@@ -765,6 +775,12 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                   disabled={index == length(@alt_descriptions) - 1}
                   icon="hero-arrow-down"
                   label={gettext("Move down")}
+                />
+                <.icon_button
+                  id={"alt-description-#{alt.id}-versions"}
+                  patch={~p"/groups/#{@group.id}/history?of=description-#{alt.id}"}
+                  icon="hero-clock"
+                  label={gettext("Earlier versions")}
                 />
                 <.icon_button
                   id={"alt-description-#{alt.id}-edit"}

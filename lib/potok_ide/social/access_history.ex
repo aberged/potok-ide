@@ -18,13 +18,14 @@ defmodule PotokIde.Social.AccessHistory do
     their own accord, which are membership and not power.
 
   Blocks are read only by those who may lift them, as they see the list of
-  blocks; the rest by every member, and by nobody outside the group.
+  blocks; the rest by every member, and by nobody outside the group. The name
+  of an alternative description is told only to those who see it.
   """
 
   import Ecto.Query
 
   alias PotokIde.Repo
-  alias PotokIde.Social.{Access, Group, GroupAccessChange}
+  alias PotokIde.Social.{Access, Group, GroupAccessChange, GroupAltDescription}
 
   @page 30
 
@@ -52,7 +53,8 @@ defmodule PotokIde.Social.AccessHistory do
   The changes of `group` the holder of `access` may read, the newest first, a
   page at a time: nothing for someone outside the group, blocks only for
   those who may remove members. `before: {inserted_at, id}` goes on from where
-  a page ended. The actor and the subject come with each row.
+  a page ended, `actor:` (a profile's id) and `until:` (a `DateTime`) narrow it.
+  The actor and the subject come with each row.
   """
   def list(group, access, opts \\ [])
 
@@ -67,16 +69,37 @@ defmodule PotokIde.Social.AccessHistory do
       preload: [actor: actor, subject: subject]
     )
     |> without_blocks(Access.can?(access, :remove_members))
+    |> by_actor(opts[:actor])
+    |> until(opts[:until])
     |> before(opts[:before])
     |> Repo.all()
+    |> Enum.map(&unnamed(&1, access))
   end
 
   def list(%Group{}, %Access{}, _opts), do: []
+
+  # Who sees a description is everyone's to know; what it is called, only of
+  # those who see it.
+  defp unnamed(%GroupAccessChange{kind: :alt_visibility_set, data: data} = change, access) do
+    roles = List.wrap(data["roles"])
+
+    if Access.sees_alt_description?(access, %GroupAltDescription{visible_role_keys: roles}),
+      do: change,
+      else: %{change | data: Map.delete(data, "alt")}
+  end
+
+  defp unnamed(change, _access), do: change
 
   defp without_blocks(query, true), do: query
 
   defp without_blocks(query, false),
     do: where(query, [c], c.kind not in ^GroupAccessChange.block_kinds())
+
+  defp by_actor(query, nil), do: query
+  defp by_actor(query, id) when is_integer(id), do: where(query, [c], c.actor_id == ^id)
+
+  defp until(query, nil), do: query
+  defp until(query, %DateTime{} = at), do: where(query, [c], c.inserted_at <= ^at)
 
   defp before(query, nil), do: query
 

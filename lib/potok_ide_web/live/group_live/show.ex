@@ -40,6 +40,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
   alias PotokIdeWeb.GroupLive.Show.{
     AccessPreview,
     AccessTab,
+    HistoryState,
+    HistoryTab,
     CalendarState,
     CalendarTab,
     Components,
@@ -995,6 +997,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 overview={@access_overview}
                 view={@access_view}
               />
+              <HistoryTab.panel
+                :if={@active_tab == "history"}
+                group={@group}
+                access={@access}
+                history={@history}
+                entries={@streams.history_entries}
+              />
             </div>
           </div>
         </div>
@@ -1012,6 +1021,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
         card={:dialog}
       />
       <ProfileCard.dialog card={@profile_card} />
+      <HistoryTab.dialog open={@history_open} manifest={@access.manifest} />
       <ProcessForm.dialog state={@process_form} />
       <ProcessesTab.start_dialog start={@processes_start} />
       <ValueSearch.dialog
@@ -1195,6 +1205,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> PollsState.init(params)
          |> NoticesState.init(params)
          |> ProcessesState.init(params)
+         |> HistoryState.init(params)
          |> GroupSheet.init()
          |> load_group_data(group, active_tab)
          |> sync_group_presence()}
@@ -1263,7 +1274,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> ProcessesState.assign_params(params)
          |> NoticesState.assign_params(params)
          |> RootMapState.assign_params(params)
+         |> HistoryState.assign_params(params)
          |> load_group_data(socket.assigns.group, active_tab)}
+
+      active_tab == "history" and HistoryState.params_changed?(socket, params) ->
+        {:noreply, HistoryState.handle_params(socket, params)}
 
       active_tab == "calendar" and CalendarState.params_changed?(socket, params) ->
         {:noreply, CalendarState.handle_params(socket, params)}
@@ -1337,6 +1352,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_event("process_editor_" <> _ = event, params, socket),
     do: ProcessEditorState.handle_event(event, params, socket)
+
+  def handle_event("history_" <> _ = event, params, socket),
+    do: HistoryState.handle_event(event, params, socket)
 
   def handle_event("group_template_" <> _ = event, params, socket) do
     if Access.can?(socket.assigns.access, :edit_group),
@@ -3816,6 +3834,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> ProcessesState.maybe_load(group, active_tab)
     |> maybe_load_roles(group, active_tab)
     |> maybe_load_access_overview(group, active_tab)
+    |> HistoryState.maybe_load(group, active_tab)
     |> maybe_load_thread_origin(group, active_tab)
     |> maybe_load_alt_descriptions(group, active_tab)
     |> TemplatesState.load(group, active_tab)

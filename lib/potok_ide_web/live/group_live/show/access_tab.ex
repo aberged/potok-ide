@@ -13,7 +13,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AccessTab do
   use PotokIdeWeb, :html
 
   alias PotokIde.Processes.Graph
-  alias PotokIde.Social.{Access, AccessHistory, Group, GroupAccessChange, GroupRole}
+  alias PotokIde.Social.{Access, AccessHistory, Group, GroupAccessChange, GroupRole, Profile}
 
   alias PotokIdeWeb.GroupLive.Show.{
     AccessCatalog,
@@ -876,32 +876,36 @@ defmodule PotokIdeWeb.GroupLive.Show.AccessTab do
 
   ## The history
 
-  defp change_icon(kind) when kind in [:role_given, :role_taken], do: "hero-tag"
+  @doc "The icon of a change of access."
+  def change_icon(kind) when kind in [:role_given, :role_taken], do: "hero-tag"
 
-  defp change_icon(kind)
-       when kind in [
-              :member_admitted,
-              :member_removed,
-              :member_blocked,
-              :member_unblocked,
-              :member_left
-            ],
-       do: "hero-user"
+  def change_icon(kind)
+      when kind in [
+             :member_admitted,
+             :member_removed,
+             :member_blocked,
+             :member_unblocked,
+             :member_left
+           ],
+      do: "hero-user"
 
-  defp change_icon(kind) when kind in [:elections_on, :elections_off], do: "hero-scale"
-  defp change_icon(:settings_changed), do: "hero-cog-6-tooth"
-  defp change_icon(:alt_visibility_set), do: "hero-document-text"
-  defp change_icon(_kind), do: "hero-shield-check"
+  def change_icon(kind) when kind in [:elections_on, :elections_off], do: "hero-scale"
+  def change_icon(:settings_changed), do: "hero-cog-6-tooth"
+  def change_icon(:alt_visibility_set), do: "hero-document-text"
+  def change_icon(_kind), do: "hero-shield-check"
 
   # Who did it: a profile, a decision of a poll, or someone since deleted.
-  defp actor_name(%GroupAccessChange{actor: %{username: name}}), do: name
+  defp actor_name(%GroupAccessChange{actor: %Profile{} = profile}),
+    do: Profile.display_name(profile)
 
   defp actor_name(%GroupAccessChange{poll_id: id}) when not is_nil(id),
     do: gettext("A decision of a poll")
 
   defp actor_name(_change), do: gettext("Someone")
 
-  defp subject_name(%GroupAccessChange{subject: %{username: name}}), do: name
+  defp subject_name(%GroupAccessChange{subject: %Profile{} = profile}),
+    do: Profile.display_name(profile)
+
   defp subject_name(_change), do: gettext("someone")
 
   # The roles someone held as they left, by their names now or as they were
@@ -915,6 +919,14 @@ defmodule PotokIdeWeb.GroupLive.Show.AccessTab do
     end
   end
 
+  @doc "A role by its name in `manifest`, or its key when it is no longer there."
+  def role_name(key, manifest) do
+    case Enum.find(manifest.roles, &(&1.key == key)) do
+      nil -> key
+      role -> RolesTab.role_label(role)
+    end
+  end
+
   # A role by its name now, or as it was called when it went.
   defp change_role(%GroupAccessChange{role_key: key, data: data}, manifest) do
     case Enum.find(manifest.roles, &(&1.key == key)) do
@@ -923,7 +935,8 @@ defmodule PotokIdeWeb.GroupLive.Show.AccessTab do
     end
   end
 
-  defp change_text(%GroupAccessChange{kind: :role_given} = change, manifest) do
+  @doc "A change of access in a sentence."
+  def change_text(%GroupAccessChange{kind: :role_given} = change, manifest) do
     words = [
       actor: actor_name(change),
       subject: subject_name(change),
@@ -935,7 +948,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AccessTab do
       else: gettext("%{actor} gives %{subject} the role %{role}.", words)
   end
 
-  defp change_text(%GroupAccessChange{kind: :role_taken} = change, manifest) do
+  def change_text(%GroupAccessChange{kind: :role_taken} = change, manifest) do
     gettext("%{actor} takes the role %{role} from %{subject}.",
       actor: actor_name(change),
       subject: subject_name(change),
@@ -943,7 +956,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AccessTab do
     )
   end
 
-  defp change_text(%GroupAccessChange{kind: :permission_set} = change, manifest) do
+  def change_text(%GroupAccessChange{kind: :permission_set} = change, manifest) do
     gettext("%{actor}: the role %{role} now %{state}: %{permission}.",
       actor: actor_name(change),
       role: change_role(change, manifest),
@@ -952,14 +965,14 @@ defmodule PotokIdeWeb.GroupLive.Show.AccessTab do
     )
   end
 
-  defp change_text(%GroupAccessChange{kind: :role_added} = change, manifest),
+  def change_text(%GroupAccessChange{kind: :role_added} = change, manifest),
     do:
       gettext("%{actor} adds the role %{role}.",
         actor: actor_name(change),
         role: change_role(change, manifest)
       )
 
-  defp change_text(%GroupAccessChange{kind: :role_renamed} = change, _manifest) do
+  def change_text(%GroupAccessChange{kind: :role_renamed} = change, _manifest) do
     gettext("%{actor} renames the role %{from} to %{to}.",
       actor: actor_name(change),
       from: change.data["from"],
@@ -967,7 +980,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AccessTab do
     )
   end
 
-  defp change_text(%GroupAccessChange{kind: :role_removed} = change, _manifest) do
+  def change_text(%GroupAccessChange{kind: :role_removed} = change, _manifest) do
     gettext("%{actor} deletes the role %{role}, which %{count} held.",
       actor: actor_name(change),
       role: change.data["role"],
@@ -975,7 +988,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AccessTab do
     )
   end
 
-  defp change_text(%GroupAccessChange{kind: :request_rule_set} = change, manifest) do
+  def change_text(%GroupAccessChange{kind: :request_rule_set} = change, manifest) do
     gettext("%{actor} changes how the role %{role} is had: %{mode}.",
       actor: actor_name(change),
       role: change_role(change, manifest),
@@ -983,55 +996,67 @@ defmodule PotokIdeWeb.GroupLive.Show.AccessTab do
     )
   end
 
-  defp change_text(%GroupAccessChange{kind: :manifest_copied} = change, _manifest),
+  def change_text(%GroupAccessChange{kind: :manifest_copied} = change, _manifest),
     do: gettext("%{actor} gives the group a manifest of its own.", actor: actor_name(change))
 
-  defp change_text(%GroupAccessChange{kind: :manifest_dropped} = change, _manifest),
+  def change_text(%GroupAccessChange{kind: :manifest_dropped} = change, _manifest),
     do:
       gettext("%{actor} makes the group use the manifest of the group above it again.",
         actor: actor_name(change)
       )
 
-  defp change_text(%GroupAccessChange{kind: :settings_changed} = change, manifest) do
+  def change_text(%GroupAccessChange{kind: :settings_changed} = change, manifest) do
     gettext("%{actor}: %{changes}.",
       actor: actor_name(change),
       changes: settings_words(change.data, manifest)
     )
   end
 
-  defp change_text(%GroupAccessChange{kind: :alt_visibility_set} = change, manifest) do
-    gettext("%{actor} sets who sees the description %{alt}: %{who}.",
-      actor: actor_name(change),
-      alt: change.data["alt"],
-      who:
-        alt_rule_text(
-          %{visible_role_keys: change.data["roles"] || [], for_guests: change.data["guests"]},
-          manifest
+  def change_text(%GroupAccessChange{kind: :alt_visibility_set} = change, manifest) do
+    who =
+      alt_rule_text(
+        %{visible_role_keys: change.data["roles"] || [], for_guests: change.data["guests"]},
+        manifest
+      )
+
+    case change.data["alt"] do
+      # One the viewer does not see (`AccessHistory.list/3`).
+      nil ->
+        gettext("%{actor} sets who sees one of the descriptions: %{who}.",
+          actor: actor_name(change),
+          who: who
         )
-    )
+
+      alt ->
+        gettext("%{actor} sets who sees the description %{alt}: %{who}.",
+          actor: actor_name(change),
+          alt: alt,
+          who: who
+        )
+    end
   end
 
-  defp change_text(%GroupAccessChange{kind: :join_rule_set} = change, _manifest) do
+  def change_text(%GroupAccessChange{kind: :join_rule_set} = change, _manifest) do
     gettext("%{actor} changes how a request to join is decided: %{mode}.",
       actor: actor_name(change),
       mode: mode_name(:join, change.data["to"])
     )
   end
 
-  defp change_text(%GroupAccessChange{kind: :elections_on} = change, _manifest),
+  def change_text(%GroupAccessChange{kind: :elections_on} = change, _manifest),
     do: gettext("%{actor} lets the group elect its admins.", actor: actor_name(change))
 
-  defp change_text(%GroupAccessChange{kind: :elections_off} = change, _manifest),
+  def change_text(%GroupAccessChange{kind: :elections_off} = change, _manifest),
     do: gettext("%{actor} gives the group back to its founders' rule.", actor: actor_name(change))
 
-  defp change_text(%GroupAccessChange{kind: :member_admitted} = change, _manifest),
+  def change_text(%GroupAccessChange{kind: :member_admitted} = change, _manifest),
     do:
       gettext("%{actor} admits %{subject}.",
         actor: actor_name(change),
         subject: subject_name(change)
       )
 
-  defp change_text(%GroupAccessChange{kind: :member_removed} = change, _manifest),
+  def change_text(%GroupAccessChange{kind: :member_removed} = change, _manifest),
     do:
       gettext("%{actor} removes %{subject}.",
         actor: actor_name(change),
@@ -1039,7 +1064,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AccessTab do
       )
 
   # Who left, and the roles they held then: an admin who leaves resigns.
-  defp change_text(%GroupAccessChange{kind: :member_left} = change, manifest) do
+  def change_text(%GroupAccessChange{kind: :member_left} = change, manifest) do
     case left_roles(change, manifest) do
       [] ->
         gettext("%{subject} leaves the group.", subject: subject_name(change))
@@ -1052,14 +1077,14 @@ defmodule PotokIdeWeb.GroupLive.Show.AccessTab do
     end
   end
 
-  defp change_text(%GroupAccessChange{kind: :member_blocked} = change, _manifest),
+  def change_text(%GroupAccessChange{kind: :member_blocked} = change, _manifest),
     do:
       gettext("%{actor} blocks %{subject}.",
         actor: actor_name(change),
         subject: subject_name(change)
       )
 
-  defp change_text(%GroupAccessChange{kind: :member_unblocked} = change, _manifest),
+  def change_text(%GroupAccessChange{kind: :member_unblocked} = change, _manifest),
     do:
       gettext("%{actor} lifts the block on %{subject}.",
         actor: actor_name(change),

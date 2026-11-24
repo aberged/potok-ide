@@ -40,6 +40,8 @@ defmodule PotokIde.History.GroupChange do
     field :at, :utc_datetime_usec
     field :last_at, :utc_datetime_usec
     field :purged_at, :utc_datetime
+    # Of a change of a poll's end: whether it ended, or opened again (`Feed`).
+    field :closing?, :boolean, virtual: true
 
     belongs_to :group, PotokIde.Social.Group
     belongs_to :actor, PotokIde.Social.Profile

@@ -39,7 +39,8 @@ defmodule PotokIdeWeb.GroupLive.Show.AccessPreview do
     clear_group_sidebar_search group_sidebar_toggle group_sidebar_sheet
     group_sidebar_sheet_close request_dialog_close request_decision_close group_sheet_close
     group_kind_close access_view_preset access_view_roles access_history_more
-    access_preview_exit
+    access_preview_exit history_filter history_until history_actor history_actor_clear
+    history_subject history_subject_clear history_more history_open history_close
   )
 
   @doc "The events a preview lets through."

@@ -176,6 +176,25 @@ defmodule PotokIde.History do
   defp part({key, id}) when key in [:poll, :process, :restored] and is_integer(id),
     do: {key, id}
 
+  @doc "When the history began: what changed before is not in it."
+  def since do
+    case :persistent_term.get({__MODULE__, :since}, nil) do
+      nil ->
+        %{rows: [[at]]} =
+          Repo.query!(
+            "SELECT inserted_at FROM schema_migrations WHERE version = $1",
+            [20_261_124_183_712]
+          )
+
+        at = DateTime.from_naive!(at, "Etc/UTC")
+        :persistent_term.put({__MODULE__, :since}, at)
+        at
+
+      at ->
+        at
+    end
+  end
+
   # ---------
   # What the triggers do not see
   # ---------

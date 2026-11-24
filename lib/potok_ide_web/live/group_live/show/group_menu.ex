@@ -169,6 +169,15 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
         label={gettext("Access overview")}
         icon="hero-eye"
       />
+      <.tab_item
+        :if={PageRules.history_tab?(@group, @access)}
+        id={"#{@id_prefix}-tab-history"}
+        group={@group}
+        tab="history"
+        active_tab={@active_tab}
+        label={gettext("History")}
+        icon="hero-clock"
+      />
       <.menu_item
         :if={Access.can?(@access, :create_subgroups)}
         id={"#{@id_prefix}-tab-create-sub-group"}

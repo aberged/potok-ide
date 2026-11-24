@@ -69,6 +69,24 @@ defmodule PotokIde.Social.AccessHistoryTest do
     assert kinds(ctx.group) == [:manifest_copied, :role_added, :role_given, :role_taken]
   end
 
+  test "a description the reader does not see is told of without its name", ctx do
+    {:ok, _} =
+      Social.create_alt_description(ctx.owner, ctx.group, %{
+        "name" => "Samo admini",
+        "description" => "1",
+        "visible_role_keys" => ["admin"]
+      })
+
+    named = fn profile ->
+      [row] = AccessHistory.list(ctx.group, Access.for_profile(profile, ctx.group))
+      row.data
+    end
+
+    assert %{"alt" => "Samo admini", "roles" => ["admin"]} = named.(ctx.owner)
+    assert %{"roles" => ["admin"]} = data = named.(ctx.member)
+    refute Map.has_key?(data, "alt")
+  end
+
   test "a refused change leaves nothing", ctx do
     assert {:error, :not_permitted} =
              Social.assign_group_member_role(ctx.member, ctx.group, ctx.other.id, "admin")

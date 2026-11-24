@@ -63,6 +63,9 @@ defmodule PotokIdeWeb.GroupLive.Show.PageRules do
   def tab("access", group, access, _facts),
     do: if(access_tab?(group, access), do: "access", else: default_tab(group))
 
+  def tab("history", group, access, _facts),
+    do: if(history_tab?(group, access), do: "history", else: default_tab(group))
+
   # In the root group, the events of every group the profile is in.
   def tab("calendar", group, access, facts),
     do: if(calendar?(group, access, facts), do: "calendar", else: default_tab(group))
@@ -103,6 +106,14 @@ defmodule PotokIdeWeb.GroupLive.Show.PageRules do
   """
   def access_tab?(%Group{} = group, %Access{} = access),
     do: Effects.group_allowed?(group) and sees_group?(group, access)
+
+  @doc """
+  Whether the viewer has the history of the group: its members, where there is
+  an access overview, as a conversation and a thread have neither and the
+  root's is nobody's in particular.
+  """
+  def history_tab?(%Group{} = group, %Access{member?: member?}),
+    do: member? and Effects.group_allowed?(group)
 
   @doc "Whether the viewer has the Members tab: members of a group under the root."
   def members?(%Group{parent_id: parent_id}, %Access{member?: member?}),
