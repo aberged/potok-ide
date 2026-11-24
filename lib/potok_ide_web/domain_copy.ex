@@ -320,6 +320,18 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("GroupAccessChange", "data"),
     do: dgettext("domain_map", "what it was, in a few values")
 
+  defp own_field("RunEvent", "run_id"), do: dgettext("domain_map", "run of a process")
+  defp own_field("RunEvent", "app_process_id"), do: dgettext("domain_map", "process")
+  defp own_field("RunEvent", "kind"), do: dgettext("domain_map", "what it did")
+  defp own_field("RunEvent", "element"), do: dgettext("domain_map", "step")
+  defp own_field("RunEvent", "label"), do: dgettext("domain_map", "what the step was called")
+  defp own_field("RunEvent", "type"), do: dgettext("domain_map", "what kind of step")
+  defp own_field("RunEvent", "outcome"), do: dgettext("domain_map", "how it went")
+  defp own_field("RunEvent", "actor_id"), do: dgettext("domain_map", "who did it")
+  defp own_field("RunEvent", "vars"), do: dgettext("domain_map", "variables it changed")
+  defp own_field("RunEvent", "count"), do: dgettext("domain_map", "how many times")
+  defp own_field("RunEvent", "at"), do: dgettext("domain_map", "when")
+  defp own_field("RunEvent", "last_at"), do: dgettext("domain_map", "last time at")
   defp own_field("GroupChange", "subject_type"), do: dgettext("domain_map", "kind of thing")
   defp own_field("GroupChange", "subject_id"), do: dgettext("domain_map", "what changed")
 
@@ -354,6 +366,10 @@ defmodule PotokIdeWeb.DomainCopy do
     do: dgettext("domain_map", "last change of the burst at")
 
   defp own_field("GroupChange", "purged_at"), do: dgettext("domain_map", "emptied at")
+
+  defp own_field("GroupChange", "closing?"),
+    do: dgettext("domain_map", "whether a poll ended")
+
   defp own_field("GroupChange", "purged_by_id"), do: dgettext("domain_map", "who emptied it")
 
   defp own_field("GroupMemberRole", "profile_id"), do: dgettext("domain_map", "member")
@@ -791,6 +807,7 @@ defmodule PotokIdeWeb.DomainCopy do
   def entity_name("GroupRoleRequest"), do: dgettext("domain_map", "Request for roles")
   def entity_name("GroupRequestDecision"), do: dgettext("domain_map", "Decision on a request")
   def entity_name("GroupAccessChange"), do: dgettext("domain_map", "Change of access")
+  def entity_name("RunEvent"), do: dgettext("domain_map", "Step of a run")
   def entity_name("GroupChange"), do: dgettext("domain_map", "Change in a group")
   def entity_name("CostHour"), do: dgettext("domain_map", "Hour of costs")
   def entity_name("Invoice"), do: dgettext("domain_map", "Invoice")
@@ -1112,6 +1129,13 @@ defmodule PotokIdeWeb.DomainCopy do
     dgettext(
       "domain_map",
       "One change of who may do what in a group: a role given or taken, by an admin, a decision of a poll or an approved request, the statute or a setting that lets people in changed, a member admitted, removed, blocked or gone of their own accord, and who did it. It is written in the same transaction as the change. Every member reads it, blocks only those who may remove members, and deleting a profile leaves only that someone did it."
+    )
+  end
+
+  defp entity_description("RunEvent", _edges) do
+    dgettext(
+      "domain_map",
+      "One thing a run of a process did: it started, passed a step, waited, was answered by a person, woke, failed, was taken up again, was cancelled or ended, and when. The database writes it as the run moves. It keeps the step's name as it was drawn then, and for 30 days what the step made of the run's variables. A run goes with its value; its trace stays with the group."
     )
   end
 

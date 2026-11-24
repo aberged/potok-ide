@@ -63,6 +63,7 @@ defmodule PotokIde.Social.AppFileSweeper do
       PotokIde.Accounts.Deletion.purge_unclaimed()
       PotokIde.Social.delete_expired_invitations()
       PotokIde.History.thin()
+      PotokIde.Processes.RunEvents.forget_vars()
       RateLimit.prune()
       :done
     else

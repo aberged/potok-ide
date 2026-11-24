@@ -29,7 +29,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
   import Phoenix.LiveView, only: [put_flash: 3]
 
   alias PotokIde.Processes
-  alias PotokIde.Processes.{Graph, GroupEntities, GroupEntity, GroupFields}
+  alias PotokIde.Processes.{Graph, GroupEntities, GroupEntity, GroupFields, RunEvents}
   alias PotokIde.Social.{Access, AppProcesses, DrawnProcesses, Group, ValueRules}
   alias PotokIdeWeb.GroupLive.Show.{EntityFields, PageRules, ProcessEditorState, ProcessForm}
 
@@ -48,6 +48,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
       processes_entities: [],
       processes_entity: nil,
       processes_can_draw?: false,
+      processes_runs: nil,
       processes_refresh?: false,
       processes_start: nil,
       processes_waiting: 0,
@@ -154,7 +155,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
       processes_tasks: [],
       processes_fields: [],
       processes_entities: [],
-      processes_entity: nil
+      processes_entity: nil,
+      processes_runs: nil
     )
     |> ProcessEditorState.init()
   end
@@ -349,8 +351,44 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
     end
   end
 
+  # What the runs of a process did, in a dialog: the list, and the run picked.
+  def handle_event("processes_runs_open", %{"id" => id}, socket) do
+    with {id, ""} <- Integer.parse(to_string(id)),
+         %{process: process} <- entry(socket, id) do
+      {:noreply, assign(socket, :processes_runs, runs(socket, process, nil, []))}
+    else
+      _gone -> {:noreply, socket}
+    end
+  end
+
+  def handle_event("processes_runs_close", _params, socket),
+    do: {:noreply, assign(socket, :processes_runs, nil)}
+
+  def handle_event("processes_runs_more", _params, socket) do
+    case socket.assigns.processes_runs do
+      %{runs: [_ | _] = runs, process: process} ->
+        before = List.last(runs).event_id
+        {:noreply, assign(socket, :processes_runs, runs(socket, process, before, runs))}
+
+      _none ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("processes_run_open", %{"id" => id}, socket) do
+    with %{} = state <- socket.assigns.processes_runs,
+         {id, ""} <- Integer.parse(to_string(id)) do
+      %{group: group, access: access, current_profile: profile} = socket.assigns
+      open = if state.open == id, do: nil, else: id
+      events = if open, do: RunEvents.events(group, id, access, profile), else: []
+      {:noreply, assign(socket, :processes_runs, %{state | open: open, events: events})}
+    else
+      _none -> {:noreply, socket}
+    end
+  end
+
   def handle_event("processes_retry", %{"id" => id}, socket) do
-    case instance_call(socket, id, &Processes.retry/4) do
+    case instance_call(socket, id, &Processes.retry/5) do
       {:ok, _instance} ->
         {:noreply,
          socket
@@ -434,7 +472,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
   end
 
   def handle_event("processes_cancel", %{"id" => id}, socket) do
-    case instance_call(socket, id, &Processes.cancel/4) do
+    case instance_call(socket, id, &Processes.cancel/5) do
       {:ok, _instance} ->
         {:noreply, socket |> put_flash(:info, gettext("The instance is cancelled.")) |> load()}
 
@@ -620,9 +658,25 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
 
   defp instance_call(socket, id, fun) do
     case Integer.parse(to_string(id)) do
-      {id, ""} -> fun.(socket.assigns.group, :any, socket.assigns.access, id)
-      _invalid -> {:error, :not_found}
+      {id, ""} ->
+        %{group: group, access: access, current_profile: profile} = socket.assigns
+        fun.(group, :any, access, id, profile)
+
+      _invalid ->
+        {:error, :not_found}
     end
+  end
+
+  defp entry(socket, id) do
+    socket.assigns.processes_apps
+    |> Enum.flat_map(& &1.entries)
+    |> Enum.find(&(&1.id == id))
+  end
+
+  defp runs(socket, process, before, earlier) do
+    %{group: group, access: access, current_profile: profile} = socket.assigns
+    {page, more?} = RunEvents.runs(group, process.id, access, profile, before)
+    %{process: process, runs: earlier ++ page, more?: more?, open: nil, events: []}
   end
 
   ## Other people's changes

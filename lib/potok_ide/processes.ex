@@ -133,20 +133,20 @@ defmodule PotokIde.Processes do
   Takes up again a failed instance of this app, for its editors; `alt`
   `:any` takes any app of the group, as the group's list of processes does.
   """
-  def retry(%Group{} = group, alt, %Access{} = access, id) do
+  def retry(%Group{} = group, alt, %Access{} = access, id, editor \\ nil) do
     with :ok <- editor(access),
          %ValueProcess{} <- of_this_app(group, alt, id) || {:error, :not_found},
-         {:ok, instance} <- Engine.retry(id) do
+         {:ok, instance} <- Engine.retry(id, editor) do
       Scheduler.nudge()
       {:ok, present(instance, access)}
     end
   end
 
   @doc "Cancels an instance of this app that runs or waits, for its editors."
-  def cancel(%Group{} = group, alt, %Access{} = access, id) do
+  def cancel(%Group{} = group, alt, %Access{} = access, id, editor \\ nil) do
     with :ok <- editor(access),
          %ValueProcess{} <- of_this_app(group, alt, id) || {:error, :not_found},
-         {:ok, instance} <- Engine.cancel(id) do
+         {:ok, instance} <- Engine.cancel(id, editor) do
       {:ok, present(instance, access)}
     end
   end

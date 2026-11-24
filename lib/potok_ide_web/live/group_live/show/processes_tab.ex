@@ -7,6 +7,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
 
   use PotokIdeWeb, :html
 
+  alias PotokIde.Social.Profile
   alias PotokIde.Social.ValueRules
   alias PotokIde.Social.DrawnProcesses
 
@@ -575,6 +576,16 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
       >
         {label}
       </span>
+      <button
+        type="button"
+        id={"process-row-#{@entry.id}-runs"}
+        phx-click="processes_runs_open"
+        phx-value-id={@entry.id}
+        class="inline-flex h-6 items-center gap-1 rounded-full px-2 text-[11px] font-semibold text-primary hover:bg-primary/10"
+      >
+        <.icon name="hero-clock" class="size-3.5" />
+        {gettext("What the runs did")}
+      </button>
     </div>
 
     <ul :if={@entry.failed != []} id={"process-row-#{@entry.id}-failed"} class="mt-2 space-y-1">
@@ -650,6 +661,231 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
 
     [start, takes, owner] |> Enum.reject(&is_nil/1) |> Enum.join(" · ")
   end
+
+  attr :state, :map,
+    default: nil,
+    doc: "`%{process, runs, more?, open, events}` while the runs of a process are looked at"
+
+  attr :manage?, :boolean, required: true
+
+  @doc "What the runs of a process did (`PotokIde.Processes.RunEvents`): the list, and the run picked."
+  def runs_dialog(assigns) do
+    ~H"""
+    <dialog
+      :if={@state}
+      id="process-runs-dialog"
+      phx-hook=".ProcessRunsDialog"
+      phx-mounted={JS.ignore_attributes(["open"])}
+      aria-labelledby="process-runs-title"
+      class="fixed inset-0 m-0 size-full max-h-none max-w-none overflow-hidden bg-transparent p-0 backdrop:bg-transparent"
+    >
+      <div class="flex size-full items-end justify-center sm:items-center sm:p-4">
+        <div
+          class="absolute inset-0 bg-black/30 backdrop-blur-[2px] dark:bg-black/60"
+          phx-click="processes_runs_close"
+          aria-hidden="true"
+        >
+        </div>
+        <section
+          tabindex="-1"
+          autofocus
+          class="relative flex max-h-[85dvh] w-full flex-col overflow-hidden rounded-t-3xl border border-b-0 border-base-300/70 bg-base-100 text-base-content shadow-2xl outline-none sm:max-w-xl sm:rounded-3xl sm:border-b"
+        >
+          <header class="flex items-start gap-3 border-b border-base-300/60 px-5 pt-5 pb-4">
+            <span class="inline-flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <.icon name="hero-clock" class="size-5" />
+            </span>
+            <div class="min-w-0 flex-1">
+              <h2 id="process-runs-title" class="text-base font-semibold [overflow-wrap:anywhere]">
+                {@state.process.name}
+              </h2>
+              <p class="text-xs text-base-content/60">
+                {if @manage?,
+                  do: gettext("What its runs did, step by step."),
+                  else: gettext("The runs you started or answered.")}
+              </p>
+            </div>
+            <.icon_button
+              id="process-runs-close"
+              type="button"
+              phx-click="processes_runs_close"
+              icon="hero-x-mark"
+              label={gettext("Close")}
+            />
+          </header>
+          <div class="min-h-0 flex-1 overflow-y-auto px-4 pt-3 pb-[calc(1rem+var(--app-safe-area-bottom))]">
+            <p
+              :if={@state.runs == []}
+              id="process-runs-empty"
+              class="py-8 text-center text-sm text-base-content/60"
+            >
+              {gettext("No run since the trace began.")}
+            </p>
+            <ul class="space-y-1">
+              <li :for={run <- @state.runs} id={"process-run-#{run.id}"}>
+                <button
+                  type="button"
+                  id={"process-run-#{run.id}-open"}
+                  phx-click="processes_run_open"
+                  phx-value-id={run.id}
+                  aria-expanded={to_string(@state.open == run.id)}
+                  class="flex w-full items-center gap-2.5 rounded-2xl px-2 py-2 text-left hover:bg-base-200"
+                >
+                  <.icon
+                    name={run_icon(run.last.kind)}
+                    class={["size-5 shrink-0", run_class(run.last.kind)]}
+                  />
+                  <span class="min-w-0 flex-1">
+                    <span class="block truncate text-sm font-medium">{run_state(run.last)}</span>
+                    <span class="block text-xs text-base-content/60">
+                      <Components.local_time id={"process-run-#{run.id}-at"} datetime={run.at} />
+                      {if run.actor, do: "· " <> Profile.display_name(run.actor)}
+                    </span>
+                  </span>
+                  <.icon
+                    name={if @state.open == run.id, do: "hero-chevron-up", else: "hero-chevron-down"}
+                    class="size-4 shrink-0 opacity-50"
+                  />
+                </button>
+                <ol
+                  :if={@state.open == run.id}
+                  id={"process-run-#{run.id}-events"}
+                  class="mb-2 ml-4 space-y-1.5 border-l border-base-300 py-1 pl-4"
+                >
+                  <li :for={event <- @state.events} id={"run-event-#{event.id}"} class="text-sm">
+                    <p class="[overflow-wrap:anywhere]">{event_text(event)}</p>
+                    <p class="text-xs text-base-content/55">
+                      <Components.local_time
+                        id={"run-event-#{event.id}-at"}
+                        datetime={event.at}
+                      />
+                    </p>
+                    <ul :if={is_map(event.vars)} class="mt-0.5 space-y-0.5">
+                      <li
+                        :for={{name, sides} <- event.vars}
+                        class="text-xs text-base-content/70 [overflow-wrap:anywhere]"
+                      >
+                        <code>{name}</code>{var_text(sides)}
+                      </li>
+                    </ul>
+                  </li>
+                </ol>
+              </li>
+            </ul>
+            <div :if={@state.more?} class="mt-3 flex justify-center">
+              <.button
+                id="process-runs-more"
+                type="button"
+                phx-click="processes_runs_more"
+                size="sm"
+              >
+                {gettext("Older runs")}
+              </.button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </dialog>
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".ProcessRunsDialog">
+      export default {
+        mounted() {
+          // Escape and Android's back button close it through the server.
+          this.el.addEventListener("cancel", event => {
+            event.preventDefault()
+            this.pushEvent("processes_runs_close", {})
+          })
+
+          this.el.showModal()
+        },
+
+        updated() {
+          if (!this.el.open) this.el.showModal()
+        },
+      }
+    </script>
+    """
+  end
+
+  defp run_icon("done"), do: "hero-check-circle"
+  defp run_icon("failed"), do: "hero-exclamation-circle"
+  defp run_icon("cancelled"), do: "hero-x-circle"
+  defp run_icon("waits"), do: "hero-pause-circle"
+  defp run_icon(_kind), do: "hero-play-circle"
+
+  defp run_class("done"), do: "text-emerald-600 dark:text-emerald-400"
+  defp run_class("failed"), do: "text-rose-600 dark:text-rose-400"
+  defp run_class(_kind), do: "text-base-content/50"
+
+  # Where a run stands, by the last thing it did.
+  defp run_state(%{kind: "done", label: label}), do: gettext("Ended at “%{step}”", step: label)
+
+  defp run_state(%{kind: "failed", label: label}),
+    do: gettext("Stopped at “%{step}”", step: label)
+
+  defp run_state(%{kind: "cancelled"}), do: gettext("Cancelled")
+  defp run_state(%{kind: "waits", label: label}), do: gettext("Waits at “%{step}”", step: label)
+  defp run_state(%{label: label}), do: gettext("Under way, after “%{step}”", step: label)
+
+  # What an event of a run says, with who did it where someone did.
+  defp event_text(%{kind: "started", actor: %Profile{} = actor}),
+    do: gettext("%{name} sets it off.", name: Profile.display_name(actor))
+
+  defp event_text(%{kind: "started"}), do: gettext("It starts.")
+
+  defp event_text(%{kind: "passed", count: count, label: label}) when count > 1,
+    do: gettext("“%{step}”, %{count} times in all.", step: label, count: count)
+
+  defp event_text(%{kind: "passed", label: label}), do: gettext("“%{step}”", step: label)
+  defp event_text(%{kind: "waits", label: label}), do: gettext("Waits at “%{step}”.", step: label)
+
+  defp event_text(%{kind: "answered"} = event) do
+    name = if event.actor, do: Profile.display_name(event.actor), else: gettext("Someone")
+
+    if event.outcome,
+      do:
+        gettext("%{name} decides “%{step}”: %{outcome}.",
+          name: name,
+          step: event.label,
+          outcome: event.outcome
+        ),
+      else: gettext("%{name} fills in “%{step}”.", name: name, step: event.label)
+  end
+
+  defp event_text(%{kind: "woke", label: label}),
+    do: gettext("Goes on from “%{step}”.", step: label)
+
+  defp event_text(%{kind: "failed"} = event),
+    do:
+      gettext("Stops at “%{step}”: %{reason}.",
+        step: event.label,
+        reason: failure_reason(event.outcome)
+      )
+
+  defp event_text(%{kind: "retried"} = event) do
+    case event.actor do
+      %Profile{} = actor ->
+        gettext("%{name} takes it up again.", name: Profile.display_name(actor))
+
+      _nobody ->
+        gettext("It is taken up again.")
+    end
+  end
+
+  defp event_text(%{kind: "cancelled"} = event) do
+    case event.actor do
+      %Profile{} = actor -> gettext("%{name} cancels it.", name: Profile.display_name(actor))
+      _nobody -> gettext("It is cancelled.")
+    end
+  end
+
+  defp event_text(%{kind: "done", label: label}), do: gettext("Ends at “%{step}”.", step: label)
+
+  defp var_text([before, now]), do: ": #{var_value(before)} → #{var_value(now)}"
+  defp var_text(_much), do: gettext(": changed")
+
+  defp var_value(nil), do: "—"
+  defp var_value(value) when is_binary(value), do: String.slice(value, 0, 120)
+  defp var_value(value), do: value |> Jason.encode!() |> String.slice(0, 120)
 
   attr :start, :map,
     default: nil,

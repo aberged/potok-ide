@@ -31,7 +31,7 @@ defmodule PotokIdeWeb.DomainCopyTest do
   end
 
   test "counts what the map shows" do
-    assert %{entities: 49, domains: 11, soft: 18} = DomainCopy.map(DomainMap.graph()).counts
+    assert %{entities: 50, domains: 11, soft: 20} = DomainCopy.map(DomainMap.graph()).counts
   end
 
   test "has a word for every check that is not an enum list" do

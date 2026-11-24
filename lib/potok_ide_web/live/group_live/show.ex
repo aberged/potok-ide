@@ -1025,6 +1025,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       <HistoryTab.dialog open={@history_open} manifest={@access.manifest} />
       <ProcessForm.dialog state={@process_form} />
       <ProcessesTab.start_dialog start={@processes_start} />
+      <ProcessesTab.runs_dialog state={@processes_runs} manage?={@processes_can_draw?} />
       <ValueSearch.dialog
         state={@value_search}
         results={@streams.value_search_results}

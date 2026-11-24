@@ -59,7 +59,7 @@ defmodule PotokIde.History.TrackedTest do
     assert rows |> List.flatten() |> Enum.map(&String.trim(&1, "\"")) |> Enum.sort() ==
              Enum.sort(
                Map.keys(Tracked.tables()) ++
-                 ~w(group_notices group_reactions group_shortcuts value_reactions)
+                 ~w(group_notices group_reactions group_shortcuts value_processes value_reactions)
              )
   end
 end

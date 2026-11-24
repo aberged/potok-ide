@@ -51,6 +51,7 @@ defmodule PotokIde.DomainMap do
        PotokIde.Social.GroupValueRead,
        PotokIde.Social.AppProcess,
        PotokIde.Processes.ValueProcess,
+       PotokIde.Processes.RunEvent,
        PotokIde.Processes.GroupField,
        PotokIde.Processes.GroupEntity,
        PotokIde.Social.AppProfileEntry,
@@ -104,6 +105,8 @@ defmodule PotokIde.DomainMap do
     {"GroupChange", "keys_before", "GroupRole", "key"},
     {"GroupChange", "keys_after", "GroupRole", "key"},
     {"GroupChange", "alt_description_id", "GroupAltDescription", "id"},
+    {"RunEvent", "run_id", "ValueProcess", "id"},
+    {"RunEvent", "app_process_id", "AppProcess", "id"},
     {"PollBallot", "option_ids", "PollOption", "id"}
   ]
 

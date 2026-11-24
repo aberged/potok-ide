@@ -1562,6 +1562,10 @@ defmodule PotokIde.Processes.Engine do
           nil ->
             nil
 
+          # Ended or cancelled while its step was taken back.
+          %ValueProcess{status: status} = instance when status not in [:running, :waiting] ->
+            instance
+
           instance ->
             update!(instance, %{
               status: :failed,
@@ -1591,7 +1595,7 @@ defmodule PotokIde.Processes.Engine do
   to the scheduler.
   """
   def complete_task(%Profile{} = profile, id, element, outcome, comment \\ nil) do
-    Repo.transaction(fn ->
+    History.transaction([actor: profile], fn ->
       instance = lock(id) || Repo.rollback(:not_found)
       task = Graph.node(instance.graph, instance.element)
 
@@ -1659,7 +1663,7 @@ defmodule PotokIde.Processes.Engine do
   name, reason}}` for an attribute that is missing or not of its type.
   """
   def complete_form(%Profile{} = profile, id, element, answers, zone \\ nil) do
-    Repo.transaction(fn ->
+    History.transaction([actor: profile], fn ->
       instance = lock(id) || Repo.rollback(:not_found)
       form = Graph.node(instance.graph, instance.element)
 
@@ -1789,9 +1793,12 @@ defmodule PotokIde.Processes.Engine do
 
   defp written(answer), do: answer
 
-  @doc "Takes a failed instance up again on the element where it stopped, due at once."
-  def retry(id) do
-    Repo.transaction(fn ->
+  @doc """
+  Takes a failed instance up again on the element where it stopped, due at
+  once, as `editor` has it (`PotokIde.Processes.RunEvents`).
+  """
+  def retry(id, editor \\ nil) do
+    History.transaction(signature(editor), fn ->
       case lock(id) do
         %ValueProcess{status: :failed} = instance ->
           update!(instance, %{status: :running, error: nil, wake_at: now()})
@@ -1807,8 +1814,8 @@ defmodule PotokIde.Processes.Engine do
   Cancels an instance that runs, waits or has failed, with the runs it waits
   for; a run that waits for it fails (`call_cancelled`).
   """
-  def cancel(id) do
-    Repo.transaction(fn ->
+  def cancel(id, editor \\ nil) do
+    History.transaction(signature(editor), fn ->
       # Deeper runs first, as a run that ends locks the one waiting for it.
       chain = id |> awaiting_of() |> awaited_chain()
       Enum.each(Enum.reverse(chain), &lock/1)
@@ -1832,6 +1839,9 @@ defmodule PotokIde.Processes.Engine do
         error
     end
   end
+
+  defp signature(%Profile{} = editor), do: [actor: editor]
+  defp signature(nil), do: []
 
   @doc """
   Cancels every instance of a process that runs or waits, as its rule goes

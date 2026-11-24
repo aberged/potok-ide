@@ -11,7 +11,7 @@ msgstr ""
 "Language: en\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: lib/potok_ide_web/domain_copy.ex:1505
+#: lib/potok_ide_web/domain_copy.ex:1529
 #, elixir-autogen, elixir-format
 msgid "%{count} key"
 msgid_plural "%{count} keys"
@@ -23,735 +23,735 @@ msgstr[1] ""
 msgid "%{field}, in any letter case"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1833
+#: lib/potok_ide_web/domain_copy.ex:1857
 #, elixir-autogen, elixir-format
 msgid "<Account>The account</Account> is the identity: an email and a password. Everything in groups is done by a <Profile>profile</Profile>. One account can have several profiles, say a business, a private and a club one. The code does not tell them apart by purpose, only unique from shared. A shared profile is used by every account that accepts a <ProfileInvitation>profile invitation</ProfileInvitation>."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2157
+#: lib/potok_ide_web/domain_copy.ex:2181
 #, elixir-autogen, elixir-format
 msgid "<Tagging>Tagging</Tagging> joins a <Tag>tag</Tag> with exactly one group, profile, event, value or file, and the database checks that. A tag without an owner is public. A tag with an owner is seen only by that profile."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:902
+#: lib/potok_ide_web/domain_copy.ex:919
 #, elixir-autogen, elixir-format
 msgid "A file attached to a value. The bytes are in storage, and the row keeps what the browser reported about the file."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1985
+#: lib/potok_ide_web/domain_copy.ex:2009
 #, elixir-autogen, elixir-format
 msgid "A group can inherit members: it then holds all the members of its parent and their roles. Those rows in <GroupMembership>memberships</GroupMembership> and <GroupMemberRole>member roles</GroupMemberRole> are marked as inherited and leave with the membership in the parent. Members added in the group itself stay. When a group stops inheriting, the inherited rows become its own and nobody falls out. The exception is an app withdrawing a group: the inherited members then leave and the direct ones stay. It can also take in only the parent's members who hold one of the <GroupRole>roles</GroupRole> it picks: they come with all their roles from there and leave when they lose the last of the picked ones, while a member added in the group itself loses only what came from the parent. When the pick narrows, those who no longer fit leave, except whoever narrowed it. A role deleted in the parent leaves the pick, and a pick left empty stops the inheriting instead of taking everyone in."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1518
+#: lib/potok_ide_web/domain_copy.ex:1542
 #, elixir-autogen, elixir-format
 msgid "A group contains values, and a value opens a thread, which is a group again. That is why sub-groups and threads share one model. The arrows read as sentences, from subject to object. These are the main entities, and all of them are under All tables."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1159
+#: lib/potok_ide_web/domain_copy.ex:1183
 #, elixir-autogen, elixir-format
 msgid "A group public from the root must be public."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2047
+#: lib/potok_ide_web/domain_copy.ex:2071
 #, elixir-autogen, elixir-format
 msgid "A group's description can be an app"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1588
+#: lib/potok_ide_web/domain_copy.ex:1612
 #, elixir-autogen, elixir-format
 msgid "A group's description does not have to be text. The default description and every <GroupAltDescription>alternative description</GroupAltDescription> can be an app: a program written by members who may edit the group, which runs on the group's page, in a frame of its own, for everyone who opens it."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:845
+#: lib/potok_ide_web/domain_copy.ex:862
 #, elixir-autogen, elixir-format
 msgid "A join table: which account may use which profile. A unique profile allows only one account. The code checks that, the database does not know about it."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1576
+#: lib/potok_ide_web/domain_copy.ex:1600
 #, elixir-autogen, elixir-format
 msgid "A key over two columns holds both rows in the same group. The schema in the code does not show that."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1000
+#: lib/potok_ide_web/domain_copy.ex:1017
 #, elixir-autogen, elixir-format
 msgid "A member's answer for one occurrence, named by its local start date. Whoever declined gets no reminders for that occurrence."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1049
+#: lib/potok_ide_web/domain_copy.ex:1066
 #, elixir-autogen, elixir-format
 msgid "A member's own reminders for every occurrence, in place of the organizer's. An empty list turns them off, and without a row the member gets the event's reminders."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:799
+#: lib/potok_ide_web/domain_copy.ex:816
 #, elixir-autogen, elixir-format
 msgid "A person's identity: the email and password they log in with. It takes no part in groups, where a profile acts. An account remembers which profile it is using now, which one it falls back to, and which profile invited it."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:874
+#: lib/potok_ide_web/domain_copy.ex:891
 #, elixir-autogen, elixir-format
 msgid "A profile is a member of a group. An inherited membership exists only through the parent group and leaves with the membership there."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:881
+#: lib/potok_ide_web/domain_copy.ex:898
 #, elixir-autogen, elixir-format
 msgid "A role given to a member in one group. In the database it points at the membership, so it cannot exist without one, although the schema in the code says it points at a profile. The role is kept as text, by its key, as it can come from an ancestor's manifest. `everyone` is never written here."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:866
+#: lib/potok_ide_web/domain_copy.ex:883
 #, elixir-autogen, elixir-format
 msgid "A role of a manifest. For each of the %{count} permissions it says allowed, denied or nothing, and a denial wins. The built-in ones are `admin`, which has everything, and `everyone`, which every member has."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1056
+#: lib/potok_ide_web/domain_copy.ex:1073
 #, elixir-autogen, elixir-format
 msgid "A tag without an owner is public and part of one vocabulary for the whole app. A tag with an owner is private and only that profile sees it."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:820
+#: lib/potok_ide_web/domain_copy.ex:837
 #, elixir-autogen, elixir-format
 msgid "A technical table with no links to the rest of the domain: the `OAuth` refresh token the app uses to send email through `Gmail`."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1863
+#: lib/potok_ide_web/domain_copy.ex:1887
 #, elixir-autogen, elixir-format
 msgid "A thread is an ordinary group"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:748
+#: lib/potok_ide_web/domain_copy.ex:764
 #, elixir-autogen, elixir-format
 msgid "Account"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:736
+#: lib/potok_ide_web/domain_copy.ex:752
 #, elixir-autogen, elixir-format
 msgid "Account and identity"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:787
+#: lib/potok_ide_web/domain_copy.ex:803
 #, elixir-autogen, elixir-format
 msgid "Account invitation"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:749
+#: lib/potok_ide_web/domain_copy.ex:765
 #, elixir-autogen, elixir-format
 msgid "Account token"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:753
+#: lib/potok_ide_web/domain_copy.ex:769
 #, elixir-autogen, elixir-format
 msgid "Account–profile link"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1550
+#: lib/potok_ide_web/domain_copy.ex:1574
 #, elixir-autogen, elixir-format
 msgid "All links (%{count})"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1544
+#: lib/potok_ide_web/domain_copy.ex:1568
 #, elixir-autogen, elixir-format
 msgid "All tables"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:730
+#: lib/potok_ide_web/domain_copy.ex:746
 #, elixir-autogen, elixir-format
 msgid "All the entities and the links between them, as they stand in the code and in the database schema."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1497
+#: lib/potok_ide_web/domain_copy.ex:1521
 #, elixir-autogen, elixir-format
 msgid "All the tables of the domain by area, with their foreign keys and soft links."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:760
+#: lib/potok_ide_web/domain_copy.ex:776
 #, elixir-autogen, elixir-format
 msgid "Alt. description"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2173
+#: lib/potok_ide_web/domain_copy.ex:2197
 #, elixir-autogen, elixir-format
 msgid "An <Event>event</Event> keeps the repeat rule. A single occurrence is named by its local start date, so an <Response>event response</Response> carries that date, and cancelled occurrences are listed on the event."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1711
+#: lib/potok_ide_web/domain_copy.ex:1735
 #, elixir-autogen, elixir-format
 msgid "An <GroupAltDescription>alternative description</GroupAltDescription> can be limited to certain <GroupRole>roles</GroupRole>, and it can be the page a group opens on."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:888
+#: lib/potok_ide_web/domain_copy.ex:905
 #, elixir-autogen, elixir-format
 msgid "An additional description of a group next to the default one. Like it, it can be text or an app with its own data. It can be limited to certain roles, and without a limit everyone who sees the group's description sees it."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1702
+#: lib/potok_ide_web/domain_copy.ex:1726
 #, elixir-autogen, elixir-format
 msgid "An app can rewrite its own description, when the viewer may edit the group."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1756
+#: lib/potok_ide_web/domain_copy.ex:1780
 #, elixir-autogen, elixir-format
 msgid "An app in the default description decides what the card of a shared link says about the group. A link into the app that names a public group it reaches, such as a story of a feed, gets that group's card, marked with the app's name and picture."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1773
+#: lib/potok_ide_web/domain_copy.ex:1797
 #, elixir-autogen, elixir-format
 msgid "An app runs apart from Potok's page, so it gets only what Potok hands it."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1525
+#: lib/potok_ide_web/domain_copy.ex:1549
 #, elixir-autogen, elixir-format
 msgid "An arrow goes from the table holding the key to the table the key points at. %{count} of the %{total} keys go to Profile and Group, so they are hidden behind the marks P and G. Select an entity to see all its links. Its neighbours then show the column that joins them."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:909
+#: lib/potok_ide_web/domain_copy.ex:926
 #, elixir-autogen, elixir-format
 msgid "An emoji of one profile on a value. A profile cannot use the same emoji twice on the same value."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:993
+#: lib/potok_ide_web/domain_copy.ex:1010
 #, elixir-autogen, elixir-format
 msgid "An event in a group's calendar, once or repeating. The start and the end are those of the first occurrence, and repeats keep the local time of the event's time zone. A value can announce an event. Its place is words, and on a map the place of a group or a point, an area or a route of its own."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2171
+#: lib/potok_ide_web/domain_copy.ex:2195
 #, elixir-autogen, elixir-format
 msgid "An event's occurrence has no row of its own"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1084
+#: lib/potok_ide_web/domain_copy.ex:1101
 #, elixir-autogen, elixir-format
 msgid "An invitation for one more account to connect to a shared profile. Accepting it adds a row to the account–profile link."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1077
+#: lib/potok_ide_web/domain_copy.ex:1094
 #, elixir-autogen, elixir-format
 msgid "An invitation to a group sent to an email address, and so to the account behind it, never to one of its profiles. The person picks which of their profiles accepts it, or makes a new one, and only then does the inviter learn which: an accepted group invitation naming it takes the place of this row. Until then the inviter sees the address they typed. The first profile, made in the window the invitation's link opens, goes straight into the group of the oldest one. It lapses after 30 days."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:790
+#: lib/potok_ide_web/domain_copy.ex:806
 #, elixir-autogen, elixir-format
 msgid "Approved request"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1541
+#: lib/potok_ide_web/domain_copy.ex:1565
 #, elixir-autogen, elixir-format
 msgid "Areas"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1469
+#: lib/potok_ide_web/domain_copy.ex:1493
 #, elixir-autogen, elixir-format
 msgid "Blocked by:"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:740
+#: lib/potok_ide_web/domain_copy.ex:756
 #, elixir-autogen, elixir-format
 msgid "Calendar"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1700
+#: lib/potok_ide_web/domain_copy.ex:1724
 #, elixir-autogen, elixir-format
 msgid "Changes itself"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1471
+#: lib/potok_ide_web/domain_copy.ex:1495
 #, elixir-autogen, elixir-format
 msgid "Clears the fields:"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1463
+#: lib/potok_ide_web/domain_copy.ex:1487
 #, elixir-autogen, elixir-format
 msgid "Close"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1574
+#: lib/potok_ide_web/domain_copy.ex:1598
 #, elixir-autogen, elixir-format
 msgid "Composite keys"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:739
+#: lib/potok_ide_web/domain_copy.ex:755
 #, elixir-autogen, elixir-format
 msgid "Content"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1543
+#: lib/potok_ide_web/domain_copy.ex:1567
 #, elixir-autogen, elixir-format
 msgid "Core"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1468
+#: lib/potok_ide_web/domain_copy.ex:1492
 #, elixir-autogen, elixir-format
 msgid "Deleting a row in the database"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:775
+#: lib/potok_ide_web/domain_copy.ex:791
 #, elixir-autogen, elixir-format
 msgid "Event"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:776
+#: lib/potok_ide_web/domain_copy.ex:792
 #, elixir-autogen, elixir-format
 msgid "Event response"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1214
+#: lib/potok_ide_web/domain_copy.ex:1238
 #, elixir-autogen, elixir-format
 msgid "Exactly one target."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1473
+#: lib/potok_ide_web/domain_copy.ex:1497
 #, elixir-autogen, elixir-format
 msgid "Fields"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:762
+#: lib/potok_ide_web/domain_copy.ex:778
 #, elixir-autogen, elixir-format
 msgid "File"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1718
+#: lib/potok_ide_web/domain_copy.ex:1742
 #, elixir-autogen, elixir-format
 msgid "Fits in"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:751
+#: lib/potok_ide_web/domain_copy.ex:767
 #, elixir-autogen, elixir-format
 msgid "Gmail token"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:755
+#: lib/potok_ide_web/domain_copy.ex:771
 #, elixir-autogen, elixir-format
 msgid "Group"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:738
+#: lib/potok_ide_web/domain_copy.ex:754
 #, elixir-autogen, elixir-format
 msgid "Group and roles"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:786
+#: lib/potok_ide_web/domain_copy.ex:802
 #, elixir-autogen, elixir-format
 msgid "Group invitation"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:944
+#: lib/potok_ide_web/domain_copy.ex:961
 #, elixir-autogen, elixir-format
 msgid "How far a profile has read a group. Everything newer than the last read value is unread. That value is kept as a plain number, with no foreign key."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1871
+#: lib/potok_ide_web/domain_copy.ex:1895
 #, elixir-autogen, elixir-format
 msgid "How permissions come about"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2163
+#: lib/potok_ide_web/domain_copy.ex:2187
 #, elixir-autogen, elixir-format
 msgid "How to get into a group"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1720
+#: lib/potok_ide_web/domain_copy.ex:1744
 #, elixir-autogen, elixir-format
 msgid "It follows the light or dark theme, and keeps each viewer's settings in their browser."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1693
+#: lib/potok_ide_web/domain_copy.ex:1717
 #, elixir-autogen, elixir-format
 msgid "It gets the viewer's <Profile>profile</Profile> and their <GroupRole>roles</GroupRole> in the group, so it can show different things to different members. Of the profile's <ProfileField>details</ProfileField> and description it gets only what the group's members see, never what the profile keeps for itself."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:789
+#: lib/potok_ide_web/domain_copy.ex:805
 #, elixir-autogen, elixir-format
 msgid "Join request"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:744
+#: lib/potok_ide_web/domain_copy.ex:760
 #, elixir-autogen, elixir-format
 msgid "Joining a group"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1601
+#: lib/potok_ide_web/domain_copy.ex:1625
 #, elixir-autogen, elixir-format
 msgid "Keeps its own data"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1464
+#: lib/potok_ide_web/domain_copy.ex:1488
 #, elixir-autogen, elixir-format
 msgid "Keys of this table"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1562
+#: lib/potok_ide_web/domain_copy.ex:1586
 #, elixir-autogen, elixir-format
 msgid "Keys that block deleting"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1691
+#: lib/potok_ide_web/domain_copy.ex:1715
 #, elixir-autogen, elixir-format
 msgid "Knows who is looking"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:756
+#: lib/potok_ide_web/domain_copy.ex:772
 #, elixir-autogen, elixir-format
 msgid "Manifest"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:759
+#: lib/potok_ide_web/domain_copy.ex:775
 #, elixir-autogen, elixir-format
 msgid "Member role"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1983
+#: lib/potok_ide_web/domain_copy.ex:2007
 #, elixir-autogen, elixir-format
 msgid "Members are inherited down the tree"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1596
+#: lib/potok_ide_web/domain_copy.ex:1620
 #, elixir-autogen, elixir-format
 msgid "Members who have it open"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:758
+#: lib/potok_ide_web/domain_copy.ex:774
 #, elixir-autogen, elixir-format
 msgid "Membership"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1472
+#: lib/potok_ide_web/domain_copy.ex:1496
 #, elixir-autogen, elixir-format
 msgid "Nothing else changes."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1467
+#: lib/potok_ide_web/domain_copy.ex:1491
 #, elixir-autogen, elixir-format
 msgid "Nothing."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:813
+#: lib/potok_ide_web/domain_copy.ex:830
 #, elixir-autogen, elixir-format
 msgid "One device or browser that receives notifications, through web push or FCM. It remembers the last successful send and the last error."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1063
+#: lib/potok_ide_web/domain_copy.ex:1080
 #, elixir-autogen, elixir-format
 msgid "One tag on one item. Exactly one of the five target columns is set, and the database checks that."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2155
+#: lib/potok_ide_web/domain_copy.ex:2179
 #, elixir-autogen, elixir-format
 msgid "One tag, five kinds of items"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1547
+#: lib/potok_ide_web/domain_copy.ex:1571
 #, elixir-autogen, elixir-format
 msgid "Only soft links (%{count})"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1534
+#: lib/potok_ide_web/domain_copy.ex:1558
 #, elixir-autogen, elixir-format
 msgid "Only soft links are shown. They point at another table with text, a number or a list. The database does not check them, so whether they are right depends on the code."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1556
+#: lib/potok_ide_web/domain_copy.ex:1580
 #, elixir-autogen, elixir-format
 msgid "Overview"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:777
+#: lib/potok_ide_web/domain_copy.ex:793
 #, elixir-autogen, elixir-format
 msgid "Personal reminders"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1466
+#: lib/potok_ide_web/domain_copy.ex:1490
 #, elixir-autogen, elixir-format
 msgid "Pointing here"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1594
+#: lib/potok_ide_web/domain_copy.ex:1618
 #, elixir-autogen, elixir-format
 msgid "Potok checks the permissions"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:752
+#: lib/potok_ide_web/domain_copy.ex:768
 #, elixir-autogen, elixir-format
 msgid "Profile"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:788
+#: lib/potok_ide_web/domain_copy.ex:804
 #, elixir-autogen, elixir-format
 msgid "Profile invitation"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:737
+#: lib/potok_ide_web/domain_copy.ex:753
 #, elixir-autogen, elixir-format
 msgid "Profiles"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:750
+#: lib/potok_ide_web/domain_copy.ex:766
 #, elixir-autogen, elixir-format
 msgid "Push subscription"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1709
+#: lib/potok_ide_web/domain_copy.ex:1733
 #, elixir-autogen, elixir-format
 msgid "Reaches those it is meant for"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:763
+#: lib/potok_ide_web/domain_copy.ex:779
 #, elixir-autogen, elixir-format
 msgid "Reaction"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:768
+#: lib/potok_ide_web/domain_copy.ex:784
 #, elixir-autogen, elixir-format
 msgid "Read marker"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:757
+#: lib/potok_ide_web/domain_copy.ex:773
 #, elixir-autogen, elixir-format
 msgid "Role"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1475
+#: lib/potok_ide_web/domain_copy.ex:1499
 #, elixir-autogen, elixir-format
 msgid "Rules in the database"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1619
+#: lib/potok_ide_web/domain_copy.ex:1643
 #, elixir-autogen, elixir-format
 msgid "Sees the other apps"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1558
+#: lib/potok_ide_web/domain_copy.ex:1582
 #, elixir-autogen, elixir-format
 msgid "Select an entity on the diagram and its fields, links and rules appear here."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1568
+#: lib/potok_ide_web/domain_copy.ex:1592
 #, elixir-autogen, elixir-format
 msgid "Soft links"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1477
+#: lib/potok_ide_web/domain_copy.ex:1501
 #, elixir-autogen, elixir-format
 msgid "Source"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1754
+#: lib/potok_ide_web/domain_copy.ex:1778
 #, elixir-autogen, elixir-format
 msgid "Speaks for itself"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:784
+#: lib/potok_ide_web/domain_copy.ex:800
 #, elixir-autogen, elixir-format
 msgid "Tag"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:785
+#: lib/potok_ide_web/domain_copy.ex:801
 #, elixir-autogen, elixir-format
 msgid "Tagging"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:743
+#: lib/potok_ide_web/domain_copy.ex:759
 #, elixir-autogen, elixir-format
 msgid "Tags"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1470
+#: lib/potok_ide_web/domain_copy.ex:1494
 #, elixir-autogen, elixir-format
 msgid "Takes with it:"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:727
+#: lib/potok_ide_web/domain_copy.ex:743
 #, elixir-autogen, elixir-format
 msgid "The Potok domain model"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1828
+#: lib/potok_ide_web/domain_copy.ex:1852
 #, elixir-autogen, elixir-format
 msgid "The account is the identity, the profile is the face in a group"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1593
+#: lib/potok_ide_web/domain_copy.ex:1617
 #, elixir-autogen, elixir-format
 msgid "The app"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:852
+#: lib/potok_ide_web/domain_copy.ex:869
 #, elixir-autogen, elixir-format
 msgid "The basic unit of Potok. One model covers the root, ordinary groups and sub-groups, direct conversations and threads. Exactly one group is the root, and every other has a parent and a creator."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:895
+#: lib/potok_ide_web/domain_copy.ex:912
 #, elixir-autogen, elixir-format
 msgid "The content of a group. In a conversation it is a message, and as data of an app it does not appear in the conversation. A value can reply to another value, and a thread opened from a value is a group that points back at it."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1492
+#: lib/potok_ide_web/domain_copy.ex:1516
 #, elixir-autogen, elixir-format
 msgid "The core of the domain: an account uses profiles, a profile is a member of groups, a group contains values, and a value opens a thread, which is a group again."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1814
+#: lib/potok_ide_web/domain_copy.ex:1838
 #, elixir-autogen, elixir-format
 msgid "The data of an app goes with its description, and it can be deleted from the group's settings."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1552
+#: lib/potok_ide_web/domain_copy.ex:1576
 #, elixir-autogen, elixir-format
 msgid "The diagram scrolls left and right."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1217
+#: lib/potok_ide_web/domain_copy.ex:1241
 #, elixir-autogen, elixir-format
 msgid "The end is not before the start."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1873
+#: lib/potok_ide_web/domain_copy.ex:1897
 #, elixir-autogen, elixir-format
 msgid "The group's <GroupManifest>manifest</GroupManifest> applies or, if it has none, that of its nearest ancestor. Every member has `everyone`, so that <GroupRole>role</GroupRole> is not stored, and `admin` has everything. With the other roles a permission holds when at least one allows it and none denies it. `everyone` can only allow. A <GroupReaction>reaction to a group</GroupReaction> also reaches past the members: while `everyone` may react, so may a signed-in profile that is not a member of a public group, unless it is <GroupBlock>blocked</GroupBlock> there."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1595
+#: lib/potok_ide_web/domain_copy.ex:1619
 #, elixir-autogen, elixir-format
 msgid "The group's values"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1221
+#: lib/potok_ide_web/domain_copy.ex:1245
 #, elixir-autogen, elixir-format
 msgid "The repeat interval is from 1 to 99."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1211
+#: lib/potok_ide_web/domain_copy.ex:1235
 #, elixir-autogen, elixir-format
 msgid "The role `everyone` is not written here."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1163
+#: lib/potok_ide_web/domain_copy.ex:1187
 #, elixir-autogen, elixir-format
 msgid "The root and direct groups do not inherit members."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1155
+#: lib/potok_ide_web/domain_copy.ex:1179
 #, elixir-autogen, elixir-format
 msgid "The root has no creator, every other group does."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1151
+#: lib/potok_ide_web/domain_copy.ex:1175
 #, elixir-autogen, elixir-format
 msgid "The root has no parent, every other group does."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1148
+#: lib/potok_ide_web/domain_copy.ex:1172
 #, elixir-autogen, elixir-format
 msgid "The root is not public."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1781
+#: lib/potok_ide_web/domain_copy.ex:1805
 #, elixir-autogen, elixir-format
 msgid "The server checks every call again, whatever the app asks for."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:859
+#: lib/potok_ide_web/domain_copy.ex:876
 #, elixir-autogen, elixir-format
 msgid "The set of roles of a group. A group without its own manifest uses that of its nearest ancestor that has one. The root always has one."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1330
+#: lib/potok_ide_web/domain_copy.ex:1354
 #, elixir-autogen, elixir-format
 msgid "The size is not negative."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1564
+#: lib/potok_ide_web/domain_copy.ex:1588
 #, elixir-autogen, elixir-format
 msgid "These keys do not let a row be deleted while something uses it. The others delete the dependent rows or clear the field."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1570
+#: lib/potok_ide_web/domain_copy.ex:1594
 #, elixir-autogen, elixir-format
 msgid "They point at another table, but the database does not check them."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1465
+#: lib/potok_ide_web/domain_copy.ex:1489
 #, elixir-autogen, elixir-format
 msgid "This table points at nothing."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1476
+#: lib/potok_ide_web/domain_copy.ex:1500
 #, elixir-autogen, elixir-format
 msgid "Unique"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:761
+#: lib/potok_ide_web/domain_copy.ex:777
 #, elixir-autogen, elixir-format
 msgid "Value"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1540
+#: lib/potok_ide_web/domain_copy.ex:1564
 #, elixir-autogen, elixir-format
 msgid "View"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1474
+#: lib/potok_ide_web/domain_copy.ex:1498
 #, elixir-autogen, elixir-format
 msgid "Virtual fields, not in the database"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1586
+#: lib/potok_ide_web/domain_copy.ex:1610
 #, elixir-autogen, elixir-format
 msgid "What a description can do as an app"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1822
+#: lib/potok_ide_web/domain_copy.ex:1846
 #, elixir-autogen, elixir-format
 msgid "What holds the domain together"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1771
+#: lib/potok_ide_web/domain_copy.ex:1795
 #, elixir-autogen, elixir-format
 msgid "Where it stops"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1610
+#: lib/potok_ide_web/domain_copy.ex:1634
 #, elixir-autogen, elixir-format
 msgid "Works live"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:695
+#: lib/potok_ide_web/domain_copy.ex:711
 #, elixir-autogen, elixir-format
 msgid "accepted at"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:685
+#: lib/potok_ide_web/domain_copy.ex:701
 #, elixir-autogen, elixir-format
 msgid "account"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:547
+#: lib/potok_ide_web/domain_copy.ex:563
 #, elixir-autogen, elixir-format
 msgid "all day"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:366
+#: lib/potok_ide_web/domain_copy.ex:382
 #, elixir-autogen, elixir-format
 msgid "allowed permissions"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:566
+#: lib/potok_ide_web/domain_copy.ex:582
 #, elixir-autogen, elixir-format
 msgid "announcing value"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:573
+#: lib/potok_ide_web/domain_copy.ex:589
 #, elixir-autogen, elixir-format
 msgid "answer"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:384
-#: lib/potok_ide_web/domain_copy.ex:1448
+#: lib/potok_ide_web/domain_copy.ex:400
+#: lib/potok_ide_web/domain_copy.ex:1472
 #, elixir-autogen, elixir-format
 msgid "app data"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:400
-#: lib/potok_ide_web/domain_copy.ex:420
-#: lib/potok_ide_web/domain_copy.ex:484
+#: lib/potok_ide_web/domain_copy.ex:416
+#: lib/potok_ide_web/domain_copy.ex:436
+#: lib/potok_ide_web/domain_copy.ex:500
 #, elixir-autogen, elixir-format
 msgid "app description"
 msgstr ""
@@ -761,14 +761,14 @@ msgstr ""
 msgid "approved at"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1511
+#: lib/potok_ide_web/domain_copy.ex:1535
 #, elixir-autogen, elixir-format
 msgid "area"
 msgid_plural "areas"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/potok_ide_web/domain_copy.ex:1593
+#: lib/potok_ide_web/domain_copy.ex:1617
 #, elixir-autogen, elixir-format
 msgid "asks"
 msgstr ""
@@ -778,12 +778,12 @@ msgstr ""
 msgid "authentication secret"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1483
+#: lib/potok_ide_web/domain_copy.ex:1507
 #, elixir-autogen, elixir-format
 msgid "blocks"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1487
+#: lib/potok_ide_web/domain_copy.ex:1511
 #, elixir-autogen, elixir-format
 msgid "blocks deleting"
 msgstr ""
@@ -793,63 +793,63 @@ msgstr ""
 msgid "browser"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1444
+#: lib/potok_ide_web/domain_copy.ex:1468
 #, elixir-autogen, elixir-format
 msgid "by key"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1449
+#: lib/potok_ide_web/domain_copy.ex:1473
 #, elixir-autogen, elixir-format
 msgid "calendar"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:564
+#: lib/potok_ide_web/domain_copy.ex:580
 #, elixir-autogen, elixir-format
 msgid "cancelled at"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:556
+#: lib/potok_ide_web/domain_copy.ex:572
 #, elixir-autogen, elixir-format
 msgid "cancelled occurrences"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1440
+#: lib/potok_ide_web/domain_copy.ex:1464
 #, elixir-autogen, elixir-format
 msgid "carries"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1481
+#: lib/potok_ide_web/domain_copy.ex:1505
 #, elixir-autogen, elixir-format
 msgid "cascades"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1482
-#: lib/potok_ide_web/domain_copy.ex:1486
+#: lib/potok_ide_web/domain_copy.ex:1506
+#: lib/potok_ide_web/domain_copy.ex:1510
 #, elixir-autogen, elixir-format
 msgid "clears the field"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1445
+#: lib/potok_ide_web/domain_copy.ex:1469
 #, elixir-autogen, elixir-format
 msgid "contains"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:378
+#: lib/potok_ide_web/domain_copy.ex:394
 #, elixir-autogen, elixir-format
 msgid "content"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:379
+#: lib/potok_ide_web/domain_copy.ex:395
 #, elixir-autogen, elixir-format
 msgid "content format"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:683
+#: lib/potok_ide_web/domain_copy.ex:699
 #, elixir-autogen, elixir-format
 msgid "created at"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:691
+#: lib/potok_ide_web/domain_copy.ex:707
 #, elixir-autogen, elixir-format
 msgid "creator"
 msgstr ""
@@ -864,12 +864,12 @@ msgstr ""
 msgid "default profile"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1451
+#: lib/potok_ide_web/domain_copy.ex:1475
 #, elixir-autogen, elixir-format
 msgid "defines"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1485
+#: lib/potok_ide_web/domain_copy.ex:1509
 #, elixir-autogen, elixir-format
 msgid "deletes with it"
 msgstr ""
@@ -884,22 +884,22 @@ msgstr ""
 msgid "delivery type"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:367
+#: lib/potok_ide_web/domain_copy.ex:383
 #, elixir-autogen, elixir-format
 msgid "denied permissions"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:697
+#: lib/potok_ide_web/domain_copy.ex:713
 #, elixir-autogen, elixir-format
 msgid "description"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:698
+#: lib/potok_ide_web/domain_copy.ex:714
 #, elixir-autogen, elixir-format
 msgid "description format"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1447
+#: lib/potok_ide_web/domain_copy.ex:1471
 #, elixir-autogen, elixir-format
 msgid "descriptions"
 msgstr ""
@@ -934,8 +934,8 @@ msgstr ""
 msgid "email confirmed at"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:533
-#: lib/potok_ide_web/domain_copy.ex:534
+#: lib/potok_ide_web/domain_copy.ex:549
+#: lib/potok_ide_web/domain_copy.ex:550
 #, elixir-autogen, elixir-format
 msgid "emoji"
 msgstr ""
@@ -945,29 +945,29 @@ msgstr ""
 msgid "encryption key"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:549
+#: lib/potok_ide_web/domain_copy.ex:565
 #, elixir-autogen, elixir-format
 msgid "end"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:569
+#: lib/potok_ide_web/domain_copy.ex:585
 #, elixir-autogen, elixir-format
 msgid "end date"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:570
+#: lib/potok_ide_web/domain_copy.ex:586
 #, elixir-autogen, elixir-format
 msgid "end time"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1510
+#: lib/potok_ide_web/domain_copy.ex:1534
 #, elixir-autogen, elixir-format
 msgid "entity"
 msgid_plural "entities"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/potok_ide_web/domain_copy.ex:688
+#: lib/potok_ide_web/domain_copy.ex:704
 #, elixir-autogen, elixir-format
 msgid "event"
 msgstr ""
@@ -982,34 +982,34 @@ msgstr ""
 msgid "failure reason"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:667
+#: lib/potok_ide_web/domain_copy.ex:683
 #, elixir-autogen, elixir-format
 msgid "file"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:408
+#: lib/potok_ide_web/domain_copy.ex:424
 #, elixir-autogen, elixir-format
 msgid "file name"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:413
+#: lib/potok_ide_web/domain_copy.ex:429
 #, elixir-autogen, elixir-format
 msgid "file type"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1512
+#: lib/potok_ide_web/domain_copy.ex:1536
 #, elixir-autogen, elixir-format
 msgid "foreign key"
 msgid_plural "foreign keys"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/potok_ide_web/domain_copy.ex:1490
+#: lib/potok_ide_web/domain_copy.ex:1514
 #, elixir-autogen, elixir-format
 msgid "goes on everything marked #"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:687
+#: lib/potok_ide_web/domain_copy.ex:703
 #, elixir-autogen, elixir-format
 msgid "group"
 msgstr ""
@@ -1019,12 +1019,12 @@ msgstr ""
 msgid "group picture"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1450
+#: lib/potok_ide_web/domain_copy.ex:1474
 #, elixir-autogen, elixir-format
 msgid "has a manifest"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1443
+#: lib/potok_ide_web/domain_copy.ex:1467
 #, elixir-autogen, elixir-format
 msgid "holds roles"
 msgstr ""
@@ -1039,17 +1039,17 @@ msgstr ""
 msgid "home page"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:682
+#: lib/potok_ide_web/domain_copy.ex:698
 #, elixir-autogen, elixir-format
 msgid "identifier"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1442
+#: lib/potok_ide_web/domain_copy.ex:1466
 #, elixir-autogen, elixir-format
 msgid "in a group"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:702
+#: lib/potok_ide_web/domain_copy.ex:718
 #, elixir-autogen, elixir-format
 msgid "inherited"
 msgstr ""
@@ -1064,27 +1064,27 @@ msgstr ""
 msgid "invited account"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1441
+#: lib/potok_ide_web/domain_copy.ex:1465
 #, elixir-autogen, elixir-format
 msgid "is a member"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:699
+#: lib/potok_ide_web/domain_copy.ex:715
 #, elixir-autogen, elixir-format
 msgid "is an app"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1480
+#: lib/potok_ide_web/domain_copy.ex:1504
 #, elixir-autogen, elixir-format
 msgid "key"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1489
+#: lib/potok_ide_web/domain_copy.ex:1513
 #, elixir-autogen, elixir-format
 msgid "key to Profile, Group"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:684
+#: lib/potok_ide_web/domain_copy.ex:700
 #, elixir-autogen, elixir-format
 msgid "last changed at"
 msgstr ""
@@ -1099,7 +1099,7 @@ msgstr ""
 msgid "last log-in"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:373
+#: lib/potok_ide_web/domain_copy.ex:389
 #, elixir-autogen, elixir-format
 msgid "last read value"
 msgstr ""
@@ -1109,23 +1109,23 @@ msgstr ""
 msgid "last success"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:391
-#: lib/potok_ide_web/domain_copy.ex:657
+#: lib/potok_ide_web/domain_copy.ex:407
+#: lib/potok_ide_web/domain_copy.ex:673
 #, elixir-autogen, elixir-format
 msgid "link preview"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:394
+#: lib/potok_ide_web/domain_copy.ex:410
 #, elixir-autogen, elixir-format
 msgid "link preview dismissed"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1595
+#: lib/potok_ide_web/domain_copy.ex:1619
 #, elixir-autogen, elixir-format
 msgid "live"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:541
+#: lib/potok_ide_web/domain_copy.ex:557
 #, elixir-autogen, elixir-format
 msgid "location"
 msgstr ""
@@ -1135,13 +1135,13 @@ msgstr ""
 msgid "logged in at"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:368
+#: lib/potok_ide_web/domain_copy.ex:384
 #, elixir-autogen, elixir-format
 msgid "manifest"
 msgstr ""
 
 #: lib/potok_ide_web/domain_copy.ex:292
-#: lib/potok_ide_web/domain_copy.ex:359
+#: lib/potok_ide_web/domain_copy.ex:375
 #, elixir-autogen, elixir-format
 msgid "member"
 msgstr ""
@@ -1151,22 +1151,22 @@ msgstr ""
 msgid "member count"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:389
+#: lib/potok_ide_web/domain_copy.ex:405
 #, elixir-autogen, elixir-format
 msgid "mentioned profiles"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:386
+#: lib/potok_ide_web/domain_copy.ex:402
 #, elixir-autogen, elixir-format
 msgid "mentions"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:554
+#: lib/potok_ide_web/domain_copy.ex:570
 #, elixir-autogen, elixir-format
 msgid "monthly repeat mode"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:696
+#: lib/potok_ide_web/domain_copy.ex:712
 #, elixir-autogen, elixir-format
 msgid "name"
 msgstr ""
@@ -1181,32 +1181,32 @@ msgstr ""
 msgid "newest value at"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:563
+#: lib/potok_ide_web/domain_copy.ex:579
 #, elixir-autogen, elixir-format
 msgid "next reminder"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:572
+#: lib/potok_ide_web/domain_copy.ex:588
 #, elixir-autogen, elixir-format
 msgid "occurrence date"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1453
+#: lib/potok_ide_web/domain_copy.ex:1477
 #, elixir-autogen, elixir-format
 msgid "of a group"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1446
+#: lib/potok_ide_web/domain_copy.ex:1470
 #, elixir-autogen, elixir-format
 msgid "opens a thread"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:700
+#: lib/potok_ide_web/domain_copy.ex:716
 #, elixir-autogen, elixir-format
 msgid "order"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:557
+#: lib/potok_ide_web/domain_copy.ex:573
 #, elixir-autogen, elixir-format
 msgid "organizer's reminders"
 msgstr ""
@@ -1216,13 +1216,13 @@ msgstr ""
 msgid "other field"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:649
+#: lib/potok_ide_web/domain_copy.ex:665
 #, elixir-autogen, elixir-format
 msgid "own reminders"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:423
-#: lib/potok_ide_web/domain_copy.ex:663
+#: lib/potok_ide_web/domain_copy.ex:439
+#: lib/potok_ide_web/domain_copy.ex:679
 #, elixir-autogen, elixir-format
 msgid "owner"
 msgstr ""
@@ -1242,17 +1242,17 @@ msgstr ""
 msgid "password hash"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:407
+#: lib/potok_ide_web/domain_copy.ex:423
 #, elixir-autogen, elixir-format
 msgid "place in storage"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1479
+#: lib/potok_ide_web/domain_copy.ex:1503
 #, elixir-autogen, elixir-format
 msgid "primary"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:686
+#: lib/potok_ide_web/domain_copy.ex:702
 #, elixir-autogen, elixir-format
 msgid "profile"
 msgstr ""
@@ -1272,7 +1272,7 @@ msgstr ""
 msgid "provider"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:701
+#: lib/potok_ide_web/domain_copy.ex:717
 #, elixir-autogen, elixir-format
 msgid "public"
 msgstr ""
@@ -1297,47 +1297,47 @@ msgstr ""
 msgid "refresh token"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:560
+#: lib/potok_ide_web/domain_copy.ex:576
 #, elixir-autogen, elixir-format
 msgid "reminders handled until"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:552
+#: lib/potok_ide_web/domain_copy.ex:568
 #, elixir-autogen, elixir-format
 msgid "repeat interval"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:553
+#: lib/potok_ide_web/domain_copy.ex:569
 #, elixir-autogen, elixir-format
 msgid "repeat weekdays"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:551
+#: lib/potok_ide_web/domain_copy.ex:567
 #, elixir-autogen, elixir-format
 msgid "repeats"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:555
+#: lib/potok_ide_web/domain_copy.ex:571
 #, elixir-autogen, elixir-format
 msgid "repeats until"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:405
+#: lib/potok_ide_web/domain_copy.ex:421
 #, elixir-autogen, elixir-format
 msgid "replies to"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1454
+#: lib/potok_ide_web/domain_copy.ex:1478
 #, elixir-autogen, elixir-format
 msgid "reply"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:360
+#: lib/potok_ide_web/domain_copy.ex:376
 #, elixir-autogen, elixir-format
 msgid "role"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:365
+#: lib/potok_ide_web/domain_copy.ex:381
 #, elixir-autogen, elixir-format
 msgid "role key"
 msgstr ""
@@ -1352,12 +1352,12 @@ msgstr ""
 msgid "root"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1594
+#: lib/potok_ide_web/domain_copy.ex:1618
 #, elixir-autogen, elixir-format
 msgid "saves"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:565
+#: lib/potok_ide_web/domain_copy.ex:581
 #, elixir-autogen, elixir-format
 msgid "schedule version"
 msgstr ""
@@ -1367,7 +1367,7 @@ msgstr ""
 msgid "sent to"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:376
+#: lib/potok_ide_web/domain_copy.ex:392
 #, elixir-autogen, elixir-format
 msgid "shared profile"
 msgstr ""
@@ -1377,49 +1377,49 @@ msgstr ""
 msgid "sharing"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:414
+#: lib/potok_ide_web/domain_copy.ex:430
 #, elixir-autogen, elixir-format
 msgid "size"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1484
+#: lib/potok_ide_web/domain_copy.ex:1508
 #, elixir-autogen, elixir-format
 msgid "soft"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1513
+#: lib/potok_ide_web/domain_copy.ex:1537
 #, elixir-autogen, elixir-format
 msgid "soft link"
 msgid_plural "soft links"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/potok_ide_web/domain_copy.ex:1488
+#: lib/potok_ide_web/domain_copy.ex:1512
 #, elixir-autogen, elixir-format
 msgid "soft link, no key"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:548
+#: lib/potok_ide_web/domain_copy.ex:564
 #, elixir-autogen, elixir-format
 msgid "start"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:567
+#: lib/potok_ide_web/domain_copy.ex:583
 #, elixir-autogen, elixir-format
 msgid "start date"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:568
+#: lib/potok_ide_web/domain_copy.ex:584
 #, elixir-autogen, elixir-format
 msgid "start time"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:385
+#: lib/potok_ide_web/domain_copy.ex:401
 #, elixir-autogen, elixir-format
 msgid "stored data"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1452
+#: lib/potok_ide_web/domain_copy.ex:1476
 #, elixir-autogen, elixir-format
 msgid "sub-group"
 msgstr ""
@@ -1429,32 +1429,32 @@ msgstr ""
 msgid "sub-group count"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1478
+#: lib/potok_ide_web/domain_copy.ex:1502
 #, elixir-autogen, elixir-format
 msgid "table"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:665
+#: lib/potok_ide_web/domain_copy.ex:681
 #, elixir-autogen, elixir-format
 msgid "tag"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:703
+#: lib/potok_ide_web/domain_copy.ex:719
 #, elixir-autogen, elixir-format
 msgid "tags the viewer sees"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:550
+#: lib/potok_ide_web/domain_copy.ex:566
 #, elixir-autogen, elixir-format
 msgid "time zone"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:540
+#: lib/potok_ide_web/domain_copy.ex:556
 #, elixir-autogen, elixir-format
 msgid "title"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1455
+#: lib/potok_ide_web/domain_copy.ex:1479
 #, elixir-autogen, elixir-format
 msgid "to a value"
 msgstr ""
@@ -1469,12 +1469,12 @@ msgstr ""
 msgid "username"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1438
+#: lib/potok_ide_web/domain_copy.ex:1462
 #, elixir-autogen, elixir-format
 msgid "uses"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:690
+#: lib/potok_ide_web/domain_copy.ex:706
 #, elixir-autogen, elixir-format
 msgid "value"
 msgstr ""
@@ -1504,8 +1504,8 @@ msgstr ""
 msgid "while this is empty: %{field}"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:415
-#: lib/potok_ide_web/domain_copy.ex:666
+#: lib/potok_ide_web/domain_copy.ex:431
+#: lib/potok_ide_web/domain_copy.ex:682
 #, elixir-autogen, elixir-format
 msgid "who added it"
 msgstr ""
@@ -1515,47 +1515,47 @@ msgstr ""
 msgid "who approved"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:694
+#: lib/potok_ide_web/domain_copy.ex:710
 #, elixir-autogen, elixir-format
 msgid "who asks to join"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:692
+#: lib/potok_ide_web/domain_copy.ex:708
 #, elixir-autogen, elixir-format
 msgid "who invited"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:693
+#: lib/potok_ide_web/domain_copy.ex:709
 #, elixir-autogen, elixir-format
 msgid "who is invited"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1439
+#: lib/potok_ide_web/domain_copy.ex:1463
 #, elixir-autogen, elixir-format
 msgid "writes"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1798
+#: lib/potok_ide_web/domain_copy.ex:1822
 #, elixir-autogen, elixir-format
 msgid "Below its group it sees only what the viewer sees, and no further than one level under a direct sub-group."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1648
+#: lib/potok_ide_web/domain_copy.ex:1672
 #, elixir-autogen, elixir-format
 msgid "It can list the <Group>groups</Group> under one of its sub-groups, all of them or those of a chosen period, show their descriptions and take the viewer to their chat or their page. A link can open it on one of those groups. That is how a group becomes a news feed, with one story in each group. The groups an app keeps its files in stay out of such lists."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1646
+#: lib/potok_ide_web/domain_copy.ex:1670
 #, elixir-autogen, elixir-format
 msgid "Reads the groups below it"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1802
+#: lib/potok_ide_web/domain_copy.ex:1826
 #, elixir-autogen, elixir-format
 msgid "It writes to groups only for a viewer who may edit its own group, only right under it, and it neither deletes a group nor makes one an app."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1673
+#: lib/potok_ide_web/domain_copy.ex:1697
 #, elixir-autogen, elixir-format
 msgid "Keeps the groups below it"
 msgstr ""
@@ -1565,381 +1565,381 @@ msgstr ""
 msgid "published at"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1806
+#: lib/potok_ide_web/domain_copy.ex:1830
 #, elixir-autogen, elixir-format
 msgid "A reaction is the exception: an app adds it for any viewer who may react, only to a group below it, and the viewer can take it back."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:916
+#: lib/potok_ide_web/domain_copy.ex:933
 #, elixir-autogen, elixir-format
 msgid "An emoji of one profile on a group, as on a story in a news feed. A profile cannot use the same emoji twice on the same group."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1657
+#: lib/potok_ide_web/domain_copy.ex:1681
 #, elixir-autogen, elixir-format
 msgid "For each <Group>group</Group> below it, it gets the number of messages in its chat and its <GroupReaction>reactions</GroupReaction>. It can add the viewer's reaction and open the sharing of the group's link. That is how a story in a feed gets comments, reactions and a share button."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1655
+#: lib/potok_ide_web/domain_copy.ex:1679
 #, elixir-autogen, elixir-format
 msgid "Gathers reactions and comments"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:764
+#: lib/potok_ide_web/domain_copy.ex:780
 #, elixir-autogen, elixir-format
 msgid "Group reaction"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2139
+#: lib/potok_ide_web/domain_copy.ex:2163
 #, elixir-autogen, elixir-format
 msgid "A picture in a description is a file in the chat"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2007
+#: lib/potok_ide_web/domain_copy.ex:2031
 #, elixir-autogen, elixir-format
 msgid "A preset starts a group, and its kind can change"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:923
+#: lib/potok_ide_web/domain_copy.ex:940
 #, elixir-autogen, elixir-format
 msgid "A profile a group has blocked. Until the block is lifted it does not write or react in the group's open chat, and cannot ask to join or be invited. Membership comes first: a member answers to their roles."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1943
+#: lib/potok_ide_web/domain_copy.ex:1967
 #, elixir-autogen, elixir-format
 msgid "A public group can open its chat"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:765
+#: lib/potok_ide_web/domain_copy.ex:781
 #, elixir-autogen, elixir-format
 msgid "Block"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1945
+#: lib/potok_ide_web/domain_copy.ex:1969
 #, elixir-autogen, elixir-format
 msgid "While a <Group>group</Group> is public, its chat can reach past the members. A signed-in profile that is not a member then reads its <Value>values</Value> and files, and writes and reacts as far as `everyone` may. It sends no files, opens no threads and has a limit on how much it writes. Its message pushes only to those it mentions or answers, and a reply reaches it the same way. A <GroupBlock>block</GroupBlock> stops one profile from writing and reacting there, asking to join or being invited. A member answers to their roles, so blocking one also removes them from the group."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:535
+#: lib/potok_ide_web/domain_copy.ex:551
 #, elixir-autogen, elixir-format
 msgid "who blocked"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1879
+#: lib/potok_ide_web/domain_copy.ex:1903
 #, elixir-autogen, elixir-format
 msgid "A poll carries its own rules"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1007
+#: lib/potok_ide_web/domain_copy.ex:1024
 #, elixir-autogen, elixir-format
 msgid "A question put to a vote in a group, with the rules of who votes, who sees the results and who sees the details. A value can carry a poll, and the two go together. When it ends it writes down how many could vote and what was decided, so that a later change of members leaves that as it was."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1241
+#: lib/potok_ide_web/domain_copy.ex:1265
 #, elixir-autogen, elixir-format
 msgid "A quorum is between 1 and 100 percent."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1249
+#: lib/potok_ide_web/domain_copy.ex:1273
 #, elixir-autogen, elixir-format
 msgid "A secret poll takes no change of a vote and no answers from members, and shows results only at the end."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1014
+#: lib/potok_ide_web/domain_copy.ex:1031
 #, elixir-autogen, elixir-format
 msgid "An answer of a poll, with its count of votes. In a secret poll that count is the only record of the votes. It has no timestamps, as the time of the last change would show what the last voter chose."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:779
+#: lib/potok_ide_web/domain_copy.ex:795
 #, elixir-autogen, elixir-format
 msgid "Answer"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1238
+#: lib/potok_ide_web/domain_copy.ex:1262
 #, elixir-autogen, elixir-format
 msgid "At least one answer."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:780
+#: lib/potok_ide_web/domain_copy.ex:796
 #, elixir-autogen, elixir-format
 msgid "Ballot"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1810
+#: lib/potok_ide_web/domain_copy.ex:1834
 #, elixir-autogen, elixir-format
 msgid "It does not vote and does not change a poll: a vote can be final, so that takes place on Potok's own page."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1747
+#: lib/potok_ide_web/domain_copy.ex:1771
 #, elixir-autogen, elixir-format
 msgid "It reads the <Poll>polls</Poll> of its group as far as their rules show them to the viewer, hears when one changes, and opens Potok's own form and voting over itself."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:778
+#: lib/potok_ide_web/domain_copy.ex:794
 #, elixir-autogen, elixir-format
 msgid "Poll"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:741
+#: lib/potok_ide_web/domain_copy.ex:757
 #, elixir-autogen, elixir-format
 msgid "Polls"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1745
+#: lib/potok_ide_web/domain_copy.ex:1769
 #, elixir-autogen, elixir-format
 msgid "Shows the group's polls"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1021
+#: lib/potok_ide_web/domain_copy.ex:1038
 #, elixir-autogen, elixir-format
 msgid "That a profile voted, and for what. In a secret poll it holds no answers, so nothing ties a voter to one. Both profile and account stay empty when their rows are deleted, so a vote that was given stays counted."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1245
+#: lib/potok_ide_web/domain_copy.ex:1269
 #, elixir-autogen, elixir-format
 msgid "The number of voters is never negative."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1260
+#: lib/potok_ide_web/domain_copy.ex:1284
 #, elixir-autogen, elixir-format
 msgid "The number of votes is never negative."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:611
+#: lib/potok_ide_web/domain_copy.ex:627
 #, elixir-autogen, elixir-format
 msgid "carrying value"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:643
+#: lib/potok_ide_web/domain_copy.ex:659
 #, elixir-autogen, elixir-format
 msgid "chosen answers"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:585
+#: lib/potok_ide_web/domain_copy.ex:601
 #, elixir-autogen, elixir-format
 msgid "deadline"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:612
+#: lib/potok_ide_web/domain_copy.ex:628
 #, elixir-autogen, elixir-format
 msgid "deadline in local time"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:608
+#: lib/potok_ide_web/domain_copy.ex:624
 #, elixir-autogen, elixir-format
 msgid "decision"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:604
+#: lib/potok_ide_web/domain_copy.ex:620
 #, elixir-autogen, elixir-format
 msgid "details show from"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:586
+#: lib/potok_ide_web/domain_copy.ex:602
 #, elixir-autogen, elixir-format
 msgid "ended at"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:607
+#: lib/potok_ide_web/domain_copy.ex:623
 #, elixir-autogen, elixir-format
 msgid "how many could vote"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:609
+#: lib/potok_ide_web/domain_copy.ex:625
 #, elixir-autogen, elixir-format
 msgid "how many voted"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:592
+#: lib/potok_ide_web/domain_copy.ex:608
 #, elixir-autogen, elixir-format
 msgid "last reminder by hand"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:606
+#: lib/potok_ide_web/domain_copy.ex:622
 #, elixir-autogen, elixir-format
 msgid "majority asked for"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:582
+#: lib/potok_ide_web/domain_copy.ex:598
 #, elixir-autogen, elixir-format
 msgid "members can add answers"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:577
+#: lib/potok_ide_web/domain_copy.ex:593
 #, elixir-autogen, elixir-format
 msgid "most answers on a ballot"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:576
+#: lib/potok_ide_web/domain_copy.ex:592
 #, elixir-autogen, elixir-format
 msgid "one answer or several"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:689
+#: lib/potok_ide_web/domain_copy.ex:705
 #, elixir-autogen, elixir-format
 msgid "poll"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:575
+#: lib/potok_ide_web/domain_copy.ex:591
 #, elixir-autogen, elixir-format
 msgid "question"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:605
+#: lib/potok_ide_web/domain_copy.ex:621
 #, elixir-autogen, elixir-format
 msgid "quorum"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:589
+#: lib/potok_ide_web/domain_copy.ex:605
 #, elixir-autogen, elixir-format
 msgid "reminder before the end"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:591
+#: lib/potok_ide_web/domain_copy.ex:607
 #, elixir-autogen, elixir-format
 msgid "reminder is due at"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:603
+#: lib/potok_ide_web/domain_copy.ex:619
 #, elixir-autogen, elixir-format
 msgid "results show from"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:601
+#: lib/potok_ide_web/domain_copy.ex:617
 #, elixir-autogen, elixir-format
 msgid "roles that see details"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:598
+#: lib/potok_ide_web/domain_copy.ex:614
 #, elixir-autogen, elixir-format
 msgid "roles that see results"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:593
+#: lib/potok_ide_web/domain_copy.ex:609
 #, elixir-autogen, elixir-format
 msgid "roles that vote"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:579
+#: lib/potok_ide_web/domain_copy.ex:595
 #, elixir-autogen, elixir-format
 msgid "secret"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:636
-#: lib/potok_ide_web/domain_copy.ex:655
+#: lib/potok_ide_web/domain_copy.ex:652
+#: lib/potok_ide_web/domain_copy.ex:671
 #, elixir-autogen, elixir-format
 msgid "text"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:578
+#: lib/potok_ide_web/domain_copy.ex:594
 #, elixir-autogen, elixir-format
 msgid "vote can change"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:644
+#: lib/potok_ide_web/domain_copy.ex:660
 #, elixir-autogen, elixir-format
 msgid "vote changed at"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:637
+#: lib/potok_ide_web/domain_copy.ex:653
 #, elixir-autogen, elixir-format
 msgid "votes"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:628
+#: lib/potok_ide_web/domain_copy.ex:644
 #, elixir-autogen, elixir-format
 msgid "what the viewer sees of its poll"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:610
+#: lib/potok_ide_web/domain_copy.ex:626
 #, elixir-autogen, elixir-format
 msgid "winning answer"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1881
+#: lib/potok_ide_web/domain_copy.ex:1905
 #, elixir-autogen, elixir-format
 msgid "A <Poll>poll</Poll> names the <GroupRole>roles</GroupRole> that vote, that see the results and that see the details, and the organizer and those who manage polls always see them. Once a <PollBallot>ballot</PollBallot> is in, what voters saw no longer changes, except the deadline, and in a decision that changes roles not even that. One account gives one vote, whichever of its profiles it uses. The poll says whether unique profiles vote, and whether a profile several accounts share votes on its own, once for all of them, or each of its holders votes through it as themself, counted on their own account, or it does not vote; somebody always does. A secret poll keeps no answers on its ballots, only the count of each <PollOption>answer</PollOption> grows, so neither the group's admins nor an app can see who voted for what. No counts show before its end, and a finished one is not opened again. A public poll also takes the votes of signed-in non-members of a public group. Deleting the <Value>value</Value> that carries a poll deletes the poll."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2009
+#: lib/potok_ide_web/domain_copy.ex:2033
 #, elixir-autogen, elixir-format
 msgid "A new <Group>group</Group> can start from a preset: chat, folder, feed, polls, form, map, ordering or page. A preset sets what any group can have, so all of it can be changed later. The group also starts with its kind's icon as its picture, its own from then on. The group keeps only the preset's name: its avatar shows that kind while the group still fits it, and the list of sub-groups can be narrowed to one kind. A feed is two groups, one with the Feed app and one below it with FeedCreator, and each keeps its own copy of its app: a new version reaches an older group when someone who edits it refreshes the app in its description, Potok replacing only a copy it knows for one of its own builds, and the app's data stay. A group for polls, a form, a map and a group for ordering keep a copy of their app the same way, and a form gets its two groups for files only once it needs them. The root offers no map, as it has one of its own. Whoever edits a group can give it another kind later: the new kind brings its description, the page the group opens on, and its picture while the group still has the old kind's or none. An app that would be overwritten, or a text an app takes the place of, goes to an <GroupAltDescription>alternative description</GroupAltDescription> that only those who edit the group see, with everything its app kept, so the new app starts empty and the old one can come back as the default. A feed that becomes something else keeps the sub-group with its posts, and takes it back when it becomes a feed again. Only the root, direct conversations, threads and the groups an app keeps for itself have no kind to change."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1612
+#: lib/potok_ide_web/domain_copy.ex:1636
 #, elixir-autogen, elixir-format
 msgid "A new value reaches right away, with no refresh, everyone who has the app open and may see it."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1630
+#: lib/potok_ide_web/domain_copy.ex:1654
 #, elixir-autogen, elixir-format
 msgid "An app can keep its <Value>values</Value> under rules its editors set: which <GroupRole>roles</GroupRole> write and which read everything, one answer per person, changing one's own answer, a deadline, anonymous answers and, in a public group, answers from signed-in non-members. Potok also scores a quiz by a key only the editors see, counts the answers for a summary, keeps the files sent with them in two sub-groups of the app's group, and sends a push about each new answer to whoever asks for it. That is how a group becomes a form."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2055
+#: lib/potok_ide_web/domain_copy.ex:2079
 #, elixir-autogen, elixir-format
 msgid "An app's data carry their own rules"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2057
+#: lib/potok_ide_web/domain_copy.ex:2081
 #, elixir-autogen, elixir-format
 msgid "An app's settings are one <Value>value</Value> of its own: the app's data, a secret part only its editors read, and the rules of its other collections, which Potok holds to on every call. A rule names the <GroupRole>roles</GroupRole> that write and those that read everything; everyone else reads only what they wrote, and those who may edit the group always read all. A collection without a rule is closed the same way. One answer per person counts one account once, as a poll does. An answer written while its collection was anonymous never shows its author to anyone but the author, though its time shows, and whoever rewrites the app's code could still get around it. Files sent with answers are values with a <ValueAttachment>file</ValueAttachment> in two sub-groups of the app's group: a closed one, whose members alone open them, and one that inherits the members. Whoever sent a file can always open it."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1628
+#: lib/potok_ide_web/domain_copy.ex:1652
 #, elixir-autogen, elixir-format
 msgid "Collects answers by its own rules"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1603
+#: lib/potok_ide_web/domain_copy.ex:1627
 #, elixir-autogen, elixir-format
 msgid "Each app has its own <Value>values</Value>, apart from the other apps of the group. It can search them, sort them, count them, add them up and read them page by page, the newest first if it likes."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1621
+#: lib/potok_ide_web/domain_copy.ex:1645
 #, elixir-autogen, elixir-format
 msgid "It can also read the values of the group's other apps, except those kept under rules, and it writes only to its own."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1786
+#: lib/potok_ide_web/domain_copy.ex:1810
 #, elixir-autogen, elixir-format
 msgid "Members read and save values, and so do signed-in non-members where an app's rules open that to them in a public group. Rules can narrow it further, and the number of saves is limited."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1415
+#: lib/potok_ide_web/domain_copy.ex:1439
 #, elixir-autogen, elixir-format
 msgid "Only app data has a collection, named with small letters, digits, - and _."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1794
+#: lib/potok_ide_web/domain_copy.ex:1818
 #, elixir-autogen, elixir-format
 msgid "Potok checks who answers, when, how many times and how much, not what an answer says."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2049
+#: lib/potok_ide_web/domain_copy.ex:2073
 #, elixir-autogen, elixir-format
 msgid "The default description and every <GroupAltDescription>alternative description</GroupAltDescription> can be an app. Its data are <Value>values</Value> marked as data, and each of them knows which app it belongs to and which of the app's collections holds it. A composite key holds them in the same group, and deleting an alternative description deletes its data too. When an alternative description becomes the default, each app takes along what it keeps: its data, its processes, its personal memory and the files sent with its values."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:402
+#: lib/potok_ide_web/domain_copy.ex:418
 #, elixir-autogen, elixir-format
 msgid "anonymous when written"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:401
-#: lib/potok_ide_web/domain_copy.ex:422
+#: lib/potok_ide_web/domain_copy.ex:417
+#: lib/potok_ide_web/domain_copy.ex:438
 #, elixir-autogen, elixir-format
 msgid "collection of app data"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:403
-#: lib/potok_ide_web/domain_copy.ex:428
-#: lib/potok_ide_web/domain_copy.ex:481
+#: lib/potok_ide_web/domain_copy.ex:419
+#: lib/potok_ide_web/domain_copy.ex:444
+#: lib/potok_ide_web/domain_copy.ex:497
 #, elixir-autogen, elixir-format
 msgid "revision"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:404
+#: lib/potok_ide_web/domain_copy.ex:420
 #, elixir-autogen, elixir-format
 msgid "score and grades"
 msgstr ""
@@ -1949,22 +1949,22 @@ msgstr ""
 msgid "ready setup"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2017
+#: lib/potok_ide_web/domain_copy.ex:2041
 #, elixir-autogen, elixir-format
 msgid "A <Group>group</Group> can have a place: both coordinates or neither, set by whoever may edit it, with a pin picked from a list or the one of its kind, and a picked pin keeps the kind's mark in its corner, as the group's picture does. A map app shows the places of the groups right under its own, each to whoever sees that group. A group added from the map is an ordinary sub-group, made by whoever may make one there. The map's pictures come through Potok, so the map service does not see who is looking. The root has no map app but a map of its own: the places of every group the viewer sees, at any depth, which the server gathers into numbered circles where they stand close, narrowed by the filters of the sub-groups, by the pins the groups show and by when a group appeared or was last written in, at any time until the viewer picks a time frame. A search by a group's name, there and among the sub-groups, takes no notice of diacritics or of a name written in Latin or Cyrillic."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2015
+#: lib/potok_ide_web/domain_copy.ex:2039
 #, elixir-autogen, elixir-format
 msgid "A group can stand on a map"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1185
+#: lib/potok_ide_web/domain_copy.ex:1209
 #, elixir-autogen, elixir-format
 msgid "A place on a map has both coordinates, each within its range, or neither."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1664
+#: lib/potok_ide_web/domain_copy.ex:1688
 #, elixir-autogen, elixir-format
 msgid "Shows its groups on a map"
 msgstr ""
@@ -1984,17 +1984,17 @@ msgstr ""
 msgid "pin on a map"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2033
+#: lib/potok_ide_web/domain_copy.ex:2057
 #, elixir-autogen, elixir-format
 msgid "A <Group>group</Group>'s place can be an area instead of a point, as a local community covers its streets: a border drawn on the map or brought from a GeoJSON file, set by whoever may edit the group. The area keeps a pin, which the server puts inside it by itself. An area holds a group when it holds that group's pin, so every place shows the areas around it, smallest first, and an area inside a bigger one lies in it too. Each viewer sees only the areas of the groups they see. On the root's map an area is only the shape of its group: the filters keep it or leave it out like any group, and once it is wide enough it also shows its border, under the pins. An area that holds others whose borders show inside it gets a wide soft band under every border, so its own border shows where theirs lie on it. A tap on the map lists the areas there, and a filter keeps only the groups inside chosen areas, which stay outlined."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2031
+#: lib/potok_ide_web/domain_copy.ex:2055
 #, elixir-autogen, elixir-format
 msgid "A place can be an area"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1196
+#: lib/potok_ide_web/domain_copy.ex:1220
 #, elixir-autogen, elixir-format
 msgid "An area on a map always has its pin as well."
 msgstr ""
@@ -2039,17 +2039,17 @@ msgstr ""
 msgid "width of the area on a map"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2041
+#: lib/potok_ide_web/domain_copy.ex:2065
 #, elixir-autogen, elixir-format
 msgid "A <Group>group</Group>'s place can also be a route, as a walk, a race, a march or a bike path runs: a line drawn on the map or brought from a GPX, KML or GeoJSON file, set by whoever may edit the group. A place is a point, an area or a route, never an area and a route at once. The route keeps its pin at its start, where people meet, which the server puts there by itself, and the map marks its end with a ring. A route lies in every area it passes through, not only in the one it starts in, so its page lists those areas and the filter by area keeps it. On the root's map a route is only the shape of its group, as an area is: the filters keep it or leave it out, and once it is wide enough its line is drawn over the areas, under the pins, in a layer of its own; a tap on the line opens the group, and a link to the map can show one route, whatever the filters."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2039
+#: lib/potok_ide_web/domain_copy.ex:2063
 #, elixir-autogen, elixir-format
 msgid "A place can be a route"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1200
+#: lib/potok_ide_web/domain_copy.ex:1224
 #, elixir-autogen, elixir-format
 msgid "A route on a map always has its pin as well, and a place is never an area and a route at once."
 msgstr ""
@@ -2089,47 +2089,47 @@ msgstr ""
 msgid "width of the route on a map"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2181
+#: lib/potok_ide_web/domain_copy.ex:2205
 #, elixir-autogen, elixir-format
 msgid "An <Event>event</Event>'s place is words, and it can also stand on the map: at the place of a <Group>group</Group> or at a place of its own, never both. A place of its own is a point, an area or a route, as a group's is, drawn the same way, and an area or a route keeps its pin. Only a group with a place that the author sees can be picked, and the event then stands where the group stands, even after the group moves. Whoever does not see that group sees only the words, and deleting the group leaves the words as well. A link from a group or from an event opens the root's map on its place, which stands out whatever the filters, and an event shows a card of its own there."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2179
+#: lib/potok_ide_web/domain_copy.ex:2203
 #, elixir-autogen, elixir-format
 msgid "An event can take place at a group"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1225
+#: lib/potok_ide_web/domain_copy.ex:1249
 #, elixir-autogen, elixir-format
 msgid "An event's point has both coordinates, each within its range, or neither, and an event at a group's place has no point of its own."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:542
+#: lib/potok_ide_web/domain_copy.ex:558
 #, elixir-autogen, elixir-format
 msgid "group it takes place at"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:543
+#: lib/potok_ide_web/domain_copy.ex:559
 #, elixir-autogen, elixir-format
 msgid "latitude of its point"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:544
+#: lib/potok_ide_web/domain_copy.ex:560
 #, elixir-autogen, elixir-format
 msgid "longitude of its point"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1232
+#: lib/potok_ide_web/domain_copy.ex:1256
 #, elixir-autogen, elixir-format
 msgid "An event's area or route always has its pin as well, and an event never has an area and a route at once."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:545
+#: lib/potok_ide_web/domain_copy.ex:561
 #, elixir-autogen, elixir-format
 msgid "its area on a map, as its border"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:546
+#: lib/potok_ide_web/domain_copy.ex:562
 #, elixir-autogen, elixir-format
 msgid "its route on a map, as its line"
 msgstr ""
@@ -2139,77 +2139,77 @@ msgstr ""
 msgid "newest value, for a member"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:382
+#: lib/potok_ide_web/domain_copy.ex:398
 #, elixir-autogen, elixir-format
 msgid "text as a search reads it, in Latin and without diacritics"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1959
+#: lib/potok_ide_web/domain_copy.ex:1983
 #, elixir-autogen, elixir-format
 msgid "Unread is measured from one marker"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1935
+#: lib/potok_ide_web/domain_copy.ex:1959
 #, elixir-autogen, elixir-format
 msgid "A group sends notices to those who follow it"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1035
+#: lib/potok_ide_web/domain_copy.ex:1052
 #, elixir-autogen, elixir-format
 msgid "A notice a group sent to those who follow it: one text, never edited. It remembers who sent it, how many followers it reached and the preview of its first link. Deleting it deletes it for everyone who received it."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1042
+#: lib/potok_ide_web/domain_copy.ex:1059
 #, elixir-autogen, elixir-format
 msgid "A notice that reached one profile, and whether it was read. It is written when the notice is sent, for every follower who sees the group then, so it stays after unfollowing. Unread ones make the counter of notices."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1937
+#: lib/potok_ide_web/domain_copy.ex:1961
 #, elixir-autogen, elixir-format
 msgid "A profile can follow a <Group>group</Group> it sees, a public one without being a member: that is a <GroupFollow>following</GroupFollow>. The root, direct conversations and threads are not followed. Whoever holds the permission to send notices sends a <GroupNotice>notice</GroupNotice>, and `admin` holds it as it holds every permission. The notice is written as a <GroupNoticeReceipt>received notice</GroupNoticeReceipt> for every follower who sees the group at that moment, never for its author, so it stays after unfollowing, and a later follower finds the older ones on the group's page. Unread received notices make their own counter, apart from unread messages, and opening the list of notices or the group's notices reads them. A push goes out while both the following and the profile allow it. Deleting a notice takes it from everyone who received it. The preview of a notice's first link comes a moment after it is sent, and whoever may delete the notice may remove the preview, for everyone. At the root, the groups a profile follows stay on its lists and on the map of groups while the other public groups are hidden, and its sub-groups can be narrowed to them."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1028
+#: lib/potok_ide_web/domain_copy.ex:1045
 #, elixir-autogen, elixir-format
 msgid "A profile follows a group, to receive its notices. Anyone who sees the group may follow it, a public one without being a member. It says whether the group's notices push to the follower's devices."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:781
+#: lib/potok_ide_web/domain_copy.ex:797
 #, elixir-autogen, elixir-format
 msgid "Following"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:742
+#: lib/potok_ide_web/domain_copy.ex:758
 #, elixir-autogen, elixir-format
 msgid "Following and notices"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:782
+#: lib/potok_ide_web/domain_copy.ex:798
 #, elixir-autogen, elixir-format
 msgid "Notice"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:783
+#: lib/potok_ide_web/domain_copy.ex:799
 #, elixir-autogen, elixir-format
 msgid "Received notice"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1326
+#: lib/potok_ide_web/domain_copy.ex:1350
 #, elixir-autogen, elixir-format
 msgid "The text has 1 to 2,000 characters, and not only spaces."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:651
+#: lib/potok_ide_web/domain_copy.ex:667
 #, elixir-autogen, elixir-format
 msgid "follower"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:656
+#: lib/potok_ide_web/domain_copy.ex:672
 #, elixir-autogen, elixir-format
 msgid "how many got it"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:660
+#: lib/potok_ide_web/domain_copy.ex:676
 #, elixir-autogen, elixir-format
 msgid "notice"
 msgstr ""
@@ -2219,42 +2219,42 @@ msgstr ""
 msgid "push of notices"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:652
+#: lib/potok_ide_web/domain_copy.ex:668
 #, elixir-autogen, elixir-format
 msgid "push to devices"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:661
+#: lib/potok_ide_web/domain_copy.ex:677
 #, elixir-autogen, elixir-format
 msgid "read at"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:659
+#: lib/potok_ide_web/domain_copy.ex:675
 #, elixir-autogen, elixir-format
 msgid "recipient"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:654
+#: lib/potok_ide_web/domain_copy.ex:670
 #, elixir-autogen, elixir-format
 msgid "who sent it"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2025
+#: lib/potok_ide_web/domain_copy.ex:2049
 #, elixir-autogen, elixir-format
 msgid "A <Group>group</Group> an app made with a key of its own is a record, such as one row of an open dataset brought in with thousands of others. The key is set once and is unique under its parent, so bringing the same list in again makes no duplicates. A record is an ordinary group, seen by whoever may see it, but it stands only on its own map: the root's map and the place picker of events leave records out, and the unread counts of the profile that brought them in do not follow them. Pages hear of a hundred records made at once as of one change."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1192
+#: lib/potok_ide_web/domain_copy.ex:1216
 #, elixir-autogen, elixir-format
 msgid "An app's key for a group has from 1 to 64 characters."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1675
+#: lib/potok_ide_web/domain_copy.ex:1699
 #, elixir-autogen, elixir-format
 msgid "For a viewer who may edit its group, an app can make <Group>groups</Group> right under it, change them and take them back, and put them on a map with a pin. A new one opens its chat if the app's group has. It can inherit the members of the app's group, all of them or only those with the roles the app picks. It can also make up to a hundred at once, all or none, each with a key of its own, so that the same list brought in again makes no duplicates: that is how the rows of an open dataset become groups on a map. That is how one app writes what another shows, and a feed gets its editors' desk."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2023
+#: lib/potok_ide_web/domain_copy.ex:2047
 #, elixir-autogen, elixir-format
 msgid "Records stay on their own map"
 msgstr ""
@@ -2264,32 +2264,32 @@ msgstr ""
 msgid "an app's own key"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1207
+#: lib/potok_ide_web/domain_copy.ex:1231
 #, elixir-autogen, elixir-format
 msgid "A description only some roles see never goes to guests."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1790
+#: lib/potok_ide_web/domain_copy.ex:1814
 #, elixir-autogen, elixir-format
 msgid "A guest saves, reacts and votes in nothing. Of an app's values it gets only the settings and counts that public rules show everyone."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1951
+#: lib/potok_ide_web/domain_copy.ex:1975
 #, elixir-autogen, elixir-format
 msgid "A public group can open its description to guests"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1953
+#: lib/potok_ide_web/domain_copy.ex:1977
 #, elixir-autogen, elixir-format
 msgid "Anyone with the link of a public <Group>group</Group> sees its name, its picture and a piece of its description, without an account. Whoever may edit the group can open the whole description to such guests, and then each <GroupAltDescription>alternative description</GroupAltDescription> marked for them goes along; one that only some <GroupRole>roles</GroupRole> see never does. A description that is an app runs for guests too, and only reads: the public groups below it, the descriptions of those open to guests, a map of them, public <Poll>polls</Poll> and what public rules show. The chat, the members and who reacted stay behind the login, and search engines do not list the page. A group that stops being public closes it, and keeps the choice for when it opens again."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1763
+#: lib/potok_ide_web/domain_copy.ex:1787
 #, elixir-autogen, elixir-format
 msgid "Opens to guests"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1765
+#: lib/potok_ide_web/domain_copy.ex:1789
 #, elixir-autogen, elixir-format
 msgid "Where a public <Group>group</Group> opens its description to guests, its app runs for people without an account too. It then lists the public groups below it and shows the descriptions of those open to guests, maps them and reads public <Poll>polls</Poll>, and a tap on a group opens its text over the app. That is how a feed or a map can be read by anyone with the link."
 msgstr ""
@@ -2304,242 +2304,243 @@ msgstr ""
 msgid "guests read it too"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1426
+#: lib/potok_ide_web/domain_copy.ex:1450
 #, elixir-autogen, elixir-format
 msgid "A month is written as its first day."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1133
+#: lib/potok_ide_web/domain_copy.ex:1157
 #, elixir-autogen, elixir-format
 msgid "A technical table with no links to the rest of the domain: what one hour of one thing Potok runs on cost at `Fly.io`, a machine, the database, the stored files, the IP addresses or the data sent out, estimated by Potok itself from what `Fly.io` reports and its price list."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:746
+#: lib/potok_ide_web/domain_copy.ex:762
 #, elixir-autogen, elixir-format
 msgid "Hosting costs"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:795
+#: lib/potok_ide_web/domain_copy.ex:812
 #, elixir-autogen, elixir-format
 msgid "Hour of costs"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:796
+#: lib/potok_ide_web/domain_copy.ex:813
 #, elixir-autogen, elixir-format
 msgid "Invoice"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1422
+#: lib/potok_ide_web/domain_copy.ex:1446
 #, elixir-autogen, elixir-format
 msgid "Neither the cost nor the amount is negative."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2187
+#: lib/potok_ide_web/domain_copy.ex:2211
 #, elixir-autogen, elixir-format
 msgid "Potok estimates what it costs"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1430
+#: lib/potok_ide_web/domain_copy.ex:1454
 #, elixir-autogen, elixir-format
 msgid "The sum is not negative, and the note has up to 500 characters."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1140
+#: lib/potok_ide_web/domain_copy.ex:1164
 #, elixir-autogen, elixir-format
 msgid "What `Fly.io` actually billed for one month, copied from the invoice, so the estimate of that month stands next to the real sum."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2189
+#: lib/potok_ide_web/domain_copy.ex:2213
 #, elixir-autogen, elixir-format
 msgid "`Fly.io` gives no way to read its bills, so Potok estimates them itself. Every quarter of an hour it reads which machines run and how big they are, how big the database and the stored files are and how much data went out, and writes what each <CostHour>hour</CostHour> cost by the price list. The hours it missed, back to the start of the month, are filled in from `Fly.io`'s own metrics of those hours, which go back about ten days, and the rest from what runs now. Once a month is billed, one of the people who run Potok copies the sum from the <Invoice>invoice</Invoice>, and only they may. Everyone with an account sees both on the costs page; guests do not."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:677
+#: lib/potok_ide_web/domain_copy.ex:693
 #, elixir-autogen, elixir-format
 msgid "billed in dollars"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:673
+#: lib/potok_ide_web/domain_copy.ex:689
 #, elixir-autogen, elixir-format
 msgid "cost in dollars"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:669
+#: lib/potok_ide_web/domain_copy.ex:685
 #, elixir-autogen, elixir-format
 msgid "hour"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:672
+#: lib/potok_ide_web/domain_copy.ex:688
 #, elixir-autogen, elixir-format
 msgid "how much of it"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:676
+#: lib/potok_ide_web/domain_copy.ex:692
 #, elixir-autogen, elixir-format
 msgid "month"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:678
+#: lib/potok_ide_web/domain_copy.ex:694
 #, elixir-autogen, elixir-format
 msgid "note"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:670
+#: lib/potok_ide_web/domain_copy.ex:686
 #, elixir-autogen, elixir-format
 msgid "what it pays for"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:674
+#: lib/potok_ide_web/domain_copy.ex:690
 #, elixir-autogen, elixir-format
 msgid "what it was estimated from"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:671
+#: lib/potok_ide_web/domain_copy.ex:687
 #, elixir-autogen, elixir-format
 msgid "which one"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2071
+#: lib/potok_ide_web/domain_copy.ex:2095
 #, elixir-autogen, elixir-format
 msgid "An app's process signs with a profile of its own"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:769
+#: lib/potok_ide_web/domain_copy.ex:785
 #, elixir-autogen, elixir-format
 msgid "App process"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2073
+#: lib/potok_ide_web/domain_copy.ex:2097
 #, elixir-autogen, elixir-format
 msgid "Every <Value>value</Value> and every <Group>group</Group> but the root has a creator, so what an app's process does is signed by a <Profile>profile</Profile> of its own, which belongs to no <Account>account</Account>. It comes with the rule that gives a collection of the app a process, as an <AppProcess>app process</AppProcess> owned by the editor who saved that rule, and it joins the app's group with what `everyone` may do there. Nobody logs in as it or picks it, nobody mentions or invites it or opens a direct conversation with it, it is not counted among the members, and groups that inherit members do not take it in. Removing the rule makes the process inactive and takes it out of the group, and its values keep their author. It writes only in the app's group and in the sub-groups it made itself, as far as its permissions there go. In a sub-group it makes it is a plain member, and people are the admins: its owner, while the owner still edits the app, and whoever set the process going. It pushes to the people of a role only with the right to mention roles. In the app's group nobody removes or blocks it, as its rule takes it in and out; in the sub-groups it makes, people may."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1334
+#: lib/potok_ide_web/domain_copy.ex:1358
 #, elixir-autogen, elixir-format
 msgid "The collection is named as an app names its own."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:424
+#: lib/potok_ide_web/domain_copy.ex:440
 #, elixir-autogen, elixir-format
 msgid "active"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:417
+#: lib/potok_ide_web/domain_copy.ex:433
 #, elixir-autogen, elixir-format
 msgid "profile of the process"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:631
+#: lib/potok_ide_web/domain_copy.ex:647
 #, elixir-autogen, elixir-format
 msgid "who set the process going"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:770
+#: lib/potok_ide_web/domain_copy.ex:786
 #, elixir-autogen, elixir-format
 msgid "Process instance"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:465
+#: lib/potok_ide_web/domain_copy.ex:481
 #, elixir-autogen, elixir-format
 msgid "decisions of people"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:455
+#: lib/potok_ide_web/domain_copy.ex:471
 #, elixir-autogen, elixir-format
 msgid "graph it started with"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:443
+#: lib/potok_ide_web/domain_copy.ex:324
+#: lib/potok_ide_web/domain_copy.ex:459
 #, elixir-autogen, elixir-format
 msgid "process"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:450
+#: lib/potok_ide_web/domain_copy.ex:466
 #, elixir-autogen, elixir-format
 msgid "status"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:463
+#: lib/potok_ide_web/domain_copy.ex:479
 #, elixir-autogen, elixir-format
 msgid "steps taken"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:456
+#: lib/potok_ide_web/domain_copy.ex:472
 #, elixir-autogen, elixir-format
 msgid "sub-groups it made"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:444
+#: lib/potok_ide_web/domain_copy.ex:460
 #, elixir-autogen, elixir-format
 msgid "value that started it"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:462
+#: lib/potok_ide_web/domain_copy.ex:478
 #, elixir-autogen, elixir-format
 msgid "when it wakes"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:453
+#: lib/potok_ide_web/domain_copy.ex:469
 #, elixir-autogen, elixir-format
 msgid "where it stands in the graph"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:457
+#: lib/potok_ide_web/domain_copy.ex:473
 #, elixir-autogen, elixir-format
 msgid "who started it"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:464
+#: lib/potok_ide_web/domain_copy.ex:480
 #, elixir-autogen, elixir-format
 msgid "why it stopped"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:460
+#: lib/potok_ide_web/domain_copy.ex:476
 #, elixir-autogen, elixir-format
 msgid "who set off its step"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2079
+#: lib/potok_ide_web/domain_copy.ex:2103
 #, elixir-autogen, elixir-format
 msgid "A value sets an app's process going"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1637
+#: lib/potok_ide_web/domain_copy.ex:1661
 #, elixir-autogen, elixir-format
 msgid "Runs a process"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1639
+#: lib/potok_ide_web/domain_copy.ex:1663
 #, elixir-autogen, elixir-format
 msgid "A collection's rule can carry the graph of a process, which Potok checks as the app saves it and runs for every new <Value>value</Value>: messages, sub-groups and pushes signed by the process's own <Profile>profile</Profile>, tasks for the people of a role, deadlines and timers. The app lists the <ValueProcess>instances</ValueProcess> of the values its viewer may read, lets whoever holds a task's role finish it, and lets its editors take a failed one up again or cancel one. Each move reaches the app live. Of the processes the group's editors draw in Potok, the app sees what waits for its viewer, opens a form of theirs in Potok's own dialog and may finish a decision, and opens the Start of one the viewer may start by hand the same way; their drawings stay out of its sight."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2087
+#: lib/potok_ide_web/domain_copy.ex:2111
 #, elixir-autogen, elixir-format
 msgid "Editors can draw a process in Potok"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1338
+#: lib/potok_ide_web/domain_copy.ex:1362
 #, elixir-autogen, elixir-format
 msgid "Only a process drawn in Potok keeps a graph here."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:986
+#: lib/potok_ide_web/domain_copy.ex:1003
 #, elixir-autogen, elixir-format
 msgid "The process of one collection of an app, with the profile that signs what it does and its owner, the editor who saved its rule. Removing the rule makes it inactive, and its profile stays as the author of what it wrote. A process an editor drew in Potok keeps its graph and the places of its steps here, where no save of the app reaches it; a collection has at most one process of the app's own, and may have drawn ones beside it."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:425
+#: lib/potok_ide_web/domain_copy.ex:441
 #, elixir-autogen, elixir-format
 msgid "drawn in Potok"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:426
+#: lib/potok_ide_web/domain_copy.ex:442
 #, elixir-autogen, elixir-format
 msgid "graph of a drawn process"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:427
+#: lib/potok_ide_web/domain_copy.ex:443
 #, elixir-autogen, elixir-format
 msgid "places on the drawing"
 msgstr ""
@@ -2549,62 +2550,62 @@ msgstr ""
 msgid "unless this holds: %{field}"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1342
+#: lib/potok_ide_web/domain_copy.ex:1366
 #, elixir-autogen, elixir-format
 msgid "Only a process that starts on a new value hangs on a collection."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:449
+#: lib/potok_ide_web/domain_copy.ex:465
 #, elixir-autogen, elixir-format
 msgid "fields for its texts"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:434
+#: lib/potok_ide_web/domain_copy.ex:450
 #, elixir-autogen, elixir-format
 msgid "next scheduled start"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:432
+#: lib/potok_ide_web/domain_copy.ex:448
 #, elixir-autogen, elixir-format
 msgid "settings of what starts it"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:447
+#: lib/potok_ide_web/domain_copy.ex:463
 #, elixir-autogen, elixir-format
 msgid "sub-group that started it"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:429
+#: lib/potok_ide_web/domain_copy.ex:445
 #, elixir-autogen, elixir-format
 msgid "what starts it"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1357
+#: lib/potok_ide_web/domain_copy.ex:1381
 #, elixir-autogen, elixir-format, fuzzy
 msgid "A process starts on a value, a message, a sub-group, a schedule, by hand, when another process calls it or on a signal."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1411
+#: lib/potok_ide_web/domain_copy.ex:1435
 #, elixir-autogen, elixir-format
 msgid "A run is never less than zero processes deep."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:951
+#: lib/potok_ide_web/domain_copy.ex:968
 #, elixir-autogen, elixir-format, fuzzy
 msgid "One run of a process: the graph it started with, the element it stands on and when it wakes next. What set it going is a value of a collection or a chat message, a new sub-group, or nothing for a run started by hand or by a schedule, which keeps the fields its texts read. A run another process started, by a call or a signal, is one level deeper than that one, shares its subject and keeps the fields it was given; a caller that waits for it points at it, and what each wait brought back stays with the run that waited. A value or a sub-group has at most one instance of each process that its trigger started. Deleting it or the process takes the instance along, and what it wrote stays."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:511
+#: lib/potok_ide_web/domain_copy.ex:527
 #, elixir-autogen, elixir-format
 msgid "how many processes deep"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:466
+#: lib/potok_ide_web/domain_copy.ex:482
 #, elixir-autogen, elixir-format
 msgid "run it waits for"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:514
+#: lib/potok_ide_web/domain_copy.ex:530
 #, elixir-autogen, elixir-format
 msgid "what its waits brought back"
 msgstr ""
@@ -2614,68 +2615,68 @@ msgstr ""
 msgid "where %{field} is %{value}"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2131
+#: lib/potok_ide_web/domain_copy.ex:2155
 #, elixir-autogen, elixir-format
 msgid "Processes talk to each other only on purpose"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:771
+#: lib/potok_ide_web/domain_copy.ex:787
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Group field"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1384
-#: lib/potok_ide_web/domain_copy.ex:1403
+#: lib/potok_ide_web/domain_copy.ex:1408
+#: lib/potok_ide_web/domain_copy.ex:1427
 #, elixir-autogen, elixir-format
 msgid "The name has 1 to 40 characters."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1388
+#: lib/potok_ide_web/domain_copy.ex:1412
 #, elixir-autogen, elixir-format
 msgid "The text has at most 1,000 characters."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:476
+#: lib/potok_ide_web/domain_copy.ex:492
 #, elixir-autogen, elixir-format
 msgid "process that wrote it last"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:471
+#: lib/potok_ide_web/domain_copy.ex:487
 #, elixir-autogen, elixir-format
 msgid "text it keeps"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1993
+#: lib/potok_ide_web/domain_copy.ex:2017
 #, elixir-autogen, elixir-format
 msgid "A <GroupShortcut>shortcut</GroupShortcut> puts a <Group>group</Group> that stands deeper in the tree among the sub-groups of another group, the root as well, and a tap opens it where it stands. Whoever may make sub-groups there places one to a group they see, and it shows only to those who see that group, by the same rule as the other sub-groups. The row shows the group itself, with its newest value and what is unread in it, but the counts above it hold that unread once, where the group stands. It never leads to the root, a thread, a direct conversation or an app's record, nor to a group already standing there. Its author or an admin of the group it stands in removes it, which leaves the group as it is. Apps do not see shortcuts among the sub-groups."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:930
+#: lib/potok_ide_web/domain_copy.ex:947
 #, elixir-autogen, elixir-format
 msgid "A group shown among the sub-groups of another group too, as a shortcut on a computer: a tap opens it where it stands. It has no members, values or counts of its own. Deleting either group takes it along."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1181
+#: lib/potok_ide_web/domain_copy.ex:1205
 #, elixir-autogen, elixir-format
 msgid "A shortcut never opens the group it stands in."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1991
+#: lib/potok_ide_web/domain_copy.ex:2015
 #, elixir-autogen, elixir-format
 msgid "A shortcut shows a group in one more place"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:766
+#: lib/potok_ide_web/domain_copy.ex:782
 #, elixir-autogen, elixir-format
 msgid "Shortcut"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:537
+#: lib/potok_ide_web/domain_copy.ex:553
 #, elixir-autogen, elixir-format
 msgid "group it opens"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:536
+#: lib/potok_ide_web/domain_copy.ex:552
 #, elixir-autogen, elixir-format
 msgid "group it stands in"
 msgstr ""
@@ -2685,147 +2686,147 @@ msgstr ""
 msgid "shortcut it is listed by"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:772
+#: lib/potok_ide_web/domain_copy.ex:788
 #, elixir-autogen, elixir-format
 msgid "Entity definition"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1407
+#: lib/potok_ide_web/domain_copy.ex:1431
 #, elixir-autogen, elixir-format
 msgid "The attributes are kept as a list."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:479
+#: lib/potok_ide_web/domain_copy.ex:495
 #, elixir-autogen, elixir-format
 msgid "attributes and their types"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:965
+#: lib/potok_ide_web/domain_copy.ex:982
 #, elixir-autogen, elixir-format
 msgid "What the data of the processes drawn in a group looks like, as its editors define it: a name and up to 30 attributes, each with the type of what it holds. An attribute holds a text, a number, a yes or no, a date, a date and time, one of the choices it lists, or another entity of the group, and may be a list of them. Entities nest at most four deep and never in a circle. A group has at most 50, each name once in any letter case, and one that another holds, or that a process drawn in the group keeps a variable of, cannot be deleted. Deleting the group takes them along."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:516
+#: lib/potok_ide_web/domain_copy.ex:532
 #, elixir-autogen, elixir-format
 msgid "what its variables hold"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2097
+#: lib/potok_ide_web/domain_copy.ex:2121
 #, elixir-autogen, elixir-format
 msgid "A <AppProcess>process</AppProcess> drawn in Potok that starts on a call, on a signal, by hand or on a value may take an <GroupEntity>entity</GroupEntity> of its group. A call then hands it that entity's attributes, each a value of its type and every required one a value, checked when the caller is saved and again when the call is made, against the entity as the called process was saved with it; a call that does not fit fails where it stands and starts nothing. A process started by hand asks for the attributes in a form, lists and the entities it holds included. A signal is waited for with an entity, and a process sends it only with the entity those who wait for it expect, where someone does: whoever waits says what it waits for. A drawing whose entity changed since it was saved, or whose calls and signals no longer fit those they talk to, runs on as it was saved, and its editors are told to look it over."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2095
+#: lib/potok_ide_web/domain_copy.ex:2119
 #, elixir-autogen, elixir-format
 msgid "What a process takes is an entity"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:435
+#: lib/potok_ide_web/domain_copy.ex:451
 #, elixir-autogen, elixir-format
 msgid "entity it takes"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2089
+#: lib/potok_ide_web/domain_copy.ex:2113
 #, elixir-autogen, elixir-format
 msgid "Besides the process an app writes into its rules, the editors of a group can draw processes of their own in Potok, as <AppProcess>app processes</AppProcess> that keep their graph outside any app's settings. One starts on a new value of a collection of an app, on a member's chat message holding one of its words or mentioning its role, on a sub-group made one at a time (not a record, a thread or what a process makes), on a schedule, when someone holding its role starts it by hand with a title and a text, when another process drawn in the group calls it, or on a signal one sends. An app replaces its settings whole when it saves them, so it could never keep a drawing safe; this way it neither sees nor overwrites them, and its own process runs beside them. A drawing is kept only when an instance could finish it, with roles the group has, and starts switched off. What its texts and conditions say are expressions over the names it has, such as what set it going and what a decision ended with, checked when it is kept, so a drawing that names what is not there is refused. One kept before expressions is turned into them when its editor opens it, and an instance reads the language of the graph it started with. A drawing may also declare variables, each with the type of what it holds, a plain one or an <GroupEntity>entity</GroupEntity> of the group: a step sets one to what an expression gives, every instance keeps its own, and the drawing is kept with the entities as they were then, so an instance under way reads them the same after one changes. A step may also go through a list an item at a time, with steps of its own for each: it reads the list once, on its way in, at most 200 items, and hands each to those steps by a name. So that a drawing that runs in a circle stops, an instance takes at most 25 steps in a row without waiting, counted anew for each item, and 5,000 in its life; after 100 it gives way to the others, and the steps that write outside it (a message, a sub-group, a push, a field of the group, a signal, a call) are 60 a minute for a process at most. Switched on, its profile joins the group and each of these starts a <ValueProcess>process instance</ValueProcess> of it; a change applies to the instances that start after it, and switching it off cancels those that run or wait. The app knows nothing of their tasks, so the people of a task's role finish them on the group's Processes tab, where they see a <Value>value</Value> only as far as they may read it. Deleting the app takes the processes drawn on its collections along."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2125
+#: lib/potok_ide_web/domain_copy.ex:2149
 #, elixir-autogen, elixir-format
 msgid "A drawn <AppProcess>process</AppProcess> that others call is private until an editor makes it public. A private one is called by the processes of its own <Group>group</Group> alone. A public one is called from the groups above its group and from those below it too, never from a branch beside it, and the editors there see its name and what it takes. The <ValueProcess>run</ValueProcess> such a call starts in another group gets what the call hands over and nothing else: it has no subject and nobody set it off, as the caller's value and people are no part of that group, and the caller hears only which end it reached. Callers of other groups do not keep a public process from being deleted or made private again: their calls then fail where they stand, their editors are told to look the drawing over, and a caller left waiting for a run that went with its group fails as one whose run was cancelled."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2120
+#: lib/potok_ide_web/domain_copy.ex:2144
 #, elixir-autogen, elixir-format
 msgid "A process is private to its group, or public up and down the tree"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1353
+#: lib/potok_ide_web/domain_copy.ex:1377
 #, elixir-autogen, elixir-format
 msgid "Only a process drawn in Potok that another calls can be public."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:522
+#: lib/potok_ide_web/domain_copy.ex:538
 #, elixir-autogen, elixir-format
 msgid "person its wait asks"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:519
+#: lib/potok_ide_web/domain_copy.ex:535
 #, elixir-autogen, elixir-format
 msgid "role its wait asks"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2111
+#: lib/potok_ide_web/domain_copy.ex:2135
 #, elixir-autogen, elixir-format
 msgid "A process asks a person with a form"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2113
+#: lib/potok_ide_web/domain_copy.ex:2137
 #, elixir-autogen, elixir-format
 msgid "A step of a drawing may be a form: it stops the <ValueProcess>process instance</ValueProcess> until a person fills in an <GroupEntity>entity</GroupEntity>, each attribute as its type, a list a row per item and an entity it holds as a group of its own, as the drawing was saved with it. It may say something first, and start with something in some attributes, worked out from what the instance holds when the form is opened; the person may change it, and what they send counts. It asks whoever started the instance, or the people of a role, and only a member of the group answers, once. The form opens by itself only for the one who started the instance, and only when it was their own step that led to it: a message they wrote, a start by hand, a form before it. Reached after a wait or someone else's decision, and for a role, it waits on the group's Processes tab. What was filled in is read by the steps that follow, an attribute at a time, with who filled it in, and whoever filled it in sets off those steps. Nobody starts a process on a schedule, so its form asks a role, and an instance nobody started fails on a form that asks whoever did. While it waits for a person, on a form or a decision, an instance keeps whom it asks, so a group's page counts what waits for its viewer without reading every waiting instance, and counts again only on news that is theirs. The same count stands on the bar's hand beside the join requests the person may approve, the Requests page lists those tasks by group, and an amber mark stands on the rows of the groups they wait in and of those above them."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1969
+#: lib/potok_ide_web/domain_copy.ex:1993
 #, elixir-autogen, elixir-format
 msgid "A <GroupMembership>membership</GroupMembership> remembers until when its member silenced the group: an hour, eight hours, a week or until they turn it on again. Until then nothing that goes to everyone reaches them as a push: new values, polls, events, an app's notices, a process's push to everyone. What is meant for them still does: a mention, an answer to their value, a reaction, a process asking them or their role. The group's unread values leave the home badge and the sums of the groups above it, while its own row still shows them, in grey. The threads of a silenced group are silent too."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1967
+#: lib/potok_ide_web/domain_copy.ex:1991
 #, elixir-autogen, elixir-format
 msgid "A member can silence a group"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:525
+#: lib/potok_ide_web/domain_copy.ex:541
 #, elixir-autogen, elixir-format
 msgid "until when the member silenced it"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2105
+#: lib/potok_ide_web/domain_copy.ex:2129
 #, elixir-autogen, elixir-format
 msgid "A <AppProcess>process</AppProcess> that others call may name an <GroupEntity>entity</GroupEntity> of its group that it hands back. Each of its ends then fills it in, an attribute at a time, checked when the process is saved, and the caller reads it under the call's id, in its own group or in another: the process hands over exactly that and nothing else. One that names none hands back only the end it reached, and to a caller of its own group what it was given and what its waits brought back. An end whose values do not fit when the run gets there fails that run, and the caller waits for it as for any run it called."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2103
+#: lib/potok_ide_web/domain_copy.ex:2127
 #, elixir-autogen, elixir-format
 msgid "A called process can hand an entity back"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:441
+#: lib/potok_ide_web/domain_copy.ex:457
 #, elixir-autogen, elixir-format
 msgid "entity it hands back"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:411
+#: lib/potok_ide_web/domain_copy.ex:427
 #, elixir-autogen, elixir-format
 msgid "file name as a search reads it, in Latin and without diacritics"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:937
+#: lib/potok_ide_web/domain_copy.ex:954
 #, elixir-autogen, elixir-format
 msgid "A group a profile keeps at the top of its column of groups. Only that profile sees it. Deleting the group or the profile takes it along."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2001
+#: lib/potok_ide_web/domain_copy.ex:2025
 #, elixir-autogen, elixir-format
 msgid "Beside a group's page, a wide screen shows the profile's groups as a tree: its <GroupMembership>memberships</GroupMembership>, the public groups it <GroupFollow>follows</GroupFollow> and the <Group>groups</Group> on the way to them, without threads or the records apps keep as groups; direct conversations stand in a list of their own below it. A closed folder counts everything unread below it, an open one only what its open sub-groups do not show, so every unread value can be followed down to its group. Above the tree stand the <PinnedGroup>pinned groups</PinnedGroup>: up to 20 groups the profile sees, never the root or a direct conversation, in the order it pinned them. Nobody else sees them, and a group it no longer sees drops out of the list. A narrower screen opens the same tree in a panel from a button in the group's header, and the pinned groups also stand at the top of the root's list of groups."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:767
+#: lib/potok_ide_web/domain_copy.ex:783
 #, elixir-autogen, elixir-format
 msgid "Pinned group"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1999
+#: lib/potok_ide_web/domain_copy.ex:2023
 #, elixir-autogen, elixir-format
 msgid "The column of your groups is a tree"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:538
+#: lib/potok_ide_web/domain_copy.ex:554
 #, elixir-autogen, elixir-format
 msgid "who pinned it"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:634
+#: lib/potok_ide_web/domain_copy.ex:650
 #, elixir-autogen, elixir-format
 msgid "reactions by emoji, with how many and the first names"
 msgstr ""
@@ -2835,52 +2836,52 @@ msgstr ""
 msgid "member count in a list of sub-groups"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1865
+#: lib/potok_ide_web/domain_copy.ex:1889
 #, elixir-autogen, elixir-format
 msgid "A <Group>group</Group> opened from a <Value>value</Value> is a thread. One value has at most one thread. A thread inherits from its group only those who take part in it: whoever opened it, the author of its value, and a member of the group who opens it, writes in it or is mentioned in it. They hold the roles they hold in the group and leave with it. There is one root, with no parent and no creator. All other groups have both, even direct conversations, which sit right under the root."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1961
+#: lib/potok_ide_web/domain_copy.ex:1985
 #, elixir-autogen, elixir-format
 msgid "A <GroupValueRead>read marker</GroupValueRead> holds, for one profile in one group, the last <Value>value</Value> it has read, and everything newer is unread. Only members have one, and a chat opened while still empty gets one too. Whoever joins, by an invitation, a request or through the parent, gets it at the newest value, so the history is there to read but not counted. Opening the chat moves the marker to the newest value, and the line that shows where the unread values begin stands where the marker was before. A group counts at most 100 unread values, shown as 99+, and every sum above it adds what its groups counted. A group's newest value shows in the lists only to its members, as only their pages hear of new values. A search of the chat finds what the chat shows: a member's also takes the group's threads, and someone reading an open chat from outside does not find announcements of events that are not public."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1167
+#: lib/potok_ide_web/domain_copy.ex:1191
 #, elixir-autogen, elixir-format
 msgid "A thread always inherits from its group, taking its members in as they take part."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:528
+#: lib/potok_ide_web/domain_copy.ex:544
 #, elixir-autogen, elixir-format
 msgid "the last of its values the member got a push for"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:531
+#: lib/potok_ide_web/domain_copy.ex:547
 #, elixir-autogen, elixir-format
 msgid "when it last pushed the member"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1977
+#: lib/potok_ide_web/domain_copy.ex:2001
 #, elixir-autogen, elixir-format
 msgid "A <GroupMembership>membership</GroupMembership> also remembers the last of the group's <Value>values</Value> its member got a push for, and when. The next value of the group pushes them again only once they have read up to that one, or five minutes later. Picking the members and marking them is one statement, so values posted at the same moment still make one push. A mention and an answer to their value always go out and leave the mark as it was. A thread waits on its own, with its own memberships. Polls, events, reminders, notices, reactions and a process's pushes are not held back."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1975
+#: lib/potok_ide_web/domain_copy.ex:1999
 #, elixir-autogen, elixir-format
 msgid "A group pushes once until it is read"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:806
+#: lib/potok_ide_web/domain_copy.ex:823
 #, elixir-autogen, elixir-format
 msgid "Tokens of sessions and of links in emails, such as log-in, invitation and email change. Each token says what it is for, and once no check accepts it any more, it is deleted."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2081
+#: lib/potok_ide_web/domain_copy.ex:2105
 #, elixir-autogen, elixir-format
 msgid "When a <Value>value</Value> comes to a collection whose process has a graph, a <ValueProcess>process instance</ValueProcess> starts in the same transaction, with a copy of the graph, so changing the rule later leaves it as it was. Each element runs in a transaction of its own together with the instance's move to the next, so what it writes happens once. The instance waits on a task until someone holding the task's role picks an outcome or the deadline passes, and on a timer until it is due; a scheduler on every server takes forward those whose time has come. An action that fails leaves the instance failed where it stopped, for an editor to take up again, and removing the rule cancels the instances that run or wait. A month after an instance ends, done or cancelled, it keeps its status and log but not the copy of the graph, its variables or what it started from; a failed one keeps everything, for a retry. Nobody learns from a process who wrote an anonymous value."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1174
+#: lib/potok_ide_web/domain_copy.ex:1198
 #, elixir-autogen, elixir-format
 msgid "Only a group that inherits members, and is not a thread, picks roles to inherit them by."
 msgstr ""
@@ -2890,22 +2891,22 @@ msgstr ""
 msgid "roles it inherits by"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1666
+#: lib/potok_ide_web/domain_copy.ex:1690
 #, elixir-autogen, elixir-format, fuzzy
 msgid "It gets the <Group>groups</Group> right under it that have a place on a map, with the pin each one shows, and whoever may make a sub-group there can add one where they tap. A tap on a pin opens that group's description over the app, where its own app, a form or a poll, works with that group's rights. Among them, groups that cover an area come with their borders, groups that run along a route with their lines and lengths, and each place with the areas it lies in or passes through, so the app draws the areas and routes and shows only the groups inside one area. A map of more than 2000 places gets only what its view shows, which the server gathers into numbered circles as on the root's map, filtered by name and by the pins the groups show. That is how a group becomes a map. The root needs no such app: it has a map of its own. Any app can also take the viewer to the root's map at a point it keeps in its own data, such as a farm or where goods are handed out, with the group's picture on the pin: the group's own place stays as it is."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1777
+#: lib/potok_ide_web/domain_copy.ex:1801
 #, elixir-autogen, elixir-format
 msgid "A site inside an app gets the theme, the language and the calls its description lists, and no more. Potok cannot tell which page stands in that frame, so the list holds for whatever opens there."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1727
+#: lib/potok_ide_web/domain_copy.ex:1751
 #, elixir-autogen, elixir-format
 msgid "Shows a site"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1855
+#: lib/potok_ide_web/domain_copy.ex:1879
 #, elixir-autogen, elixir-format
 msgid "A deleted account leaves what was written"
 msgstr ""
@@ -2915,218 +2916,218 @@ msgstr ""
 msgid "person, process or deleted"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1729
+#: lib/potok_ide_web/domain_copy.ex:1753
 #, elixir-autogen, elixir-format
 msgid "A description can show a site from another address, in a frame inside its own. Potok tells that site the viewer's theme and language, so the site can follow them, and passes on only the calls the description lists for it. It remembers the page the reader got to, and a link to the group can open a chapter of the site. That is how a handbook published elsewhere reads as a part of the group."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1738
+#: lib/potok_ide_web/domain_copy.ex:1762
 #, elixir-autogen, elixir-format
 msgid "An app, or a site in its frame, keeps a <AppProfileEntry>personal memory</AppProfileEntry> for each viewer: how far they read, what they marked. It is the same on every device and only that person reads it, not even the app's editors; a guest's stays in the browser."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:773
+#: lib/potok_ide_web/domain_copy.ex:789
 #, elixir-autogen, elixir-format
 msgid "Personal app memory"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1736
+#: lib/potok_ide_web/domain_copy.ex:1760
 #, elixir-autogen, elixir-format
 msgid "Remembers for each person"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1364
+#: lib/potok_ide_web/domain_copy.ex:1388
 #, elixir-autogen, elixir-format
 msgid "The key has 1 to 64 letters, digits and the characters _ . : -."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1368
+#: lib/potok_ide_web/domain_copy.ex:1392
 #, elixir-autogen, elixir-format
 msgid "The value has at most 16 KB."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1782
+#: lib/potok_ide_web/domain_copy.ex:1806
 #, elixir-autogen, elixir-format
 msgid "What an app keeps for one person, nobody else reads, not even its editors."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:979
+#: lib/potok_ide_web/domain_copy.ex:996
 #, elixir-autogen, elixir-format
 msgid "What one app, or a site in its frame, keeps for one profile alone, such as how far its reader got: a key and a value. Nobody else reads it, not even the app's editors, and the person sees and deletes it in the settings. An app keeps up to 100 keys per profile, each value up to 16 KB. Deleting the app, its group or the account takes them along."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:487
+#: lib/potok_ide_web/domain_copy.ex:503
 #, elixir-autogen, elixir-format
 msgid "name the app gives it"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:488
+#: lib/potok_ide_web/domain_copy.ex:504
 #, elixir-autogen, elixir-format
 msgid "what the app keeps"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:332
-#: lib/potok_ide_web/domain_copy.ex:486
+#: lib/potok_ide_web/domain_copy.ex:344
+#: lib/potok_ide_web/domain_copy.ex:502
 #, elixir-autogen, elixir-format
 msgid "whose it is"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1346
+#: lib/potok_ide_web/domain_copy.ex:1370
 #, elixir-autogen, elixir-format
 msgid "Only a process drawn in Potok that starts on a signal hears the groups above and below."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:438
+#: lib/potok_ide_web/domain_copy.ex:454
 #, elixir-autogen, elixir-format
 msgid "hears groups above and below"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:469
+#: lib/potok_ide_web/domain_copy.ex:485
 #, elixir-autogen, elixir-format
 msgid "signal from groups around"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:958
+#: lib/potok_ide_web/domain_copy.ex:975
 #, elixir-autogen, elixir-format
 msgid "A field the processes drawn in a group keep for each other: a step sets it, or adds a number to it, and every drawn process of the group reads it. It has a type, a text, a number, a yes or no, a date, a date and time, or one of its choices, and keeps a value of that type as a text. The group's editors declare it, or a drawing that sets it brings it along. A group has at most 50, each name once, and one a drawn process uses cannot be deleted. Deleting the group takes them along, and the process that wrote one last may go first."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1392
+#: lib/potok_ide_web/domain_copy.ex:1416
 #, elixir-autogen, elixir-format
 msgid "A text, a number, a yes or no, a date, a date and time, or a choice."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1399
+#: lib/potok_ide_web/domain_copy.ex:1423
 #, elixir-autogen, elixir-format
 msgid "Only a choice has choices, at most 30."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2133
+#: lib/potok_ide_web/domain_copy.ex:2157
 #, elixir-autogen, elixir-format
 msgid "What a process writes starts no other process: its messages and the sub-groups it makes set nothing going, so two processes never keep each other running by chance. A drawn process talks to another only by a step drawn for it. A call starts a drawn <AppProcess>process</AppProcess> that starts when another calls it, of the same group or a public one of a group above or below, and hands over what it takes; the <ValueProcess>run</ValueProcess> it starts is one level deeper, and in its own group it shares the caller's subject. A caller that waits goes on when that run ends, knowing which end it reached, or gives up at its deadline and cancels it. Cancelling a run cancels the run it waits for, and a run whose called run is cancelled stops, for an editor to take up again, which calls anew. A step can also keep a <GroupField>field of the group</GroupField>, which every drawn process of the group reads as its type; adding to one takes its lock, so two runs never lose each other's count, and a value not of its type is refused. A signal wakes the runs of the group's drawn processes that wait for it just then, at most 100, and starts the processes that start on it; nothing keeps it for a run that comes to wait later, and a wait may take only a signal sent on its own subject. A wait or a start that hears the groups above and below also takes their signals, as the entity it expects, and a run started so gets nothing of the sender's subject or people; a group beside never hears them. Runs go at most three processes deep, and a process another one of its group calls cannot be deleted."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:473
+#: lib/potok_ide_web/domain_copy.ex:489
 #, elixir-autogen, elixir-format
 msgid "choices of a choice"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:472
+#: lib/potok_ide_web/domain_copy.ex:488
 #, elixir-autogen, elixir-format
 msgid "type of what it holds"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2065
+#: lib/potok_ide_web/domain_copy.ex:2089
 #, elixir-autogen, elixir-format
 msgid "A link to a form in a <Value>value</Value> gets a card with the form's own title and subtitle, read from its settings when the value is posted. The page asks for each reader whether they may open the form: its members may, and everyone may when the form takes non-members in a public <Group>group</Group>. The others see the card a guest would get, when the group is public, and otherwise only the link. A <GroupNotice>notice</GroupNotice> reaches followers nobody asks about, so it carries only a card anyone may see."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2063
+#: lib/potok_ide_web/domain_copy.ex:2087
 #, elixir-autogen, elixir-format
 msgid "A link to a form shows its card to whoever may open it"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:398
+#: lib/potok_ide_web/domain_copy.ex:414
 #, elixir-autogen, elixir-format
 msgid "whether the viewer sees the card of a form for its members"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:972
+#: lib/potok_ide_web/domain_copy.ex:989
 #, elixir-autogen, elixir-format
 msgid "A template of a group's own for descriptions: the fields of a form and the HTML they go into, with tags that take them and nothing that runs. It serves its group and every group below it, and whoever may edit the group makes it there, up to 30 in a group. A description made with it keeps its HTML when the template changes, and takes the new version when it is saved again; deleting the template leaves those descriptions as they are."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:774
+#: lib/potok_ide_web/domain_copy.ex:790
 #, elixir-autogen, elixir-format
 msgid "Template"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:496
+#: lib/potok_ide_web/domain_copy.ex:512
 #, elixir-autogen, elixir-format
 msgid "name in the list of templates"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:508
+#: lib/potok_ide_web/domain_copy.ex:524
 #, elixir-autogen, elixir-format
 msgid "place in the group's list"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:502
+#: lib/potok_ide_web/domain_copy.ex:518
 #, elixir-autogen, elixir-format
 msgid "the HTML its fields go into"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:499
+#: lib/potok_ide_web/domain_copy.ex:515
 #, elixir-autogen, elixir-format
 msgid "the fields of its form"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:505
+#: lib/potok_ide_web/domain_copy.ex:521
 #, elixir-autogen, elixir-format
 msgid "version, which a description keeps"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:498
+#: lib/potok_ide_web/domain_copy.ex:514
 #, elixir-autogen, elixir-format
 msgid "what it is for"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:493
+#: lib/potok_ide_web/domain_copy.ex:509
 #, elixir-autogen, elixir-format
 msgid "who made it"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1684
+#: lib/potok_ide_web/domain_copy.ex:1708
 #, elixir-autogen, elixir-format
 msgid "For a viewer who may edit its group, an app gets the <GroupTemplate>templates</GroupTemplate> of that group and of the groups above it, each with a picture of how it looks, and has Potok turn what its form holds into a description: the same HTML the group's own page writes with them. It can send pictures and videos for those descriptions too. That is how FeedCreator writes posts with an organization's own templates."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1682
+#: lib/potok_ide_web/domain_copy.ex:1706
 #, elixir-autogen, elixir-format
 msgid "Writes with the group's templates"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:491
+#: lib/potok_ide_web/domain_copy.ex:507
 #, elixir-autogen, elixir-format
 msgid "its group and those below"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2147
+#: lib/potok_ide_web/domain_copy.ex:2171
 #, elixir-autogen, elixir-format
 msgid "A group's templates serve the groups below it"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2141
+#: lib/potok_ide_web/domain_copy.ex:2165
 #, elixir-autogen, elixir-format
 msgid "A picture a description's template takes from the device is a <Value>value</Value> in the group's chat with its <ValueAttachment>file</ValueAttachment>, so it stays among the group's files; pictures picked together for a gallery are one value with up to ten files. A video goes the same way, as it is, and plays in the description. More people see a description than a chat, so the address of the picture or video is signed and needs no login. Deleting that value also removes it from the description. A gallery says in its HTML only which pictures and in which of four looks, the one attribute of its kind the sanitizer keeps; Potok draws the look, its buttons and its counter wherever the description shows, in an app's frame too."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2149
+#: lib/potok_ide_web/domain_copy.ex:2173
 #, elixir-autogen, elixir-format
 msgid "Whoever may edit a <Group>group</Group> makes its <GroupTemplate>templates</GroupTemplate>: the fields of a form and the HTML they go into, with tags that take them and nothing that runs. They serve that group and every group below it, next to Potok's own, in the description of a group and in FeedCreator, so an organization writes them once at its top. Only Potok turns them into HTML, and the sanitizer still runs over it. A description keeps the HTML and the version it was made with: a changed template reaches it only when it is saved again, and a deleted one leaves it as it is, to be edited as text."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1264
+#: lib/potok_ide_web/domain_copy.ex:1288
 #, elixir-autogen, elixir-format
 msgid "A decision gives a role, takes it, elects someone to it or ends the election of admins."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1278
+#: lib/potok_ide_web/domain_copy.ex:1302
 #, elixir-autogen, elixir-format
 msgid "A decision that changes roles takes one answer, is put to all who may vote, is not public, and ends at a deadline, with a quorum and a majority; only an election may be won by the most votes."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1285
+#: lib/potok_ide_web/domain_copy.ex:1309
 #, elixir-autogen, elixir-format
 msgid "An answer either stands for a candidate or carries a decision out."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1271
+#: lib/potok_ide_web/domain_copy.ex:1295
 #, elixir-autogen, elixir-format
 msgid "Only a decision that changes roles says what came of it: done, not passed, the member left, the role is gone, the role is held through the parent, or the group would lose its last admin."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1319
+#: lib/potok_ide_web/domain_copy.ex:1343
 #, elixir-autogen, elixir-format
 msgid "The root, direct conversations and threads do not elect their admins."
 msgstr ""
@@ -3136,97 +3137,97 @@ msgstr ""
 msgid "admins come by election"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:638
+#: lib/potok_ide_web/domain_copy.ex:654
 #, elixir-autogen, elixir-format
 msgid "candidate"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:641
+#: lib/potok_ide_web/domain_copy.ex:657
 #, elixir-autogen, elixir-format
 msgid "carries the decision out"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:363
+#: lib/potok_ide_web/domain_copy.ex:379
 #, elixir-autogen, elixir-format
 msgid "decision that gave it"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:615
+#: lib/potok_ide_web/domain_copy.ex:631
 #, elixir-autogen, elixir-format
 msgid "member it names"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:625
+#: lib/potok_ide_web/domain_copy.ex:641
 #, elixir-autogen, elixir-format
 msgid "process run waiting for it"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:614
+#: lib/potok_ide_web/domain_copy.ex:630
 #, elixir-autogen, elixir-format
 msgid "role it names"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:618
+#: lib/potok_ide_web/domain_copy.ex:634
 #, elixir-autogen, elixir-format
 msgid "the elected one takes the others' place"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:620
+#: lib/potok_ide_web/domain_copy.ex:636
 #, elixir-autogen, elixir-format
 msgid "what came of it"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:613
+#: lib/potok_ide_web/domain_copy.ex:629
 #, elixir-autogen, elixir-format
 msgid "what the decision changes"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1897
+#: lib/potok_ide_web/domain_copy.ex:1921
 #, elixir-autogen, elixir-format
 msgid "A <Group>group</Group> that elects its admins gives and takes `admin` only by decisions of <Poll>polls</Poll>: nobody assigns it by hand, and only a decision removes an admin from the group, though an admin may leave of their own accord. An admin switches it on, and the admins it has stay for the time being, until a decision takes the role from them or an election puts its winner in their place in the same step; an election does that only when it says so, as one called from the list of members does. Only a decision switches it off, or an elected admin could stay for good. An admin inherited from the parent stays an admin. The root, direct conversations and threads do not elect their admins."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1889
+#: lib/potok_ide_web/domain_copy.ex:1913
 #, elixir-autogen, elixir-format
 msgid "A <Poll>poll</Poll> may say what its decision changes: it gives a member a <GroupRole>role</GroupRole>, takes it, elects one of its candidates to it, ends the election of admins, or admits someone who asked to join. Voters read it before they vote. Such a poll is put to every member who may vote, as it says for unique and shared profiles, takes one answer, is decided by a majority with a quorum and ends at its deadline, not before; it is not opened again, and once it has a vote neither it nor its <Value>value</Value> is deleted. As it closes the decision is carried out in the same step, and the poll keeps what came of it. A <GroupMemberRole>member role</GroupMemberRole> it gave keeps the poll. A role held through the parent is not taken, and a group never loses its last admin this way either. In a group run by its founders only an admin puts such a decision to a vote; in a group that elects its admins anyone who may start a poll does. A drawn process puts one to the vote with the step that raises a poll: the decision carries the role over, as the process holds no more than `everyone`, and where the founders run the group its owner must be an admin. A request raises such a poll by the rule written down beforehand, in the name of whoever asked, and it is never deleted."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1887
+#: lib/potok_ide_web/domain_copy.ex:1911
 #, elixir-autogen, elixir-format
 msgid "A decision of a poll can give and take roles"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1895
+#: lib/potok_ide_web/domain_copy.ex:1919
 #, elixir-autogen, elixir-format
 msgid "A group may elect its admins"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1256
+#: lib/potok_ide_web/domain_copy.ex:1280
 #, elixir-autogen, elixir-format
 msgid "Somebody votes: unique profiles, shared ones, or both."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:595
+#: lib/potok_ide_web/domain_copy.ex:611
 #, elixir-autogen, elixir-format
 msgid "how shared profiles vote"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:647
+#: lib/potok_ide_web/domain_copy.ex:663
 #, elixir-autogen, elixir-format
 msgid "one holder of a shared profile"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:594
+#: lib/potok_ide_web/domain_copy.ex:610
 #, elixir-autogen, elixir-format
 msgid "unique profiles vote"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1312
+#: lib/potok_ide_web/domain_copy.ex:1336
 #, elixir-autogen, elixir-format
 msgid "A role that may go to a vote has the rules of that vote, and only then; everyone is never asked for."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1305
+#: lib/potok_ide_web/domain_copy.ex:1329
 #, elixir-autogen, elixir-format
 msgid "Admission that may go to a vote has the rules of that vote, and only then."
 msgstr ""
@@ -3236,7 +3237,7 @@ msgstr ""
 msgid "how admission is decided"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:369
+#: lib/potok_ide_web/domain_copy.ex:385
 #, elixir-autogen, elixir-format
 msgid "how the role is had"
 msgstr ""
@@ -3246,52 +3247,52 @@ msgstr ""
 msgid "rules of a vote on admission"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:370
+#: lib/potok_ide_web/domain_copy.ex:386
 #, elixir-autogen, elixir-format
 msgid "rules of a vote on it"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1098
+#: lib/potok_ide_web/domain_copy.ex:1115
 #, elixir-autogen, elixir-format
 msgid "A lasting record of who admitted whom to a group and when: a member who manages requests, or a vote. It is created in the same transaction that deletes the request and creates the membership."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1105
+#: lib/potok_ide_web/domain_copy.ex:1122
 #, elixir-autogen, elixir-format
 msgid "A member asks for roles, saying why if it wants. It holds only the roles still waiting for whoever manages requests, one row per member and group, and goes with the membership."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1091
+#: lib/potok_ide_web/domain_copy.ex:1108
 #, elixir-autogen, elixir-format
 msgid "A profile asks to join a public group, with the roles it would like there and, if it wants, why. While a vote decides it, it names that poll. An accepted request is deleted, and an approval stays in its place."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1301
+#: lib/potok_ide_web/domain_copy.ex:1325
 #, elixir-autogen, elixir-format
 msgid "A request for roles waits for at least one role."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:792
+#: lib/potok_ide_web/domain_copy.ex:808
 #, elixir-autogen, elixir-format
 msgid "Decision on a request"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:791
+#: lib/potok_ide_web/domain_copy.ex:807
 #, elixir-autogen, elixir-format
 msgid "Request for roles"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1289
+#: lib/potok_ide_web/domain_copy.ex:1313
 #, elixir-autogen, elixir-format
 msgid "Someone admitted a member, or a vote did."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1126
+#: lib/potok_ide_web/domain_copy.ex:1150
 #, elixir-autogen, elixir-format
 msgid "What became of admission or of one role asked for: given, refused or put to a vote, by whom (nobody when the rule put it to a vote) and why. The one who asked reads it too."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:622
+#: lib/potok_ide_web/domain_copy.ex:638
 #, elixir-autogen, elixir-format
 msgid "raised by a request"
 msgstr ""
@@ -3352,42 +3353,42 @@ msgstr ""
 msgid "why they ask"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1929
+#: lib/potok_ide_web/domain_copy.ex:1953
 #, elixir-autogen, elixir-format
 msgid "Each <GroupRole>role</GroupRole> of a statute says how it is had: nobody asks for it, whoever manages requests gives or refuses it, the same or they put it to a vote, or every request goes to a vote, whose rules the role writes down beforehand. Whoever asks reads that before sending. A member asks with a <GroupRoleRequest>request for roles</GroupRoleRequest>, which holds only what still waits; one asking to join names the roles in the <GroupJoinRequest>join request</GroupJoinRequest>, and what is left of them on admission waits as the new member's request. A role that goes to a vote raises a poll that gives it, in the name of whoever asked. Admin is given on request only by an admin, and only by a vote where the group elects its admins. Each part decided stays as a <GroupRequestDecision>decision on a request</GroupRequestDecision>, with who decided and why, and after a refusal or a vote that did not carry, the same request waits seven days."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1927
+#: lib/potok_ide_web/domain_copy.ex:1951
 #, elixir-autogen, elixir-format
 msgid "How a role is had"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1293
+#: lib/potok_ide_web/domain_copy.ex:1317
 #, elixir-autogen, elixir-format
 msgid "A change of a role names the role."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:793
+#: lib/potok_ide_web/domain_copy.ex:809
 #, elixir-autogen, elixir-format
 msgid "Change of access"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1913
+#: lib/potok_ide_web/domain_copy.ex:1937
 #, elixir-autogen, elixir-format
 msgid "Each <GroupMemberRole>role</GroupMemberRole> given or taken, by an admin, a decision of a <Poll>poll</Poll> or an approved request, each change of a <GroupRole>role</GroupRole> of the statute or of its permissions, a <GroupManifest>manifest</GroupManifest> made or dropped, each setting of a <Group>group</Group> that lets people in, who sees an <GroupAltDescription>alternative description</GroupAltDescription>, and each member admitted, removed, blocked or gone of their own accord, with the roles they held, is written as a <GroupAccessChange>change of access</GroupAccessChange>, in the same step as the change, with who did it. What follows from these by itself, such as members coming into an inheriting sub-group, is not written, nor are invitations. Every member of the group reads the changes, and a <GroupBlock>block</GroupBlock> only those who may remove members."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1911
+#: lib/potok_ide_web/domain_copy.ex:1935
 #, elixir-autogen, elixir-format
 msgid "Every change of access stays on record"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1112
+#: lib/potok_ide_web/domain_copy.ex:1129
 #, elixir-autogen, elixir-format
 msgid "One change of who may do what in a group: a role given or taken, by an admin, a decision of a poll or an approved request, the statute or a setting that lets people in changed, a member admitted, removed, blocked or gone of their own accord, and who did it. It is written in the same transaction as the change. Every member reads it, blocks only those who may remove members, and deleting a profile leaves only that someone did it."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:745
+#: lib/potok_ide_web/domain_copy.ex:761
 #, elixir-autogen, elixir-format
 msgid "Requests, decisions and history"
 msgstr ""
@@ -3403,7 +3404,7 @@ msgid "role it was about"
 msgstr ""
 
 #: lib/potok_ide_web/domain_copy.ex:317
-#: lib/potok_ide_web/domain_copy.ex:324
+#: lib/potok_ide_web/domain_copy.ex:336
 #, elixir-autogen, elixir-format
 msgid "what changed"
 msgstr ""
@@ -3414,7 +3415,8 @@ msgid "what it was, in a few values"
 msgstr ""
 
 #: lib/potok_ide_web/domain_copy.ex:309
-#: lib/potok_ide_web/domain_copy.ex:331
+#: lib/potok_ide_web/domain_copy.ex:330
+#: lib/potok_ide_web/domain_copy.ex:343
 #, elixir-autogen, elixir-format
 msgid "who did it"
 msgstr ""
@@ -3424,67 +3426,67 @@ msgstr ""
 msgid "whom it was done to"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1903
+#: lib/potok_ide_web/domain_copy.ex:1927
 #, elixir-autogen, elixir-format
 msgid "Every member sees who may do what"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1905
+#: lib/potok_ide_web/domain_copy.ex:1929
 #, elixir-autogen, elixir-format
 msgid "The access overview of a <Group>group</Group> tells every member what each <GroupRole>role</GroupRole> of the <GroupManifest>manifest</GroupManifest> lets one do there, and why, also for roles picked together, where a denial wins over what another role allows; and what someone outside a public group, a blocked profile or a guest may. It asks the same rules the group's page does, so it cannot say anything the page does not do. It counts who holds the permissions that act on others from the <GroupMemberRole>roles</GroupMemberRole> people hold, and lists the rules of the things the member sees: <GroupAltDescription>alternative descriptions</GroupAltDescription>, <Poll>polls</Poll>, the collections of apps and the processes. Someone outside a public group sees only what they may do there and how one comes in, with no names. An admin can also open the group's page as the roles picked would see it, as a preview in which nothing changes."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:2165
+#: lib/potok_ide_web/domain_copy.ex:2189
 #, elixir-autogen, elixir-format
 msgid "A <GroupInvitation>group invitation</GroupInvitation> goes from profile to profile. One by email is an <GroupAccountInvitation>account invitation</GroupAccountInvitation>: it goes to whoever holds the address, and the answer to the inviter is the same whether the address has an account or not. The person picks which of their profiles accepts it, or makes a new one, and the inviter sees that profile only then; the first profile, made in the window the email's link opens, goes straight into the group of the oldest one. Either waits 30 days from when it was sent, then lapses. An invitation to a unique <Profile>profile</Profile> can also be accepted by another unique profile of the same <Account>account</Account>, or by a new one made for it, which joins in its place: the invitation then names that profile, and the inviter sees it. A <GroupJoinRequest>join request</GroupJoinRequest> goes the other way, with the roles one would like and, if one wants, why. The group's rule says who decides it: whoever manages requests, who may also put it to a vote, or always a vote. When accepted it is deleted, and an <GroupJoinRequestApproval>approved request</GroupJoinRequestApproval> stays with the name of whoever admitted the member, or the vote that did. An invitation still brings someone in at once. A member leaves of their own accord, unless they are held through the parent, which they leave instead, or are the group's last admin."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1070
+#: lib/potok_ide_web/domain_copy.ex:1087
 #, elixir-autogen, elixir-format
 msgid "A profile invites another profile to a group. Accepting it creates the membership. An invitation to a unique profile can also be accepted by another unique profile of the same account, which it then names. One not accepted within 30 days lapses and is deleted, and the profile can be invited again."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1841
+#: lib/potok_ide_web/domain_copy.ex:1865
 #, elixir-autogen, elixir-format
 msgid "A <Profile>profile</Profile> may tell its first and last name, occupation, place, phone, contact email and links, each a <ProfileField>detail</ProfileField> of its own, and its description. Each says who sees it: only the accounts that hold the profile, members of the <Group>groups</Group> it picks, anyone who is in a group with it, or anyone signed in. A group counts when both are its members, inherited too, except the root, where everyone is, direct conversations, which anyone may open, threads and an app's records. A picked group the profile leaves stops counting. A profile's card shows each viewer only what is theirs to see, and whoever the profile invites into a group, or whoever decides its request to join one, sees it as a member of that group would. Details are read on their own, never with the profile, and go with a deleted account."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:829
+#: lib/potok_ide_web/domain_copy.ex:846
 #, elixir-autogen, elixir-format
 msgid "An account's face in groups: username, picture, description and details. The code does not distinguish purposes such as business, private or club. Everything that happens in a group is signed by a profile, so %{count} of the %{total} foreign keys point at this table. A profile either belongs to one account or several accounts share it. The profile of an app's process belongs to none."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1839
+#: lib/potok_ide_web/domain_copy.ex:1863
 #, elixir-autogen, elixir-format
 msgid "Each detail of a profile has its own audience"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1857
+#: lib/potok_ide_web/domain_copy.ex:1881
 #, elixir-autogen, elixir-format
 msgid "Its person deletes <Account>an account</Account>, in the settings or by a link sent to its address. A <Profile>profile</Profile> only that account used stays as a deleted one, with no name, picture, description or details of theirs, and is left out wherever people are listed, mentioned or invited. Its <Value>values</Value>, <ValueAttachment>files</ValueAttachment>, <Poll>polls</Poll> and <Event>events</Event> stay in the groups, while its <GroupMembership>memberships</GroupMembership>, reactions, <GroupFollow>followings</GroupFollow>, <Tag>tags</Tag> and invitations go. A profile other accounts share stays theirs. A <Group>group</Group> where it is the only admin among people waits until someone else is made one, and one where it is alone goes with it. An account opened by an invitation nobody took up goes after 90 days."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:838
+#: lib/potok_ide_web/domain_copy.ex:855
 #, elixir-autogen, elixir-format
 msgid "One detail of a profile, only while it is filled: first or last name, occupation, place, phone, contact email or links. Each says who sees it: only the accounts that hold the profile, members of the groups it picks, anyone who is in a group with it, or anyone signed in."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1380
+#: lib/potok_ide_web/domain_copy.ex:1404
 #, elixir-autogen, elixir-format
 msgid "Only a description shown to picked groups names groups."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1376
+#: lib/potok_ide_web/domain_copy.ex:1400
 #, elixir-autogen, elixir-format
 msgid "Only a detail shown to picked groups names groups."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:754
+#: lib/potok_ide_web/domain_copy.ex:770
 #, elixir-autogen, elixir-format
 msgid "Profile detail"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1372
+#: lib/potok_ide_web/domain_copy.ex:1396
 #, elixir-autogen, elixir-format
 msgid "The text has 1 to 500 characters."
 msgstr ""
@@ -3519,12 +3521,12 @@ msgstr ""
 msgid "who sees it"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1849
+#: lib/potok_ide_web/domain_copy.ex:1873
 #, elixir-autogen, elixir-format
 msgid "A <Profile>profile</Profile> chooses who may find it: everyone signed in, also among the suggestions when inviting and in a <Tag>tag</Tag>'s list; whoever knows its exact username or is in a <Group>group</Group> with it, as every profile starts; or only whoever is in a group with it, while anyone else invites it by email. The suggestions offer only people the inviter shares a group with and profiles open to everyone, never one <GroupBlock>blocked</GroupBlock> in the group. A hidden name answers as one nobody has, a link that carries only an id opens a direct conversation only with a profile open to everyone or one already talked to, and looking names up counts against the account's limit. The address of a profile's picture is signed, so an id alone shows no one's. On a group's page the group decides instead: whoever it shows there opens."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1847
+#: lib/potok_ide_web/domain_copy.ex:1871
 #, elixir-autogen, elixir-format
 msgid "Who can find a profile"
 msgstr ""
@@ -3539,107 +3541,168 @@ msgstr ""
 msgid "address the inviter typed"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1297
+#: lib/potok_ide_web/domain_copy.ex:1321
 #, elixir-autogen, elixir-format
 msgid "A change that was emptied no longer holds what it was before."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:794
+#: lib/potok_ide_web/domain_copy.ex:811
 #, elixir-autogen, elixir-format
 msgid "Change in a group"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1919
+#: lib/potok_ide_web/domain_copy.ex:1943
 #, elixir-autogen, elixir-format
 msgid "Every change in a group stays on record"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1119
+#: lib/potok_ide_web/domain_copy.ex:1143
 #, elixir-autogen, elixir-format
 msgid "One change of what a group keeps: its description and settings, an app's record, a drawn process, an entity or a field, a poll, an event, a template, a shortcut, a sub-group. The database writes it in the same transaction as the change, with what it was before, so nothing passes it by; the app adds who did it. Of a message, a reaction and a notice it keeps only that it was changed or deleted, never the text. Votes are not followed at all. Members read it by the rules of the thing itself."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1921
+#: lib/potok_ide_web/domain_copy.ex:1945
 #, elixir-autogen, elixir-format
 msgid "The database itself writes a <GroupChange>change in a group</GroupChange> for each thing a <Group>group</Group> keeps that is made, changed or deleted: its own description and settings, <GroupAltDescription>alternative descriptions</GroupAltDescription>, <GroupTemplate>templates</GroupTemplate>, the records of its apps, drawn <AppProcess>processes</AppProcess>, <GroupEntity>entities</GroupEntity> and <GroupField>fields</GroupField>, <Poll>polls</Poll>, <Event>events</Event> and <GroupShortcut>shortcuts</GroupShortcut>, with what it was before, in the same step, whichever way the change came. Who did it and why, a decision of a poll, a step of a process or a deadline, the app adds. Of a <Value>value</Value> in the chat, a <ValueReaction>reaction</ValueReaction> and a <GroupNotice>notice</GroupNotice> only the fact stays: who changed or deleted it and when, never the text or the emoji. A <PollBallot>ballot</PollBallot>, the number of votes and the secret part of an app's config are never written, nor is a group's picture, and the author of an anonymous record stays one. Changes one person makes to the same description, process or config within five minutes are one change. Members read it by the rules of the thing today and by those of that time: whoever did not see an alternative description then does not see what it was. Direct conversations keep no history. It starts with the first change after it was introduced, and goes with the group."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:337
+#: lib/potok_ide_web/domain_copy.ex:349
 #, elixir-autogen, elixir-format
 msgid "collection"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:335
+#: lib/potok_ide_web/domain_copy.ex:347
 #, elixir-autogen, elixir-format
 msgid "description of the app"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:356
+#: lib/potok_ide_web/domain_copy.ex:368
 #, elixir-autogen, elixir-format
 msgid "emptied at"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:323
+#: lib/potok_ide_web/domain_copy.ex:335
 #, elixir-autogen, elixir-format
 msgid "kind of thing"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:354
+#: lib/potok_ide_web/domain_copy.ex:366
 #, elixir-autogen, elixir-format
 msgid "last change of the burst at"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:327
+#: lib/potok_ide_web/domain_copy.ex:339
 #, elixir-autogen, elixir-format
 msgid "made, changed or deleted"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:343
+#: lib/potok_ide_web/domain_copy.ex:355
 #, elixir-autogen, elixir-format
 msgid "roles that saw it before"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:346
+#: lib/potok_ide_web/domain_copy.ex:358
 #, elixir-autogen, elixir-format
 msgid "roles that see it after"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:349
+#: lib/potok_ide_web/domain_copy.ex:361
 #, elixir-autogen, elixir-format
 msgid "the act it is part of"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:340
+#: lib/potok_ide_web/domain_copy.ex:352
 #, elixir-autogen, elixir-format
 msgid "the author is not shown"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:348
+#: lib/potok_ide_web/domain_copy.ex:360
 #, elixir-autogen, elixir-format
 msgid "what it came of"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:330
+#: lib/potok_ide_web/domain_copy.ex:342
 #, elixir-autogen, elixir-format
 msgid "what it was before"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:329
+#: lib/potok_ide_web/domain_copy.ex:341
 #, elixir-autogen, elixir-format
 msgid "what of it changed"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:351
+#: lib/potok_ide_web/domain_copy.ex:333
+#: lib/potok_ide_web/domain_copy.ex:363
 #, elixir-autogen, elixir-format
 msgid "when"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:357
+#: lib/potok_ide_web/domain_copy.ex:373
 #, elixir-autogen, elixir-format
 msgid "who emptied it"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:350
+#: lib/potok_ide_web/domain_copy.ex:362
 #, elixir-autogen, elixir-format
 msgid "stands for the act"
+msgstr ""
+
+#: lib/potok_ide_web/domain_copy.ex:1136
+#, elixir-autogen, elixir-format
+msgid "One thing a run of a process did: it started, passed a step, waited, was answered by a person, woke, failed, was taken up again, was cancelled or ended, and when. The database writes it as the run moves. It keeps the step's name as it was drawn then, and for 30 days what the step made of the run's variables. A run goes with its value; its trace stays with the group."
+msgstr ""
+
+#: lib/potok_ide_web/domain_copy.ex:810
+#, elixir-autogen, elixir-format
+msgid "Step of a run"
+msgstr ""
+
+#: lib/potok_ide_web/domain_copy.ex:329
+#, elixir-autogen, elixir-format
+msgid "how it went"
+msgstr ""
+
+#: lib/potok_ide_web/domain_copy.ex:332
+#, elixir-autogen, elixir-format
+msgid "how many times"
+msgstr ""
+
+#: lib/potok_ide_web/domain_copy.ex:334
+#, elixir-autogen, elixir-format
+msgid "last time at"
+msgstr ""
+
+#: lib/potok_ide_web/domain_copy.ex:323
+#, elixir-autogen, elixir-format
+msgid "run of a process"
+msgstr ""
+
+#: lib/potok_ide_web/domain_copy.ex:326
+#, elixir-autogen, elixir-format
+msgid "step"
+msgstr ""
+
+#: lib/potok_ide_web/domain_copy.ex:331
+#, elixir-autogen, elixir-format
+msgid "variables it changed"
+msgstr ""
+
+#: lib/potok_ide_web/domain_copy.ex:325
+#, elixir-autogen, elixir-format
+msgid "what it did"
+msgstr ""
+
+#: lib/potok_ide_web/domain_copy.ex:328
+#, elixir-autogen, elixir-format
+msgid "what kind of step"
+msgstr ""
+
+#: lib/potok_ide_web/domain_copy.ex:327
+#, elixir-autogen, elixir-format
+msgid "what the step was called"
+msgstr ""
+
+#: lib/potok_ide_web/domain_copy.ex:371
+#, elixir-autogen, elixir-format
+msgid "whether a poll ended"
 msgstr ""

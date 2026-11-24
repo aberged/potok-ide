@@ -142,14 +142,13 @@ defmodule PotokIdeWeb.GroupLive.Show.HistoryTab do
                   <span :if={entry.emptied?}>{gettext("old version emptied")}</span>
                 </p>
               </div>
-              <.link
+              <.icon_button
                 :if={entry.message_path}
                 id={"#{dom_id}-message"}
                 navigate={entry.message_path}
-                class="btn btn-ghost btn-xs rounded-full"
-              >
-                {gettext("Message")}
-              </.link>
+                icon="hero-chat-bubble-left-ellipsis"
+                label={gettext("Message")}
+              />
               <.icon_button
                 :if={entry.opens?}
                 id={"#{dom_id}-open"}

@@ -669,12 +669,14 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   end
 
   defp run(method, params, socket) when method in ["retry_process", "cancel_process"] do
-    %{group: group, active_alt_description: alt, access: access} = socket.assigns
-    act = if method == "retry_process", do: &Processes.retry/4, else: &Processes.cancel/4
+    %{group: group, active_alt_description: alt, access: access, current_profile: profile} =
+      socket.assigns
+
+    act = if method == "retry_process", do: &Processes.retry/5, else: &Processes.cancel/5
 
     with {:ok, id} <- id_param(params),
          {:ok, socket} <- take_write_token(socket) do
-      case act.(group, alt, access, id) do
+      case act.(group, alt, access, id, profile) do
         {:ok, process} -> {%{ok: true, process: process}, socket}
         {:error, reason} -> {data_error(reason), socket}
       end

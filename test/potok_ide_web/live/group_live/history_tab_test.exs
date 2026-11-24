@@ -389,6 +389,67 @@ defmodule PotokIdeWeb.GroupLive.HistoryTabTest do
     end
   end
 
+  test "what the runs of a process did, from the Processes tab", ctx do
+    alias PotokIde.Processes.Engine
+    alias PotokIde.Social.DrawnProcesses
+
+    {:ok, process} =
+      DrawnProcesses.create(ctx.owner, ctx.group, %{
+        "name" => "Prijava",
+        "graph" => %{
+          "v" => 2,
+          "nodes" => [
+            %{"id" => "start", "type" => "startEvent"},
+            %{
+              "id" => "odluka",
+              "type" => "userTask",
+              "label" => "Savet odlučuje",
+              "role" => "everyone",
+              "outcomes" => ["odobri", "odbij"]
+            },
+            %{"id" => "kraj", "type" => "endEvent", "label" => "Gotovo"}
+          ],
+          "flows" => [
+            %{"from" => "start", "to" => "odluka"},
+            %{"from" => "odluka", "to" => "kraj", "outcome" => "odobri"},
+            %{"from" => "odluka", "to" => "kraj", "outcome" => "odbij"}
+          ]
+        },
+        "trigger" => "manual",
+        "trigger_config" => %{"roles" => ["everyone"]}
+      })
+
+    {:ok, _} = DrawnProcesses.activate(ctx.owner, ctx.group, process.id)
+
+    {:ok, run} =
+      DrawnProcesses.start(ctx.member, ctx.group, process.id, %{"title" => "T", "text" => ""})
+
+    Engine.run(run.id)
+    {:ok, _} = Engine.complete_task(ctx.member, run.id, "odluka", "odobri")
+    Engine.run(run.id)
+
+    path = "/groups/#{ctx.group.id}/processes"
+    {:ok, lv, _html} = build_conn() |> log_in_account(ctx.owner_account) |> live(path)
+    lv |> element("#process-row-#{process.id}-runs") |> render_click()
+    assert has_element?(lv, "#process-run-#{run.id}", "Gotovo")
+    lv |> element("#process-run-#{run.id}-open") |> render_click()
+    assert has_element?(lv, "#process-run-#{run.id}-events", "odobri")
+    assert has_element?(lv, "#process-run-#{run.id}-events", ctx.member.username)
+    lv |> element("#process-run-#{run.id}-open") |> render_click()
+    refute has_element?(lv, "#process-run-#{run.id}-events")
+    lv |> element("#process-runs-close") |> render_click()
+    refute has_element?(lv, "#process-runs-dialog")
+
+    # A member who had no part in it.
+    {account, late} = account_with_profile!("ht-late#{unique()}")
+    add_member!(ctx.owner, ctx.group, late)
+    {:ok, lv, _html} = build_conn() |> log_in_account(account) |> live(path)
+    lv |> element("#process-row-#{process.id}-runs") |> render_click()
+    assert has_element?(lv, "#process-runs-empty")
+    render_hook(lv, "processes_run_open", %{"id" => run.id})
+    refute render(lv) =~ "odobri"
+  end
+
   describe "the group as it was" do
     # What happened so far moves an hour back; the minute half an hour ago
     # stands between it and what comes next.
