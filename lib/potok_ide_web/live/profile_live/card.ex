@@ -38,7 +38,19 @@ defmodule PotokIdeWeb.ProfileLive.Card do
           </section>
 
           <section
-            :if={!@card}
+            :if={@loading?}
+            id="profile-card-loading"
+            class="rounded-3xl border border-base-300/70 bg-base-100 p-5 shadow-sm sm:p-6"
+            aria-hidden="true"
+          >
+            <div class="flex items-center gap-3">
+              <div class="size-16 shrink-0 animate-pulse rounded-full bg-base-200"></div>
+              <div class="h-5 w-32 animate-pulse rounded-full bg-base-200"></div>
+            </div>
+          </section>
+
+          <section
+            :if={!@card and !@loading?}
             id="profile-card-missing"
             class="rounded-3xl border border-dashed border-base-300 bg-base-100/70 p-6 text-center"
           >
@@ -58,20 +70,21 @@ defmodule PotokIdeWeb.ProfileLive.Card do
   def mount(%{"username" => username}, _session, socket) do
     socket = assign(socket, :page_title, username)
 
-    # The lookup counts once, on the page that stays.
+    # The lookup counts once, on the page that stays. The first HTML looks
+    # nothing up, or plain requests would try names without any limit.
     if connected?(socket) do
       case RateLimit.hit(:profile_lookup, socket.assigns.current_scope.account.id) do
         :ok ->
-          {:ok, assign(socket, :card, load_card(socket, username))}
+          {:ok, assign(socket, card: load_card(socket, username), loading?: false)}
 
         {:error, :rate_limited, retry_after} ->
           {:ok,
            socket
-           |> assign(:card, nil)
+           |> assign(card: nil, loading?: false)
            |> put_flash(:error, RateLimited.message(retry_after))}
       end
     else
-      {:ok, assign(socket, :card, load_card(socket, username))}
+      {:ok, assign(socket, card: nil, loading?: true)}
     end
   end
 

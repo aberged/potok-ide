@@ -72,6 +72,22 @@ defmodule PotokIdeWeb.GroupLive.InviteDiscoveryTest do
     assert render(lv) =~ "Too many requests"
   end
 
+  test "the first HTML of a card tells nothing, as only the live page is counted",
+       %{conn: conn} = ctx do
+    {_account, known} = account_with_profile!(unique("poznat"))
+    conn = log_in_account(conn, Accounts.get_account!(ctx.account.id))
+
+    known_html = conn |> get(~p"/u/#{known.username}") |> html_response(200)
+    unknown_html = conn |> get(~p"/u/niko-nema-ovo") |> html_response(200)
+
+    for html <- [known_html, unknown_html] do
+      document = LazyHTML.from_document(html)
+      assert Enum.empty?(LazyHTML.query(document, "#profile-card"))
+      assert Enum.empty?(LazyHTML.query(document, "#profile-card-missing"))
+      assert Enum.count(LazyHTML.query(document, "#profile-card-loading")) == 1
+    end
+  end
+
   test "the card of a hidden profile is not found, a findable one opens", %{conn: conn} = ctx do
     {_account, hidden} = account_with_profile!(unique("skriven"))
     {_account, known} = account_with_profile!(unique("poznat"))

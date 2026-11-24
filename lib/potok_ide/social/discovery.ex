@@ -11,8 +11,9 @@ defmodule PotokIde.Social.Discovery do
 
   A shared group, or a relation that counts as one, is the one of
   `PotokIde.Social.ProfileFacts`; the profile's own accounts always find it.
-  A refusal looks exactly like a profile that is not there, so nobody learns
-  that a hidden name exists.
+  A refusal looks exactly like a profile that is not there, so looking a name
+  up never tells that a hidden one exists. Making a profile still says that a
+  name is taken, as usernames are unique.
 
   How the viewer came to the profile (`via`) decides what counts:
 
