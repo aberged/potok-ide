@@ -114,6 +114,15 @@ defmodule PotokIdeWeb.AccountLive.SettingsTest do
     end
   end
 
+  # Accounts of the fixtures get emails of their own.
+  defp empty_mailbox do
+    receive do
+      {:email, _email} -> empty_mailbox()
+    after
+      0 -> :ok
+    end
+  end
+
   describe "update email form" do
     setup %{conn: conn} do
       {conn, account} = conn_with_current_profile(conn)
@@ -134,6 +143,37 @@ defmodule PotokIdeWeb.AccountLive.SettingsTest do
 
       assert result =~ "A link to confirm your email"
       assert Accounts.get_account_by_email(account.email)
+    end
+
+    test "the answer does not tell whether the address has an account", %{
+      conn: conn,
+      account: account
+    } do
+      taken = account_fixture()
+      empty_mailbox()
+
+      answers =
+        for email <- [taken.email, String.upcase(taken.email), unique_account_email()] do
+          {:ok, lv, _html} = live(conn, ~p"/accounts/settings")
+
+          html = render_hook(lv, "update_email", %{"account" => %{"email" => email}})
+
+          refute html =~ "has already been taken"
+          assert_received {:email, %Swoosh.Email{to: [{"", ^email}], subject: subject}}
+          {lv |> element("#flash-info p") |> render(), subject}
+        end
+
+      assert [answer, answer, answer] = answers
+      assert Accounts.get_account!(account.id).email == account.email
+    end
+
+    test "the account's own address is no change", %{conn: conn, account: account} do
+      {:ok, lv, _html} = live(conn, ~p"/accounts/settings")
+
+      assert render_hook(lv, "update_email", %{"account" => %{"email" => account.email}}) =~
+               "did not change"
+
+      refute has_element?(lv, "#flash-info")
     end
 
     test "shows an error when the confirmation email cannot be sent", %{conn: conn} do
@@ -267,6 +307,27 @@ defmodule PotokIdeWeb.AccountLive.SettingsTest do
       assert {:live_redirect, %{to: path, flash: flash}} = redirect
       assert path == ~p"/accounts/settings"
       assert %{"error" => message} = flash
+      assert message == "Email change link is invalid or it has expired."
+    end
+
+    test "whoever reads the mailbox learns that it has an account of its own", %{
+      conn: conn,
+      account: account,
+      token: token,
+      email: email
+    } do
+      other = account_fixture(%{email: email})
+
+      {:error, redirect} = live(conn, ~p"/accounts/settings/confirm-email/#{token}")
+
+      assert {:live_redirect, %{flash: %{"error" => message}}} = redirect
+      assert message =~ "That address has an account of its own"
+      assert Accounts.get_account!(account.id).email == account.email
+      assert Accounts.get_account!(other.id).email == email
+
+      # A link that was made up tells nothing of the kind.
+      {:error, redirect} = live(conn, ~p"/accounts/settings/confirm-email/oops")
+      assert {:live_redirect, %{flash: %{"error" => message}}} = redirect
       assert message == "Email change link is invalid or it has expired."
     end
 

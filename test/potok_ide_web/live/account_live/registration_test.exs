@@ -25,6 +25,15 @@ defmodule PotokIdeWeb.AccountLive.RegistrationTest do
     {log_in_account(conn, account), profile}
   end
 
+  # Accounts of the fixtures get emails of their own.
+  defp empty_mailbox do
+    receive do
+      {:email, _email} -> empty_mailbox()
+    after
+      0 -> :ok
+    end
+  end
+
   describe "Registration page" do
     test "redirects unauthenticated accounts to log in", %{conn: conn} do
       assert {:error, {:redirect, %{to: "/accounts/log-in"}}} = live(conn, ~p"/accounts/register")
@@ -118,6 +127,7 @@ defmodule PotokIdeWeb.AccountLive.RegistrationTest do
     test "the answer does not tell whether the address has an account", %{conn: conn} do
       {conn, _profile} = conn_with_current_profile(conn)
       taken = account_fixture(%{email: "test@email.com"})
+      empty_mailbox()
 
       answers =
         for email <- [taken.email, unique_account_email()] do
@@ -129,7 +139,8 @@ defmodule PotokIdeWeb.AccountLive.RegistrationTest do
             |> render_submit()
 
           refute html =~ "has already been taken"
-          assert_received {:email, %Swoosh.Email{to: [{"", ^email}]}}
+          assert_received {:email, %Swoosh.Email{to: [{"", ^email}], subject: subject}}
+          assert subject =~ "@invite-owner invites you to Potok"
           lv |> element("#flash-info p") |> render() |> String.replace(email, "EMAIL")
         end
 

@@ -16,7 +16,7 @@ msgstr ""
 msgid "(none)"
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:729
+#: lib/potok_ide_web/live/account_live/settings.ex:744
 #, elixir-autogen, elixir-format
 msgid "A link to confirm your email change has been sent to the new address."
 msgstr ""
@@ -161,7 +161,7 @@ msgstr ""
 msgid "Email"
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:527
+#: lib/potok_ide_web/live/account_live/settings.ex:536
 #, elixir-autogen, elixir-format
 msgid "Email change link is invalid or it has expired."
 msgstr ""
@@ -1492,7 +1492,7 @@ msgstr ""
 msgid "Load more created requests"
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:773
+#: lib/potok_ide_web/live/account_live/settings.ex:788
 #, elixir-autogen, elixir-format
 msgid "Never"
 msgstr ""
@@ -1513,13 +1513,13 @@ msgstr ""
 msgid "No data values to delete."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:761
+#: lib/potok_ide_web/live/account_live/settings.ex:776
 #, elixir-autogen, elixir-format
 msgid "No identifier"
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:716
-#: lib/potok_ide_web/live/account_live/settings.ex:740
+#: lib/potok_ide_web/live/account_live/settings.ex:731
+#: lib/potok_ide_web/live/account_live/settings.ex:755
 #, elixir-autogen, elixir-format
 msgid "We couldn't send the confirmation email right now. Please try again later."
 msgstr ""
@@ -1539,8 +1539,8 @@ msgstr ""
 msgid "No sub-groups match your search."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:766
-#: lib/potok_ide_web/live/account_live/settings.ex:771
+#: lib/potok_ide_web/live/account_live/settings.ex:781
+#: lib/potok_ide_web/live/account_live/settings.ex:786
 #: lib/potok_ide_web/live/group_live/show/roles_tab.ex:419
 #, elixir-autogen, elixir-format
 msgid "Not set"
@@ -1607,7 +1607,7 @@ msgstr ""
 msgid "Stored Push Subscriptions"
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:755
+#: lib/potok_ide_web/live/account_live/settings.ex:770
 #, elixir-autogen, elixir-format
 msgid "Unknown"
 msgstr ""
@@ -4331,32 +4331,32 @@ msgstr ""
 msgid "Back to Potok"
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:790
+#: lib/potok_ide_web/live/account_live/settings.ex:805
 #, elixir-autogen, elixir-format
 msgid "Browser permission for notifications is blocked."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:792
+#: lib/potok_ide_web/live/account_live/settings.ex:807
 #, elixir-autogen, elixir-format
 msgid "Device notification permission is blocked."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:795
+#: lib/potok_ide_web/live/account_live/settings.ex:810
 #, elixir-autogen, elixir-format
 msgid "Enable notifications before sending a test push."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:799
+#: lib/potok_ide_web/live/account_live/settings.ex:814
 #, elixir-autogen, elixir-format
 msgid "FCM is unavailable on this device right now. Ensure Google Play services are installed and updated, verify network access to Google services, then try again."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:802
+#: lib/potok_ide_web/live/account_live/settings.ex:817
 #, elixir-autogen, elixir-format
 msgid "Finishing iPhone notification registration..."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:808
+#: lib/potok_ide_web/live/account_live/settings.ex:823
 #, elixir-autogen, elixir-format
 msgid "Google Play services are missing or outdated on this device, so push registration cannot complete."
 msgstr ""
@@ -4376,7 +4376,7 @@ msgstr ""
 msgid "Missing push subscription payload."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:804
+#: lib/potok_ide_web/live/account_live/settings.ex:819
 #, elixir-autogen, elixir-format
 msgid "Native push notifications are unavailable in this app session."
 msgstr ""
@@ -4386,37 +4386,37 @@ msgstr ""
 msgid "No saved push subscription was found for this account."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:806
+#: lib/potok_ide_web/live/account_live/settings.ex:821
 #, elixir-autogen, elixir-format
 msgid "Notification permission was not granted."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:816
+#: lib/potok_ide_web/live/account_live/settings.ex:831
 #, elixir-autogen, elixir-format
 msgid "Push notification request failed."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:821
+#: lib/potok_ide_web/live/account_live/settings.ex:836
 #, elixir-autogen, elixir-format
 msgid "Push notifications are active on this device but Potok could not save the token."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:793
+#: lib/potok_ide_web/live/account_live/settings.ex:808
 #, elixir-autogen, elixir-format
 msgid "Push notifications are disabled for this browser."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:794
+#: lib/potok_ide_web/live/account_live/settings.ex:809
 #, elixir-autogen, elixir-format
 msgid "Push notifications are disabled for this device."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:797
+#: lib/potok_ide_web/live/account_live/settings.ex:812
 #, elixir-autogen, elixir-format
 msgid "Push notifications are enabled."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:805
+#: lib/potok_ide_web/live/account_live/settings.ex:820
 #, elixir-autogen, elixir-format
 msgid "Push notifications are not configured on this server yet."
 msgstr ""
@@ -4426,52 +4426,52 @@ msgstr ""
 msgid "Push notifications are not configured on this server."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:791
+#: lib/potok_ide_web/live/account_live/settings.ex:806
 #, elixir-autogen, elixir-format
 msgid "Push notifications are unavailable in this browser session."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:819
+#: lib/potok_ide_web/live/account_live/settings.ex:834
 #, elixir-autogen, elixir-format
 msgid "Push notifications require HTTPS or localhost."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:811
+#: lib/potok_ide_web/live/account_live/settings.ex:826
 #, elixir-autogen, elixir-format
 msgid "Refreshing device notification token..."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:815
+#: lib/potok_ide_web/live/account_live/settings.ex:830
 #, elixir-autogen, elixir-format
 msgid "Removing device notification token..."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:814
+#: lib/potok_ide_web/live/account_live/settings.ex:829
 #, elixir-autogen, elixir-format
 msgid "Removing push subscription..."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:817
+#: lib/potok_ide_web/live/account_live/settings.ex:832
 #, elixir-autogen, elixir-format
 msgid "Requesting device notification permission..."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:818
+#: lib/potok_ide_web/live/account_live/settings.ex:833
 #, elixir-autogen, elixir-format
 msgid "Requesting notification permission..."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:824
+#: lib/potok_ide_web/live/account_live/settings.ex:839
 #, elixir-autogen, elixir-format
 msgid "Sending test notification..."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:827
+#: lib/potok_ide_web/live/account_live/settings.ex:842
 #, elixir-autogen, elixir-format
 msgid "Test notification sent. Background the app if Android suppresses foreground banners."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:831
+#: lib/potok_ide_web/live/account_live/settings.ex:846
 #, elixir-autogen, elixir-format
 msgid "Test notification sent. Minimize the app if the browser suppresses foreground notifications."
 msgstr ""
@@ -4481,27 +4481,27 @@ msgstr ""
 msgid "The saved push subscription expired and has been removed."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:834
+#: lib/potok_ide_web/live/account_live/settings.ex:849
 #, elixir-autogen, elixir-format
 msgid "This browser does not support Web Push notifications."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:796
+#: lib/potok_ide_web/live/account_live/settings.ex:811
 #, elixir-autogen, elixir-format
 msgid "Unable to enable push notifications."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:812
+#: lib/potok_ide_web/live/account_live/settings.ex:827
 #, elixir-autogen, elixir-format
 msgid "Unable to register this device for push notifications."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:813
+#: lib/potok_ide_web/live/account_live/settings.ex:828
 #, elixir-autogen, elixir-format
 msgid "Unable to remove the push subscription."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:825
+#: lib/potok_ide_web/live/account_live/settings.ex:840
 #, elixir-autogen, elixir-format
 msgid "Unable to send the test notification."
 msgstr ""
@@ -9753,7 +9753,7 @@ msgstr ""
 msgid "A group never loses its last admin, so the account can't be deleted until then."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:700
+#: lib/potok_ide_web/live/account_live/settings.ex:715
 #, elixir-autogen, elixir-format
 msgid "A link that deletes the account is on its way to %{email}. It works for an hour."
 msgstr ""
@@ -9923,7 +9923,7 @@ msgstr[1] ""
 msgid "This address no longer has an account."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:661
+#: lib/potok_ide_web/live/account_live/settings.ex:676
 #, elixir-autogen, elixir-format
 msgid "This is not the address of the account."
 msgstr ""
@@ -12951,4 +12951,9 @@ msgstr ""
 #: lib/potok_ide_web/emails/account_emails.ex:201
 #, elixir-autogen, elixir-format
 msgid "You choose the profile you join with, and @%{username} sees it only once you accept."
+msgstr ""
+
+#: lib/potok_ide_web/live/account_live/settings.ex:530
+#, elixir-autogen, elixir-format
+msgid "That address has an account of its own, so this one stays on its old address."
 msgstr ""

@@ -377,6 +377,8 @@ defmodule PotokIde.Accounts do
   Updates the account email using the given token.
 
   If the token matches, the account email is updated and the token is deleted.
+  Returns `{:error, :taken}` when another account has the address: whoever
+  holds the link reads that mailbox, so it is theirs to know.
   """
   def update_account_email(account, token) do
     context = "change:#{account.email}"
@@ -384,6 +386,7 @@ defmodule PotokIde.Accounts do
     Repo.transact(fn ->
       with {:ok, query} <- AccountToken.verify_change_email_token_query(token, context),
            %AccountToken{sent_to: email} <- Repo.one(query),
+           :ok <- free_address(account, email),
            {:ok, account} <- Repo.update(Account.email_changeset(account, %{email: email})),
            {_count, _result} <-
              Repo.delete_all(
@@ -391,9 +394,17 @@ defmodule PotokIde.Accounts do
              ) do
         {:ok, account}
       else
+        {:error, :taken} -> {:error, :taken}
         _ -> {:error, :transaction_aborted}
       end
     end)
+  end
+
+  defp free_address(%Account{id: id}, email) do
+    case get_account_by_email(email) do
+      %Account{id: other_id} when other_id != id -> {:error, :taken}
+      _own_or_none -> :ok
+    end
   end
 
   @doc """

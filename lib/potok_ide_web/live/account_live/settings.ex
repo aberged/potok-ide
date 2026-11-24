@@ -523,6 +523,15 @@ defmodule PotokIdeWeb.AccountLive.Settings do
         {:ok, _account} ->
           put_flash(socket, :info, gettext("Email changed successfully."))
 
+        {:error, :taken} ->
+          put_flash(
+            socket,
+            :error,
+            gettext(
+              "That address has an account of its own, so this one stays on its old address."
+            )
+          )
+
         {:error, _} ->
           put_flash(socket, :error, gettext("Email change link is invalid or it has expired."))
       end
@@ -570,7 +579,13 @@ defmodule PotokIdeWeb.AccountLive.Settings do
     account = socket.assigns.current_scope.account
     true = Accounts.sudo_mode?(account)
 
-    changeset = Accounts.change_account_email(account, account_params)
+    # Whether another account has the address is said only to whoever opens
+    # the link sent there (`Accounts.update_account_email/2`).
+    changeset =
+      Accounts.change_account_email(account, account_params,
+        validate_unique: false,
+        validate_changed: true
+      )
 
     with true <- changeset.valid?,
          :ok <- RateLimit.hit(:email_change, account.id) do
