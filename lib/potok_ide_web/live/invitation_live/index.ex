@@ -3,7 +3,7 @@ defmodule PotokIdeWeb.InvitationLive.Index do
 
   alias PotokIde.Accounts
   alias PotokIde.Social
-  alias PotokIde.Social.GroupInvitation
+  alias PotokIde.Social.{EmailInvitations, GroupAccountInvitation, GroupInvitation}
   alias PotokIde.Social.Profile
   alias PotokIdeWeb.ProfileAuth
   alias PotokIdeWeb.GroupLive.Show.Components
@@ -39,7 +39,9 @@ defmodule PotokIdeWeb.InvitationLive.Index do
         <.page_header id="invitations-header" icon="hero-inbox-arrow-down">
           {gettext("Invitations")}
           <:subtitle>
-            {gettext("Received and sent group invitations for your current profile.")}
+            {gettext(
+              "Group invitations your current profile got and sent, and those that reached your account by email."
+            )}
           </:subtitle>
         </.page_header>
 
@@ -51,8 +53,8 @@ defmodule PotokIdeWeb.InvitationLive.Index do
           tab_id_prefix="invitations-tab"
           counts={
             %{
-              "received" => @invitations_pagination.total_count,
-              "sent" => @sent_invitations_pagination.total_count
+              "received" => @invitations_pagination.total_count + length(@account_invitations),
+              "sent" => @sent_invitations_pagination.total_count + length(@sent_by_email)
             }
           }
         />
@@ -61,7 +63,8 @@ defmodule PotokIdeWeb.InvitationLive.Index do
         <.form
           :if={
             @invitations_pagination.total_count > 0 or
-              @sent_invitations_pagination.total_count > 0 or @invitations_search_query != ""
+              @sent_invitations_pagination.total_count > 0 or @invitations_search_query != "" or
+              @account_invitations != [] or @sent_by_email != []
           }
           for={@invitation_search_form}
           id="invitation-search-form"
@@ -84,11 +87,94 @@ defmodule PotokIdeWeb.InvitationLive.Index do
           active={@section == "received"}
           icon="hero-inbox-arrow-down"
           title={gettext("Invitations for me")}
-          subtitle={gettext("Invitations addressed to your current profile.")}
+          subtitle={gettext("To your account by email, or to your current profile.")}
         >
           <div :if={@section == "received"} class="space-y-4">
+            <section
+              :if={@account_invitations != []}
+              id="account-invitations"
+              class="space-y-3"
+            >
+              <h3 class="flex items-center gap-2 text-sm font-semibold text-base-content/80">
+                <.icon name="hero-envelope" class="size-4" />
+                {gettext("For your account")}
+              </h3>
+              <p class="text-xs text-base-content/65">
+                {gettext(
+                  "Invited by email: you choose the profile you join with, and the inviter sees it only then."
+                )}
+              </p>
+              <div
+                :for={inv <- @account_invitations}
+                id={"account-invitation-#{inv.id}"}
+                class="card rounded-2xl border border-primary/25 bg-primary/5"
+              >
+                <div class="card-body relative mb-0 p-3">
+                  <Components.group_identity
+                    group={inv.group}
+                    current_profile={@current_profile}
+                    avatar_size="size-12"
+                    text_class="text-sm"
+                    highlight_query={@invitations_search_query}
+                  />
+                  <div class="text-sm text-base-content/70">
+                    {gettext("Invited by:")}
+                    <.link
+                      id={"account-invitation-inviter-#{inv.id}"}
+                      navigate={~p"/u/#{inv.inviter.username}"}
+                      class="font-semibold underline-offset-2 transition-colors hover:text-primary hover:underline"
+                    >
+                      {inv.inviter.username}
+                    </.link>
+                    <Components.local_time
+                      id={"account-invitation-inserted-at-#{inv.id}"}
+                      datetime={inv.inserted_at}
+                      class="text-xs font-thin italic"
+                    />
+                  </div>
+                  <p
+                    id={"account-invitation-expires-#{inv.id}"}
+                    class="mt-1 text-xs text-base-content/60"
+                  >
+                    {valid_for(inv)}
+                  </p>
+                  <div class="mt-2 flex flex-wrap gap-2">
+                    <.button
+                      id={"account-invitation-accept-#{inv.id}"}
+                      phx-click="account_invitation_accept"
+                      phx-value-id={inv.id}
+                      variant="success"
+                      size="sm"
+                    >
+                      {gettext("Join as @%{username}", username: @current_profile.username)}
+                    </.button>
+                    <.button
+                      id={"account-invitation-accept-as-#{inv.id}"}
+                      phx-click="account_invitation_accept_as"
+                      phx-value-id={inv.id}
+                      variant="secondary"
+                      size="sm"
+                    >
+                      <.icon name="hero-arrows-right-left" class="size-4" />
+                      {gettext("Another profile")}
+                    </.button>
+                  </div>
+                  <.icon_button
+                    id={"account-invitation-delete-#{inv.id}"}
+                    phx-click="account_invitation_delete"
+                    phx-value-id={inv.id}
+                    data-confirm={gettext("Are you sure you want to delete this invitation?")}
+                    icon="hero-trash"
+                    label={gettext("Delete")}
+                    variant="danger"
+                    class="absolute right-0"
+                  />
+                </div>
+              </div>
+            </section>
+
             <div
-              :if={@invitations_pagination.total_count == 0}
+              :if={@invitations_pagination.total_count == 0 and @account_invitations == []}
               class="rounded-2xl border border-base-300/60 bg-base-100/70 px-4 py-3 text-sm text-base-content/70"
             >
               {if String.trim(@invitations_search_query) == "",
@@ -215,8 +301,46 @@ defmodule PotokIdeWeb.InvitationLive.Index do
           subtitle={gettext("Invitations your current profile has sent to other profiles.")}
         >
           <div :if={@section == "sent"} class="space-y-4">
+            <section :if={@sent_by_email != []} id="sent-by-email" class="space-y-3">
+              <h3 class="flex items-center gap-2 text-sm font-semibold text-base-content/80">
+                <.icon name="hero-envelope" class="size-4" />
+                {gettext("Sent by email")}
+              </h3>
+              <div
+                :for={inv <- @sent_by_email}
+                id={"sent-by-email-#{inv.id}"}
+                class="card rounded-2xl border border-base-300/70 bg-base-100/80"
+              >
+                <div class="card-body p-3">
+                  <Components.group_identity
+                    group={inv.group}
+                    current_profile={@current_profile}
+                    avatar_size="size-12"
+                    text_class="text-sm"
+                    highlight_query={@invitations_search_query}
+                  />
+                  <div class="text-sm text-base-content/70">
+                    {gettext("Invited:")}
+                    <span class="font-semibold">{inv.email || gettext("an address")}</span>
+                  </div>
+                  <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-base-content/70">
+                    <span class="inline-flex items-center rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-amber-800 dark:text-amber-200">
+                      {gettext("Pending")}
+                    </span>
+                    <span>{gettext("Sent on")}</span>
+                    <Components.local_time
+                      id={"sent-by-email-timestamp-#{inv.id}"}
+                      datetime={inv.inserted_at}
+                      class="text-xs font-thin italic"
+                    />
+                  </div>
+                  <p class="mt-1 text-xs text-base-content/60">{valid_for(inv)}</p>
+                </div>
+              </div>
+            </section>
+
             <div
-              :if={@sent_invitations_pagination.total_count == 0}
+              :if={@sent_invitations_pagination.total_count == 0 and @sent_by_email == []}
               class="rounded-2xl border border-base-300/60 bg-base-100/70 px-4 py-3 text-sm text-base-content/70"
             >
               {if String.trim(@invitations_search_query) == "",
@@ -332,6 +456,8 @@ defmodule PotokIdeWeb.InvitationLive.Index do
       |> assign(:visible_invitations, [])
       |> assign(:visible_sent_invitations, [])
       |> assign(:accept_as, nil)
+      |> assign(:account_invitations, [])
+      |> assign(:sent_by_email, [])
       |> assign(:new_profile_form, nil)
       |> stream(:invitations, [], reset: true)
       |> stream(:sent_invitations, [], reset: true)
@@ -489,6 +615,51 @@ defmodule PotokIdeWeb.InvitationLive.Index do
     end
   end
 
+  # An invitation to the account: the current profile joins, or the person
+  # picks another profile, or makes one, in the same window as above.
+  def handle_event("account_invitation_accept", %{"id" => id}, socket) do
+    account = socket.assigns.current_scope.account
+    profile = socket.assigns.current_profile
+
+    with %GroupAccountInvitation{} = invitation <- account_invitation(socket, id),
+         {:ok, group} <- EmailInvitations.accept(account, invitation, profile) do
+      {:noreply, enter_group_as(socket, profile, group)}
+    else
+      {:error, reason} -> {:noreply, accept_as_failed(socket, reason)}
+      nil -> {:noreply, accept_as_failed(socket, :expired)}
+    end
+  end
+
+  def handle_event("account_invitation_accept_as", %{"id" => id}, socket) do
+    case account_invitation(socket, id) do
+      %GroupAccountInvitation{} = invitation ->
+        choices = EmailInvitations.choices(socket.assigns.current_scope.account, invitation)
+
+        {:noreply,
+         assign(socket,
+           accept_as: %{invitation: invitation, choices: choices, account?: true},
+           new_profile_form: nil
+         )}
+
+      nil ->
+        {:noreply, accept_as_failed(socket, :expired)}
+    end
+  end
+
+  def handle_event("account_invitation_delete", %{"id" => id}, socket) do
+    account = socket.assigns.current_scope.account
+
+    with %GroupAccountInvitation{} = invitation <- account_invitation(socket, id),
+         :ok <- EmailInvitations.delete(account, invitation) do
+      {:noreply,
+       socket
+       |> put_flash(:info, gettext("Invitation deleted."))
+       |> assign_account_invitations()}
+    else
+      _gone -> {:noreply, put_flash(socket, :error, gettext("Invitation not found."))}
+    end
+  end
+
   def handle_event("accept_as_close", _params, socket),
     do: {:noreply, assign(socket, accept_as: nil, new_profile_form: nil)}
 
@@ -504,7 +675,7 @@ defmodule PotokIdeWeb.InvitationLive.Index do
 
     with {id, ""} <- Integer.parse(to_string(profile_id)),
          %Profile{} = profile <- Social.get_profile_for_account(account, id),
-         {:ok, _accepted} <- Social.accept_group_invitation_as(invitation, account, profile) do
+         {:ok, _accepted} <- accept_with(socket.assigns.accept_as, account, profile) do
       {:noreply, enter_group_as(socket, profile, invitation.group)}
     else
       {:error, reason} -> {:noreply, accept_as_failed(socket, reason)}
@@ -534,7 +705,12 @@ defmodule PotokIdeWeb.InvitationLive.Index do
     invitation = socket.assigns.accept_as.invitation
     attrs = ProfileComponents.welcome_attrs(params["profile"] || %{})
 
-    case Social.create_profile_and_accept_invitation(account, invitation, attrs) do
+    create =
+      if socket.assigns.accept_as[:account?],
+        do: &EmailInvitations.create_profile_and_accept/3,
+        else: &Social.create_profile_and_accept_invitation/3
+
+    case create.(account, invitation, attrs) do
       {:ok, profile, %{} = group} ->
         {:noreply, enter_group_as(socket, profile, group)}
 
@@ -682,9 +858,54 @@ defmodule PotokIdeWeb.InvitationLive.Index do
 
   def handle_info({:account_profiles_updated, _account_id}, socket), do: {:noreply, socket}
 
+  def handle_info({:account_invitations_updated, account_id}, socket)
+      when socket.assigns.current_scope.account.id == account_id,
+      do: {:noreply, assign_account_invitations(socket)}
+
   # A message no clause above knows (one that ProfileAuth passes on, or one a
   # newer server sends during a deploy) is left alone, not a crash.
   def handle_info(_message, socket), do: {:noreply, socket}
+
+  defp accept_with(%{account?: true, invitation: invitation}, account, profile),
+    do: EmailInvitations.accept(account, invitation, profile)
+
+  defp accept_with(%{invitation: invitation}, account, profile),
+    do: Social.accept_group_invitation_as(invitation, account, profile)
+
+  defp account_invitation(socket, id) do
+    case Integer.parse(to_string(id)) do
+      {id, ""} -> EmailInvitations.get(socket.assigns.current_scope.account, id)
+      _not_an_id -> nil
+    end
+  end
+
+  # The account's invitations by email and those the current profile sent,
+  # narrowed by the search like the lists.
+  defp assign_account_invitations(socket) do
+    query = PotokIde.TextFold.fold(String.trim(socket.assigns.invitations_search_query))
+    account = socket.assigns.current_scope.account
+
+    sent =
+      case socket.assigns.current_profile do
+        %Profile{} = profile -> EmailInvitations.list_sent(profile)
+        nil -> []
+      end
+
+    socket
+    |> assign(
+      :account_invitations,
+      Enum.filter(EmailInvitations.list(account), &matches?(&1, query, [&1.inviter.username]))
+    )
+    |> assign(:sent_by_email, Enum.filter(sent, &matches?(&1, query, [&1.email])))
+  end
+
+  defp matches?(_invitation, "", _names), do: true
+
+  defp matches?(invitation, query, names) do
+    [invitation.group.name | names]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.any?(&String.contains?(PotokIde.TextFold.fold(&1), query))
+  end
 
   # The profile that came into the group becomes the current one, and the
   # group opens. The group's page reads the account's current profile as it
@@ -707,10 +928,13 @@ defmodule PotokIdeWeb.InvitationLive.Index do
         :already_member ->
           gettext("That profile is already a member of the group.")
 
+        :member ->
+          gettext("That profile is already a member of the group.")
+
         :blocked ->
           gettext("That profile is blocked in this group.")
 
-        reason when reason in [:expired, :already_accepted] ->
+        reason when reason in [:expired, :already_accepted, :lapsed, :not_found] ->
           gettext("This invitation was accepted or has lapsed.")
 
         _other ->
@@ -727,6 +951,7 @@ defmodule PotokIdeWeb.InvitationLive.Index do
   # counts from it.
   defp assign_invitations(socket, nil) do
     socket
+    |> assign_account_invitations()
     |> assign_unread_overview()
     |> assign(:invitations_pagination, default_invitations_pagination())
     |> assign(:sent_invitations_pagination, default_sent_invitations_pagination())
@@ -739,6 +964,7 @@ defmodule PotokIdeWeb.InvitationLive.Index do
 
   defp assign_invitations(socket, profile) do
     socket
+    |> assign_account_invitations()
     |> assign_unread_overview()
     |> assign(:invitations_pagination, default_invitations_pagination())
     |> assign(:sent_invitations_pagination, default_sent_invitations_pagination())
@@ -944,7 +1170,7 @@ defmodule PotokIdeWeb.InvitationLive.Index do
 
   # How long a waiting invitation still holds (`GroupInvitation.valid_days/0`).
   defp valid_for(invitation) do
-    seconds = DateTime.diff(GroupInvitation.expires_at(invitation), DateTime.utc_now(:second))
+    seconds = DateTime.diff(expires_at(invitation), DateTime.utc_now(:second))
 
     case div(seconds + 86_399, 86_400) do
       days when days > 1 ->
@@ -954,4 +1180,9 @@ defmodule PotokIdeWeb.InvitationLive.Index do
         gettext("Lapses within a day")
     end
   end
+
+  defp expires_at(%GroupAccountInvitation{inserted_at: at}),
+    do: DateTime.add(at, GroupInvitation.valid_days(), :day)
+
+  defp expires_at(%GroupInvitation{} = invitation), do: GroupInvitation.expires_at(invitation)
 end

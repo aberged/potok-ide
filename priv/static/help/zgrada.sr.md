@@ -23,7 +23,7 @@ Korak po korak do zgrade kakva je Cvetna 12 iz primera: jedan razgovor za sve st
 ## 2. Stanari {:#stanari}
 
 1. Otvori karticu **Članovi** i dodirni **Pozovi**.
-2. Upiši korisničko ime komšije ili njegov imejl i dodirni **Pozovi**. Ko još nema nalog, dobija pozivnicu za Potok, a poziv u zgradu ga čeka kad napravi profil.
+2. Upiši korisničko ime komšije ili njegov imejl i dodirni **Pozovi**. Na imejl poziv odgovara osoba, profilom koji sama izabere. Ko još nema nalog, dobija pozivnicu za Potok, a kad sa njenog linka napravi profil, odmah je u zgradi.
 
 Pozvani prihvataju poziv na stranici Pozivnice, do koje vodi ikona u gornjoj traci.
 

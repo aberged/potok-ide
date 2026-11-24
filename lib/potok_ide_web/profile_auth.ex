@@ -10,6 +10,7 @@ defmodule PotokIdeWeb.ProfileAuth do
   alias PotokIde.Notices
   alias PotokIde.Processes
   alias PotokIde.Social
+  alias PotokIde.Social.EmailInvitations
 
   # Same debounce as the group page's refreshes; 0 (the test config) recounts
   # right after the message. A random part of the spread is added so that a
@@ -73,7 +74,9 @@ defmodule PotokIdeWeb.ProfileAuth do
               account = Accounts.get_account!(account_id)
               current_profile = Social.get_account_current_profile(account)
               counts_unread? = not counts_unread_itself?(socket)
-              counts = Social.nav_counts(current_profile, unread: counts_unread?)
+
+              counts =
+                Social.nav_counts(current_profile, unread: counts_unread?, account: account)
 
               socket =
                 socket
@@ -82,6 +85,10 @@ defmodule PotokIdeWeb.ProfileAuth do
                   | account: account
                 })
                 |> Phoenix.Component.assign(:current_profile, current_profile)
+                |> Phoenix.LiveView.put_private(
+                  :account_invitations_count,
+                  counts.account_invitations
+                )
                 |> Phoenix.Component.assign(
                   :pending_invitations_count,
                   counts.pending_invitations
@@ -104,10 +111,29 @@ defmodule PotokIdeWeb.ProfileAuth do
               {:cont, socket}
             end
 
+          # The invitations to the account count on every profile's badge.
+          {:account_invitations_updated, account_id}, socket ->
+            if socket.assigns.current_scope.account.id == account_id do
+              account_count = EmailInvitations.count(socket.assigns.current_scope.account)
+
+              socket =
+                Phoenix.LiveView.put_private(socket, :account_invitations_count, account_count)
+
+              count =
+                pending_invitations_count(socket.assigns.current_profile) + account_count
+
+              {:cont,
+               socket
+               |> Phoenix.Component.assign(:pending_invitations_count, count)
+               |> push_pending_invitations_count_updated(count)}
+            else
+              {:cont, socket}
+            end
+
           {:profile_invitations_updated, profile_id},
           %{assigns: %{current_profile: current_profile}} = socket
           when not is_nil(current_profile) and current_profile.id == profile_id ->
-            count = pending_invitations_count(current_profile)
+            count = pending_invitations_count(current_profile) + account_invitations(socket)
 
             {:cont,
              socket
@@ -117,6 +143,8 @@ defmodule PotokIdeWeb.ProfileAuth do
           {:pending_invitations_count_updated, profile_id, count},
           %{assigns: %{current_profile: current_profile}} = socket
           when not is_nil(current_profile) and current_profile.id == profile_id ->
+            count = count + account_invitations(socket)
+
             {:cont,
              socket
              |> Phoenix.Component.assign(:pending_invitations_count, count)
@@ -681,7 +709,17 @@ defmodule PotokIdeWeb.ProfileAuth do
 
   defp profile_picture_url(profile), do: PotokIdeWeb.Avatars.profile_avatar_url(profile)
 
+  defp pending_invitations_count(nil), do: 0
   defp pending_invitations_count(profile), do: Social.count_pending_invitations(profile)
+
+  # The account's own invitations, which the badge adds to the profile's
+  # (`Social.nav_counts/2`); counted again when the page never did.
+  defp account_invitations(socket) do
+    case socket.private[:account_invitations_count] do
+      count when is_integer(count) -> count
+      nil -> EmailInvitations.count(socket.assigns.current_scope.account)
+    end
+  end
 
   # What the hand counts: join requests the profile may approve, and the
   # tasks of drawn processes that wait for it (`Social.nav_counts/2`).

@@ -96,7 +96,10 @@ defmodule PotokIdeWeb.AccountAuth do
   pages that render the app layout, not on every request.
   """
   def assign_nav_counts(conn, _opts) do
-    counts = Social.nav_counts(conn.assigns[:current_profile])
+    counts =
+      Social.nav_counts(conn.assigns[:current_profile],
+        account: conn.assigns[:current_scope] && conn.assigns.current_scope.account
+      )
 
     conn
     |> assign(:pending_invitations_count, counts.pending_invitations)
@@ -351,7 +354,8 @@ defmodule PotokIdeWeb.AccountAuth do
 
         Phoenix.LiveView.connected?(socket) ->
           Social.nav_counts(socket.assigns[:current_profile],
-            unread: not PotokIdeWeb.ProfileAuth.counts_unread_itself?(socket)
+            unread: not PotokIdeWeb.ProfileAuth.counts_unread_itself?(socket),
+            account: socket.assigns[:current_scope] && socket.assigns.current_scope.account
           )
 
         true ->
@@ -365,6 +369,7 @@ defmodule PotokIdeWeb.AccountAuth do
       |> Phoenix.LiveView.put_private(:muted_group_ids, counts.muted_group_ids)
       |> Phoenix.LiveView.put_private(:pinned_group_ids, counts.pinned_group_ids)
       |> Phoenix.LiveView.put_private(:unread_notices_as_of, counts.unread_notices_as_of)
+      |> Phoenix.LiveView.put_private(:account_invitations_count, counts.account_invitations)
       |> Phoenix.Component.assign_new(:pending_invitations_count, fn ->
         counts.pending_invitations
       end)

@@ -89,7 +89,7 @@ Lične podatke obrađujemo na osnovu:
 
 ### Drugi korisnici
 
-Ono što objavite u grupi vide oni kojima to uloge u grupi dozvoljavaju. Vaš profil, članstva i objave vide se u grupama i funkcijama za saradnju koje koristite. Detalje i opis profila vidi samo onaj kome ste ih za svaki od njih namenili. Ko može da pronađe vaš profil birate sami: svi prijavljeni, oni koji znaju tačno korisničko ime ili su sa vama u nekoj grupi, ili samo oni koji su sa vama u nekoj grupi. Kada nekoga pozovete u grupu ili zatražite da uđete u nju, pozvani, odnosno oni koji o zahtevu odlučuju, vide vaše detalje kao članovi te grupe. Javne grupe vidi svako ko je prijavljen.
+Ono što objavite u grupi vide oni kojima to uloge u grupi dozvoljavaju. Vaš profil, članstva i objave vide se u grupama i funkcijama za saradnju koje koristite. Detalje i opis profila vidi samo onaj kome ste ih za svaki od njih namenili. Ko može da pronađe vaš profil birate sami: svi prijavljeni, oni koji znaju tačno korisničko ime ili su sa vama u nekoj grupi, ili samo oni koji su sa vama u nekoj grupi. Odgovor na poziv u grupu imejlom ne govori onome ko poziva da li na toj adresi imate nalog ni koji su vaši profili: vidi adresu koju je upisao, a vaš profil tek kada pozivnicu njime prihvatite. Kada nekoga pozovete u grupu ili zatražite da uđete u nju, pozvani, odnosno oni koji o zahtevu odlučuju, vide vaše detalje kao članovi te grupe. Javne grupe vidi svako ko je prijavljen.
 
 ### Svako ko ima link
 

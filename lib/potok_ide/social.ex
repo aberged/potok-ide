@@ -33,6 +33,7 @@ defmodule PotokIde.Social do
     AppProcesses,
     AppScope,
     Discovery,
+    EmailInvitations,
     Group,
     GroupAccountInvitation,
     GroupAltDescription,
@@ -346,25 +347,17 @@ defmodule PotokIde.Social do
     |> case do
       {:ok,
        %{
-         account_already_has_profiles: already_has_profiles,
          profile: profile,
          update_account_profiles: updated_account,
          initial_direct_group: initial_direct_group
        }} ->
         broadcast_initial_direct_group(initial_direct_group, root_group, account)
         broadcast_account_profiles_updated(updated_account)
-        materialize_pending_group_account_invitations(account, profile, already_has_profiles)
         {:ok, profile}
 
-      {:ok,
-       %{
-         account_already_has_profiles: already_has_profiles,
-         profile: profile,
-         initial_direct_group: initial_direct_group
-       }} ->
+      {:ok, %{profile: profile, initial_direct_group: initial_direct_group}} ->
         broadcast_initial_direct_group(initial_direct_group, root_group, account)
         broadcast_account_profiles_updated(account)
-        materialize_pending_group_account_invitations(account, profile, already_has_profiles)
         {:ok, profile}
 
       {:error, _step, reason, _changes} ->
@@ -394,38 +387,26 @@ defmodule PotokIde.Social do
   @doc """
   Creates the account's first profile from an invitation's link and takes it
   into the group of `first_pending_account_invitation/1`, as the button that
-  creates it says. Any other invitation waits as an ordinary one.
+  creates it says (`EmailInvitations.accept/3`). Any other invitation waits
+  for the account on Invitations.
 
   Returns `{:ok, profile, group}`, where the group is nil when there was no
   invitation or it no longer holds, or `{:error, changeset}`.
   """
   def create_profile_from_invitation(%Account{} = account, attrs) do
-    # Read before the profile exists: creating it turns the account's
-    # invitations into ordinary ones and deletes them.
     invitation = first_pending_account_invitation(account)
 
     with {:ok, profile} <- create_profile_for_account(account, attrs) do
-      {:ok, profile, join_invited_group(profile, invitation)}
+      {:ok, profile, join_invited_group(account, profile, invitation)}
     end
   end
 
-  defp join_invited_group(_profile, nil), do: nil
+  defp join_invited_group(_account, _profile, nil), do: nil
 
-  defp join_invited_group(%Profile{} = profile, %GroupAccountInvitation{group: group}) do
-    invitation =
-      Repo.one(
-        from(i in GroupInvitation,
-          where:
-            i.group_id == ^group.id and i.invitee_id == ^profile.id and is_nil(i.accepted_at),
-          limit: 1
-        )
-      )
-
-    with %GroupInvitation{} <- invitation,
-         {:ok, _accepted} <- accept_group_invitation(invitation, profile) do
-      group
-    else
-      _gone_or_refused -> nil
+  defp join_invited_group(account, profile, %GroupAccountInvitation{} = invitation) do
+    case EmailInvitations.accept(account, invitation, profile) do
+      {:ok, group} -> group
+      {:error, _gone_or_refused} -> nil
     end
   end
 
@@ -2370,32 +2351,79 @@ defmodule PotokIde.Social do
     end
   end
 
-  def invite_account_to_group(%Profile{} = inviter, %Group{} = group, %Account{} = account) do
+  @doc """
+  Invites `account` into `group` (`PotokIde.Social.EmailInvitations`): the
+  account picks the profile that accepts. `email` is the address the inviter
+  typed, which alone they see of it; without one they see none, as the
+  account's own may have changed since. An invitation the same inviter sent
+  before stays as it was, unless it lapsed. The account gets a push.
+
+  Returns `{:ok, %GroupAccountInvitation{}}` or `{:error, reason}` for the
+  inviter (`invitation_refusal/2`).
+  """
+  def invite_account_to_group(
+        %Profile{} = inviter,
+        %Group{} = group,
+        %Account{} = account,
+        email \\ nil
+      ) do
     account = Accounts.get_account!(account.id)
 
-    cond do
-      reason = invitation_refusal(inviter, group) ->
-        {:error, reason}
+    if reason = invitation_refusal(inviter, group) do
+      {:error, reason}
+    else
+      Repo.delete_all(
+        from(i in GroupAccountInvitation,
+          where:
+            i.group_id == ^group.id and i.account_id == ^account.id and
+              i.inviter_id == ^inviter.id and i.inserted_at <= ^GroupInvitation.cutoff()
+        )
+      )
 
-      profile = get_account_default_profile(account) ->
-        case invite_profile_to_group(inviter, group, profile) do
-          {:ok, invitation} ->
-            ensure_direct_group_between_profiles(profile, inviter)
-            {:ok, invitation}
+      %GroupAccountInvitation{}
+      |> GroupAccountInvitation.changeset(%{
+        group_id: group.id,
+        inviter_id: inviter.id,
+        account_id: account.id,
+        email: email
+      })
+      |> Repo.insert(
+        on_conflict: :nothing,
+        conflict_target: [:group_id, :account_id, :inviter_id]
+      )
+      |> case do
+        {:ok, invitation} ->
+          if invitation.id do
+            broadcast_account_invitations_updated(account.id)
+            EmailInvitations.notify(account, inviter, group)
+          end
 
-          error ->
-            error
-        end
+          {:ok, invitation}
 
-      true ->
-        %GroupAccountInvitation{}
-        |> GroupAccountInvitation.changeset(%{
-          group_id: group.id,
-          inviter_id: inviter.id,
-          account_id: account.id
-        })
-        |> Repo.insert()
+        error ->
+          error
+      end
     end
+  end
+
+  @doc "Tells the account's pages that its invitations by email changed."
+  def broadcast_account_invitations_updated(account_id) when is_integer(account_id) do
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      account_topic(account_id),
+      {:account_invitations_updated, account_id}
+    )
+  end
+
+  @doc "Tells a profile's pages that the invitations it sent or got changed."
+  def broadcast_invitations_updated(profile_id) when is_integer(profile_id),
+    do: broadcast_profile_invitations_updated(%Profile{id: profile_id})
+
+  @doc "Sends `payload_for` as a push to the account's devices, apart from the caller."
+  def notify_account(%Account{} = account, payload_for, context) do
+    run_notification(fn ->
+      deliver_account_push_notification(account, payload_for, context, nil)
+    end)
   end
 
   def accept_group_invitation(%GroupInvitation{} = invitation, %Profile{} = invitee) do
@@ -3088,6 +3116,7 @@ defmodule PotokIde.Social do
   def nav_counts(nil, _opts),
     do: %{
       pending_invitations: 0,
+      account_invitations: 0,
       pending_group_join_requests: 0,
       root_unread: 0,
       root_unread_as_of: nil,
@@ -3100,6 +3129,12 @@ defmodule PotokIde.Social do
 
   def nav_counts(%Profile{id: profile_id} = profile, opts) do
     unread? = Keyword.get(opts, :unread, true)
+
+    account_id =
+      case Keyword.get(opts, :account) do
+        %Account{id: id} -> id
+        _none -> nil
+      end
 
     unread_sql =
       if unread? do
@@ -3125,6 +3160,8 @@ defmodule PotokIde.Social do
       (SELECT COUNT(*) FROM group_invitations WHERE invitee_id = $1 AND accepted_at IS NULL
          AND inserted_at > now() - make_interval(days => #{GroupInvitation.valid_days()})) +
       (SELECT COUNT(*) FROM profile_invitations WHERE invitee_id = $1 AND accepted_at IS NULL),
+      (SELECT COUNT(*) FROM group_account_invitations WHERE account_id = $2
+         AND inserted_at > now() - make_interval(days => #{GroupInvitation.valid_days()})),
       (
         SELECT COALESCE(array_agg(ARRAY[r.group_id, r.request_count]), '{}')
         FROM (
@@ -3156,12 +3193,15 @@ defmodule PotokIde.Social do
       (SELECT COUNT(*) FROM (#{PotokIde.Processes.waiting_sql("$1")}) w)
     """
 
-    case Repo.query(sql, [profile_id], cache_statement: "social_nav_counts_v10_#{unread?}") do
+    case Repo.query(sql, [profile_id, account_id],
+           cache_statement: "social_nav_counts_v11_#{unread?}"
+         ) do
       {:ok,
        %{
          rows: [
            [
              invitations,
+             account_invitations,
              join_request_counts,
              member_group_ids,
              muted_group_ids,
@@ -3175,7 +3215,8 @@ defmodule PotokIde.Social do
          ]
        }} ->
         %{
-          pending_invitations: invitations,
+          pending_invitations: invitations + account_invitations,
+          account_invitations: account_invitations,
           pending_group_join_requests:
             join_request_counts
             |> Enum.map(fn [group_id, count] -> {group_id, count} end)
@@ -8822,69 +8863,6 @@ defmodule PotokIde.Social do
           {:error, _step, reason, _changes} -> {:error, reason}
         end
     end
-  end
-
-  defp materialize_pending_group_account_invitations(
-         _account,
-         _profile,
-         true
-       ) do
-    :ok
-  end
-
-  defp materialize_pending_group_account_invitations(
-         %Account{} = account,
-         %Profile{} = profile,
-         false
-       ) do
-    account
-    |> list_pending_group_account_invitations()
-    |> Enum.each(fn pending_invitation ->
-      case invite_profile_to_group(pending_invitation.inviter, pending_invitation.group, profile) do
-        {:ok, invitation} ->
-          # The invitation has waited since it was sent to the address.
-          Repo.update_all(from(i in GroupInvitation, where: i.id == ^invitation.id),
-            set: [inserted_at: pending_invitation.inserted_at]
-          )
-
-          ensure_direct_group_between_profiles(profile, pending_invitation.inviter)
-          _ = Repo.delete(pending_invitation)
-          :ok
-
-        {:error, %Ecto.Changeset{}} ->
-          ensure_direct_group_between_profiles(profile, pending_invitation.inviter)
-          _ = Repo.delete(pending_invitation)
-          :ok
-
-        {:error, :inviter_not_a_member} ->
-          _ = Repo.delete(pending_invitation)
-          :ok
-
-        {:error, reason} ->
-          Logger.warning(
-            "Could not materialize pending group account invitation #{pending_invitation.id}: #{inspect(reason)}"
-          )
-      end
-    end)
-  end
-
-  defp ensure_direct_group_between_profiles(%Profile{} = profile, %Profile{} = other_profile) do
-    case get_or_create_direct_group(profile, other_profile) do
-      {:ok, _group} ->
-        :ok
-
-      {:error, :same_profile} ->
-        :ok
-
-      {:error, reason} ->
-        Logger.warning(
-          "Could not create direct group for profiles #{profile.id} and #{other_profile.id}: #{inspect(reason)}"
-        )
-    end
-  end
-
-  defp list_pending_group_account_invitations(%Account{} = account) do
-    account |> pending_group_account_invitations_query() |> Repo.all()
   end
 
   defp pending_group_account_invitations_query(%Account{} = account) do

@@ -1,8 +1,8 @@
 defmodule PotokIde.Social.ProfileFromInvitationTest do
   @moduledoc """
   The first profile made from an invitation's link goes into the group of the
-  oldest invitation (the one whose email was sent); the others wait as
-  ordinary invitations.
+  oldest invitation (the one whose email was sent); the others wait for the
+  account, which picks the profile for each (`EmailInvitations`).
   """
 
   use PotokIde.DataCase, async: true
@@ -13,7 +13,7 @@ defmodule PotokIde.Social.ProfileFromInvitationTest do
 
   alias PotokIde.Repo
   alias PotokIde.Social
-  alias PotokIde.Social.{GroupAccountInvitation, GroupInvitation}
+  alias PotokIde.Social.{EmailInvitations, GroupAccountInvitation, GroupInvitation}
 
   setup do
     {_owner_account, owner} = account_with_profile!("pfi-owner")
@@ -56,15 +56,13 @@ defmodule PotokIde.Social.ProfileFromInvitationTest do
     refute Social.member_of_group?(profile, later_group)
     assert Social.account_has_profiles?(ctx.account)
 
-    # The list keeps accepted invitations too, with their date.
-    waiting =
-      profile
-      |> Social.list_pending_invitations()
-      |> Enum.filter(&is_nil(&1.accepted_at))
+    # The accepted one names the profile, dated as it was sent; the other
+    # waits for the account, not for this profile.
+    assert [%GroupInvitation{accepted_at: %DateTime{}, inviter_id: ^inviter_id}] =
+             Repo.all(from(i in GroupInvitation, where: i.invitee_id == ^profile.id))
 
-    assert [%{group: %{id: waiting_id}}] = waiting
+    assert [%{group: %{id: waiting_id}}] = EmailInvitations.list(ctx.account)
     assert waiting_id == later_group.id
-    refute Social.first_pending_account_invitation(ctx.account)
   end
 
   test "makes the profile with no group when there is no invitation", ctx do

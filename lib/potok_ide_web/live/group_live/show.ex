@@ -13,15 +13,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
     AppData,
     AppProcesses,
     Group,
-    GroupAccountInvitation,
     GroupAltDescription,
     GroupAreas,
-    GroupInvitation,
     GroupPresets,
     GroupRole,
     GroupRoutes,
     PinnedGroups,
     Discovery,
+    EmailInvitations,
     Profile,
     ProfileDetails,
     ProfileFacts,
@@ -6058,49 +6057,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
-  # An address with no account gets a new one and an email, so the permission
-  # and the inviting account's limit are checked before either.
+  # The account behind the address gets the invitation and picks the profile
+  # that accepts it (`EmailInvitations`); the inviter is told the same,
+  # whoever is behind the address.
   defp invite_group_by_email(current_profile, account_id, group, email) do
-    case Accounts.get_account_by_email(email) do
-      %Account{} = account ->
-        invite_group_for_account(current_profile, group, account)
+    login_url = &url(~p"/accounts/log-in/#{&1}")
 
-      nil ->
-        with nil <- Social.invitation_refusal(current_profile, group),
-             :ok <- RateLimit.check(:invitation_email, account_id),
-             {:ok, account} <- Accounts.register_account(%{email: email}),
-             :ok <- RateLimit.hit(:invitation_email, account_id),
-             {:ok, _email} <-
-               Accounts.deliver_login_instructions(account, &url(~p"/accounts/log-in/#{&1}"),
-                 invited_by: current_profile,
-                 group: group
-               ),
-             {:ok, %GroupAccountInvitation{}} <-
-               Social.invite_account_to_group(current_profile, group, account) do
-          {:ok, gettext("Account invitation email sent.")}
-        else
-          {:ok, %GroupInvitation{}} ->
-            {:ok, gettext("Invitation sent.")}
-
-          reason when is_atom(reason) ->
-            {:error, reason}
-
-          error ->
-            error
-        end
-    end
-  end
-
-  defp invite_group_for_account(current_profile, group, account) do
-    case Social.invite_account_to_group(current_profile, group, account) do
-      {:ok, %GroupInvitation{}} ->
-        {:ok, gettext("Invitation sent.")}
-
-      {:ok, %GroupAccountInvitation{}} ->
-        {:ok, gettext("Invitation will be sent when they create their first profile.")}
-
-      error ->
-        error
+    case EmailInvitations.invite(current_profile, account_id, group, email, login_url) do
+      :ok -> {:ok, gettext("Invitation sent to %{email}.", email: String.trim(email))}
+      error -> error
     end
   end
 

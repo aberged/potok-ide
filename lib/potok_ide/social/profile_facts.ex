@@ -7,8 +7,8 @@ defmodule PotokIde.Social.ProfileFacts do
     * `holder?`: the viewer's account holds the profile, so it sees all of it;
     * `shared_group_ids`: the shared groups both profiles are members of;
     * `relation_group_ids`: groups the viewer sees the profile in as if both
-      were members: one the profile invites the viewer into (the invited
-      sees whom they would join), and one the profile asks to join where the
+      were members: one the profile invites the viewer, or the viewer's
+      account, into (the invited sees whom they would join), and one the profile asks to join where the
       viewer decides on requests (who decides sees whom they would let in);
     * `direct?`: a direct conversation of the two exists.
 
@@ -75,7 +75,11 @@ defmodule PotokIde.Social.ProfileFacts do
         ARRAY(SELECT gi.group_id
               FROM group_invitations gi
               WHERE gi.inviter_id = $3 AND gi.invitee_id = $2
-                AND gi.accepted_at IS NULL AND gi.inserted_at > $4),
+                AND gi.accepted_at IS NULL AND gi.inserted_at > $4
+              UNION
+              SELECT ai.group_id
+              FROM group_account_invitations ai
+              WHERE ai.inviter_id = $3 AND ai.account_id = $1 AND ai.inserted_at > $4),
         ARRAY(SELECT r.group_id
               FROM group_join_requests r
               JOIN group_memberships v ON v.group_id = r.group_id AND v.profile_id = $2
@@ -84,7 +88,7 @@ defmodule PotokIde.Social.ProfileFacts do
 
       %{rows: [[holder?, shared_ids, direct?, inviting_ids, asking_ids]]} =
         Repo.query!(sql, [account_id, viewer_id, target.id, GroupInvitation.cutoff()],
-          cache_statement: "profile_facts_v2"
+          cache_statement: "profile_facts_v3"
         )
 
       %__MODULE__{

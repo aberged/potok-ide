@@ -13,7 +13,7 @@ defmodule PotokIde.Social.GroupInvitationExpiryTest do
 
   alias PotokIde.Repo
   alias PotokIde.Social
-  alias PotokIde.Social.{GroupAccountInvitation, GroupInvitation}
+  alias PotokIde.Social.{EmailInvitations, GroupAccountInvitation, GroupInvitation}
 
   setup do
     {_owner_account, owner} = account_with_profile!("gie-owner")
@@ -112,11 +112,17 @@ defmodule PotokIde.Social.GroupInvitationExpiryTest do
         sharing: :unique
       })
 
-    assert [%GroupInvitation{inserted_at: ^sent}] =
-             Social.list_pending_invitations(profile)
+    # It waits for the account, and is dated so once a profile accepts it.
+    assert [%GroupAccountInvitation{inserted_at: ^sent} = waiting] =
+             EmailInvitations.list(account)
+
+    assert {:ok, _group} = EmailInvitations.accept(account, waiting, profile)
+
+    assert %GroupInvitation{inserted_at: ^sent} =
+             Repo.get_by!(GroupInvitation, invitee_id: profile.id)
   end
 
-  test "one sent to an address too long ago becomes no invitation", ctx do
+  test "one sent to an address too long ago holds no more", ctx do
     account = account_fixture()
 
     {:ok, %GroupAccountInvitation{} = pending} =
@@ -133,6 +139,11 @@ defmodule PotokIde.Social.GroupInvitationExpiryTest do
         sharing: :unique
       })
 
-    assert Social.list_pending_invitations(profile) == []
+    assert EmailInvitations.list(account) == []
+    assert EmailInvitations.count(account) == 0
+
+    lapsed = EmailInvitations.get(account, pending.id)
+    assert {:error, :expired} = EmailInvitations.accept(account, lapsed, profile)
+    refute Social.member_of_group?(profile, ctx.group)
   end
 end

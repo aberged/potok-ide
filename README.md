@@ -26,7 +26,7 @@ The main concepts in the system are:
 * `GroupMemberRole`: a role held by a member in one group.
 * `GroupValueRead`: the last value a profile has read in a group, the base of unread counts.
 * `GroupInvitation`: an invitation from one profile to another profile to join a group.
-* `GroupAccountInvitation`: a group invitation sent by email to an account without a profile yet. It becomes a `GroupInvitation` when the account creates its first profile.
+* `GroupAccountInvitation`: a group invitation sent by email, to the account behind the address (`PotokIde.Social.EmailInvitations`). The account picks the profile that accepts it, and an accepted `GroupInvitation` naming it takes its place.
 * `GroupJoinRequest`: a pending request from a non-member profile to join a public group, with the roles it would like (`role_keys`), why (`note`) and, while a vote decides it, that poll (`poll_id`).
 * `GroupJoinRequestApproval`: the record of an accepted join request and who accepted it, a member (`approver_id`) or a vote (`poll_id`).
 * `GroupRoleRequest`: a member's request for roles, holding only the roles still waiting for whoever decides; one per member and group, gone with the membership.
@@ -51,7 +51,7 @@ Invitation behavior:
 Group access and direct-group behavior:
 
 * Public groups support access requests from non-member profiles, and members ask for roles (`PotokIde.Social.GroupRequests`). Each role of a manifest says how it is had (`group_roles.request_mode`: `closed`, `approve`, `choose` or `vote`, with `request_poll`, a `RequestPoll` of quorum, majority, hours, secrecy and who votes), and a public group how it admits (`groups.join_mode`: `approve`, `choose` or `vote`, with `join_poll`). Admins and members with `manage_join_requests` decide in a dialog on the members tab or the requests page: admit, refuse or put admission to a vote, and give, refuse, put to a vote or leave for later each role, with a reason. Admin is given on request only by an admin, and only by a vote where the group elects its admins. A role or admission the rule puts to a vote raises a poll in the requester's name (`Polls.create_poll_for_request/3`, `polls.from_request`, never deleted); `admit` takes them in as it closes, with the roles asked for. Refusals and failed votes keep the same request back seven days, an account sends at most ten requests an hour (`RateLimit` `:group_request`), and whoever asked gets a push for each decision.
-* Members with `invite_members` can invite a profile by username or anyone by email. An email without an account gets a new account and a login link, and the invitation waits as a `GroupAccountInvitation` until that account creates its first profile.
+* Members with `invite_members` can invite a profile by username or anyone by email. An email goes to the account behind the address as a `GroupAccountInvitation`, with the same answer to the inviter whoever is there: an address without an account gets a new one and a login link, any other account a push, and the person picks the profile that accepts on Invitations.
 * Groups persist a `home_page` enum with the values `description`, `chat`, and `subgroups`. The create-group and edit-group panels expose that setting so members can control the default landing panel for a group.
 * Opening a group without an explicit tab uses its `home_page`: `description` opens the description panel, `chat` opens the values panel, and `subgroups` opens the sub-groups panel.
 * Root groups ignore `home_page` and always open on the sub-groups panel.

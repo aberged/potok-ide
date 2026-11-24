@@ -566,7 +566,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       refute has_element?(lv, "#group-remove-member-#{owner_profile.id}")
     end
 
-    test "creates an account invite from an email and delivers the group invitation after the first profile",
+    test "an email with no account opens one, whose invitation waits for the account",
          %{conn: conn} do
       owner_account = account_fixture()
 
@@ -592,12 +592,11 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       |> element("#group-tab-invite-profile")
       |> render_click()
 
-      result =
-        lv
-        |> form("#group-invite-form-0", %{"invite" => %{"identifier" => email}})
-        |> render_submit()
+      lv
+      |> form("#group-invite-form-0", %{"invite" => %{"identifier" => email}})
+      |> render_submit()
 
-      assert result =~ "Account invitation email sent."
+      assert has_element?(lv, "#flash-info p", "Invitation sent to #{email}.")
 
       assert_received {:email, %Swoosh.Email{to: [{"", ^email}], subject: subject}}
       assert subject =~ "@email-ui-own"
@@ -616,17 +615,13 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
           sharing: :unique
         })
 
-      assert [%{group: %{id: group_id}, inviter: %{id: inviter_id}}] =
-               Social.list_pending_invitations(invited_profile)
+      assert Social.list_pending_invitations(invited_profile) == []
+
+      assert [%{group: %{id: group_id}, inviter: %{id: inviter_id}, email: ^email}] =
+               PotokIde.Social.EmailInvitations.list(invited_account)
 
       assert group_id == group.id
       assert inviter_id == owner_profile.id
-
-      assert {:ok, direct_group} =
-               Social.get_or_create_direct_group(invited_profile, owner_profile)
-
-      assert direct_group.is_direct
-      refute direct_group.is_public
     end
 
     test "a member who may not invite opens no account and sends no email", %{conn: conn} do
@@ -852,58 +847,34 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       refute has_element?(lv, "#group-invite-suggestions")
     end
 
-    test "invites an existing account by email and creates a direct group immediately", %{
-      conn: conn
-    } do
-      owner_account = account_fixture()
-      invitee_account = account_fixture()
-
-      {:ok, owner_profile} =
-        Social.create_profile_for_account(owner_account, %{
-          username: "email-own-now",
-          profile_picture_url: nil,
-          description: "",
-          description_format: :markdown,
-          sharing: :unique
-        })
-
-      {:ok, invitee_profile} =
-        Social.create_profile_for_account(invitee_account, %{
-          username: "email-now-inv",
-          profile_picture_url: nil,
-          description: "",
-          description_format: :markdown,
-          sharing: :unique
-        })
-
-      owner_account = Accounts.get_account!(owner_account.id)
+    test "the answer to an email is the same whoever is behind it", %{conn: conn} do
+      {owner_account, owner_profile} = account_with_profile!("email-own-now")
+      {with_profile, invitee_profile} = account_with_profile!("email-now-inv")
+      without_profile = account_fixture()
       group = create_child_group!(owner_profile, "email-now-group")
-      email = invitee_account.email
 
-      {:ok, lv, _html} =
-        conn
-        |> log_in_account(owner_account)
-        |> live(~p"/groups/#{group.id}/members")
+      answers =
+        for email <- [with_profile.email, without_profile.email, unique_account_email()] do
+          {:ok, lv, _html} =
+            conn
+            |> log_in_account(owner_account)
+            |> live(~p"/groups/#{group.id}/invite_profile")
 
-      lv
-      |> element("#group-tab-invite-profile")
-      |> render_click()
+          lv
+          |> form("#group-invite-form-0", %{"invite" => %{"identifier" => email}})
+          |> render_submit()
 
-      result =
-        lv
-        |> form("#group-invite-form-0", %{"invite" => %{"identifier" => email}})
-        |> render_submit()
+          lv |> element("#flash-info p") |> render() |> String.replace(email, "EMAIL")
+        end
 
-      assert result =~ "Invitation sent."
+      assert [answer, answer, answer] = answers
 
-      assert [%{id: invitation_id}] = Social.list_pending_invitations(invitee_profile)
-      assert invitation_id
+      # Nothing names the profile, and no conversation opens with it.
+      assert Social.list_pending_invitations(invitee_profile) == []
 
-      assert {:ok, direct_group} =
-               Social.get_or_create_direct_group(invitee_profile, owner_profile)
-
-      assert direct_group.is_direct
-      refute direct_group.is_public
+      assert Social.get_root_group!()
+             |> Social.list_child_groups()
+             |> Enum.filter(& &1.is_direct) == []
     end
 
     test "updates value avatars with creator presence in realtime", %{conn: conn} do

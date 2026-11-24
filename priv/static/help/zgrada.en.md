@@ -22,7 +22,7 @@ Step by step to a building like Cvetna 12 in the example: one chat for all the r
 ## 2. Residents {:#stanari}
 
 1. Open the **Members** tab and tap **Invite**.
-2. Type a neighbour's username or their email and tap **Invite**. Whoever has no account yet gets an invitation to Potok, and the invitation to the building waits for them once they create a profile.
+2. Type a neighbour's username or their email and tap **Invite**. The person answers an invitation by email with the profile they pick. Whoever has no account yet gets an invitation to Potok, and is in the building once they make a profile from its link.
 
 The invited accept on the Invitations page, which an icon in the top bar leads to.
 
