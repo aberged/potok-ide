@@ -10,6 +10,8 @@ defmodule PotokIde.Social.Visibility do
     on the way to one of its memberships or followed groups. The SQL needs
     the `mine` and `member_paths` tables of `Social`'s membership walk,
     where `member_paths` holds the followed groups too.
+  * **reads the chat** (`in_read_chats/2`): a member, anyone signed in where the
+    chat is open, and in a thread whoever may open it.
 
   Threads and direct conversations are never among plain groups.
 
@@ -20,6 +22,7 @@ defmodule PotokIde.Social.Visibility do
 
   import Ecto.Query
 
+  alias PotokIde.Events.Event
   alias PotokIde.Social.{Group, GroupMembership, Profile}
 
   @doc """
@@ -45,6 +48,56 @@ defmodule PotokIde.Social.Visibility do
               where: m.group_id == parent_as(:group).id and m.profile_id == ^profile_id
             )
           )
+    )
+  end
+
+  @doc """
+  The chat values of `query` (its binding `:value`) in the chats `profile` reads
+  now, as `Access.can_read_chat?/2` has it for one group: those of the groups it
+  is in, and the open ones (`Group.open_chat?/1`), where someone outside does not
+  see the announcement of an event that is not public.
+
+  A thread is read by whoever may open it (`Social.join_thread/2`): a member of
+  it, of a thread above it or of the group they all hang from. Being in the
+  thread itself is not asked, as that comes with opening it and goes with
+  leaving the group.
+  """
+  def in_read_chats(query, %Profile{id: profile_id}) do
+    hidden =
+      from(e in Event,
+        where: e.value_id == parent_as(:value).id and not e.is_public,
+        select: 1
+      )
+
+    query
+    |> join(:inner, [value: v], g in Group, on: g.id == v.group_id, as: :group)
+    |> join(:left, [value: v], m in GroupMembership,
+      on: m.group_id == v.group_id and m.profile_id == ^profile_id,
+      as: :membership
+    )
+    |> where(
+      [group: g, membership: m],
+      not is_nil(m.profile_id) or
+        (g.has_public_chat and g.is_public and not g.is_root and not g.is_direct and
+           is_nil(g.parent_value_id) and not exists(hidden)) or
+        (not is_nil(g.parent_value_id) and
+           fragment(
+             """
+             EXISTS (
+               WITH RECURSIVE up AS (
+                 SELECT p.id, p.parent_id, p.parent_value_id FROM groups p WHERE p.id = ?
+                 UNION ALL
+                 SELECT p.id, p.parent_id, p.parent_value_id
+                 FROM up JOIN groups p ON p.id = up.parent_id
+                 WHERE up.parent_value_id IS NOT NULL
+               )
+               SELECT 1 FROM up
+               JOIN group_memberships um ON um.group_id = up.id AND um.profile_id = ?
+             )
+             """,
+             g.parent_id,
+             ^profile_id
+           ))
     )
   end
 
