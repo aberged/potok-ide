@@ -64,18 +64,55 @@ defmodule PotokIde.Processes.GraphEditTest do
     for kind <- GraphEdit.kinds() do
       graph = insert!(GraphEdit.new(), "f1", kind)
       # A loop comes with the first step of its body, a poll with the
-      # condition that asks whether it passed.
+      # condition that asks how it ended.
       assert length(graph["nodes"]) == if(kind in ["loop", "poll"], do: 4, else: 3), kind
     end
   end
 
-  test "a poll goes on to a condition that asks whether it passed" do
+  # What the condition after the poll of `graph` asks.
+  defp asked(graph) do
+    assert [%{"condition" => %{"expr" => asked}} | _] = Graph.out(graph, "gateway_1")
+    asked
+  end
+
+  test "a poll that only asks goes on to a condition that asks whether its first answer won" do
     graph = insert!(GraphEdit.new(), "f1", "poll")
 
     assert [%{"to" => "gateway_1"}] = Graph.out(graph, "poll_1")
 
-    assert [%{"condition" => %{"expr" => "poll_1.passed"}}, %{"default" => true}] =
+    assert [%{"condition" => %{"expr" => ~s(poll_1.winner = "Da")}}, %{"default" => true}] =
              Graph.out(graph, "gateway_1")
+  end
+
+  test "that condition goes by what the poll asks, until someone writes their own" do
+    graph = insert!(GraphEdit.new(), "f1", "poll")
+
+    {:ok, graph} =
+      GraphEdit.update_node(graph, "poll_1", %{"answers" => [~s(Za „kućni red"), "Protiv"]})
+
+    assert asked(graph) == ~S(poll_1.winner = "Za \„kućni red\"")
+    valid!(graph)
+
+    # With no answers for a moment, as they are being typed.
+    {:ok, graph} = GraphEdit.update_node(graph, "poll_1", %{"answers" => []})
+    {:ok, graph} = GraphEdit.update_node(graph, "poll_1", %{"answers" => ["Da", "Ne"]})
+    assert asked(graph) == ~s(poll_1.winner = "Da")
+
+    # A decision on a role approves or not, in answers of its own.
+    {:ok, graph} =
+      GraphEdit.update_node(graph, "poll_1", %{"effect" => "grant", "role" => "admin"})
+
+    assert asked(graph) == "poll_1.passed"
+    {:ok, graph} = GraphEdit.update_node(graph, "poll_1", %{"effect" => "none"})
+    assert asked(graph) == ~s(poll_1.winner = "Da")
+
+    [%{"key" => key} | _] = Graph.out(graph, "gateway_1")
+
+    {:ok, graph} =
+      GraphEdit.update_condition(graph, key, %{"expr" => ~s(poll_1.winner = "Ne")})
+
+    {:ok, graph} = GraphEdit.update_node(graph, "poll_1", %{"answers" => ["Jeste", "Nije"]})
+    assert asked(graph) == ~s(poll_1.winner = "Ne")
   end
 
   test "a decision leaves by each outcome, a condition by one and by default" do

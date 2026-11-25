@@ -2111,9 +2111,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   @doc """
   What a step's texts and conditions may name, as an expression names it
   (`Processes.Scope`): the fields of what set the process going, under the
-  id of its start, then what the calls, waits and decisions of the drawing
-  bring back, but the step's own, then the fields of the group; and its
-  variables, with the attributes of those that hold an entity.
+  id of its start, then what the calls, waits, decisions, polls and loops of
+  the drawing bring back, but the step's own, then the fields of the group;
+  and its variables, with the attributes of those that hold an entity.
   """
   def field_hints(editor) do
     own = with {:node, id} <- editor.selected, do: id
@@ -2151,7 +2151,13 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
               _plain -> []
             end
 
-          [item | held] ++ ["#{id}.index"]
+          [item | held] ++ ["#{id}.index", "#{id}.count"]
+
+        # Only a decision on a role has something to carry out.
+        %{"type" => "pollTask", "id" => id} = poll ->
+          asked = ~w(winner passed outcome voters eligible)
+          brought = if poll["effect"] in ~w(grant revoke), do: asked ++ ["applied"], else: asked
+          Enum.map(brought, &"#{id}.#{&1}")
 
         _other ->
           []

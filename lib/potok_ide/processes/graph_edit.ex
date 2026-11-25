@@ -18,7 +18,7 @@ defmodule PotokIde.Processes.GraphEdit do
   come from the caller, in the editor's language.
   """
 
-  alias PotokIde.Processes.Graph
+  alias PotokIde.Processes.{Expr, Graph}
 
   @max_outcomes 10
   @prefixes %{
@@ -229,8 +229,8 @@ defmodule PotokIde.Processes.GraphEdit do
     |> add_flow(%{"from" => id, "to" => to, "default" => true})
   end
 
-  # A poll goes on to a condition that asks whether it passed.
-  defp add_exits(graph, %{"type" => "pollTask", "id" => id}, to, _d) do
+  # A poll goes on to a condition that asks how it ended (`poll_condition/1`).
+  defp add_exits(graph, %{"type" => "pollTask", "id" => id} = poll, to, _d) do
     gateway = %{"id" => fresh_id(graph, "gateway"), "type" => "exclusiveGateway"}
 
     graph
@@ -239,7 +239,7 @@ defmodule PotokIde.Processes.GraphEdit do
     |> add_flow(%{
       "from" => gateway["id"],
       "to" => to,
-      "condition" => %{"expr" => "#{id}.passed"}
+      "condition" => %{"expr" => poll_condition(poll)}
     })
     |> add_flow(%{"from" => gateway["id"], "to" => to, "default" => true})
   end
@@ -259,6 +259,18 @@ defmodule PotokIde.Processes.GraphEdit do
 
   # A new condition holds until its editor writes what it asks.
   defp condition(d), do: %{"expr" => d[:condition] || "true"}
+
+  @doc """
+  What the condition after a poll asks at first. A poll that only asks has
+  passed whichever answer won, "No" as well, so it is asked whether its first
+  answer won; a decision on a role, whether it passed.
+  """
+  def poll_condition(%{"id" => id, "effect" => "none"} = poll) do
+    first = poll["answers"] |> List.wrap() |> List.first("")
+    "#{id}.winner = #{Expr.literal(first)}"
+  end
+
+  def poll_condition(%{"id" => id}), do: "#{id}.passed"
 
   @doc """
   One more branch for a decision (a new `outcome`) or a condition (a new
@@ -574,8 +586,9 @@ defmodule PotokIde.Processes.GraphEdit do
   a call starts, whether it waits and the fields it hands over, or the
   entity a signal is sent or waited for with (none with `nil`), or the
   entity a form asks for and who fills it in (`by`, with the `role` when it
-  is one's people, and none with `nil`). A blank label is none, and a call
-  that no longer waits has no deadline.
+  is one's people, and none with `nil`). A blank label is none, a call that
+  no longer waits has no deadline, and a condition that still asks what it
+  was given after a poll (`poll_condition/1`) asks it of the poll as changed.
   """
   def update_node(graph, id, attrs) do
     case Graph.node(graph, id) do
@@ -602,10 +615,23 @@ defmodule PotokIde.Processes.GraphEdit do
           %{"type" => "callActivity", "wait" => false, "deadline" => _} ->
             {:ok, deadline(graph, changed, nil, %{})}
 
+          %{"type" => "pollTask"} ->
+            {:ok, ask_anew(graph, poll_condition(node), poll_condition(changed))}
+
           _other ->
             {:ok, graph}
         end
     end
+  end
+
+  # The conditions that ask `was`, as the poll they follow now has it.
+  defp ask_anew(graph, same, same), do: graph
+
+  defp ask_anew(graph, was, now) do
+    map_flows(graph, fn
+      %{"condition" => %{"expr" => ^was}} = flow -> %{flow | "condition" => %{"expr" => now}}
+      flow -> flow
+    end)
   end
 
   # A sub-group step names the roles it inherits members by only while it

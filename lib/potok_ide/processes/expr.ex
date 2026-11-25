@@ -97,6 +97,20 @@ defmodule PotokIde.Processes.Expr do
 
   def template(_text), do: {:error, {:syntax, 0}}
 
+  @doc "A text as an expression writes it, between quotes, which a parse gives back as it was."
+  def literal(text) when is_binary(text) do
+    escaped =
+      text
+      |> String.replace(["\\" | @double], &("\\" <> &1))
+      |> String.replace(
+        "
+",
+        "\n"
+      )
+
+    "\"" <> escaped <> "\""
+  end
+
   defp lex("", _at, acc), do: Enum.reverse(acc)
 
   defp lex(<<space, rest::binary>>, at, acc) when space in [?\s, ?\t, ?\n, ?\r],

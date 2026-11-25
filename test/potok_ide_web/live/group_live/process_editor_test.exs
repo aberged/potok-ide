@@ -88,6 +88,48 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
              Enum.find(row.graph["nodes"], &(&1["type"] == "pollTask"))
   end
 
+  test "the condition after a poll that only asks is about its first answer", ctx do
+    {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes")
+    lv |> element("#processes-new") |> render_click()
+    insert(lv, "f1", "poll")
+
+    assert has_element?(lv, "#process-poll-note", ~s(poll_1.winner = "Yes"))
+
+    lv
+    |> form("#process-element-form", %{"element" => %{"answers" => "Plava\nZelena"}})
+    |> render_change()
+
+    assert has_element?(lv, "#process-poll-note", ~s(poll_1.winner = "Plava"))
+
+    # The way the condition takes, what it may name, and a warning where it
+    # asks what is true whichever answer wins.
+    render_hook(canvas(lv), "process_editor_select", %{"flow" => "f3"})
+    assert has_element?(lv, "#process-flow-form textarea", ~s(poll_1.winner = "Plava"))
+    refute has_element?(lv, "#process-flow-passed-poll_1")
+
+    for name <- ~w(winner passed outcome voters eligible) do
+      assert has_element?(lv, "[id^='process-field-expr-']", "poll_1.#{name}")
+    end
+
+    refute has_element?(lv, "[id^='process-field-expr-']", "poll_1.applied")
+
+    lv
+    |> form("#process-flow-form", %{"flow" => %{"expr" => "not poll_1.passed"}})
+    |> render_change()
+
+    assert has_element?(lv, "#process-flow-passed-poll_1", ~s(poll_1.winner = "Plava"))
+  end
+
+  test "where an arrow leads, a push goes by the name of its role", ctx do
+    {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes")
+    lv |> element("#processes-new") |> render_click()
+    insert(lv, "f1", "push")
+
+    render_hook(canvas(lv), "process_editor_select", %{"flow" => "f1"})
+    assert has_element?(lv, "#process-flow-form option[value=push_1]", "Push to Admin")
+    refute has_element?(lv, "#process-flow-form option[value=push_1]", "Push to admin")
+  end
+
   test "an editor draws a new process, saves it and switches it on", ctx do
     {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes")
 

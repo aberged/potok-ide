@@ -35,6 +35,13 @@ defmodule PotokIde.Processes.ExprTest do
 
   defp d(text), do: Decimal.new(text)
 
+  test "a text written for an expression reads back as it was" do
+    for text <- ["Da", "", ~s(a "b" c), ~S(put\do), "„Da“ i ’ne’", "dva\nreda", "{{start.title}}"] do
+      assert {:ok, tree} = text |> Expr.literal() |> Expr.parse()
+      assert Expr.eval(tree, %{}) == {:ok, text}
+    end
+  end
+
   defp check(text) do
     {:ok, tree} = Expr.parse(text)
     Expr.check(tree, @scope)

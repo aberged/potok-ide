@@ -374,7 +374,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                     start_title={@start_title}
                   />
                 <% match?({:flow, _}, @editor.selected) and @form -> %>
-                  <.flow_panel editor={@editor} form={@form} />
+                  <.flow_panel editor={@editor} form={@form} roles={@roles} />
                 <% @editor.editable? -> %>
                   <.data_panel editor={@editor} />
                 <% true -> %>
@@ -2156,6 +2156,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
 
   attr :editor, :map, required: true
   attr :form, :any, required: true
+  attr :roles, :map, required: true
 
   defp flow_panel(assigns) do
     {:flow, key} = assigns.editor.selected
@@ -2164,7 +2165,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
     assigns =
       assigns
       |> assign(:flow, flow)
-      |> assign(:targets, target_options(assigns.editor.graph, flow))
+      |> assign(:targets, target_options(assigns.editor, flow, assigns.roles))
       |> assign(:removable?, removable?(assigns.editor.graph, flow))
 
     ~H"""
@@ -2218,6 +2219,17 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                 phx-debounce="400"
               />
               <.fields editor={@editor} target="expr" />
+              <p
+                :for={poll <- asked_if_passed(@editor.graph, @flow)}
+                id={"process-flow-passed-#{poll["id"]}"}
+                class="rounded-xl bg-amber-500/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-100"
+              >
+                {gettext(
+                  "%{passed} is true whichever answer wins, as this poll only asks. For its first answer write %{winner}.",
+                  passed: "#{poll["id"]}.passed",
+                  winner: GraphEdit.poll_condition(poll)
+                )}
+              </p>
               <p class="text-xs text-base-content/60">
                 {gettext(
                   "An expression that is true or false: compare with %{compare}, join with %{join}, and write a text between quotes.",
@@ -2245,6 +2257,19 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
     """
   end
 
+  # The polls that only ask, whose `passed` the condition of `flow` reads:
+  # what is true whichever answer wins is seldom what it is after.
+  defp asked_if_passed(graph, %{"condition" => %{"expr" => expression}}) do
+    for %{"type" => "pollTask", "effect" => "none", "id" => id} = poll <- graph["nodes"],
+        Regex.match?(
+          ~r/(?<![\p{L}\p{Nd}_.])#{Regex.escape(id)}\s*\.\s*passed(?![\p{L}\p{Nd}_])/u,
+          expression
+        ),
+        do: poll
+  end
+
+  defp asked_if_passed(_graph, _flow), do: []
+
   defp outcome_flows(graph, %{"type" => "userTask", "id" => id}),
     do: graph |> Graph.out(id) |> Enum.filter(&Map.has_key?(&1, "outcome"))
 
@@ -2271,14 +2296,14 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
     end
   end
 
-  defp target_options(graph, flow) do
-    roles = %{}
+  defp target_options(%{graph: graph} = editor, flow, roles) do
+    opts = [processes: ProcessEditorState.process_names(editor)]
 
     steps =
       for node <- graph["nodes"],
           node["type"] != "startEvent",
           node["id"] != flow["from"],
-          do: {elem(ProcessEditorState.describe(node, graph, roles), 2), node["id"]}
+          do: {elem(ProcessEditorState.describe(node, graph, roles, opts), 2), node["id"]}
 
     steps ++ [{gettext("A new end"), "__new_end"}]
   end
@@ -2420,8 +2445,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
             ),
           else:
             gettext(
-              "The run waits for the end of the poll. The condition after it asks %{name}: whether it passed.",
-              name: "#{@node["id"]}.passed"
+              "The run waits for the end of the poll. The condition after it asks whether the first answer won: %{name}.",
+              name: GraphEdit.poll_condition(@node)
             )
         )}
       </p>
