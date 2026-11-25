@@ -24,8 +24,7 @@ defmodule PotokIde.Polls do
   alias PotokIde.History
   alias PotokIde.PlainText
   alias PotokIde.Polls.{Effects, Notifications, Outcome, Poll, PollBallot, PollOption, Rules}
-  alias PotokIde.Processes
-  alias PotokIde.Processes.ValueProcess
+  alias PotokIde.Processes.Engine
   alias PotokIde.Repo
   alias PotokIde.Social
 
@@ -952,7 +951,8 @@ defmodule PotokIde.Polls do
         Effects.apply_locked(poll, group, outcome, winner)
       end)
 
-    announcements = announcements ++ wake_process(poll, closed_at)
+    # The run of a process that waits for the poll goes on.
+    announcements = announcements ++ Engine.poll_closed(poll, closed_at)
 
     closed =
       poll
@@ -967,17 +967,6 @@ defmodule PotokIde.Polls do
       |> Repo.update!()
 
     {closed, announcements}
-  end
-
-  # The run of a process that waits for the poll goes on.
-  defp wake_process(%Poll{process_instance_id: nil}, _closed_at), do: []
-
-  defp wake_process(%Poll{process_instance_id: id}, closed_at) do
-    {count, _rows} =
-      from(i in ValueProcess, where: i.id == ^id and i.status == :waiting)
-      |> Repo.update_all(set: [wake_at: closed_at])
-
-    if count > 0, do: [&Processes.Scheduler.nudge/0], else: []
   end
 
   @doc """
@@ -1052,7 +1041,8 @@ defmodule PotokIde.Polls do
   @doc """
   Deletes the poll with all its votes, and the message that carries it. A
   decision that changes roles stays once it has a vote: it is the record of
-  what the group decided (`decision?/1`).
+  what the group decided (`decision?/1`). The run of a process that waits for
+  the poll stops there (`Processes.Engine.poll_deleted/1`).
   """
   def delete_poll(%Profile{} = actor, %Poll{} = poll) do
     group = Repo.get!(Group, poll.group_id)
@@ -1086,7 +1076,13 @@ defmodule PotokIde.Polls do
         {:ok, poll}
 
       _no_value ->
-        {:ok, _deleted} = History.delete(poll, actor: actor)
+        {:ok, announcements} =
+          History.transaction([actor: actor], fn ->
+            Repo.delete!(poll)
+            Engine.poll_deleted(poll)
+          end)
+
+        Enum.each(announcements, & &1.())
         broadcast_deleted(poll)
         {:ok, poll}
     end

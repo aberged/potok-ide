@@ -90,7 +90,11 @@ defmodule PotokIde.Processes.Engine do
   someone of the process do so (`PotokIde.Polls.Effects`): its owner, an
   admin, in a group of its founders, or the process itself where the group
   elects its admins (`effect_not_permitted` otherwise). The process holds
-  no more than "everyone" does: the decision carries the role over.
+  no more than "everyone" does: the decision carries the role over. A poll
+  deleted before its end fails the run that waits for it (`poll_gone`,
+  `poll_deleted/1`), for an editor to take up again, which puts it anew. A
+  cancelled run ends the poll it waited for, unless that is a decision on a
+  role, which goes on to its deadline, as voters counted on it.
 
   While a run waits on a step a person finishes it keeps whom it asks
   (`asks_role`, `asks_profile_id`), and says so when it tells that it
@@ -152,6 +156,18 @@ defmodule PotokIde.Processes.Engine do
   @max_woken 100
   # Processes of the groups above and below that one signal starts.
   @max_related_started 20
+
+  # Whether the run `i` stands on an element of `type`, in a query.
+  defmacrop stands_on(i, type) do
+    quote do
+      fragment(
+        "jsonb_path_exists(?, '$.nodes[*] \\? (@.id == $e && @.type == $t)', jsonb_build_object('e', ?, 't', ?::text))",
+        unquote(i).graph,
+        unquote(i).element,
+        unquote(type)
+      )
+    end
+  end
 
   @doc "Steps a run takes in a row before it has to wait."
   def max_run, do: @max_run
@@ -1374,8 +1390,7 @@ defmodule PotokIde.Processes.Engine do
     do: {:continue, move(instance, flow["to"], %{triggered_by_id: nil}), left(instance)}
 
   # How the run's newest poll went, under the poll's element; still open, it
-  # waits on. A poll deleted before its end leaves the run nothing to wait
-  # for, which only a decision without votes can be.
+  # waits on. One deleted has failed the run already (`poll_deleted/1`).
   defp poll_ended(instance, id, flow) do
     case Repo.one(
            from(p in Poll,
@@ -1506,7 +1521,11 @@ defmodule PotokIde.Processes.Engine do
     case cancel_awaited(instance) do
       {:ok, cancelled} ->
         moved = move(instance, flow["to"], %{triggered_by_id: nil, awaiting_id: nil})
-        {:continue, moved, Enum.map(cancelled, fn run -> fn -> tell(run) end end)}
+        polls = end_polls(Enum.map(cancelled, & &1.id))
+
+        {:continue, moved,
+         Enum.map(cancelled, fn run -> fn -> tell(run) end end) ++
+           Enum.map(polls, fn poll -> fn -> Polls.refresh(poll) end end)}
 
       :busy ->
         :skip
@@ -1812,7 +1831,8 @@ defmodule PotokIde.Processes.Engine do
 
   @doc """
   Cancels an instance that runs, waits or has failed, with the runs it waits
-  for; a run that waits for it fails (`call_cancelled`).
+  for and the poll one of them waits for; a run that waits for it fails
+  (`call_cancelled`).
   """
   def cancel(id, editor \\ nil) do
     History.transaction(signature(editor), fn ->
@@ -1824,15 +1844,17 @@ defmodule PotokIde.Processes.Engine do
         %ValueProcess{status: status} = instance when status in [:running, :waiting, :failed] ->
           below = Enum.flat_map(chain, &List.wrap(cancel_live(&1)))
           instance = cancelled!(instance)
-          {instance, below ++ fail_callers([instance.id])}
+          polls = end_polls([instance.id | Enum.map(below, & &1.id)])
+          {instance, below ++ fail_callers([instance.id]), polls}
 
         _other ->
           Repo.rollback(:not_running)
       end
     end)
     |> case do
-      {:ok, {instance, others}} ->
+      {:ok, {instance, others, polls}} ->
         Enum.each(others, &tell/1)
+        Enum.each(polls, &Polls.refresh/1)
         {:ok, tell(instance)}
 
       error ->
@@ -1840,14 +1862,90 @@ defmodule PotokIde.Processes.Engine do
     end
   end
 
+  # The plain polls the runs `ids`, just cancelled in this transaction, waited
+  # for end with them, as nobody waits for what they say. A decision on a role
+  # goes on to its deadline: an editor takes no vote back by stopping the
+  # process that put it. One another transaction holds is closing as it is, so
+  # it is skipped: that one waits for the runs this one holds. Returns the
+  # polls, to tell of once this commits.
+  defp end_polls([]), do: []
+
+  defp end_polls(ids) do
+    from(p in Poll,
+      join: i in ValueProcess,
+      on: i.id == p.process_instance_id,
+      where: i.id in ^ids and is_nil(p.closed_at) and is_nil(p.effect),
+      where: stands_on(i, "pollTask"),
+      lock: fragment("FOR UPDATE OF ? SKIP LOCKED", p)
+    )
+    |> Repo.all()
+    |> Enum.map(fn poll ->
+      {closed, _announcements} =
+        History.within([process: poll.process_instance_id], fn ->
+          Polls.close_locked(poll, Repo.get!(Group, poll.group_id), now())
+        end)
+
+      closed
+    end)
+  end
+
+  @doc """
+  Wakes the run that put `poll`, which ends in the caller's transaction, while
+  it waits at a poll. One that has gone on, and waits for something else by
+  now, does not: a poll taken up again may end more than once. Returns what to
+  do once the transaction commits.
+  """
+  def poll_closed(%Poll{process_instance_id: nil}, _closed_at), do: []
+
+  def poll_closed(%Poll{process_instance_id: run_id}, %DateTime{} = closed_at) do
+    {count, _rows} =
+      from(i in ValueProcess,
+        where: i.id == ^run_id and i.status == :waiting,
+        where: stands_on(i, "pollTask")
+      )
+      |> Repo.update_all(set: [wake_at: closed_at])
+
+    if count > 0, do: [&Scheduler.nudge/0], else: []
+  end
+
+  @doc """
+  Fails the run that waits for `poll`, deleted in the caller's transaction
+  (`poll_gone`): the one that put it, while it waits at a poll and has put
+  none since. Returns what to do once the transaction commits.
+  """
+  def poll_deleted(%Poll{process_instance_id: nil}), do: []
+
+  def poll_deleted(%Poll{process_instance_id: run_id} = poll) do
+    with %ValueProcess{status: :waiting} = instance <- lock(run_id),
+         %{"type" => "pollTask"} <- Graph.node(instance.graph, instance.element),
+         false <- Repo.exists?(put_since(poll)) do
+      failed = poll_gone!(instance)
+      [fn -> tell(failed) end]
+    else
+      _does_not_wait_for_it -> []
+    end
+  end
+
+  defp put_since(%Poll{id: id, process_instance_id: run_id}),
+    do: from(p in Poll, where: p.process_instance_id == ^run_id and p.id > ^id)
+
+  defp poll_gone!(%ValueProcess{} = instance) do
+    update!(instance, %{
+      status: :failed,
+      wake_at: nil,
+      error: %{"element" => instance.element, "reason" => "poll_gone"}
+    })
+  end
+
   defp signature(%Profile{} = editor), do: [actor: editor]
   defp signature(nil), do: []
 
   @doc """
   Cancels every instance of a process that runs or waits, as its rule goes
-  (`PotokIde.Social.AppProcesses`), with the runs they wait for; the runs
-  that wait for one of its instances fail (`call_cancelled`), also for one
-  that had failed. Returns how many of its own it cancelled.
+  (`PotokIde.Social.AppProcesses`), with the runs they wait for and the polls
+  they wait for; the runs that wait for one of its instances fail
+  (`call_cancelled`), also for one that had failed. Runs in the caller's
+  transaction and returns the polls it ended, to refresh once that commits.
   """
   def cancel_all(%AppProcess{id: id}) do
     own =
@@ -1869,11 +1967,12 @@ defmodule PotokIde.Processes.Engine do
       set: [status: :cancelled, wake_at: nil, awaiting_id: nil, updated_at: now()]
     )
 
-    {count, _} =
-      from(i in ValueProcess, where: i.id in ^own and i.status in [:running, :waiting])
-      |> Repo.update_all(
-        set: [status: :cancelled, wake_at: nil, awaiting_id: nil, updated_at: now()]
-      )
+    from(i in ValueProcess, where: i.id in ^own and i.status in [:running, :waiting])
+    |> Repo.update_all(
+      set: [status: :cancelled, wake_at: nil, awaiting_id: nil, updated_at: now()]
+    )
+
+    polls = end_polls(own ++ below)
 
     failed =
       from(i in ValueProcess,
@@ -1883,7 +1982,7 @@ defmodule PotokIde.Processes.Engine do
       |> Repo.all()
 
     fail_callers(own ++ failed)
-    count
+    polls
   end
 
   @doc """
@@ -1897,12 +1996,7 @@ defmodule PotokIde.Processes.Engine do
       Repo.transaction(fn ->
         from(i in ValueProcess,
           where: i.status == :waiting and is_nil(i.awaiting_id),
-          where:
-            fragment(
-              "jsonb_path_exists(?, '$.nodes[*] \\? (@.id == $e && @.type == \"callActivity\")', jsonb_build_object('e', ?))",
-              i.graph,
-              i.element
-            ),
+          where: stands_on(i, "callActivity"),
           # One whose run ended has heard of it, and only waits to go on.
           where: fragment("(? -> ?) IS NULL", i.results, i.element),
           order_by: [asc: i.id],
@@ -1917,6 +2011,38 @@ defmodule PotokIde.Processes.Engine do
             error: %{"element" => caller.element, "reason" => "call_cancelled"}
           })
         end)
+      end)
+
+    Enum.each(failed, &tell/1)
+    length(failed)
+  end
+
+  @doc """
+  Fails the runs that wait for a poll that is gone in some way other than
+  `poll_deleted/1` hears of, as it does: at most `limit` in one go, skipping
+  one another node holds. Returns how many it failed.
+  """
+  def fail_orphaned_polls(limit \\ 200) do
+    {:ok, failed} =
+      Repo.transaction(fn ->
+        from(i in ValueProcess,
+          as: :run,
+          where: i.status == :waiting and is_nil(i.wake_at),
+          where: stands_on(i, "pollTask"),
+          # A poll that ended woke its run as it did.
+          where:
+            not exists(
+              from(p in Poll,
+                where: p.process_instance_id == parent_as(:run).id and is_nil(p.closed_at),
+                select: 1
+              )
+            ),
+          order_by: [asc: i.id],
+          limit: ^limit,
+          lock: "FOR UPDATE SKIP LOCKED"
+        )
+        |> Repo.all()
+        |> Enum.map(&poll_gone!/1)
       end)
 
     Enum.each(failed, &tell/1)

@@ -119,12 +119,13 @@ defmodule PotokIde.Social.AppProcesses do
 
   @doc false
   # Deactivates a process: for `sync/4` and for `DrawnProcesses`, inside a
-  # transaction that holds the app's lock.
+  # transaction that holds the app's lock. Returns the polls that ended with
+  # it, to refresh once that commits; only a drawn process puts any.
   def stop(%Group{id: group_id}, %AppProcess{profile_id: profile_id} = row) do
     row |> Ecto.Changeset.change(active: false) |> Repo.update!()
 
     # What it was doing stops with it.
-    Engine.cancel_all(row)
+    polls = Engine.cancel_all(row)
 
     # Its roles go with the membership (composite foreign key).
     Repo.delete_all(
@@ -140,6 +141,7 @@ defmodule PotokIde.Social.AppProcesses do
     # Inside the app's transaction, so a read before it commits may still keep
     # the old access, for as long as `Access` keeps it.
     Access.forget([group_id])
+    polls
   end
 
   @doc false

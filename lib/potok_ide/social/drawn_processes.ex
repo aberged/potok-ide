@@ -592,14 +592,20 @@ defmodule PotokIde.Social.DrawnProcesses do
 
   @doc """
   Switches a drawn process off: its instances that run or wait are cancelled,
-  and its profile leaves the app's group, with its roles.
+  with the polls they wait for (`Engine.cancel_all/1`), and its profile leaves
+  the app's group, with its roles.
   """
   def deactivate(%Profile{} = editor, %Group{} = group, id) do
     changing(editor, group, id, fn row, _access ->
-      if row.active, do: AppProcesses.stop(group, row)
-      row |> Ecto.Changeset.change(active: false, next_run_at: nil) |> Repo.update!()
+      polls = stopped(group, row)
+      row = row |> Ecto.Changeset.change(active: false, next_run_at: nil) |> Repo.update!()
+      {row, polls}
     end)
   end
+
+  # The polls that ended as the process stopped; none when it was off.
+  defp stopped(group, %AppProcess{active: true} = row), do: AppProcesses.stop(group, row)
+  defp stopped(_group, %AppProcess{}), do: []
 
   @doc """
   Makes a process that others call public, for the processes drawn in the
@@ -845,8 +851,8 @@ defmodule PotokIde.Social.DrawnProcesses do
   def delete(%Profile{} = editor, %Group{} = group, id) do
     changing(editor, group, id, fn row, _access ->
       if name = caller(group, row), do: Repo.rollback({:in_use, name})
-      if row.active, do: AppProcesses.stop(group, row)
-      Repo.delete!(row)
+      polls = stopped(group, row)
+      {Repo.delete!(row), polls}
     end)
   end
 
@@ -868,7 +874,8 @@ defmodule PotokIde.Social.DrawnProcesses do
     |> Repo.one()
   end
 
-  # Runs `fun` on the locked row, for an editor of its app, under the app's lock.
+  # Runs `fun` on the locked row, for an editor of its app, under the app's
+  # lock. It returns the row, or the row and the polls that ended with it.
   defp changing(editor, group, id, fun) do
     case get(group, id) do
       nil ->
@@ -963,6 +970,11 @@ defmodule PotokIde.Social.DrawnProcesses do
   end
 
   # The pages of the group hear of it; apps' frames do not (`AppValues`).
+  defp announced({:ok, {%AppProcess{} = row, polls}}, group) do
+    Enum.each(polls, &PotokIde.Polls.refresh/1)
+    announced({:ok, row}, group)
+  end
+
   defp announced({:ok, %AppProcess{} = row}, group) do
     AppData.broadcast(group, :drawn_process, %{
       alt_id: row.alt_description_id,

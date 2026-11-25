@@ -4145,6 +4145,9 @@ defmodule PotokIde.Social do
       from(a in ValueAttachment, where: a.value_id == ^value.id, select: a.storage_key)
     )
     |> Multi.delete(:value, value)
+    |> Multi.run(:waiting_run, fn _repo, _changes ->
+      {:ok, if(poll, do: Engine.poll_deleted(poll), else: [])}
+    end)
     |> Multi.run(:group_last_value_at, fn repo, _changes ->
       # The newest by id, which grows with the time of writing: the chat's
       # index on (group_id, id) answers it from its end.
@@ -4166,9 +4169,11 @@ defmodule PotokIde.Social do
        %{
          value: deleted_value,
          attachments: {_count, storage_keys},
+         waiting_run: announcements,
          group_last_value_at: last_value_at
        }} ->
         Storage.delete_later(storage_keys)
+        Enum.each(announcements, & &1.())
         broadcast_value_deleted(deleted_value)
         broadcast_group_value_removed(deleted_value)
         maybe_broadcast_last_value_removed(deleted_value, last_value_at)
