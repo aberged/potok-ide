@@ -19,8 +19,7 @@ defmodule PotokIde.Activity.Entries do
   - `:event` (`:event`, `:rsvp`), and for an answer its `:status` and the date it
     is `:on`;
   - `:app` (an alternative description, nil for the default one) and `:count` of
-    the day's, as far as they are counted (`Activity.counted/0`, one more where
-    there are more), never what they hold (`:record`);
+    the day's, never what they hold (`:record`);
   - `:process`, `:label`, `:type` and `:outcome` (`:run_answer`, `:run_start`);
   - `:person`, and for a `:decision` also `:decision`, `:role_key` and `:role` as
     the group's statute has it, nil once deleted (`:decision`, `:admission`);
@@ -33,7 +32,6 @@ defmodule PotokIde.Activity.Entries do
 
   import Ecto.Query
 
-  alias PotokIde.Activity
   alias PotokIde.Activity.Sources
   alias PotokIde.Events.{Event, Recurrence, Response}
   alias PotokIde.Notices.{GroupFollow, GroupNotice}
@@ -47,6 +45,7 @@ defmodule PotokIde.Activity.Entries do
     AppProcess,
     Group,
     GroupAccessChange,
+    GroupAltDescription,
     GroupJoinRequestApproval,
     GroupMembership,
     GroupReaction,
@@ -54,8 +53,7 @@ defmodule PotokIde.Activity.Entries do
     Profile,
     Value,
     ValueAttachment,
-    ValueReaction,
-    ValueRules
+    ValueReaction
   }
 
   alias PotokIde.Tags.{Tag, Tagging}
@@ -202,31 +200,30 @@ defmodule PotokIde.Activity.Entries do
   # Records, processes and requests
   # ---------
 
-  defp load_kind(:record, %{record: ids}, %{profile: profile, zone: zone}) do
-    rows =
-      from(v in Value,
-        left_join: d in assoc(v, :alt_description),
-        where: v.id in ^ids,
-        select: %{
-          id: v.id,
-          group_id: v.group_id,
-          kept?: not is_nil(v.collection),
-          inserted_at: v.inserted_at,
-          app: map(d, [:id, :name])
-        }
-      )
+  # Grouped again, over the days of the page alone: a key's row holds all of
+  # its day, so it comes out as it was.
+  defp load_kind(:record, %{record: ids}, %{zone: zone} = reader) do
+    days =
+      from(v in Value, where: v.id in ^ids, select: v.inserted_at)
       |> Repo.all()
+      |> Enum.map(&Recurrence.local_date(&1, zone))
+
+    rows =
+      if days == [],
+        do: [],
+        else: written(ids, Enum.min_max_by(days, &Date.to_gregorian_days/1), reader)
+
+    apps = app_names(rows)
 
     for row <- rows do
-      day = Recurrence.local_date(row.inserted_at, zone)
-      app_id = row.app && row.app.id
-
       {{:record, row.id},
        %{
-         key: "record-#{row.group_id}-#{app_id || 0}-#{if row.kept?, do: 1, else: 0}-#{day}",
+         key:
+           "record-#{row.group_id}-#{row.alt_description_id || 0}-#{if row.kept, do: 1, else: 0}-" <>
+             Date.to_iso8601(Recurrence.local_date(row.at, zone)),
          group_id: row.group_id,
-         app: app_id && row.app,
-         count: counted(row, app_id, day, profile, zone)
+         app: apps[row.alt_description_id],
+         count: row.count
        }}
     end
   end
@@ -340,19 +337,25 @@ defmodule PotokIde.Activity.Entries do
     }
   end
 
-  # How many of the day's went into the app up to this one.
-  defp counted(row, app_id, day, profile, zone) do
-    from(v in Value,
-      where: v.creator_id == ^profile.id and v.is_data and v.group_id == ^row.group_id,
-      where: v.inserted_at <= ^row.inserted_at and v.inserted_at >= ^day_start(day, zone),
-      where: is_nil(v.collection) == ^(not row.kept?),
-      where: is_nil(v.collection) or v.collection not in ^ValueRules.reserved(),
-      where: fragment("? IS NOT DISTINCT FROM ?", v.alt_description_id, type(^app_id, :integer)),
-      limit: ^(Activity.counted() + 1),
-      select: 1
+  defp written(ids, {first, last}, %{zone: zone} = reader) do
+    from([value: v] in Sources.written(reader),
+      where: v.inserted_at >= ^day_start(first, zone),
+      where: v.inserted_at < ^day_start(Date.add(last, 1), zone)
     )
     |> Repo.all()
-    |> length()
+    |> Enum.filter(&(&1.id in ids))
+  end
+
+  defp app_names(rows) do
+    ids = for %{alt_description_id: id} when is_integer(id) <- rows, uniq: true, do: id
+
+    if ids == [] do
+      %{}
+    else
+      from(d in GroupAltDescription, where: d.id in ^ids, select: {d.id, map(d, [:id, :name])})
+      |> Repo.all()
+      |> Map.new()
+    end
   end
 
   defp day_start(%Date{} = day, zone), do: Recurrence.to_utc(day, ~T[00:00:00], zone)

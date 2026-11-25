@@ -12,7 +12,6 @@ defmodule PotokIdeWeb.ActivityLive.Words do
   use Gettext, backend: PotokIdeWeb.Gettext
   use PotokIdeWeb, :verified_routes
 
-  alias PotokIde.Activity
   alias PotokIde.Events.{Event, Format, Recurrence}
   alias PotokIde.Social.Profile
   alias PotokIde.Tags.Tag
@@ -100,12 +99,8 @@ defmodule PotokIdeWeb.ActivityLive.Words do
 
   def title(%{source: :record, count: 1}), do: pgettext("activity", "Record in an app")
 
-  def title(%{source: :record, count: count}) do
-    if count > Activity.counted(),
-      do: pgettext("activity", "More than %{count} records in an app", count: Activity.counted()),
-      else:
-        pngettext("activity", "%{count} record in an app", "%{count} records in an app", count)
-  end
+  def title(%{source: :record, count: count}),
+    do: pngettext("activity", "%{count} record in an app", "%{count} records in an app", count)
 
   def title(%{source: :run_answer, type: "formTask"}), do: pgettext("activity", "Filled in form")
   def title(%{source: :run_answer}), do: pgettext("activity", "Decision in a process")

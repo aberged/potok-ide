@@ -294,7 +294,7 @@ defmodule PotokIde.Activity.SourcesTest do
       Repo.insert_all(Social.Value, rows)
       before = message!(ctx.me, ctx.group, at(1))
 
-      assert [%{source: :record, count: 100}] = of(ctx, :work)
+      assert [%{source: :record, count: 2_000}] = of(ctx, :work)
 
       assert ["record-" <> _rest, message] =
                keys(ctx.me, ctx.account, until: at(120), limit: 5)

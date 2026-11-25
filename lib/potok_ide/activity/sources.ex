@@ -27,6 +27,7 @@ defmodule PotokIde.Activity.Sources do
   alias PotokIde.Social.{
     Access,
     AppProcess,
+    Group,
     GroupAccessChange,
     GroupAltDescription,
     GroupJoinRequestApproval,
@@ -134,16 +135,48 @@ defmodule PotokIde.Activity.Sources do
   defp place(%{at: at, rank: last}, rank) when rank > last, do: {at, @max_id}
   defp place(%{at: at}, _rank), do: {at, 0}
 
-  # The end of the day of `at` in `zone`, as times are kept, in UTC.
-  defmacrop day_end(at, zone) do
+  # The day of `at` in `zone`; times are kept in UTC.
+  defmacrop local_day(at, zone) do
     quote do
       fragment(
-        "((date_trunc('day', (?) AT TIME ZONE 'UTC' AT TIME ZONE ?) + interval '1 day') AT TIME ZONE ?) AT TIME ZONE 'UTC'",
+        "((?) AT TIME ZONE 'UTC' AT TIME ZONE ?)::date",
         unquote(at),
-        type(unquote(zone), :string),
         type(unquote(zone), :string)
       )
     end
+  end
+
+  @doc """
+  What the reader wrote into apps. An app may write by the hundred, so what went
+  into one app of a group in one day of the reader's is one row, at the last of
+  it: `%{id, at, group_id, alt_description_id, kept, count}`, `kept` false for
+  values of no collection, which are apart. The query's binding is `:value`.
+
+  It groups all the reader ever wrote, which takes as long as there is of it
+  (35,000 in 0.1 s). Asking of each record whether another came after it would
+  stop at a page, but where Postgres has no fresh statistics of the table it
+  looks among all of the group's records, again for each (0.7 s for 2,000).
+  """
+  def written(%{profile: profile, until: until, zone: zone}) do
+    from(v in Value,
+      as: :value,
+      where: v.creator_id == ^profile.id and v.is_data and v.inserted_at < ^until,
+      where: is_nil(v.collection) or v.collection not in ^ValueRules.reserved(),
+      group_by: [
+        v.group_id,
+        v.alt_description_id,
+        is_nil(v.collection),
+        local_day(v.inserted_at, ^zone)
+      ],
+      select: %{
+        id: max(v.id),
+        at: max(v.inserted_at),
+        group_id: v.group_id,
+        alt_description_id: v.alt_description_id,
+        kept: type(fragment("bool_and(? IS NOT NULL)", v.collection), :boolean),
+        count: count(v.id)
+      }
+    )
   end
 
   # ---------
@@ -323,57 +356,30 @@ defmodule PotokIde.Activity.Sources do
   # Records, processes and requests
   # ---------
 
-  # An app may write by the hundred, so what went into it in one day of the
-  # reader's is one row, the last of it: the one no other came after. Values of
-  # no collection are read by the group's members only, so they are apart.
-  defp source(:record, %{profile: profile, until: until, zone: zone, alts: alts}) do
-    later =
-      from(n in Value,
-        where: n.creator_id == ^profile.id and n.is_data and n.inserted_at < ^until,
-        where:
-          fragment(
-            "(?, ?) > (?, ?)",
-            n.inserted_at,
-            n.id,
-            parent_as(:value).inserted_at,
-            parent_as(:value).id
-          ),
-        where: n.inserted_at < day_end(parent_as(:value).inserted_at, ^zone),
-        where: n.group_id == parent_as(:value).group_id,
-        where: is_nil(n.collection) == is_nil(parent_as(:value).collection),
-        where: is_nil(n.collection) or n.collection not in ^ValueRules.reserved(),
-        where:
-          fragment(
-            "? IS NOT DISTINCT FROM ?",
-            n.alt_description_id,
-            parent_as(:value).alt_description_id
-          ),
-        select: 1
-      )
-
+  # Values of no collection are read by the group's members only.
+  defp source(:record, %{profile: profile, alts: alts} = reader) do
     inside = Visibility.inside(profile)
 
     public =
       dynamic(
-        [value: v, group: g],
+        [written: w, group: g],
         g.is_public and not g.is_root and not g.is_direct and is_nil(g.parent_value_id) and
-          not is_nil(v.collection)
+          w.kept
       )
 
-    from(v in Value,
-      as: :value,
-      join: g in assoc(v, :group),
+    from(w in subquery(written(reader)),
+      as: :written,
+      join: g in Group,
+      on: g.id == w.group_id,
       as: :group,
-      left_join: d in assoc(v, :alt_description),
-      as: :alt,
-      where: v.creator_id == ^profile.id and v.is_data and v.inserted_at < ^until,
-      where: is_nil(v.collection) or v.collection not in ^ValueRules.reserved(),
-      where: not exists(later)
+      left_join: d in GroupAltDescription,
+      on: d.id == w.alt_description_id,
+      as: :alt
     )
     |> seen_apps(alts)
     |> Visibility.with_membership(profile)
     |> where(^dynamic(^inside or ^public))
-    |> select([value: v], %{id: v.id, at: v.inserted_at})
+    |> select([written: w], %{id: w.id, at: w.at})
   end
 
   # What a person finished: a decision, or a form filled in. The rest of a
