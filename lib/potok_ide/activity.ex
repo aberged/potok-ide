@@ -21,6 +21,8 @@ defmodule PotokIde.Activity do
 
   @page 30
   @timeout 3_000
+  # The records of a day are counted no further.
+  @counted 99
 
   # What each filter reads. Files are messages too, so "all" tells them once.
   @filters [
@@ -42,6 +44,9 @@ defmodule PotokIde.Activity do
 
   @doc "What the timeline can be narrowed to."
   def filters, do: Keyword.keys(@filters)
+
+  @doc "How far the records of a day are counted: an entry's `count` past it says only that there are more."
+  def counted, do: @counted
 
   @doc "How many entries a page has."
   def page_size, do: @page

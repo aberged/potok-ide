@@ -247,20 +247,18 @@ defmodule PotokIde.Activity.SourcesTest do
   end
 
   describe "records" do
-    test "one row for what went into a collection in a day, without what it holds", ctx do
+    test "one row for what went into an app in a day, without what it holds", ctx do
       record!(ctx.me, ctx.group, at(0), %{data: %{"tajna" => "x"}})
-      last = record!(ctx.me, ctx.group, at(5))
       record!(ctx.me, ctx.group, at(3), %{collection: "racuni"})
+      last = record!(ctx.me, ctx.group, at(5))
+      record!(ctx.me, ctx.group, at(6), %{collection: "config"})
+      old = record!(ctx.me, ctx.group, at(4), %{collection: nil})
       record!(ctx.owner, ctx.group, at(9))
 
-      assert [molbe, racuni] = of(ctx, :work)
-
-      assert {molbe.source, molbe.id, molbe.collection, molbe.count} ==
-               {:record, last.id, "molbe", 2}
-
-      assert {racuni.collection, racuni.count} == {"racuni", 1}
-      refute inspect(molbe) =~ "tajna"
-      assert molbe.app == nil
+      assert [entry, uncollected] = of(ctx, :work)
+      assert {entry.source, entry.id, entry.count, entry.app} == {:record, last.id, 3, nil}
+      assert {uncollected.id, uncollected.count} == {old.id, 1}
+      refute inspect(entry) =~ "tajna"
     end
 
     test "by the days of the reader's zone", ctx do
@@ -338,7 +336,8 @@ defmodule PotokIde.Activity.SourcesTest do
       private = group_with_members!(ctx.owner, [])
       record!(ctx.me, private, at(3))
 
-      assert [%{collection: "molbe", group: %{id: id}}] = of(ctx, :work)
+      # What is in no collection came last and hides nothing.
+      assert [%{source: :record, count: 1, group: %{id: id}}] = of(ctx, :work)
       assert id == public.id
     end
   end

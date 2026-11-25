@@ -241,6 +241,8 @@ defmodule PotokIdeWeb.Router do
       live "/groups/:id", GroupLive.Show, :show
       live "/invitations", InvitationLive.Index, :index
       live "/notices", NoticeLive.Index, :index
+      # What the current profile did, so it takes one.
+      live "/activity", ActivityLive.Index, :index
       live "/requests", RequestLive.Index, :index
       live "/tags", TagLive.Index, :index
       live "/accounts/register", AccountLive.Registration, :new

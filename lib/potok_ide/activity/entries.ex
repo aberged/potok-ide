@@ -1,7 +1,4 @@
 defmodule PotokIde.Activity.Entries do
-  # The records of a day are counted no further.
-  @counted 99
-
   @moduledoc """
   What a page of the timeline (`PotokIde.Activity`) says of each of its keys:
   read for the page at once, and only for the sources it has.
@@ -21,9 +18,9 @@ defmodule PotokIde.Activity.Entries do
     such thing;
   - `:event` (`:event`, `:rsvp`), and for an answer its `:status` and the date it
     is `:on`;
-  - `:collection`, `:app` (an alternative description, nil for the default one)
-    and `:count`, at most #{@counted + 1}, of the day's (`:record`), never what
-    they hold;
+  - `:app` (an alternative description, nil for the default one) and `:count` of
+    the day's, as far as they are counted (`Activity.counted/0`, one more where
+    there are more), never what they hold (`:record`);
   - `:process`, `:label`, `:type` and `:outcome` (`:run_answer`, `:run_start`);
   - `:person`, and for a `:decision` also `:decision`, `:role_key` and `:role` as
     the group's statute has it, nil once deleted (`:decision`, `:admission`);
@@ -36,6 +33,7 @@ defmodule PotokIde.Activity.Entries do
 
   import Ecto.Query
 
+  alias PotokIde.Activity
   alias PotokIde.Activity.Sources
   alias PotokIde.Events.{Event, Recurrence, Response}
   alias PotokIde.Notices.{GroupFollow, GroupNotice}
@@ -56,7 +54,8 @@ defmodule PotokIde.Activity.Entries do
     Profile,
     Value,
     ValueAttachment,
-    ValueReaction
+    ValueReaction,
+    ValueRules
   }
 
   alias PotokIde.Tags.{Tag, Tagging}
@@ -211,7 +210,7 @@ defmodule PotokIde.Activity.Entries do
         select: %{
           id: v.id,
           group_id: v.group_id,
-          collection: v.collection,
+          kept?: not is_nil(v.collection),
           inserted_at: v.inserted_at,
           app: map(d, [:id, :name])
         }
@@ -224,9 +223,8 @@ defmodule PotokIde.Activity.Entries do
 
       {{:record, row.id},
        %{
-         key: "record-#{row.group_id}-#{app_id || 0}-#{row.collection}-#{day}",
+         key: "record-#{row.group_id}-#{app_id || 0}-#{if row.kept?, do: 1, else: 0}-#{day}",
          group_id: row.group_id,
-         collection: row.collection,
          app: app_id && row.app,
          count: counted(row, app_id, day, profile, zone)
        }}
@@ -342,14 +340,15 @@ defmodule PotokIde.Activity.Entries do
     }
   end
 
-  # How many of the day's went into the collection up to this one.
+  # How many of the day's went into the app up to this one.
   defp counted(row, app_id, day, profile, zone) do
     from(v in Value,
       where: v.creator_id == ^profile.id and v.is_data and v.group_id == ^row.group_id,
       where: v.inserted_at <= ^row.inserted_at and v.inserted_at >= ^day_start(day, zone),
-      where: fragment("? IS NOT DISTINCT FROM ?", v.collection, ^row.collection),
+      where: is_nil(v.collection) == ^(not row.kept?),
+      where: is_nil(v.collection) or v.collection not in ^ValueRules.reserved(),
       where: fragment("? IS NOT DISTINCT FROM ?", v.alt_description_id, type(^app_id, :integer)),
-      limit: ^(@counted + 1),
+      limit: ^(Activity.counted() + 1),
       select: 1
     )
     |> Repo.all()

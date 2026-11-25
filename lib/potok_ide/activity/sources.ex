@@ -323,9 +323,9 @@ defmodule PotokIde.Activity.Sources do
   # Records, processes and requests
   # ---------
 
-  # An app may write by the hundred, so what went into one collection in one
-  # day of the reader's is one row, the last of it: the one no other came
-  # after. Values of no collection are read by the group's members.
+  # An app may write by the hundred, so what went into it in one day of the
+  # reader's is one row, the last of it: the one no other came after. Values of
+  # no collection are read by the group's members only, so they are apart.
   defp source(:record, %{profile: profile, until: until, zone: zone, alts: alts}) do
     later =
       from(n in Value,
@@ -340,13 +340,14 @@ defmodule PotokIde.Activity.Sources do
           ),
         where: n.inserted_at < day_end(parent_as(:value).inserted_at, ^zone),
         where: n.group_id == parent_as(:value).group_id,
+        where: is_nil(n.collection) == is_nil(parent_as(:value).collection),
+        where: is_nil(n.collection) or n.collection not in ^ValueRules.reserved(),
         where:
-          fragment("? IS NOT DISTINCT FROM ?", n.collection, parent_as(:value).collection) and
-            fragment(
-              "? IS NOT DISTINCT FROM ?",
-              n.alt_description_id,
-              parent_as(:value).alt_description_id
-            ),
+          fragment(
+            "? IS NOT DISTINCT FROM ?",
+            n.alt_description_id,
+            parent_as(:value).alt_description_id
+          ),
         select: 1
       )
 

@@ -35,6 +35,16 @@ defmodule PotokIdeWeb.ProfileLive.Card do
             class="rounded-3xl border border-base-300/70 bg-base-100 p-5 shadow-sm sm:p-6"
           >
             <ProfileCard.profile_card id="profile-card" card={@card} />
+            <.button
+              :if={@card.profile.id == @current_profile.id}
+              id="profile-card-activity"
+              navigate={~p"/activity"}
+              size="sm"
+              class="mt-5"
+            >
+              <.icon name="hero-clock" class="size-4" />
+              <span>{gettext("My activity")}</span>
+            </.button>
           </section>
 
           <section

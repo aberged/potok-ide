@@ -44,7 +44,14 @@ defmodule PotokIdeWeb.ProfileLive.Index do
             profile={@current_profile}
             title={gettext("Current profile:")}
             icon="hero-check-badge"
-          />
+          >
+            <:actions>
+              <.button id="profiles-activity" navigate={~p"/activity"} variant="ghost" size="sm">
+                <.icon name="hero-clock" class="size-4" />
+                <span>{gettext("My activity")}</span>
+              </.button>
+            </:actions>
+          </.profile_summary>
           <.profile_summary
             :if={@default_profile}
             id="profiles-default"
@@ -394,6 +401,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
   attr :profile, :map, required: true
   attr :title, :string, required: true
   attr :icon, :string, required: true
+  slot :actions
 
   # What the profile is to the account, over the profile itself. The label has
   # a line of its own, so a long one does not push the name.
@@ -412,6 +420,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
         </span>
       </div>
       <ProfileComponents.profile_identity profile={@profile} />
+      <div :if={@actions != []} class="mt-2 flex flex-wrap gap-2">{render_slot(@actions)}</div>
     </div>
     """
   end

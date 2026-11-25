@@ -354,6 +354,15 @@ defmodule PotokIdeWeb.Layouts do
                       {gettext("Notices")}
                     </.sidebar_link>
                     <.sidebar_link
+                      icon="hero-clock"
+                      navigate={~p"/activity"}
+                      data-nav-link
+                      data-nav-target="/activity"
+                      data-nav-match="prefix"
+                    >
+                      {gettext("My activity")}
+                    </.sidebar_link>
+                    <.sidebar_link
                       icon="hero-inbox-arrow-down"
                       navigate={~p"/invitations"}
                       data-nav-link

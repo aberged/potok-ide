@@ -31,8 +31,8 @@ msgid "Account confirmed successfully."
 msgstr "Налог је успешно потврђен."
 
 #: lib/potok_ide_web/components/core_components.ex:863
-#: lib/potok_ide_web/components/layouts.ex:958
-#: lib/potok_ide_web/components/layouts.ex:964
+#: lib/potok_ide_web/components/layouts.ex:967
+#: lib/potok_ide_web/components/layouts.ex:973
 #, elixir-autogen, elixir-format
 msgid "Actions"
 msgstr "Радње"
@@ -42,8 +42,8 @@ msgstr "Радње"
 msgid "An invitation is already pending."
 msgstr "Позивница је већ на чекању."
 
-#: lib/potok_ide_web/components/layouts.ex:826
-#: lib/potok_ide_web/components/layouts.ex:841
+#: lib/potok_ide_web/components/layouts.ex:835
+#: lib/potok_ide_web/components/layouts.ex:850
 #, elixir-autogen, elixir-format
 msgid "Attempting to reconnect"
 msgstr "Покушавам поновно повезивање"
@@ -99,8 +99,8 @@ msgid "Create"
 msgstr "Креирај"
 
 #: lib/potok_ide_web/live/profile_live/components.ex:405
-#: lib/potok_ide_web/live/profile_live/index.ex:158
-#: lib/potok_ide_web/live/profile_live/index.ex:167
+#: lib/potok_ide_web/live/profile_live/index.ex:165
+#: lib/potok_ide_web/live/profile_live/index.ex:174
 #: lib/potok_ide_web/live/profile_live/new.ex:79
 #, elixir-autogen, elixir-format
 msgid "Create profile"
@@ -183,7 +183,7 @@ msgstr "Група је креирана."
 #: lib/potok_ide_web/live/group_live/show.ex:7523
 #: lib/potok_ide_web/live/group_live/show.ex:7528
 #: lib/potok_ide_web/live/group_live/show/components.ex:717
-#: lib/potok_ide_web/live/profile_live/index.ex:147
+#: lib/potok_ide_web/live/profile_live/index.ex:154
 #, elixir-autogen, elixir-format
 msgid "Groups"
 msgstr "Групе"
@@ -237,7 +237,7 @@ msgstr "Позивница је послата."
 
 #: lib/potok_ide_web/components/layouts.ex:154
 #: lib/potok_ide_web/components/layouts.ex:156
-#: lib/potok_ide_web/components/layouts.ex:363
+#: lib/potok_ide_web/components/layouts.ex:372
 #: lib/potok_ide_web/live/invitation_live/index.ex:40
 #, elixir-autogen, elixir-format
 msgid "Invitations"
@@ -305,12 +305,12 @@ msgstr "Слање позивнице..."
 msgid "Keep me logged in on this device"
 msgstr "Остави ме пријављеним на овом уређају"
 
-#: lib/potok_ide_web/components/layouts.ex:916
+#: lib/potok_ide_web/components/layouts.ex:925
 #, elixir-autogen, elixir-format
 msgid "Language selector"
 msgstr "Избор језика"
 
-#: lib/potok_ide_web/components/layouts.ex:391
+#: lib/potok_ide_web/components/layouts.ex:400
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:12
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:118
 #: lib/potok_ide_web/controllers/page_html/public_event.html.heex:31
@@ -335,7 +335,7 @@ msgstr "Пријави се имејлом"
 msgid "Log me in only this time"
 msgstr "Пријави ме само овај пут"
 
-#: lib/potok_ide_web/components/layouts.ex:435
+#: lib/potok_ide_web/components/layouts.ex:444
 #, elixir-autogen, elixir-format
 msgid "Log out"
 msgstr "Одјави се"
@@ -423,7 +423,7 @@ msgstr "Ниједна послата позивница не одговара �
 msgid "No profile found with that username."
 msgstr "Није пронађен профил са тим корисничким именом."
 
-#: lib/potok_ide_web/live/profile_live/index.ex:91
+#: lib/potok_ide_web/live/profile_live/index.ex:98
 #, elixir-autogen, elixir-format
 msgid "No profiles yet."
 msgstr "Још нема профила."
@@ -453,7 +453,7 @@ msgstr "Профил је креиран."
 msgid "Profile picture URL"
 msgstr "URL слике профила"
 
-#: lib/potok_ide_web/live/profile_live/index.ex:237
+#: lib/potok_ide_web/live/profile_live/index.ex:244
 #, elixir-autogen, elixir-format
 msgid "Profile selected."
 msgstr "Профил је изабран."
@@ -486,7 +486,7 @@ msgstr "Сачувај лозинку"
 msgid "Saving..."
 msgstr "Чување..."
 
-#: lib/potok_ide_web/components/layouts.ex:426
+#: lib/potok_ide_web/components/layouts.ex:435
 #, elixir-autogen, elixir-format
 msgid "Settings"
 msgstr "Подешавања"
@@ -516,8 +516,8 @@ msgstr "Подгрупе"
 #: lib/potok_ide_web/live/profile_live/edit.ex:213
 #: lib/potok_ide_web/live/profile_live/edit.ex:255
 #: lib/potok_ide_web/live/profile_live/edit.ex:334
-#: lib/potok_ide_web/live/profile_live/index.ex:221
-#: lib/potok_ide_web/live/profile_live/index.ex:247
+#: lib/potok_ide_web/live/profile_live/index.ex:228
+#: lib/potok_ide_web/live/profile_live/index.ex:254
 #, elixir-autogen, elixir-format
 msgid "That profile is not available for this account."
 msgstr "Тај профил није доступан за овај налог."
@@ -613,7 +613,7 @@ msgstr "Морате поново потврдити идентитет да б�
 msgid "You need to reauthenticate to perform sensitive actions on your account."
 msgstr "Морате поново потврдити идентитет да бисте извршили осетљиве радње на налогу."
 
-#: lib/potok_ide_web/live/profile_live/index.ex:89
+#: lib/potok_ide_web/live/profile_live/index.ex:96
 #, elixir-autogen, elixir-format
 msgid "Your profiles"
 msgstr "Ваши профили"
@@ -702,7 +702,7 @@ msgstr "Напиши поруку..."
 msgid "Group picture URL"
 msgstr "URL слике групе"
 
-#: lib/potok_ide_web/components/layouts.ex:416
+#: lib/potok_ide_web/components/layouts.ex:425
 #: lib/potok_ide_web/live/account_live/settings.ex:444
 #, elixir-autogen, elixir-format
 msgid "Account"
@@ -713,7 +713,7 @@ msgstr "Налог"
 msgid "Navigation"
 msgstr "Навигација"
 
-#: lib/potok_ide_web/components/layouts.ex:442
+#: lib/potok_ide_web/components/layouts.ex:451
 #: lib/potok_ide_web/live/account_live/settings.ex:358
 #, elixir-autogen, elixir-format
 msgid "Preferences"
@@ -786,7 +786,7 @@ msgstr "Можете мењати само сопствене поруке."
 msgid "A shared profile invitation is already pending."
 msgstr "Позивница за дељени профил је већ на чекању."
 
-#: lib/potok_ide_web/live/profile_live/index.ex:82
+#: lib/potok_ide_web/live/profile_live/index.ex:89
 #, elixir-autogen, elixir-format
 msgid "Accept shared profile"
 msgstr "Прихвати дељени профил"
@@ -812,7 +812,7 @@ msgstr "Провера подршке прегледача..."
 msgid "Choose how this profile appears and whether it can be shared."
 msgstr "Изаберите како овај профил изгледа и да ли може да се дели."
 
-#: lib/potok_ide_web/live/profile_live/index.ex:335
+#: lib/potok_ide_web/live/profile_live/index.ex:342
 #, elixir-autogen, elixir-format
 msgid "Could not accept shared profile invitation."
 msgstr "Није могуће прихватити позивницу за дељени профил."
@@ -842,7 +842,7 @@ msgstr "Позовите људе у Поток путем имејла"
 msgid "Invite profile to shared profile"
 msgstr "Позови профил у дељени профил"
 
-#: lib/potok_ide_web/live/profile_live/index.ex:69
+#: lib/potok_ide_web/live/profile_live/index.ex:76
 #, elixir-autogen, elixir-format
 msgid "Invited by: "
 msgstr "Позвао: "
@@ -880,7 +880,7 @@ msgstr "На мрежи"
 msgid "Only shared profiles can be invited."
 msgstr "Могу се позивати само дељени профили."
 
-#: lib/potok_ide_web/live/profile_live/index.ex:60
+#: lib/potok_ide_web/live/profile_live/index.ex:67
 #, elixir-autogen, elixir-format
 msgid "Pending invitations for your current profile."
 msgstr "Позивнице на чекању за ваш тренутни профил."
@@ -938,12 +938,12 @@ msgstr "Слање позивнице..."
 msgid "Sending..."
 msgstr "Слање..."
 
-#: lib/potok_ide_web/live/profile_live/index.ex:328
+#: lib/potok_ide_web/live/profile_live/index.ex:335
 #, elixir-autogen, elixir-format
 msgid "Shared profile invitation accepted."
 msgstr "Позивница за дељени профил је прихваћена."
 
-#: lib/potok_ide_web/live/profile_live/index.ex:331
+#: lib/potok_ide_web/live/profile_live/index.ex:338
 #, elixir-autogen, elixir-format
 msgid "Shared profile invitation not found."
 msgstr "Позивница за дељени профил није пронађена."
@@ -953,7 +953,7 @@ msgstr "Позивница за дељени профил није пронађ�
 msgid "Shared profile invitation sent."
 msgstr "Позивница за дељени профил је послата."
 
-#: lib/potok_ide_web/live/profile_live/index.ex:59
+#: lib/potok_ide_web/live/profile_live/index.ex:66
 #, elixir-autogen, elixir-format
 msgid "Shared profile invitations"
 msgstr "Позивнице за дељене профиле"
@@ -1055,12 +1055,12 @@ msgstr "Није могуће ажурирати групу."
 msgid "Current group path"
 msgstr "Путања тренутне групе"
 
-#: lib/potok_ide_web/live/profile_live/index.ex:264
+#: lib/potok_ide_web/live/profile_live/index.ex:271
 #, elixir-autogen, elixir-format
 msgid "Default profile updated."
 msgstr "Подразумевани профил је ажуриран."
 
-#: lib/potok_ide_web/live/profile_live/index.ex:52
+#: lib/potok_ide_web/live/profile_live/index.ex:59
 #, elixir-autogen, elixir-format
 msgid "Default profile:"
 msgstr "Подразумевани профил:"
@@ -1159,8 +1159,8 @@ msgstr "Профил није пронађен."
 msgid "Public group"
 msgstr "Јавна група"
 
-#: lib/potok_ide_web/components/layouts.ex:818
-#: lib/potok_ide_web/components/layouts.ex:833
+#: lib/potok_ide_web/components/layouts.ex:827
+#: lib/potok_ide_web/components/layouts.ex:842
 #, elixir-autogen, elixir-format
 msgid "Reconnecting"
 msgstr "Поновно повезивање"
@@ -1201,7 +1201,7 @@ msgstr "Подносилац захтева"
 
 #: lib/potok_ide_web/components/layouts.ex:170
 #: lib/potok_ide_web/components/layouts.ex:172
-#: lib/potok_ide_web/components/layouts.ex:372
+#: lib/potok_ide_web/components/layouts.ex:381
 #: lib/potok_ide_web/live/group_live/show/members_tab.ex:137
 #: lib/potok_ide_web/live/request_live/index.ex:37
 #, elixir-autogen, elixir-format
@@ -1245,7 +1245,7 @@ msgid "This group has no description yet."
 msgstr "Ова група још нема опис."
 
 #: lib/potok_ide_web/live/group_live/show.ex:2147
-#: lib/potok_ide_web/live/profile_live/card.ex:101
+#: lib/potok_ide_web/live/profile_live/card.ex:111
 #: lib/potok_ide_web/live/profile_live/direct.ex:51
 #, elixir-autogen, elixir-format
 msgid "Unable to open a direct group right now."
@@ -2668,7 +2668,7 @@ msgstr "Описи"
 #: lib/potok_ide_web/live/group_live/show/processes_tab.ex:517
 #: lib/potok_ide_web/live/group_live/show/scheduling.ex:651
 #: lib/potok_ide_web/live/group_live/show/templates_card.ex:120
-#: lib/potok_ide_web/live/profile_live/index.ex:136
+#: lib/potok_ide_web/live/profile_live/index.ex:143
 #, elixir-autogen, elixir-format
 msgid "Edit"
 msgstr "Измени"
@@ -2689,7 +2689,7 @@ msgid "Home description"
 msgstr "Почетни опис"
 
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:799
-#: lib/potok_ide_web/live/profile_live/index.ex:127
+#: lib/potok_ide_web/live/profile_live/index.ex:134
 #, elixir-autogen, elixir-format
 msgid "Make default"
 msgstr "Постави као подразумевани"
@@ -2999,6 +2999,7 @@ msgstr "На колико недеља"
 msgid "Every how many years"
 msgstr "На колико година"
 
+#: lib/potok_ide_web/live/activity_live/words.ex:209
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1486
 #, elixir-autogen, elixir-format
 msgid "Going"
@@ -3020,6 +3021,7 @@ msgstr "Место"
 msgid "Manage events"
 msgstr "Управљање догађајима"
 
+#: lib/potok_ide_web/live/activity_live/words.ex:210
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1487
 #, elixir-autogen, elixir-format
 msgid "Maybe"
@@ -3071,6 +3073,7 @@ msgstr "Нема догађаја овог дана."
 msgid "No events this month."
 msgstr "Нема догађаја овог месеца."
 
+#: lib/potok_ide_web/live/activity_live/words.ex:211
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1488
 #, elixir-autogen, elixir-format
 msgid "Not going"
@@ -3184,6 +3187,7 @@ msgstr "Времена су у зони %{zone}, зони догађаја."
 msgid "Title"
 msgstr "Наслов"
 
+#: lib/potok_ide_web/live/activity_live/index.ex:433
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:100
 #: lib/potok_ide_web/live/group_live/show/values_tab.ex:112
 #, elixir-autogen, elixir-format
@@ -3264,6 +3268,7 @@ msgstr "Можда:"
 msgid "Repeats on"
 msgstr "Понавља се"
 
+#: lib/potok_ide_web/live/activity_live/words.ex:182
 #: lib/potok_ide_web/live/tag_live/index.ex:440
 #, elixir-autogen, elixir-format
 msgid "(no text)"
@@ -3462,7 +3467,7 @@ msgstr "Назив тага"
 
 #: lib/potok_ide_web/components/layouts.ex:145
 #: lib/potok_ide_web/components/layouts.ex:146
-#: lib/potok_ide_web/components/layouts.ex:381
+#: lib/potok_ide_web/components/layouts.ex:390
 #: lib/potok_ide_web/components/tag_components.ex:91
 #: lib/potok_ide_web/components/tag_components.ex:120
 #: lib/potok_ide_web/components/tag_components.ex:121
@@ -3875,6 +3880,7 @@ msgstr "Отвори линк"
 msgid "Share"
 msgstr "Подели"
 
+#: lib/potok_ide_web/live/activity_live/words.ex:203
 #: lib/potok_ide_web/live/group_live/show.ex:6804
 #, elixir-autogen, elixir-format
 msgid "%{names} and %{count} more"
@@ -3946,12 +3952,12 @@ msgstr "Подели у Поток"
 msgid "You cannot attach files in this group: %{names} left out."
 msgstr "У овој групи не можеш закачити фајлове, изостављено: %{names}."
 
-#: lib/potok_ide_web/components/layouts.ex:643
+#: lib/potok_ide_web/components/layouts.ex:652
 #, elixir-autogen, elixir-format
 msgid "No ads, no tracking. The only cookie here is the one that keeps you logged in."
 msgstr "Без реклама и без праћења. Једини колачић овде је онај који памти пријаву."
 
-#: lib/potok_ide_web/components/layouts.ex:669
+#: lib/potok_ide_web/components/layouts.ex:678
 #: lib/potok_ide_web/controllers/page_html/privacy.html.heex:25
 #: lib/potok_ide_web/live/account_live/settings.ex:454
 #, elixir-autogen, elixir-format
@@ -3963,19 +3969,19 @@ msgstr "Политика приватности"
 msgid "Potok is where groups talk, exchange values, decide and remember what they decided."
 msgstr "Поток је место где групе разговарају, размењују вредности, одлучују и памте шта су одлучили."
 
-#: lib/potok_ide_web/components/layouts.ex:724
+#: lib/potok_ide_web/components/layouts.ex:733
 #: lib/potok_ide_web/controllers/page_html/public_group_page.html.heex:104
 #, elixir-autogen, elixir-format
 msgid "No account yet?"
 msgstr "Још немаш налог?"
 
-#: lib/potok_ide_web/components/layouts.ex:726
+#: lib/potok_ide_web/components/layouts.ex:735
 #: lib/potok_ide_web/controllers/page_html/public_group_page.html.heex:106
 #, elixir-autogen, elixir-format
 msgid "Potok is invitation only for now."
 msgstr "За сада се у Поток улази уз позивницу."
 
-#: lib/potok_ide_web/components/layouts.ex:621
+#: lib/potok_ide_web/components/layouts.ex:630
 #: lib/potok_ide_web/controllers/page_html/public_group_page.html.heex:99
 #, elixir-autogen, elixir-format
 msgid "What is Potok?"
@@ -4148,7 +4154,7 @@ msgstr "Твоја позивница за Поток"
 msgid "the sign-in page"
 msgstr "страници за пријаву"
 
-#: lib/potok_ide_web/live/profile_live/index.ex:107
+#: lib/potok_ide_web/live/profile_live/index.ex:114
 #, elixir-autogen, elixir-format
 msgid "Use this profile"
 msgstr "Користи овај профил"
@@ -4189,7 +4195,7 @@ msgstr "Прикажи јавне групе у којима ниси члан �
 msgid "You are not in any group yet."
 msgstr "Још ниси члан ниједне групе."
 
-#: lib/potok_ide_web/components/layouts.ex:640
+#: lib/potok_ide_web/components/layouts.ex:649
 #: lib/potok_ide_web/emails/email_components.ex:24
 #: lib/potok_ide_web/emails/email_components.ex:135
 #, elixir-autogen, elixir-format
@@ -4293,7 +4299,7 @@ msgstr "Улоге и дозволе"
 msgid "Several profiles"
 msgstr "Више профила"
 
-#: lib/potok_ide_web/components/layouts.ex:532
+#: lib/potok_ide_web/components/layouts.ex:541
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:20
 #, elixir-autogen, elixir-format
 msgid "Society for society"
@@ -4570,14 +4576,14 @@ msgstr "Додај опис"
 msgid "Conversations"
 msgstr "Разговори"
 
-#: lib/potok_ide_web/components/layouts.ex:894
-#: lib/potok_ide_web/components/layouts.ex:895
+#: lib/potok_ide_web/components/layouts.ex:903
+#: lib/potok_ide_web/components/layouts.ex:904
 #, elixir-autogen, elixir-format
 msgid "Dark theme"
 msgstr "Тамна тема"
 
-#: lib/potok_ide_web/components/layouts.ex:885
-#: lib/potok_ide_web/components/layouts.ex:886
+#: lib/potok_ide_web/components/layouts.ex:894
+#: lib/potok_ide_web/components/layouts.ex:895
 #, elixir-autogen, elixir-format
 msgid "Light theme"
 msgstr "Светла тема"
@@ -4593,8 +4599,8 @@ msgstr "Приватна група"
 msgid "Shared profile"
 msgstr "Дељени профил"
 
-#: lib/potok_ide_web/components/layouts.ex:876
-#: lib/potok_ide_web/components/layouts.ex:877
+#: lib/potok_ide_web/components/layouts.ex:885
+#: lib/potok_ide_web/components/layouts.ex:886
 #, elixir-autogen, elixir-format
 msgid "System theme"
 msgstr "Системска тема"
@@ -4629,7 +4635,7 @@ msgstr "Испод површине"
 msgid "Potok can think of values as arising in groups, and of groups as arising from values."
 msgstr "Поток уме да мисли да вредности настају у групама и да групе настају из вредности."
 
-#: lib/potok_ide_web/components/layouts.ex:536
+#: lib/potok_ide_web/components/layouts.ex:545
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:22
 #, elixir-autogen, elixir-format
 msgid "Conversations, events, files, roles, notifications, groups, sub-groups and apps. On your computer and on your phone."
@@ -6418,8 +6424,8 @@ msgstr "Назад на врх"
 msgid "Contents"
 msgstr "Садржај"
 
-#: lib/potok_ide_web/components/layouts.ex:401
-#: lib/potok_ide_web/components/layouts.ex:662
+#: lib/potok_ide_web/components/layouts.ex:410
+#: lib/potok_ide_web/components/layouts.ex:671
 #: lib/potok_ide_web/controllers/page_controller.ex:120
 #: lib/potok_ide_web/controllers/page_html/help.html.heex:11
 #, elixir-autogen, elixir-format
@@ -6529,7 +6535,7 @@ msgstr "Овај опис више није отворен за посетиоц
 msgid "This is a public group on Potok."
 msgstr "Ово је јавна група на Потоку."
 
-#: lib/potok_ide_web/components/layouts.ex:410
+#: lib/potok_ide_web/components/layouts.ex:419
 #, elixir-autogen, elixir-format
 msgid "Costs"
 msgstr "Трошкови"
@@ -11268,6 +11274,7 @@ msgstr "Нико не види ко је како гласао."
 msgid "A few words for whoever decides."
 msgstr "Неколико речи за онога ко одлучује."
 
+#: lib/potok_ide_web/live/activity_live/words.ex:185
 #: lib/potok_ide_web/live/request_live/index.ex:665
 #, elixir-autogen, elixir-format
 msgid "A role since deleted"
@@ -11278,6 +11285,7 @@ msgstr "Улога која је у међувремену обрисана"
 msgid "A vote decides this now."
 msgstr "О томе сада одлучује гласање."
 
+#: lib/potok_ide_web/live/activity_live/words.ex:184
 #: lib/potok_ide_web/live/group_live/show/request_dialogs.ex:412
 #: lib/potok_ide_web/live/request_live/index.ex:661
 #, elixir-autogen, elixir-format
@@ -11338,6 +11346,7 @@ msgstr "Одлуке о твојим захтевима"
 msgid "Give"
 msgstr "Додели"
 
+#: lib/potok_ide_web/live/activity_live/words.ex:212
 #: lib/potok_ide_web/live/request_live/index.ex:671
 #, elixir-autogen, elixir-format
 msgid "Given"
@@ -11380,6 +11389,7 @@ msgstr "Нека од тих улога не може да се тражи, ил
 msgid "Pick at least one role."
 msgstr "Изабери бар једну улогу."
 
+#: lib/potok_ide_web/live/activity_live/words.ex:214
 #: lib/potok_ide_web/live/group_live/show/request_dialogs.ex:566
 #: lib/potok_ide_web/live/group_live/show/request_dialogs.ex:570
 #: lib/potok_ide_web/live/request_live/index.ex:679
@@ -11393,6 +11403,7 @@ msgstr "На гласање"
 msgid "Refuse"
 msgstr "Одбиј"
 
+#: lib/potok_ide_web/live/activity_live/words.ex:213
 #: lib/potok_ide_web/live/request_live/index.ex:672
 #, elixir-autogen, elixir-format
 msgid "Refused"
@@ -12657,7 +12668,7 @@ msgid "@%{username} invites you to “%{group}”. People there will know you by
 msgstr "@%{username} те позива у „%{group}“. Тамо те други препознају по овом имену и слици."
 
 #: lib/potok_ide_web/live/account_live/confirmation.ex:244
-#: lib/potok_ide_web/live/profile_live/index.ex:300
+#: lib/potok_ide_web/live/profile_live/index.ex:307
 #, elixir-autogen, elixir-format
 msgid "Could not create the profile."
 msgstr "Профил није могао да се креира."
@@ -12684,7 +12695,7 @@ msgid "You can add a description and more profiles later, on the Profiles page."
 msgstr "Опис и друге профиле можеш додати касније, на страници Профили."
 
 #: lib/potok_ide_web/controllers/account_session_controller.ex:17
-#: lib/potok_ide_web/live/profile_live/index.ex:293
+#: lib/potok_ide_web/live/profile_live/index.ex:300
 #, elixir-autogen, elixir-format
 msgid "Your profile is ready."
 msgstr "Твој профил је спреман."
@@ -12850,7 +12861,7 @@ msgstr "Ко га види"
 msgid "Who you are and how to reach you. For each one you pick who sees it."
 msgstr "Ко си и како да те нађу. За сваки бираш ко га види."
 
-#: lib/potok_ide_web/live/profile_live/card.ex:60
+#: lib/potok_ide_web/live/profile_live/card.ex:70
 #, elixir-autogen, elixir-format
 msgid "Check the name, or ask the person to write to you first."
 msgstr "Провери име, или замоли ту особу да ти се прва јави."
@@ -12860,7 +12871,7 @@ msgstr "Провери име, или замоли ту особу да ти с�
 msgid "Groups you share"
 msgstr "Заједничке групе"
 
-#: lib/potok_ide_web/live/profile_live/card.ex:58
+#: lib/potok_ide_web/live/profile_live/card.ex:68
 #, elixir-autogen, elixir-format
 msgid "No such profile"
 msgstr "Нема таквог профила"
@@ -13358,6 +13369,7 @@ msgstr "И још тога што се променило."
 msgid "Area on the map"
 msgstr "Подручје на мапи"
 
+#: lib/potok_ide_web/live/activity_live/words.ex:208
 #: lib/potok_ide_web/live/group_live/show/history_words.ex:466
 #: lib/potok_ide_web/live/group_live/show/processes_tab.ex:848
 #, elixir-autogen, elixir-format
@@ -13733,6 +13745,7 @@ msgstr "Улоге групе изнад су се промениле, а са �
 msgid "The vote may be changed"
 msgstr "Глас може да се промени"
 
+#: lib/potok_ide_web/live/activity_live/index.ex:89
 #: lib/potok_ide_web/live/group_live/show/history_tab.ex:79
 #, elixir-autogen, elixir-format
 msgid "Up to the day"
@@ -13753,6 +13766,7 @@ msgstr "Какво је било"
 msgid "What leads to what changed."
 msgstr "Променило се шта куда води."
 
+#: lib/potok_ide_web/live/activity_live/index.ex:58
 #: lib/potok_ide_web/live/group_live/show/history_tab.ex:50
 #, elixir-autogen, elixir-format
 msgid "What to show"
@@ -14425,3 +14439,369 @@ msgstr "сутра у %{time}"
 #, elixir-autogen, elixir-format
 msgid "Do not schedule it"
 msgstr "Не заказуј"
+
+#: lib/potok_ide_web/components/layouts.ex:363
+#: lib/potok_ide_web/live/activity_live/index.ex:40
+#: lib/potok_ide_web/live/activity_live/index.ex:301
+#: lib/potok_ide_web/live/profile_live/card.ex:46
+#: lib/potok_ide_web/live/profile_live/index.ex:51
+#, elixir-autogen, elixir-format
+msgid "My activity"
+msgstr "Моја активност"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:54
+#, elixir-autogen, elixir-format
+msgid "No events you answered or added."
+msgstr "Нема твојих догађаја ни одговора на догађаје."
+
+#: lib/potok_ide_web/live/activity_live/words.ex:50
+#, elixir-autogen, elixir-format
+msgid "No files or pictures of yours in the groups you read."
+msgstr "Нема твојих фајлова ни слика у групама које читаш."
+
+#: lib/potok_ide_web/live/activity_live/words.ex:58
+#, elixir-autogen, elixir-format
+msgid "No forms, decisions, processes or records of yours."
+msgstr "Нема твојих форми, одлука, процеса ни записа."
+
+#: lib/potok_ide_web/live/activity_live/words.ex:55
+#, elixir-autogen, elixir-format
+msgid "No groups you made, joined or left."
+msgstr "Нема твојих група, улазака ни излазака."
+
+#: lib/potok_ide_web/live/activity_live/words.ex:49
+#, elixir-autogen, elixir-format
+msgid "No messages of yours in the groups you read."
+msgstr "Нема твојих порука у групама које читаш."
+
+#: lib/potok_ide_web/live/activity_live/words.ex:60
+#, elixir-autogen, elixir-format
+msgid "No notices you sent, groups you follow or tags you put."
+msgstr "Нема твојих обавештења, праћења ни тагова."
+
+#: lib/potok_ide_web/live/activity_live/words.ex:52
+#, elixir-autogen, elixir-format
+msgid "No one has reacted to a message of yours yet."
+msgstr "Још нема реакција на твоје поруке."
+
+#: lib/potok_ide_web/live/activity_live/words.ex:53
+#, elixir-autogen, elixir-format
+msgid "No polls you voted in or started."
+msgstr "Нема твојих гласова ни гласања."
+
+#: lib/potok_ide_web/live/activity_live/words.ex:47
+#, elixir-autogen, elixir-format
+msgid "Nothing here yet. What you write, react to and vote in shows up here."
+msgstr "Овде још нема ничега. Твоје поруке, реакције и гласови стижу овде."
+
+#: lib/potok_ide_web/live/activity_live/index.ex:126
+#, elixir-autogen, elixir-format
+msgid "Nothing like that up to this day."
+msgstr "До овог дана нема ничега таквог."
+
+#: lib/potok_ide_web/live/activity_live/index.ex:172
+#, elixir-autogen, elixir-format
+msgid "That is all. What is in groups you do not read any more is not here, and comes back if you come back to them."
+msgstr "То је све. Онога из група које више не читаш овде нема, а враћа се ако се вратиш у њих."
+
+#: lib/potok_ide_web/live/activity_live/index.ex:157
+#, elixir-autogen, elixir-format
+msgid "There is too much to look through at once. Pick one of the kinds above."
+msgstr "Превише је тога да се прегледа одједном. Изабери једну од врста изнад."
+
+#: lib/potok_ide_web/live/activity_live/index.ex:158
+#, elixir-autogen, elixir-format
+msgid "This took too long to read. Try again in a while."
+msgstr "Читање је предуго трајало. Пробај поново мало касније."
+
+#: lib/potok_ide_web/live/activity_live/index.ex:106
+#, elixir-autogen, elixir-format
+msgid "Up to today"
+msgstr "До данас"
+
+#: lib/potok_ide_web/live/activity_live/index.ex:43
+#, elixir-autogen, elixir-format
+msgid "What the profile %{name} did in the groups it reads now, the newest first. Only those who hold this profile see it."
+msgstr "Шта профил %{name} ради у групама које сада чита, од најновијег. Виде само они који држе овај профил."
+
+#: lib/potok_ide_web/live/activity_live/index.ex:48
+#, elixir-autogen, elixir-format
+msgid "What the profile %{name} did in the groups it reads now, the newest first. Only you see it."
+msgstr "Шта профил %{name} ради у групама које сада чита, од најновијег. Видиш само ти."
+
+#: lib/potok_ide_web/live/activity_live/words.ex:51
+#, elixir-autogen, elixir-format
+msgid "You have not reacted to anything yet."
+msgstr "Још нема твојих реакција."
+
+#: lib/potok_ide_web/live/activity_live/words.ex:223
+#, elixir-autogen, elixir-format
+msgid "Your vote: %{choice}"
+msgstr "Твој глас: %{choice}"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:107
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "%{count} record in an app"
+msgid_plural "%{count} records in an app"
+msgstr[0] "%{count} запис у апликацији"
+msgstr[1] "%{count} записа у апликацији"
+msgstr[2] "%{count} записа у апликацији"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:114
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Admission to a group"
+msgstr "Пријем у групу"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:22
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "All"
+msgstr "Све"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:95
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Answer to an event"
+msgstr "Одговор на догађај"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:111
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Decision in a process"
+msgstr "Одлука у процесу"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:113
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Decision on a request"
+msgstr "Одлука о захтеву"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:28
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Events"
+msgstr "Догађаји"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:24
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Files and pictures"
+msgstr "Фајлови и слике"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:110
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Filled in form"
+msgstr "Попуњена форма"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:116
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Following a group"
+msgstr "Праћење групе"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:29
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Groups"
+msgstr "Групе"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:97
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Joining a group"
+msgstr "Улазак у групу"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:98
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Leaving a group"
+msgstr "Излазак из групе"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:67
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Message"
+msgstr "Порука"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:66
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Message in a thread"
+msgstr "Порука у нити"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:23
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Messages"
+msgstr "Поруке"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:105
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "More than %{count} records in an app"
+msgstr "Више од %{count} записа у апликацији"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:25
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "My reactions"
+msgstr "Моје реакције"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:94
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "New event"
+msgstr "Нови догађај"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:96
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "New group"
+msgstr "Нова група"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:93
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "New poll"
+msgstr "Ново гласање"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:115
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Notice to followers"
+msgstr "Обавештење пратиоцима"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:31
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Notices and tags"
+msgstr "Обавештења и тагови"
+
+#: lib/potok_ide_web/live/activity_live/index.ex:163
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Older"
+msgstr "Старије"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:27
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Polls"
+msgstr "Гласања"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:112
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Process started"
+msgstr "Покренут процес"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:30
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Processes and records"
+msgstr "Процеси и записи"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:99
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Reaction to a group"
+msgstr "Реакција на групу"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:79
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Reaction to a message"
+msgstr "Реакција на поруку"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:74
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Reaction to a poll"
+msgstr "Реакција на гласање"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:71
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Reaction to an event"
+msgstr "Реакција на догађај"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:77
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Reaction to your own message"
+msgstr "Реакција на своју поруку"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:26
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Reactions to mine"
+msgstr "Реакције на моје"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:82
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Reactions to your event"
+msgstr "Реакције на твој догађај"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:87
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Reactions to your message"
+msgstr "Реакције на твоју поруку"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:85
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Reactions to your poll"
+msgstr "Реакције на твоје гласање"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:101
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Record in an app"
+msgstr "Запис у апликацији"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:121
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Tag on a file"
+msgstr "Таг на фајлу"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:117
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Tag on a group"
+msgstr "Таг на групи"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:120
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Tag on a message"
+msgstr "Таг на поруци"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:118
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Tag on a profile"
+msgstr "Таг на профилу"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:119
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Tag on an event"
+msgstr "Таг на догађају"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:92
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Vote in a poll"
+msgstr "Глас у гласању"
+
+#: lib/potok_ide_web/live/activity_live/words.ex:90
+#, elixir-autogen, elixir-format
+msgctxt "activity"
+msgid "Vote in a secret poll"
+msgstr "Глас у тајном гласању"
