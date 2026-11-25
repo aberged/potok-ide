@@ -64,7 +64,7 @@ When you write on the council's behalf, you choose the council's profile on the 
 
 All the files of the chat gather on the **Files** tab, so the house rules can be found even after many messages, and a search by name finds them at once.
 
-![Files and a poll under the + button](prilozi) ![The building's files](fajlovi)
+![Files, a poll and scheduling under the + button](prilozi) ![The building's files](fajlovi)
 
 ## 7. A poll {:#glasanje}
 

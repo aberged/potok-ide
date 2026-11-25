@@ -420,6 +420,14 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("Value", "managed"), do: dgettext("domain_map", "score and grades")
   defp own_field("Value", "parent_id"), do: dgettext("domain_map", "replies to")
 
+  defp own_field("ScheduledValue", "content"), do: dgettext("domain_map", "content")
+  defp own_field("ScheduledValue", "files"), do: dgettext("domain_map", "files that wait with it")
+  defp own_field("ScheduledValue", "send_at"), do: dgettext("domain_map", "when it goes out")
+  defp own_field("ScheduledValue", "send_local"), do: dgettext("domain_map", "time in the form")
+  defp own_field("ScheduledValue", "failure"), do: dgettext("domain_map", "why it was not sent")
+  defp own_field("ScheduledValue", "profile_id"), do: dgettext("domain_map", "whose it is")
+  defp own_field("ScheduledValue", "parent_id"), do: dgettext("domain_map", "replies to")
+
   defp own_field("ValueAttachment", "storage_key"), do: dgettext("domain_map", "place in storage")
   defp own_field("ValueAttachment", "filename"), do: dgettext("domain_map", "file name")
 
@@ -777,6 +785,7 @@ defmodule PotokIdeWeb.DomainCopy do
   def entity_name("Value"), do: dgettext("domain_map", "Value")
   def entity_name("ValueAttachment"), do: dgettext("domain_map", "File")
   def entity_name("ValueReaction"), do: dgettext("domain_map", "Reaction")
+  def entity_name("ScheduledValue"), do: dgettext("domain_map", "Scheduled message")
   def entity_name("GroupReaction"), do: dgettext("domain_map", "Group reaction")
   def entity_name("GroupBlock"), do: dgettext("domain_map", "Block")
   def entity_name("GroupShortcut"), do: dgettext("domain_map", "Shortcut")
@@ -919,6 +928,13 @@ defmodule PotokIdeWeb.DomainCopy do
     dgettext(
       "domain_map",
       "A file attached to a value. The bytes are in storage, and the row keeps what the browser reported about the file."
+    )
+  end
+
+  defp entity_description("ScheduledValue", _edges) do
+    dgettext(
+      "domain_map",
+      "A message a member wrote to go out later, with its files and the value it replies to. Only those who use its profile see it, and it is gone once it is sent or deleted. One that could not be sent keeps the reason and waits for its author."
     )
   end
 
@@ -1880,7 +1896,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "Its person deletes <Account>an account</Account>, in the settings or by a link sent to its address. A <Profile>profile</Profile> only that account used stays as a deleted one, with no name, picture, description or details of theirs, and is left out wherever people are listed, mentioned or invited. Its <Value>values</Value>, <ValueAttachment>files</ValueAttachment>, <Poll>polls</Poll> and <Event>events</Event> stay in the groups, while its <GroupMembership>memberships</GroupMembership>, reactions, <GroupFollow>followings</GroupFollow>, <Tag>tags</Tag> and invitations go. A profile other accounts share stays theirs. A <Group>group</Group> where it is the only admin among people waits until someone else is made one, and one where it is alone goes with it. An account opened by an invitation nobody took up goes after 90 days."
+            "Its person deletes <Account>an account</Account>, in the settings or by a link sent to its address. A <Profile>profile</Profile> only that account used stays as a deleted one, with no name, picture, description or details of theirs, and is left out wherever people are listed, mentioned or invited. Its <Value>values</Value>, <ValueAttachment>files</ValueAttachment>, <Poll>polls</Poll> and <Event>events</Event> stay in the groups, while its <GroupMembership>memberships</GroupMembership>, reactions, <GroupFollow>followings</GroupFollow>, <Tag>tags</Tag>, <ScheduledValue>scheduled messages</ScheduledValue> and invitations go. A profile other accounts share stays theirs. A <Group>group</Group> where it is the only admin among people waits until someone else is made one, and one where it is alone goes with it. An account opened by an invitation nobody took up goes after 90 days."
           )
       },
       %{
@@ -1993,6 +2009,14 @@ defmodule PotokIdeWeb.DomainCopy do
           dgettext(
             "domain_map",
             "A <GroupMembership>membership</GroupMembership> remembers until when its member silenced the group: an hour, eight hours, a week or until they turn it on again. Until then nothing that goes to everyone reaches them as a push: new values, polls, events, an app's notices, a process's push to everyone. What is meant for them still does: a mention, an answer to their value, a reaction, a process asking them or their role. The group's unread values leave the home badge and the sums of the groups above it, while its own row still shows them, in grey. The threads of a silenced group are silent too."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "A message can go out later"),
+        text:
+          dgettext(
+            "domain_map",
+            "A member writes a message and picks when it goes out, up to a year ahead. Until then it is a <ScheduledValue>scheduled message</ScheduledValue>: only those who use its <Profile>profile</Profile> see it, change it or delete it, and its files already wait in storage. At its time it becomes a <Value>value</Value> like any other, in the transaction that takes it from what waits, so it goes out once. Who may write, whom it mentions and which processes it starts are decided then, not when it was written: without the right to write it waits for its author, with the reason, and whoever leaves the group takes theirs along. One that would be more than an hour late, as nothing was running, waits for its author too. It moves the author's <GroupValueRead>read marker</GroupValueRead> only when nothing else is unread, as the author may not be looking. Whoever writes in an open chat without being a member cannot schedule."
           )
       },
       %{

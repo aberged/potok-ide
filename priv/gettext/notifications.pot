@@ -11,27 +11,27 @@
 msgid ""
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:108
+#: lib/potok_ide/social/notifications.ex:120
 #, elixir-autogen, elixir-format
 msgid "%{name} accepted your invitation"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:141
+#: lib/potok_ide/social/notifications.ex:153
 #, elixir-autogen, elixir-format
 msgid "%{name} accepted your shared profile invitation"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:199
+#: lib/potok_ide/social/notifications.ex:211
 #, elixir-autogen, elixir-format
 msgid "%{name} sent a new message"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:92
+#: lib/potok_ide/social/notifications.ex:104
 #, elixir-autogen, elixir-format
 msgid "%{name} invited you to %{group}"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:110
+#: lib/potok_ide/social/notifications.ex:122
 #, elixir-autogen, elixir-format
 msgid "%{name} joined %{group}."
 msgstr ""
@@ -41,37 +41,37 @@ msgstr ""
 msgid "%{name} mentioned you in %{group}"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:145
+#: lib/potok_ide/social/notifications.ex:157
 #, elixir-autogen, elixir-format
 msgid "%{name} now has access to %{profile}."
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:76
+#: lib/potok_ide/social/notifications.ex:88
 #, elixir-autogen, elixir-format
 msgid "%{name} reacted %{emoji} to your message"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:125
+#: lib/potok_ide/social/notifications.ex:137
 #, elixir-autogen, elixir-format
 msgid "%{name} shared %{profile}"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:188
+#: lib/potok_ide/social/notifications.ex:200
 #, elixir-autogen, elixir-format
 msgid "New message in %{group}"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:191
+#: lib/potok_ide/social/notifications.ex:203
 #, elixir-autogen, elixir-format
 msgid "New message in %{group}: %{excerpt}"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:96
+#: lib/potok_ide/social/notifications.ex:108
 #, elixir-autogen, elixir-format
 msgid "Open Potok to review this group invitation."
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:129
+#: lib/potok_ide/social/notifications.ex:141
 #, elixir-autogen, elixir-format
 msgid "Open Potok to review this shared profile invitation."
 msgstr ""
@@ -91,17 +91,17 @@ msgstr ""
 msgid "%{name} replied to you in %{group}"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:170
+#: lib/potok_ide/social/notifications.ex:182
 #, elixir-autogen, elixir-format
 msgid "%{name} sent a response."
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:166
+#: lib/potok_ide/social/notifications.ex:178
 #, elixir-autogen, elixir-format
 msgid "New response in %{group}"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:173
+#: lib/potok_ide/social/notifications.ex:185
 #, elixir-autogen, elixir-format
 msgid "Someone sent a response."
 msgstr ""
@@ -116,58 +116,63 @@ msgstr ""
 msgid "%{name} in %{group}"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:303
+#: lib/potok_ide/social/notifications.ex:315
 #, elixir-autogen, elixir-format
 msgid "Admin"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:293
+#: lib/potok_ide/social/notifications.ex:305
 #, elixir-autogen, elixir-format
 msgid "Given: %{roles}."
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:299
+#: lib/potok_ide/social/notifications.ex:311
 #, elixir-autogen, elixir-format
 msgid "Put to a vote: %{roles}."
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:296
+#: lib/potok_ide/social/notifications.ex:308
 #, elixir-autogen, elixir-format
 msgid "Refused: %{roles}."
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:269
+#: lib/potok_ide/social/notifications.ex:281
 #, elixir-autogen, elixir-format
 msgid "The group admitted you by a vote."
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:243
+#: lib/potok_ide/social/notifications.ex:255
 #, elixir-autogen, elixir-format
 msgid "The group votes on admitting you."
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:273
+#: lib/potok_ide/social/notifications.ex:285
 #, elixir-autogen, elixir-format
 msgid "The vote did not admit you."
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:276
+#: lib/potok_ide/social/notifications.ex:288
 #, elixir-autogen, elixir-format
 msgid "The vote did not give you the role %{role}."
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:239
+#: lib/potok_ide/social/notifications.ex:251
 #, elixir-autogen, elixir-format
 msgid "You are a member now."
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:252
-#: lib/potok_ide/social/notifications.ex:282
+#: lib/potok_ide/social/notifications.ex:264
+#: lib/potok_ide/social/notifications.ex:294
 #, elixir-autogen, elixir-format
 msgid "Your request in %{group}"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:241
+#: lib/potok_ide/social/notifications.ex:253
 #, elixir-autogen, elixir-format
 msgid "Your request to join was refused."
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:69
+#, elixir-autogen, elixir-format
+msgid "A scheduled message was not sent"
 msgstr ""

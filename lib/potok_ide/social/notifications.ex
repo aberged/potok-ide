@@ -9,7 +9,7 @@ defmodule PotokIde.Social.Notifications do
 
   import PotokIde.PushNotifications, only: [localized: 1]
 
-  alias PotokIde.Social.{Group, Profile, Value}
+  alias PotokIde.Social.{Group, Profile, ScheduledValue, Value}
 
   def value_created(%Profile{} = creator, %Group{} = group, %Value{} = value) do
     localized(fn -> value_payload(creator, group, value) end)
@@ -58,6 +58,18 @@ defmodule PotokIde.Social.Notifications do
         tag: tag,
         url: url || "/groups/#{group.id}",
         badge: avatar_url(process)
+      }
+    end)
+  end
+
+  @doc "For the accounts of whoever scheduled a message that could not be sent."
+  def scheduled_value_failed(%Group{} = group, %ScheduledValue{} = scheduled) do
+    localized(fn ->
+      %{
+        title: dgettext("notifications", "A scheduled message was not sent"),
+        body: "#{group.name}: #{ScheduledValue.excerpt(scheduled)}",
+        tag: "group-#{group.id}-scheduled-#{scheduled.id}",
+        url: "/groups/#{group.id}/values"
       }
     end)
   end

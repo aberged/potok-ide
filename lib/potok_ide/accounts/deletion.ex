@@ -23,8 +23,9 @@ defmodule PotokIde.Accounts.Deletion do
       got, join requests, account invitations it sent (they hold the
       addresses of people who never signed up), blocks of it, the hidden
       values that ask an app for pushes, the personal memory of apps
-      (`PotokIde.Social.AppProfileStore`), and the history of its reactions
-      (`PotokIde.History`);
+      (`PotokIde.Social.AppProfileStore`), the messages it scheduled with
+      their files (`PotokIde.Social.ScheduledValues`), and the history of its
+      reactions (`PotokIde.History`);
     * emptied: who added a tag, who blocked someone, who invited an account,
       the old versions of the records it wrote into apps;
     * kept: values (an app's and "anonymous" ones too), files, polls and
@@ -51,7 +52,8 @@ defmodule PotokIde.Accounts.Deletion do
   alias PotokIde.History
   alias PotokIde.Repo
   alias PotokIde.Social
-  alias PotokIde.Social.{Access, AccountProfile, Group, GroupRole, Profile}
+  alias PotokIde.Social.{Access, AccountProfile, Group, GroupRole, Profile, ScheduledValues}
+  alias PotokIde.Storage
 
   # How long an account someone invited by email waits for its person before
   # `purge_unclaimed/0` deletes it, when nothing invites it any more.
@@ -105,7 +107,8 @@ defmodule PotokIde.Accounts.Deletion do
 
       History.off(fn -> delete_now(account, ids) end)
       |> case do
-        {:ok, {email, tokens, touched}} ->
+        {:ok, {email, tokens, touched, storage_keys}} ->
+          Storage.delete_later(storage_keys)
           after_commit(ids, touched)
           {:ok, %{email: email, tokens: tokens}}
 
@@ -279,10 +282,11 @@ defmodule PotokIde.Accounts.Deletion do
     end
 
     tokens = Repo.all(from(t in AccountToken, where: t.account_id == ^account_id))
+    storage_keys = ScheduledValues.forget_profiles(ids)
     touched = forget_profiles(ids)
 
     Repo.delete!(account)
-    {account.email, tokens, touched}
+    {account.email, tokens, touched, storage_keys}
   end
 
   # Applies the rules of the moduledoc to the profiles. Returns the groups whose

@@ -24,10 +24,11 @@ defmodule PotokIdeWeb.GroupLive.QueryCountTest do
   # reads whether the group sent notices, whether the viewer follows it and
   # how many do, for the bell and the bar (`Notices.group_state/2`). Its 24th
   # asks whether a group without an app of its own description has another
-  # app or a process, for the menu's Processes tab.
+  # app or a process, for the menu's Processes tab. Its 25th reads what the
+  # viewer scheduled there, for the row above the composer.
   @max_dead_render_queries 7
   @max_root_page_queries 11
-  @max_chat_page_queries 24
+  @max_chat_page_queries 25
   # The access overview: what every tab of a group page loads, then its own
   # reads (`AccessOverview.load/3`, `PageRules.facts/1`), none of them per
   # member: the people are counted by the sets of roles they hold. Its 26th

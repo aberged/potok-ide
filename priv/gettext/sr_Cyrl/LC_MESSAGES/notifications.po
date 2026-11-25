@@ -11,27 +11,27 @@ msgstr ""
 "Language: sr_Cyrl\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100 != 11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10||n%100>=20) ? 1 : 2);\n"
 
-#: lib/potok_ide/social/notifications.ex:108
+#: lib/potok_ide/social/notifications.ex:120
 #, elixir-autogen, elixir-format
 msgid "%{name} accepted your invitation"
 msgstr "%{name}: твоја позивница је прихваћена"
 
-#: lib/potok_ide/social/notifications.ex:141
+#: lib/potok_ide/social/notifications.ex:153
 #, elixir-autogen, elixir-format
 msgid "%{name} accepted your shared profile invitation"
 msgstr "%{name}: твоја позивница за дељени профил је прихваћена"
 
-#: lib/potok_ide/social/notifications.ex:199
+#: lib/potok_ide/social/notifications.ex:211
 #, elixir-autogen, elixir-format
 msgid "%{name} sent a new message"
 msgstr "%{name}: нова порука"
 
-#: lib/potok_ide/social/notifications.ex:92
+#: lib/potok_ide/social/notifications.ex:104
 #, elixir-autogen, elixir-format
 msgid "%{name} invited you to %{group}"
 msgstr "%{name} те позива у групу %{group}"
 
-#: lib/potok_ide/social/notifications.ex:110
+#: lib/potok_ide/social/notifications.ex:122
 #, elixir-autogen, elixir-format
 msgid "%{name} joined %{group}."
 msgstr "%{name} је сада у групи %{group}."
@@ -41,37 +41,37 @@ msgstr "%{name} је сада у групи %{group}."
 msgid "%{name} mentioned you in %{group}"
 msgstr "%{name} те помиње у групи %{group}"
 
-#: lib/potok_ide/social/notifications.ex:145
+#: lib/potok_ide/social/notifications.ex:157
 #, elixir-autogen, elixir-format
 msgid "%{name} now has access to %{profile}."
 msgstr "%{name} сада има приступ профилу %{profile}."
 
-#: lib/potok_ide/social/notifications.ex:76
+#: lib/potok_ide/social/notifications.ex:88
 #, elixir-autogen, elixir-format
 msgid "%{name} reacted %{emoji} to your message"
 msgstr "%{name}: %{emoji} на твоју поруку"
 
-#: lib/potok_ide/social/notifications.ex:125
+#: lib/potok_ide/social/notifications.ex:137
 #, elixir-autogen, elixir-format
 msgid "%{name} shared %{profile}"
 msgstr "%{name} дели профил %{profile} с тобом"
 
-#: lib/potok_ide/social/notifications.ex:188
+#: lib/potok_ide/social/notifications.ex:200
 #, elixir-autogen, elixir-format
 msgid "New message in %{group}"
 msgstr "Нова порука у групи %{group}"
 
-#: lib/potok_ide/social/notifications.ex:191
+#: lib/potok_ide/social/notifications.ex:203
 #, elixir-autogen, elixir-format
 msgid "New message in %{group}: %{excerpt}"
 msgstr "Нова порука у групи %{group}: %{excerpt}"
 
-#: lib/potok_ide/social/notifications.ex:96
+#: lib/potok_ide/social/notifications.ex:108
 #, elixir-autogen, elixir-format
 msgid "Open Potok to review this group invitation."
 msgstr "Отвори Поток и погледај позивницу."
 
-#: lib/potok_ide/social/notifications.ex:129
+#: lib/potok_ide/social/notifications.ex:141
 #, elixir-autogen, elixir-format
 msgid "Open Potok to review this shared profile invitation."
 msgstr "Отвори Поток и погледај позивницу за дељени профил."
@@ -91,17 +91,17 @@ msgstr "Пуш обавештења су укључена за твој нало
 msgid "%{name} replied to you in %{group}"
 msgstr "%{name} ти одговара у групи %{group}"
 
-#: lib/potok_ide/social/notifications.ex:170
+#: lib/potok_ide/social/notifications.ex:182
 #, elixir-autogen, elixir-format
 msgid "%{name} sent a response."
 msgstr "%{name}: нов одговор"
 
-#: lib/potok_ide/social/notifications.ex:166
+#: lib/potok_ide/social/notifications.ex:178
 #, elixir-autogen, elixir-format
 msgid "New response in %{group}"
 msgstr "Нов одговор у групи %{group}"
 
-#: lib/potok_ide/social/notifications.ex:173
+#: lib/potok_ide/social/notifications.ex:185
 #, elixir-autogen, elixir-format
 msgid "Someone sent a response."
 msgstr "Стигао је нов одговор."
@@ -116,58 +116,63 @@ msgstr "Обавештење: %{group}"
 msgid "%{name} in %{group}"
 msgstr "%{name} у групи %{group}"
 
-#: lib/potok_ide/social/notifications.ex:303
+#: lib/potok_ide/social/notifications.ex:315
 #, elixir-autogen, elixir-format
 msgid "Admin"
 msgstr "Администратор"
 
-#: lib/potok_ide/social/notifications.ex:293
+#: lib/potok_ide/social/notifications.ex:305
 #, elixir-autogen, elixir-format
 msgid "Given: %{roles}."
 msgstr "Додељено: %{roles}."
 
-#: lib/potok_ide/social/notifications.ex:299
+#: lib/potok_ide/social/notifications.ex:311
 #, elixir-autogen, elixir-format
 msgid "Put to a vote: %{roles}."
 msgstr "На гласању: %{roles}."
 
-#: lib/potok_ide/social/notifications.ex:296
+#: lib/potok_ide/social/notifications.ex:308
 #, elixir-autogen, elixir-format
 msgid "Refused: %{roles}."
 msgstr "Одбијено: %{roles}."
 
-#: lib/potok_ide/social/notifications.ex:269
+#: lib/potok_ide/social/notifications.ex:281
 #, elixir-autogen, elixir-format
 msgid "The group admitted you by a vote."
 msgstr "Група те је примила гласањем."
 
-#: lib/potok_ide/social/notifications.ex:243
+#: lib/potok_ide/social/notifications.ex:255
 #, elixir-autogen, elixir-format
 msgid "The group votes on admitting you."
 msgstr "Група гласа о твом пријему."
 
-#: lib/potok_ide/social/notifications.ex:273
+#: lib/potok_ide/social/notifications.ex:285
 #, elixir-autogen, elixir-format
 msgid "The vote did not admit you."
 msgstr "Гласање те није примило."
 
-#: lib/potok_ide/social/notifications.ex:276
+#: lib/potok_ide/social/notifications.ex:288
 #, elixir-autogen, elixir-format
 msgid "The vote did not give you the role %{role}."
 msgstr "Гласање ти није дало улогу %{role}."
 
-#: lib/potok_ide/social/notifications.ex:239
+#: lib/potok_ide/social/notifications.ex:251
 #, elixir-autogen, elixir-format
 msgid "You are a member now."
 msgstr "Сада си члан."
 
-#: lib/potok_ide/social/notifications.ex:252
-#: lib/potok_ide/social/notifications.ex:282
+#: lib/potok_ide/social/notifications.ex:264
+#: lib/potok_ide/social/notifications.ex:294
 #, elixir-autogen, elixir-format
 msgid "Your request in %{group}"
 msgstr "Твој захтев у групи %{group}"
 
-#: lib/potok_ide/social/notifications.ex:241
+#: lib/potok_ide/social/notifications.ex:253
 #, elixir-autogen, elixir-format
 msgid "Your request to join was refused."
 msgstr "Твој захтев за приступ је одбијен."
+
+#: lib/potok_ide/social/notifications.ex:69
+#, elixir-autogen, elixir-format
+msgid "A scheduled message was not sent"
+msgstr "Заказана порука није послата"

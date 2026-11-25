@@ -108,6 +108,9 @@ msgstr "ne može biti pre početka"
 msgid "must be in the future"
 msgstr "mora biti u budućnosti"
 
+msgid "must be within a year"
+msgstr "mora biti u narednih godinu dana"
+
 msgid "has the same answer twice"
 msgstr "ima isti odgovor dva puta"
 

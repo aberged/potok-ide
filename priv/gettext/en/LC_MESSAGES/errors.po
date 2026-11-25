@@ -117,6 +117,9 @@ msgstr ""
 msgid "must be in the future"
 msgstr ""
 
+msgid "must be within a year"
+msgstr ""
+
 msgid "has the same answer twice"
 msgstr ""
 

@@ -24,6 +24,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     Profile,
     ProfileDetails,
     ProfileFacts,
+    ScheduledValue,
     Value,
     ValueAttachment,
     ValueRules
@@ -71,6 +72,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     RolesTab,
     RootMapState,
     RootMapTab,
+    Scheduling,
     SubGroupsTab,
     SubGroupTree,
     TemplatesState,
@@ -778,6 +780,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 edit_value_form={@edit_value_form}
                 new_value_form={@new_value_form}
                 replying_to_value={@replying_to_value}
+                schedule_at={@schedule_at}
+                scheduled_values={@scheduled_values}
+                time_zone={@calendar_time_zone}
                 thread_origin={@thread_origin}
                 focus_value_id={@focus_value_id}
                 unread_divider={@unread_divider}
@@ -1015,6 +1020,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
       <CreateMenu.menu menu={@group_create_menu} />
       <KindMenu.dialog menu={@group_kind_menu} />
       <PollForm.dialog state={@poll_form} />
+      <Scheduling.time_dialog form={@schedule_form} time_zone={@calendar_time_zone} />
+      <Scheduling.list_dialog
+        list={@scheduled_list}
+        scheduled={@scheduled_values}
+        time_zone={@calendar_time_zone}
+      />
       <RequestDialogs.ask_dialog state={@request_dialog} />
       <RequestDialogs.decide_dialog
         state={@decision_dialog}
@@ -1203,6 +1214,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> CalendarState.init(params)
          |> RootMapState.init()
          |> PollForm.init()
+         |> Scheduling.init()
          |> ProcessForm.init()
          |> PollsState.init(params)
          |> NoticesState.init(params)
@@ -1328,6 +1340,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
   def handle_event("poll_form_" <> _ = event, params, socket),
     do: PollForm.handle_event(event, params, socket)
 
+  def handle_event("schedule_" <> _ = event, params, socket),
+    do: Scheduling.handle_event(event, params, socket)
+
   def handle_event("root_map_" <> _ = event, params, socket),
     do: RootMapState.handle_event(event, params, socket)
 
@@ -1382,7 +1397,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   def handle_event("create_value", %{"value" => attrs}, socket) do
-    current_profile = socket.assigns.current_profile
     group = socket.assigns.group
 
     if not Access.can_read_chat?(socket.assigns.access, group) do
@@ -1396,18 +1410,22 @@ defmodule PotokIdeWeb.GroupLive.Show do
         |> Map.drop(["is_data", "data", "parent_id"])
         |> maybe_put_reply_parent(socket.assigns.replying_to_value)
 
-      with {:ok, attachments} <- consume_attachments(socket),
-           {:ok, value} <- create_value_or_drop_files(current_profile, group, attrs, attachments) do
+      with :ok <- Scheduling.still_ahead(socket),
+           {:ok, attachments} <- consume_attachments(socket),
+           {:ok, posted} <- post_or_drop_files(socket, attrs, attachments) do
         socket =
           socket
           |> assign(:active_tab, "values")
           |> assign(:replying_to_value, nil)
           |> assign(:new_value_form, empty_new_value_form())
           |> push_event("value_composer_reset", %{})
-          |> apply_value_created(value)
+          |> apply_posted(posted)
 
         {:noreply, socket}
       else
+        {:error, %Ecto.Changeset{data: %ScheduledValue{}}} ->
+          {:noreply, put_flash(socket, :error, gettext("Could not create message."))}
+
         {:error, %Ecto.Changeset{} = changeset} ->
           {:noreply, assign(socket, :new_value_form, to_form(changeset))}
 
@@ -1428,8 +1446,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
         {:error, message} when is_binary(message) ->
           {:noreply, put_flash(socket, :error, message)}
 
-        {:error, _reason} ->
-          {:noreply, put_flash(socket, :error, gettext("Could not create message."))}
+        {:error, reason} ->
+          text = Scheduling.error_text(reason) || gettext("Could not create message.")
+          {:noreply, put_flash(socket, :error, text)}
       end
     end
   end
@@ -3672,6 +3691,16 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_info({:group_pins_changed, _profile_id}, socket), do: {:noreply, socket}
 
+  # What the profile scheduled changed, here, on another page, or as it went out.
+  def handle_info(
+        {:scheduled_values_changed, profile_id, group_id, sent_value_id},
+        %{assigns: %{current_profile: %{id: profile_id}, group: %{id: group_id}}} = socket
+      ),
+      do: {:noreply, Scheduling.changed(socket, sent_value_id)}
+
+  def handle_info({:scheduled_values_changed, _profile_id, _group_id, _value_id}, socket),
+    do: {:noreply, socket}
+
   # The panel opened before the column had loaded (`GroupSidebar.open_sheet/2`).
   def handle_info({:group_sidebar_load, params}, socket),
     do: {:noreply, GroupSidebar.load(socket, current_unread_overview(socket), params)}
@@ -3825,6 +3854,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> assign_child_pending_join_request_counts()
     |> maybe_load_members(group, active_tab)
     |> maybe_load_values(group, active_tab)
+    |> Scheduling.maybe_load(group, active_tab)
     |> maybe_load_files(group, active_tab)
     |> CalendarState.maybe_load(group, active_tab)
     |> RootMapState.maybe_load(group, active_tab)
@@ -4559,7 +4589,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
     group = socket.assigns.group
     active_tab = socket.assigns.active_tab
 
-    mine? = value.creator_id == socket.assigns.current_profile.id
+    # A value that went out at the time its author picked comes as others' do:
+    # whoever is reading something else stays there.
+    mine? =
+      value.creator_id == socket.assigns.current_profile.id and
+        not Scheduling.sent_by_itself?(socket, value)
 
     # Unread badges are updated by the `group_value_unread` broadcast that
     # Social sends to every member right after the value broadcast. The value
@@ -5179,22 +5213,28 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   # The message holds only the file, so what is typed stays in the composer. A
-  # reply being written goes out with the file.
+  # reply being written goes out with the file, at the time the composer holds.
   defp post_keyboard_media(socket, entry) do
-    %{current_profile: profile, group: group, replying_to_value: replying_to} = socket.assigns
+    %{group: group, replying_to_value: replying_to} = socket.assigns
     attrs = maybe_put_reply_parent(%{"content" => ""}, replying_to)
 
     stored =
       consume_uploaded_entry(socket, entry, &{:ok, store_attachment(group, &1, entry)})
 
     with {:ok, attachment} <- stored,
-         {:ok, value} <- create_value_or_drop_files(profile, group, attrs, [attachment]) do
+         {:ok, posted} <- post_or_drop_files(socket, attrs, [attachment]) do
       socket
       |> assign(:replying_to_value, nil)
-      |> apply_value_created(value)
+      |> apply_posted(posted)
     else
-      {:error, :too_many_values} -> put_flash(socket, :error, too_many_values_message())
-      _error -> put_keyboard_media_error(socket)
+      {:error, :too_many_values} ->
+        put_flash(socket, :error, too_many_values_message())
+
+      {:error, reason} when reason in [:past, :too_far, :too_many_scheduled] ->
+        put_flash(socket, :error, Scheduling.error_text(reason))
+
+      _error ->
+        put_keyboard_media_error(socket)
     end
   end
 
@@ -5298,16 +5338,32 @@ defmodule PotokIdeWeb.GroupLive.Show do
     }
   end
 
-  # Files already in storage are removed again when the value is refused.
-  defp create_value_or_drop_files(profile, group, attrs, attachments) do
-    case Social.create_value(profile, group, attrs, attachments) do
-      {:ok, value} ->
-        {:ok, value}
+  # What the composer holds: posted at once, or scheduled when it holds a time.
+  defp post_or_drop_files(%{assigns: %{schedule_at: nil}} = socket, attrs, attachments) do
+    %{current_profile: profile, group: group} = socket.assigns
+    create_value_or_drop_files(profile, group, attrs, attachments)
+  end
 
-      error ->
-        Storage.delete_later(Enum.map(attachments, & &1.storage_key))
-        error
-    end
+  defp post_or_drop_files(socket, attrs, attachments),
+    do: socket |> Scheduling.post(attrs, attachments) |> or_drop_files(attachments)
+
+  defp apply_posted(socket, %Value{} = value), do: apply_value_created(socket, value)
+
+  defp apply_posted(socket, %ScheduledValue{} = scheduled),
+    do: Scheduling.posted(socket, scheduled)
+
+  defp create_value_or_drop_files(profile, group, attrs, attachments) do
+    profile
+    |> Social.create_value(group, attrs, attachments)
+    |> or_drop_files(attachments)
+  end
+
+  # Files already in storage are removed again when the value is refused.
+  defp or_drop_files({:ok, posted}, _attachments), do: {:ok, posted}
+
+  defp or_drop_files(error, attachments) do
+    Storage.delete_later(Enum.map(attachments, & &1.storage_key))
+    error
   end
 
   defp maybe_put_reply_parent(attrs, %Value{id: parent_id}),

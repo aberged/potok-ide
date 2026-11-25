@@ -20,6 +20,7 @@ defmodule HelpShots.World do
   alias PotokIde.Social.Group
   alias PotokIde.Social.GroupAreas
   alias PotokIde.Social.GroupRoutes
+  alias PotokIde.Social.ScheduledValues
   alias PotokIde.Social.Value
   alias PotokIde.Storage
   alias PotokIde.Tags
@@ -70,6 +71,7 @@ defmodule HelpShots.World do
       {:ok, _} = Accounts.set_current_profile(person.account, person.profile)
     end
 
+    scheduled(p, mz.zbor, files_dir)
     history_at = history(p, mz.root)
 
     # Announcements went out now; the lists order groups by their newest
@@ -1295,6 +1297,30 @@ defmodule HelpShots.World do
     {:ok, value} = Social.create_value(profile, group, attrs, attachments)
     backdate(value.id, group, at)
     %{value | inserted_at: at, updated_at: at}
+  end
+
+  # What Marko wrote for later; nobody else's pictures show it.
+  defp scheduled(p, group, files_dir) do
+    path = pdf(files_dir, "dnevni-red.pdf")
+    key = Storage.new_key(group.id)
+    :ok = Storage.put_file(key, path)
+
+    file = %{
+      storage_key: key,
+      filename: "dnevni-red.pdf",
+      content_type: "application/pdf",
+      byte_size: File.stat!(path).size
+    }
+
+    for {text, files, date, time} <- [
+          {"Podsetnik: zbor počinje za sat vremena, u sali Doma kulture. Dnevni red je u prilogu.",
+           [file], next(1), ~T[18:00:00]},
+          {"Hvala svima koji su došli! Zapisnik stiže do kraja nedelje.", [], next(2),
+           ~T[09:00:00]}
+        ] do
+      at = PotokIde.Events.Recurrence.to_utc(date, time, @zone)
+      {:ok, _} = ScheduledValues.schedule(p.("marko"), group, %{"content" => text}, files, at)
+    end
   end
 
   defp backdate(nil, _group, _at), do: :ok

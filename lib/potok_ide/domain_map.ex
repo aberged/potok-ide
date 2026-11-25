@@ -48,6 +48,7 @@ defmodule PotokIde.DomainMap do
        PotokIde.Social.Value,
        PotokIde.Social.ValueAttachment,
        PotokIde.Social.ValueReaction,
+       PotokIde.Social.ScheduledValue,
        PotokIde.Social.GroupValueRead,
        PotokIde.Social.AppProcess,
        PotokIde.Processes.ValueProcess,

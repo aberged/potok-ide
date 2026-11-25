@@ -42,6 +42,7 @@ When someone invites an email address that has no account yet, Potok opens an un
 - Groups you create, their names, descriptions, pictures and settings, memberships, roles, invitations and join requests
 - Places of groups and events: a point, an area or a route you draw on the map or bring from a file
 - Messages, replies, threads and one-to-one conversations, and the data used to search messages
+- Scheduled messages: their text, files and the time they go out, until they are sent or deleted. Only the accounts with the profile in whose name they are scheduled see them.
 - Reactions, pinned groups, tags (public and private, and those you put on profiles), follows, notices and who read them, how far you read a chat, and blocks
 - Events and answers to them
 - Polls and votes: in a secret poll we keep only that a profile voted, not what for; the list of voters can be downloaded by whoever the poll's rules let see the details
@@ -58,7 +59,7 @@ Before it is sent, a JPEG, PNG or WebP photo loses EXIF, XMP and similar data, w
 
 ### What stays only on your device
 
-Unfinished messages, your choice of theme and language, the map view, the copy of data that apps in groups keep in the browser, the page where the reading of a site in a group's description stopped, and the personal memory of apps for visitors without an account are stored only in your browser or app. Who is online right now is kept only in the server's memory, while the page is open.
+Unfinished messages (drafts, not those you schedule), your choice of theme and language, the map view, the copy of data that apps in groups keep in the browser, the page where the reading of a site in a group's description stopped, and the personal memory of apps for visitors without an account are stored only in your browser or app. Who is online right now is kept only in the server's memory, while the page is open.
 
 ### Technical information
 
@@ -125,6 +126,7 @@ Potok uses only cookies that keep you logged in: the session cookie and, if you 
 - We keep your account, profiles and content while you use Potok, until you delete them or they are deleted by the rules of a feature (for example, when a group is deleted).
 - A sign-in link works for 15 minutes, an invitation and a link to change your address for 7 days, a link to delete your account for an hour, and a session for 14 days. We delete expired tokens every hour.
 - Push notifications waiting for delivery are deleted a day after they are sent.
+- A scheduled message becomes an ordinary message once it is sent. One that could not be sent is kept until you send or delete it, and it also goes when you leave the group.
 - A link preview is kept for 6 hours.
 - The data of processes is deleted 30 days after they end.
 - The history of a group stays as long as the group. Of one thing we keep at most the last 200 old versions. An admin can empty them earlier, and you can empty those of a record you wrote into an app yourself; what stays is only that there was a change.
@@ -135,7 +137,7 @@ Potok uses only cookies that keep you logged in: the session cookie and, if you 
 
 You delete your account in the account settings, in the Account part, or at https://potok.rs/brisanje-naloga, where you enter your address and get a link that works for an hour. Before deleting you see what goes and what stays.
 
-- **Gone:** the account, its sign-ins and devices, your memberships and roles, follows, reactions, tags, invitations and the personal memory of apps, the history of your reactions and the old versions of the records you wrote into apps, and the groups where you are the only member.
+- **Gone:** the account, its sign-ins and devices, your memberships and roles, follows, reactions, tags, invitations, scheduled messages with their files and the personal memory of apps, the history of your reactions and the old versions of the records you wrote into apps, and the groups where you are the only member.
 - **Stays:** the messages, files, polls, events and notices you posted in groups, and in the history of a group that you changed something in it, under the name "Deleted user", without your username, picture, description or details. A profile you share with other accounts stays theirs.
 
 A group never loses its admin: if you are the only admin of a group that has other people in it, make someone else an admin before deleting. After the deletion, one last email comes to your address.

@@ -104,7 +104,7 @@ defmodule PotokIdeWeb.GroupLive.FilesTest do
       assert has_element?(owner_lv, "#group-value-attach")
     end
 
-    test "with neither files nor polls allowed there is no + menu", %{conn: conn} do
+    test "with neither files nor polls allowed the + menu only schedules", %{conn: conn} do
       {owner_account, owner} = account_with_profile!("fnone-owner")
       {member_account, member} = account_with_profile!("fnone-member")
 
@@ -129,7 +129,9 @@ defmodule PotokIdeWeb.GroupLive.FilesTest do
         conn |> log_in_account(member_account) |> live(~p"/groups/#{group.id}/values")
 
       assert has_element?(member_lv, "#group-value-form")
-      refute has_element?(member_lv, "#group-value-add")
+      assert has_element?(member_lv, "#group-value-add-menu #group-value-schedule")
+      refute has_element?(member_lv, "#group-value-attach")
+      refute has_element?(member_lv, "#group-value-poll")
 
       {:ok, owner_lv, _html} =
         conn |> log_in_account(owner_account) |> live(~p"/groups/#{group.id}/values")

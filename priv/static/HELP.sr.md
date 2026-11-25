@@ -215,13 +215,25 @@ Na telefonu dugo pritisni poruku: otvara se list sa brzim reakcijama i svim radn
 
 ![Dugi pritisak na poruku](poruka-meni) ![Odgovor: citat je iznad polja za pisanje](poruke-odgovor) ![Nit otvorena iz poruke](nit)
 
-Dugme + pored polja dodaje fajlove ili pokreće glasanje. Jedna poruka nosi do 10 fajlova, do 100 MB svaki. Slike, video i zvuk otvaraju se pravo u razgovoru, a fajlove možeš i da prevučeš u prozor. U aplikaciji za Android GIF ili nalepnicu šalješ pravo sa tastature.
+Dugme + pored polja dodaje fajlove, pokreće glasanje ili [zakazuje poruku](#zakazane-poruke). Jedna poruka nosi do 10 fajlova, do 100 MB svaki. Slike, video i zvuk otvaraju se pravo u razgovoru, a fajlove možeš i da prevučeš u prozor. U aplikaciji za Android GIF ili nalepnicu šalješ pravo sa tastature.
 
 Ako počneš da pišeš pa odeš iz grupe, tekst te čeka kad se vratiš. Nacrt čuva ovaj pregledač, za svaki profil i grupu, a u spisku grupa umesto poslednje poruke piše „Nacrt:“ i tvoj tekst. Kad pošalješ poruku, nacrt nestaje, a kad se odjaviš, nestaju svi.
 
 Kad se vratiš u razgovor, linija pokazuje odakle počinju nepročitane poruke, a kad ih je više od 99, piše 99+ novih poruka. Lupa u zaglavlju pretražuje poruke grupe, i u nitima, i kad kucaš bez kvačica, latinicom ili ćirilicom.
 
-![Fajlovi i glasanje ispod dugmeta +](prilozi) ![Pretraga poruka](pretraga-poruka) ![Linija pokazuje gde počinju nepročitane poruke](neprocitano)
+![Fajlovi, glasanje i zakazivanje ispod dugmeta +](prilozi) ![Pretraga poruka](pretraga-poruka) ![Linija pokazuje gde počinju nepročitane poruke](neprocitano)
+
+### Zakazane poruke {:#zakazane-poruke}
+
+Poruku možeš da napišeš sada, a da ode kasnije. Dodirni **+** pored polja za pisanje, pa **Zakaži slanje**, ili dugo pritisni strelicu za slanje (na računaru je klikni desnim tasterom). Izaberi ponuđeno vreme ili tačan datum i sat, pa dodirni **Zakaži**. Ono što je već napisano time je zakazano, sa fajlovima i odgovorom. Ako još ništa nije napisano, iznad polja stoji kada poruka ide, dok je ne napišeš i pošalješ, a × je vraća na slanje odmah.
+
+Zakazane poruke vidiš samo ti. Red iznad polja kaže koliko ih je i kada ide sledeća, a dodir na njega otvara spisak, u kome svaku možeš da izmeniš, pošalješ odmah ili obrišeš. Poruke zakazane u ime deljenog profila vide i menjaju svi koji ga drže.
+
+Poruka ode u izabranom minutu i kad Potok nigde nije otvoren, i tada je kao svaka druga. Ko sme da piše i koga poruka pominje gleda se tek u trenutku slanja. Ako tada više nemaš pravo da pišeš, ili Potok nije radio duže od sat vremena, poruka se ne šalje sama: stiže ti obaveštenje, a u spisku piše zašto, pa biraš šta dalje. Kad napustiš grupu, nestaju i tvoje zakazane poruke u njoj.
+
+Zakazuju članovi koji smeju da pišu, najviše godinu dana unapred, i najviše 100 poruka po profilu.
+
+![Zakazivanje: ponuđena vremena, ili datum i sat](zakazivanje) ![Spisak zakazanih poruka](zakazane)
 
 ## Nove grupe i podešavanja {:#nove-grupe}
 

@@ -104,6 +104,7 @@ const TABLES = {
     GroupRequestDecision: [COLUMN[2], 860],
     GroupAccessChange: [COLUMN[1], 932],
     GroupChange: [COLUMN[2], 932],
+    ScheduledValue: [COLUMN[3], 644],
     RunEvent: [COLUMN[4], 644],
   },
   clusters: {
@@ -127,6 +128,9 @@ const ROUTES = {
   "GroupInvitation>Profile": {from: "l", to: "r", control: [0, 63]},
   "GroupManifest>Group": {from: "r", to: "r", bulge: 26},
   "Event>Value": {from: "l", to: "l", bulge: 24},
+  // Up the same gap, inside the event's line, and across it to the group.
+  "ScheduledValue>Value": {from: "l", to: "l", bulge: 14},
+  "ScheduledValue>Group": {from: "l", to: "r"},
   "Tagging>Value": {from: "r", to: "l"},
   "Tagging>Group": {from: "r", to: "r", bulge: 22},
   "Tag>Profile": {from: "l", to: "l", bulge: 24},

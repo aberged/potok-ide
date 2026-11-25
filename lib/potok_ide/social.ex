@@ -65,6 +65,7 @@ defmodule PotokIde.Social do
     Profile,
     ProfileDetails,
     ProfileInvitation,
+    ScheduledValue,
     Value,
     ValueAggregate,
     ValueAttachment,
@@ -2139,9 +2140,14 @@ defmodule PotokIde.Social do
     # Its shortcuts go with it, so the groups that hold them are read first.
     shortcut_parent_ids = shortcut_parent_ids(group.id)
 
-    # The group has no sub-groups, so its own values hold all the files
-    # that go with it.
+    # The group has no sub-groups, so its own values, sent and scheduled, hold
+    # all the files that go with it. The scheduled ones go first, so one being
+    # sent meanwhile is waited for before the group is touched.
     Multi.new()
+    |> Multi.delete_all(
+      :scheduled,
+      from(s in ScheduledValue, where: s.group_id == ^group.id, select: s.files)
+    )
     |> Multi.delete_all(
       :attachments,
       from(a in ValueAttachment, where: a.group_id == ^group.id, select: a.storage_key)
@@ -2149,8 +2155,13 @@ defmodule PotokIde.Social do
     |> Multi.delete(:group, group)
     |> History.transaction(signature)
     |> case do
-      {:ok, %{group: deleted_group, attachments: {_count, storage_keys}}} ->
-        Storage.delete_later(storage_keys)
+      {:ok,
+       %{
+         group: deleted_group,
+         scheduled: {_scheduled_count, files},
+         attachments: {_count, storage_keys}
+       }} ->
+        Storage.delete_later(storage_keys ++ ScheduledValue.storage_keys(files))
         broadcast_group_deleted(deleted_group.id, parent_id)
 
         if parent_id do
@@ -2894,8 +2905,10 @@ defmodule PotokIde.Social do
   end
 
   # The membership goes with its roles (composite foreign key), the read
-  # marker, the places in the sub-groups that inherit it and a request for
-  # roles that waits; `history` writes what happened in the same transaction.
+  # marker, the messages that wait to go out, the places in the sub-groups that
+  # inherit it and a request for roles that waits; `history` writes what
+  # happened in the same transaction. What waits in those sub-groups goes when
+  # its time comes (`PotokIde.Social.ScheduledValues`).
   defp drop_membership(%Group{} = group, %Profile{} = member, history) do
     Multi.new()
     |> Multi.delete_all(
@@ -2910,13 +2923,21 @@ defmodule PotokIde.Social do
         where: gvr.group_id == ^group.id and gvr.profile_id == ^member.id
       )
     )
+    |> Multi.delete_all(
+      :scheduled,
+      from(s in ScheduledValue,
+        where: s.group_id == ^group.id and s.profile_id == ^member.id,
+        select: s.files
+      )
+    )
     |> Multi.run(:inheritance, fn repo, _changes ->
       {:ok, MemberInheritance.sync(repo, group.id, [member.id])}
     end)
     |> Multi.run(:history, fn repo, _changes -> {:ok, history.(repo)} end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{inheritance: changes}} ->
+      {:ok, %{inheritance: changes, scheduled: {_count, files}}} ->
+        Storage.delete_later(ScheduledValue.storage_keys(files))
         broadcast_group_members_changed(group, [:members], profile_id: member.id)
         broadcast_group_membership_changed(member.id, group.id, :removed)
         broadcast_inheritance_changes(changes)
@@ -3660,7 +3681,7 @@ defmodule PotokIde.Social do
   end
 
   defp create_chat_value(%Profile{} = creator, %Group{} = group, attrs, attachments) do
-    with {:ok, value, announce} <- insert_chat_value(creator, group, attrs, attachments, nil) do
+    with {:ok, value, announce} <- insert_chat_value(creator, group, attrs, attachments, []) do
       announce.()
       {:ok, value}
     end
@@ -3674,7 +3695,25 @@ defmodule PotokIde.Social do
   """
   def insert_process_value(%Profile{kind: :process} = process, %Group{} = group, attrs, managed)
       when is_map(managed) do
-    insert_chat_value(process, group, Map.new(attrs), [], managed)
+    insert_chat_value(process, group, Map.new(attrs), [], managed: managed)
+  end
+
+  @doc """
+  Writes a chat value its author scheduled, inside the transaction that takes
+  it from what waits (`PotokIde.Social.ScheduledValues`). Returns
+  `{:ok, value, announce}`, as `insert_process_value/4`. With
+  `unattended: true` the author may not be looking, so it does not mark as
+  read what others wrote before it.
+  """
+  def insert_scheduled_value(
+        %Profile{} = creator,
+        %Group{} = group,
+        attrs,
+        attachments,
+        unattended: unattended?
+      )
+      when is_boolean(unattended?) do
+    insert_chat_value(creator, group, attrs, attachments, unattended: unattended?)
   end
 
   @doc """
@@ -3711,7 +3750,7 @@ defmodule PotokIde.Social do
 
   # The checks and the writes of a chat value. What its pages and devices are
   # told comes back as a function, to call once the writes are committed.
-  defp insert_chat_value(%Profile{} = creator, %Group{} = group, attrs, attachments, managed) do
+  defp insert_chat_value(%Profile{} = creator, %Group{} = group, attrs, attachments, opts) do
     access = Access.for_profile(creator, group)
 
     cond do
@@ -3742,7 +3781,7 @@ defmodule PotokIde.Social do
           |> Map.put("group_id", group.id)
 
         changeset =
-          %Value{managed: managed}
+          %Value{managed: opts[:managed]}
           |> Value.changeset(attrs, attachments?: attachments != [])
           |> limit_outsider(access)
           |> put_mentions(creator, group)
@@ -3761,7 +3800,9 @@ defmodule PotokIde.Social do
           insert_value_attachments(repo, value, attachments)
         end)
         |> Multi.run(:mark_creator_read, fn repo, %{value: value} ->
-          upsert_group_value_read(repo, creator.id, group.id, value.id)
+          if opts[:unattended] == true and unread_before?(repo, creator, value),
+            do: {:ok, :unchanged},
+            else: upsert_group_value_read(repo, creator.id, group.id, value.id)
         end)
         |> Multi.run(:group_last_value_at, fn repo, %{value: value} ->
           {:ok, set_group_last_value_at(repo, group.id, value.inserted_at)}
@@ -3790,6 +3831,25 @@ defmodule PotokIde.Social do
             {:error, reason}
         end
     end
+  end
+
+  # Whether `creator` has something by others to read before `value`. Moving
+  # the marker past it would read it for them, so a value sent in their absence
+  # then counts as unread along with it.
+  defp unread_before?(repo, %Profile{id: profile_id}, %Value{id: value_id, group_id: group_id}) do
+    last_read_id =
+      from(r in GroupValueRead,
+        where: r.profile_id == ^profile_id and r.group_id == ^group_id,
+        select: r.last_read_value_id
+      )
+      |> repo.one() || 0
+
+    from(v in Value,
+      where:
+        v.group_id == ^group_id and v.is_data == false and v.id > ^last_read_id and
+          v.id < ^value_id and v.creator_id != ^profile_id
+    )
+    |> repo.exists?()
   end
 
   # Those a message in a thread mentions come in before it is written, so it
@@ -9674,6 +9734,21 @@ defmodule PotokIde.Social do
       PotokIde.PubSub,
       profile_topic(profile_id),
       {:group_pins_changed, profile_id}
+    )
+  end
+
+  @doc """
+  Tells the pages of a profile that the messages it scheduled in a group
+  changed (`PotokIde.Social.ScheduledValues`). `sent_value_id` is the message
+  one of them became when its time came, nil for any other change; it goes out
+  before that message does.
+  """
+  def broadcast_scheduled_values_changed(profile_id, group_id, sent_value_id)
+      when is_integer(profile_id) and is_integer(group_id) do
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      profile_topic(profile_id),
+      {:scheduled_values_changed, profile_id, group_id, sent_value_id}
     )
   end
 

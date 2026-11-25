@@ -209,13 +209,25 @@ On a phone, press and hold a message: a sheet opens with quick reactions and eve
 
 ![Pressing and holding a message](poruka-meni) ![A reply: the quote is above the field you write in](poruke-odgovor) ![A thread opened from a message](nit)
 
-The + button next to the field adds files or starts a poll. One message carries up to 10 files, up to 100 MB each. Pictures, video and sound open right in the chat, and you can also drag files into the window. In the Android app, you send a GIF or a sticker straight from the keyboard.
+The + button next to the field adds files, starts a poll or [schedules a message](#zakazane-poruke). One message carries up to 10 files, up to 100 MB each. Pictures, video and sound open right in the chat, and you can also drag files into the window. In the Android app, you send a GIF or a sticker straight from the keyboard.
 
 If you start writing and leave the group, the text waits for you when you come back. This browser keeps the draft, for each profile and group, and the list of groups shows "Draft:" and your text in place of the latest message. When you send the message the draft goes, and when you log out they all go.
 
 When you come back to a chat, a line shows where the unread messages begin, and with more than 99 it says 99+ new messages. The magnifier in the header searches the group's messages, in threads too, and even when you type without diacritics, in Latin or in Cyrillic.
 
-![Files and a poll under the + button](prilozi) ![Searching messages](pretraga-poruka) ![A line shows where the unread messages begin](neprocitano)
+![Files, a poll and scheduling under the + button](prilozi) ![Searching messages](pretraga-poruka) ![A line shows where the unread messages begin](neprocitano)
+
+### Scheduled messages {:#zakazane-poruke}
+
+You can write a message now and have it go out later. Tap **+** next to the field, then **Schedule message**, or press and hold the send arrow (on a computer, right-click it). Pick an offered time or the exact date and time, and tap **Schedule**. What is already written is scheduled with that, with its files and its reply. With nothing written yet, the time the message goes out stands above the field until you write and send it, and × puts it back to going out at once.
+
+Only you see your scheduled messages. A row above the field says how many there are and when the next one goes out, and a tap on it opens the list, where you can edit, send now or delete each of them. Messages scheduled in the name of a shared profile are seen and changed by everyone who holds it.
+
+A message goes out in the minute you picked even when Potok is open nowhere, and then it is like any other. Who may write and whom the message mentions is looked at only when it is sent. If you may no longer write by then, or Potok was not running for more than an hour, the message is not sent by itself: you get a notification, the list says why, and you choose what to do. When you leave a group, your scheduled messages in it go too.
+
+Members who may write can schedule, up to a year ahead, and at most 100 messages per profile.
+
+![Scheduling: the offered times, or a date and a time](zakazivanje) ![The list of scheduled messages](zakazane)
 
 ## New groups and settings {:#nove-grupe}
 

@@ -42,6 +42,7 @@ Kada neko pozove imejl adresu koja još nema nalog, Potok za nju otvara nepotvr�
 - Grupe koje pravite, njihove nazive, opise, slike i podešavanja, članstva, uloge, pozivnice i zahteve za pridruživanje
 - Mesta grupa i događaja: tačku, područje ili rutu koju ucrtate na mapi ili donesete iz fajla
 - Poruke, odgovore, niti i razgovore u četiri oka, kao i podatke za pretragu poruka
+- Zakazane poruke: tekst, fajlove i vreme slanja, dok ne budu poslate ili obrisane. Vide ih samo nalozi sa profilom u čije ime su zakazane.
 - Reakcije, prikačene grupe, tagove (javne i privatne, i one koje stavite na profile), praćenja, obaveštenja i to ko ih je pročitao, dokle ste pročitali razgovor i blokade
 - Događaje i odgovore na njih
 - Glasanja i glasove: kod tajnog glasanja čuvamo samo to da je profil glasao, a ne i za šta; spisak glasača može da preuzme ko po pravilima glasanja vidi pojedinosti
@@ -58,7 +59,7 @@ Pre slanja, fotografija u formatu JPEG, PNG ili WebP gubi EXIF, XMP i slične po
 
 ### Šta ostaje samo na vašem uređaju
 
-Nedovršene poruke, izbor teme i jezika, prikaz mape, kopija podataka koje aplikacije u grupama drže u pregledaču, stranica na kojoj je stalo čitanje sajta u opisu grupe i lična memorija aplikacija za posetioce bez naloga čuvaju se samo u vašem pregledaču ili aplikaciji. Ko je trenutno na mreži, Potok drži samo u memoriji servera, dok je stranica otvorena.
+Nedovršene poruke (nacrti, ne i one koje zakažete), izbor teme i jezika, prikaz mape, kopija podataka koje aplikacije u grupama drže u pregledaču, stranica na kojoj je stalo čitanje sajta u opisu grupe i lična memorija aplikacija za posetioce bez naloga čuvaju se samo u vašem pregledaču ili aplikaciji. Ko je trenutno na mreži, Potok drži samo u memoriji servera, dok je stranica otvorena.
 
 ### Tehničke informacije
 
@@ -125,6 +126,7 @@ Potok koristi samo kolačiće koji vas drže prijavljenim: kolačić sesije i, a
 - Nalog, profile i sadržaj čuvamo dok koristite Potok, dok ih ne obrišete ili dok se ne obrišu po pravilima funkcija (na primer, kada se obriše grupa).
 - Link za prijavu važi 15 minuta, pozivnica i link za promenu adrese 7 dana, link za brisanje naloga sat vremena, a sesija 14 dana. Istekle tokene brišemo jednom na sat.
 - Push obaveštenja koja čekaju na isporuku brišemo dan posle slanja.
+- Zakazana poruka postaje obična poruka kad bude poslata. Onu koja nije mogla da bude poslata čuvamo dok je ne pošaljete ili obrišete, a nestaje i kad napustite grupu.
 - Pregled linka pamtimo 6 sati.
 - Podatke procesa brišemo 30 dana posle njihovog završetka.
 - Istorija grupe ostaje dok postoji grupa. Od jedne stvari čuvamo najviše poslednjih 200 starih verzija. Administrator ih može isprazniti i ranije, a stare verzije zapisa koji ste upisali u aplikaciju možete isprazniti i sami; ostaje samo to da je izmene bilo.
@@ -135,7 +137,7 @@ Potok koristi samo kolačiće koji vas drže prijavljenim: kolačić sesije i, a
 
 Nalog brišete u podešavanjima naloga, u delu Nalog, ili na https://potok.rs/brisanje-naloga, gde unesete adresu i dobijete link koji važi sat vremena. Pre brisanja vidite šta nestaje, a šta ostaje.
 
-- **Nestaju:** nalog, njegove prijave i uređaji, vaša članstva i uloge, praćenja, reakcije, tagovi, pozivnice i lična memorija aplikacija, istorija vaših reakcija i stare verzije zapisa koje ste upisali u aplikacije, kao i grupe u kojima ste jedini član.
+- **Nestaju:** nalog, njegove prijave i uređaji, vaša članstva i uloge, praćenja, reakcije, tagovi, pozivnice, zakazane poruke sa fajlovima i lična memorija aplikacija, istorija vaših reakcija i stare verzije zapisa koje ste upisali u aplikacije, kao i grupe u kojima ste jedini član.
 - **Ostaju:** poruke, fajlovi, glasanja, događaji i obaveštenja koje ste objavili u grupama, i u istoriji grupe to da ste u njoj nešto izmenili, pod imenom „Obrisan korisnik“, bez vašeg korisničkog imena, slike, opisa i detalja. Profil koji delite sa drugim nalozima ostaje njima.
 
 Grupa nikad ne ostaje bez administratora: ako ste jedini administrator grupe u kojoj ima i drugih ljudi, pre brisanja nekog drugog postavite za administratora. Posle brisanja na vašu adresu stiže još jedan, poslednji imejl.

@@ -20,6 +20,7 @@ The main concepts in the system are:
 * `Value`: content posted by a profile in a group. A chat value can quote another value as an inline reply and carry @mentions, file attachments, reactions and a link preview. A data value (`is_data`) is written by a group app and never shows in the chat.
 * `ValueReaction`: one emoji a profile put on a value.
 * `ValueAttachment`: a file attached to a chat value. The bytes live in `PotokIde.Storage`.
+* `ScheduledValue`: a message a profile wrote in a group to go out at `send_at`, gone once it is sent or cancelled. Its files are in storage already, listed on the row.
 * `GroupMembership`: the join entity between profiles and groups. A membership held only through the parent group is marked `inherited`.
 * `GroupManifest`: the roles of a group. A group without its own manifest uses the one of its nearest ancestor.
 * `GroupRole`: a role of a manifest that allows or denies permissions.
@@ -93,6 +94,7 @@ Chat values:
 * Opening a chat moves the marker to the newest value (`Social.read_group_chat/2`, one query, no write when nothing is unread) and draws a line above the first value that was unread. When the unread values do not fit on the screen the chat opens with the line at the top; more of them than a page load around the first. A profile with no marker gets no line; only members get markers, and an empty chat read gets one at 0.
 * Rows of the sub-groups list show the group's newest value to members (`Social.last_chat_previews/1`, `ValuePreview`). New values bring their preview in the unread broadcast; editing or deleting the newest one sends `{:group_last_value_changed, ...}` on the group's unread topic.
 * The magnifier in the header searches the chat (`Social.search_group_values/3`): `values.content_folded` (the content through `potok_fold/1`, a generated column, NULL for app data) against the folded term, each chat read from its newest value through its id index under a 3 s timeout, 20 at a time, `RateLimit` `:value_search`. Members also search the threads right below the group that they are in. Matches are lit with `TextFold`, the same fold in Elixir, which a test holds to the SQL one.
+* A member can schedule a message (`PotokIde.Social.ScheduledValues`): "Schedule message" in the composer's + menu, or the send button held or right-clicked, asks for the time, and the composer's own form then sends itself, as files upload only with it. `PotokIde.Social.ScheduledValues.Scheduler` runs on every node, sets its timer for the next one, and takes each with `FOR UPDATE SKIP LOCKED` in a transaction of its own, in which the row goes and the value is written (`Social.insert_scheduled_value/5`), so it is sent once and everything about it is checked at that moment. Past an hour late, or refused, it keeps its row with `failure` and its author gets a push. It leaves the author's read marker before what others wrote and they have not read. History never follows the table.
 
 Files:
 

@@ -65,7 +65,7 @@ Kad pišeš u ime saveta, na stranici Profili izabereš profil saveta, a kad pi�
 
 Svi fajlovi iz razgovora skupljaju se na kartici **Fajlovi**, pa se pravila kućnog reda nađu i posle mnogo poruka, a pretraga po imenu ih nađe odmah.
 
-![Fajlovi i glasanje ispod dugmeta +](prilozi) ![Fajlovi zgrade](fajlovi)
+![Fajlovi, glasanje i zakazivanje ispod dugmeta +](prilozi) ![Fajlovi zgrade](fajlovi)
 
 ## 7. Glasanje {:#glasanje}
 

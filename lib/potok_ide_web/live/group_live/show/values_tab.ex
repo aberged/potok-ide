@@ -1,9 +1,9 @@
 defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
   use PotokIdeWeb, :html
 
-  alias PotokIde.Social.{Access, Group, Profile, Value}
+  alias PotokIde.Social.{Access, Group, Profile, ScheduledValues, Value}
   alias PotokIde.Storage
-  alias PotokIdeWeb.GroupLive.Show.{Components, PollForm}
+  alias PotokIdeWeb.GroupLive.Show.{Components, PollForm, Scheduling}
   import PotokIdeWeb.GroupLive.Show.Components, only: [inspect_tree: 1]
 
   attr :values, :any, required: true
@@ -20,6 +20,13 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
   attr :edit_value_form, :any, default: nil
   attr :new_value_form, :any, required: true
   attr :replying_to_value, :map, default: nil
+
+  attr :schedule_at, DateTime,
+    default: nil,
+    doc: "when the message being written goes out, unless at once"
+
+  attr :scheduled_values, :list, default: [], doc: "what the viewer has waiting here"
+  attr :time_zone, :string, default: "Etc/UTC"
   attr :thread_origin, :map, default: nil
 
   attr :focus_value_id, :integer,
@@ -55,6 +62,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
       |> assign(:can_delete_any, Access.can?(access, :delete_values))
       |> assign(:can_block, Access.can?(access, :remove_members) and Group.open_chat?(group))
       |> assign(:can_start_poll, PollForm.chat_entry?(group, access))
+      |> assign(
+        :can_schedule,
+        ScheduledValues.can_schedule?(profile, access, group) and not direct_gone?(group)
+      )
       # Threads are sub-groups, which direct conversations do not have.
       |> assign(
         :can_thread,
@@ -198,6 +209,21 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
           :if={@can_post or @editing_value}
           class="relative z-10 shrink-0 border-t border-base-300/70 bg-base-100/95 px-2 py-1.5 shadow-[0_-12px_24px_rgba(0,0,0,0.08)] backdrop-blur sm:px-6 sm:py-4"
         >
+          <Scheduling.bar
+            :if={!@editing_value}
+            scheduled={@scheduled_values}
+            time_zone={@time_zone}
+          />
+          <.composer_context
+            :if={@schedule_at && !@editing_value}
+            id="group-value-schedule-bar"
+            icon="hero-clock"
+            title={gettext("Goes out by itself")}
+            text={Scheduling.when_text(@schedule_at, @time_zone)}
+            cancel_id="group-value-schedule-cancel"
+            cancel_event="schedule_cancel"
+            cancel_label={gettext("Do not schedule it")}
+          />
           <.composer_context
             :if={@replying_to_value && !@editing_value}
             id="group-value-reply-preview"
@@ -385,19 +411,30 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                   field={@new_value_form[:content]}
                   input_id="group-value-content"
                   submit_id="group-value-submit"
-                  submit_icon="hero-paper-airplane"
-                  submit_label={gettext("Send message")}
+                  submit_icon={if(@schedule_at, do: "hero-clock", else: "hero-paper-airplane")}
+                  submit_label={
+                    if(@schedule_at, do: gettext("Schedule message"), else: gettext("Send message"))
+                  }
                   has_attachments={@can_attach and Enum.any?(@attachments.entries, & &1.valid?)}
+                  can_schedule={@can_schedule}
                 >
                   <.add_menu
-                    :if={@can_attach or @can_start_poll}
+                    :if={@can_attach or @can_start_poll or @can_schedule}
                     attachments={@can_attach && @attachments}
                     can_start_poll={@can_start_poll}
+                    can_schedule={@can_schedule}
                   />
                 </.composer_row>
               </.form>
             <% end %>
           </div>
+        </div>
+
+        <div
+          :if={!@can_post and !@editing_value and @scheduled_values != []}
+          class="relative z-10 shrink-0 border-t border-base-300/70 bg-base-100/95 px-2 pt-1.5 sm:px-6"
+        >
+          <Scheduling.bar scheduled={@scheduled_values} time_zone={@time_zone} />
         </div>
 
         <div
@@ -993,17 +1030,32 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               this.handleEvent("value_composer_focus", () => {
                 this.el.focus()
               })
+              // A time was picked: what is already written goes, with its files,
+              // and with nothing written yet typing can begin.
+              this.handleEvent("value_composer_submit", () => {
+                this.syncSubmitButton()
+
+                if (this.submitButton && !this.submitButton.disabled) {
+                  this.el.form.requestSubmit()
+                } else {
+                  this.el.focus()
+                }
+              })
               // Enter sends on devices with a mouse (desktop web); touch keyboards
               // keep Enter as a newline, also on phones with a stylus, which report
               // a fine pointer. Shift+Enter is always a newline.
               this.sendOnEnter = window.matchMedia("(hover: hover)").matches
               this.handleKeydown = (event) => {
                 if (event.key === "Escape") {
-                  const editing = document.getElementById("group-value-edit-bar")
+                  const cancel = [
+                    ["group-value-edit-bar", "cancel_edit_value"],
+                    ["group-value-reply-preview", "cancel_reply_value"],
+                    ["group-value-schedule-bar", "schedule_cancel"],
+                  ].find(([id]) => document.getElementById(id))
 
-                  if (editing || document.getElementById("group-value-reply-preview")) {
+                  if (cancel) {
                     event.preventDefault()
-                    this.pushEvent(editing ? "cancel_edit_value" : "cancel_reply_value", {})
+                    this.pushEvent(cancel[1], {})
                     return
                   }
                 }
@@ -1055,11 +1107,66 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
         </script>
 
         <script :type={Phoenix.LiveView.ColocatedHook} name=".ComposerSubmit">
+          // As a long press elsewhere (`assets/js/longpress.js`).
+          const HOLD_MS = 500
+
           export default {
             mounted() {
               // A tap that moved the focus here would close the keyboard.
               this.el.addEventListener("mousedown", event => event.preventDefault())
+              this.watchHold()
               this.sync()
+            },
+
+            destroyed() {
+              clearTimeout(this.holdTimer)
+              document.removeEventListener("pointerdown", this.handlePress, true)
+              document.removeEventListener("click", this.handleClick, true)
+            },
+
+            // Holding the button, or a right click on it, asks when the message
+            // goes out. Android opens the context menu of a held button itself,
+            // at about the same time.
+            watchHold() {
+              const canSchedule = () => this.el.dataset.canSchedule === "true"
+              let held = false
+              let touched = false
+
+              const open = () => {
+                clearTimeout(this.holdTimer)
+                held = touched
+                this.pushEvent("schedule_open", {})
+              }
+
+              this.el.addEventListener("pointerdown", event => {
+                touched = event.pointerType !== "mouse"
+                clearTimeout(this.holdTimer)
+                if (touched && canSchedule()) this.holdTimer = setTimeout(open, HOLD_MS)
+              })
+
+              for (const type of ["pointerup", "pointercancel", "pointerleave"]) {
+                this.el.addEventListener(type, () => clearTimeout(this.holdTimer))
+              }
+
+              this.el.addEventListener("contextmenu", event => {
+                if (!canSchedule()) return
+                event.preventDefault()
+                if (!held) open()
+              })
+
+              // The click that ends a hold belongs to nobody: not to this button,
+              // nor to the one of the dialog that opened under the finger.
+              this.handlePress = () => {
+                held = false
+              }
+              this.handleClick = event => {
+                if (!held) return
+                event.preventDefault()
+                event.stopPropagation()
+                held = false
+              }
+              document.addEventListener("pointerdown", this.handlePress, true)
+              document.addEventListener("click", this.handleClick, true)
             },
 
             updated() {
@@ -1226,6 +1333,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
   attr :submit_icon, :string, required: true
   attr :submit_label, :string, required: true
   attr :has_attachments, :boolean, default: false
+  attr :can_schedule, :boolean, default: false
   attr :focus_on_mount, :boolean, default: false
   slot :inner_block, doc: "what goes before the text, such as the button for files"
 
@@ -1254,10 +1362,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
         type="submit"
         phx-hook=".ComposerSubmit"
         data-has-attachments={to_string(@has_attachments)}
+        data-can-schedule={to_string(@can_schedule)}
         icon={@submit_icon}
         label={@submit_label}
         variant="primary"
         size="md"
+        class="select-none [-webkit-touch-callout:none]"
       />
     </div>
     """
@@ -1265,6 +1375,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
   attr :attachments, :any, required: true, doc: "the upload, or false when files are not allowed"
   attr :can_start_poll, :boolean, required: true
+  attr :can_schedule, :boolean, required: true
 
   # The "+" before the text, with a menu of what a message can carry. The menu
   # opens upward on the client and stands in the page: above the composer
@@ -1326,6 +1437,19 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             <.icon name="hero-chart-bar" class="size-4" />
           </span>
           {dgettext("polls", "New poll")}
+        </button>
+        <button
+          :if={@can_schedule}
+          id="group-value-schedule"
+          type="button"
+          role="menuitem"
+          phx-click="schedule_open"
+          class={add_menu_item_class()}
+        >
+          <span class={add_menu_icon_class()}>
+            <.icon name="hero-clock" class="size-4" />
+          </span>
+          {gettext("Schedule message")}
         </button>
       </div>
       <.live_file_input

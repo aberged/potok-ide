@@ -158,6 +158,29 @@
     "steps": [{ "click": "#group-value-add-toggle" }, { "pause": 400 }]
   },
   {
+    "name": "zakazivanje",
+    "as": "ana",
+    "url": "/groups/{groups.mz_zbor}",
+    "steps": [
+      { "click": "#group-value-add-toggle" },
+      { "click": "#group-value-schedule" },
+      { "wait": "#schedule-dialog[open]" },
+      { "click": "#schedule-preset-tomorrow" },
+      { "wait": "#schedule-preset-tomorrow[aria-pressed=true]" },
+      { "pause": 500 }
+    ]
+  },
+  {
+    "name": "zakazane",
+    "as": "marko",
+    "url": "/groups/{groups.mz_zbor}/values",
+    "steps": [
+      { "click": "#group-scheduled-bar" },
+      { "wait": "#scheduled-dialog[open]" },
+      { "pause": 500 }
+    ]
+  },
+  {
     "name": "pretraga-poruka",
     "as": "ana",
     "url": "/groups/{groups.mz_zbor}",
