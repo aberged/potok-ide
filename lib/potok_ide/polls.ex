@@ -28,7 +28,17 @@ defmodule PotokIde.Polls do
   alias PotokIde.Processes.ValueProcess
   alias PotokIde.Repo
   alias PotokIde.Social
-  alias PotokIde.Social.{Access, AccountProfile, Group, Identity, Profile, RequestPoll, Value}
+
+  alias PotokIde.Social.{
+    Access,
+    AccountProfile,
+    Group,
+    Identity,
+    Profile,
+    RequestPoll,
+    Value,
+    Visibility
+  }
 
   # What someone outside the group may do, enough to hold back a loop.
   @outsider_votes_per_minute 10
@@ -139,10 +149,23 @@ defmodule PotokIde.Polls do
     where(query, ^dynamic([p], p.group_id in ^group_ids or ^public))
   end
 
+  @doc """
+  Keeps the polls of `query` (its bindings `:poll` and `:group`) that `profile`
+  may open: those of the groups it is inside of, and the public ones.
+  """
+  def where_open_to(query, %Profile{} = profile) do
+    inside = Visibility.inside(profile)
+    public = public_poll()
+
+    query
+    |> Visibility.with_membership(profile)
+    |> where(^dynamic(^inside or ^public))
+  end
+
   # As `Group.guest_preview?/1`: a group that stopped being public keeps its polls.
   defp public_poll do
     dynamic(
-      [p, g],
+      [poll: p, group: g],
       p.is_public and g.is_public and not g.is_root and not g.is_direct and
         is_nil(g.parent_value_id)
     )

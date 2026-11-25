@@ -36,7 +36,7 @@ defmodule PotokIde.ActivityFixtures do
       profile,
       group,
       at,
-      Map.merge(%{content: nil, is_data: true, data: %{"n" => 1}, collection: "molbe"}, attrs)
+      Map.merge(%{content: "", is_data: true, data: %{"n" => 1}, collection: "molbe"}, attrs)
     )
   end
 

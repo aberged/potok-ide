@@ -480,6 +480,16 @@ defmodule PotokIde.Tags do
     )
   end
 
+  @doc """
+  The items of `kind` that `viewer` can open, as the tags page lists them; the
+  item is the query's first binding.
+  """
+  def open_items(%Profile{id: viewer_id}, kind) when kind in @kinds,
+    do: base_query(kind, viewer_id)
+
+  @doc "The column a tagging keeps an item of `kind` in."
+  def column(kind), do: Map.fetch!(@columns, kind)
+
   defp base_query(:group, viewer_id) do
     from(g in Group,
       left_join: gm in GroupMembership,

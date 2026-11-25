@@ -55,49 +55,52 @@ defmodule PotokIde.Social.Visibility do
   The chat values of `query` (its binding `:value`) in the chats `profile` reads
   now, as `Access.can_read_chat?/2` has it for one group: those of the groups it
   is in, and the open ones (`Group.open_chat?/1`), where someone outside does not
-  see the announcement of an event that is not public.
-
-  A thread is read by whoever may open it (`Social.join_thread/2`): a member of
-  it, of a thread above it or of the group they all hang from. Being in the
-  thread itself is not asked, as that comes with opening it and goes with
-  leaving the group.
+  see the announcement of an event that is not public. A thread is read by
+  whoever may open it (`inside/1`): being in the thread itself is not asked, as
+  that comes with opening it and goes with leaving the group.
   """
-  def in_read_chats(query, %Profile{id: profile_id}) do
+  def in_read_chats(query, %Profile{} = profile) do
     hidden =
       from(e in Event,
         where: e.value_id == parent_as(:value).id and not e.is_public,
         select: 1
       )
 
+    inside = inside(profile)
+
+    open =
+      dynamic(
+        [group: g],
+        g.has_public_chat and g.is_public and not g.is_root and not g.is_direct and
+          is_nil(g.parent_value_id) and not exists(hidden)
+      )
+
     query
     |> join(:inner, [value: v], g in Group, on: g.id == v.group_id, as: :group)
-    |> join(:left, [value: v], m in GroupMembership,
-      on: m.group_id == v.group_id and m.profile_id == ^profile_id,
+    |> with_membership(profile)
+    |> where(^dynamic(^inside or ^open))
+  end
+
+  @doc "Joins the profile's membership (`:membership`, nil outside) to the binding `:group`."
+  def with_membership(query, %Profile{id: profile_id}) do
+    join(query, :left, [group: g], m in GroupMembership,
+      on: m.group_id == g.id and m.profile_id == ^profile_id,
       as: :membership
     )
-    |> where(
+  end
+
+  @doc """
+  Whether the profile is inside the group, for a query with the bindings
+  `:group` and `:membership` (`with_membership/2`): a member, or of a thread
+  one who may open it and so become one (`Social.join_thread/2`), as a member
+  of a thread above it or of the group they all hang from.
+  """
+  def inside(%Profile{id: profile_id}) do
+    dynamic(
       [group: g, membership: m],
       not is_nil(m.profile_id) or
-        (g.has_public_chat and g.is_public and not g.is_root and not g.is_direct and
-           is_nil(g.parent_value_id) and not exists(hidden)) or
         (not is_nil(g.parent_value_id) and
-           fragment(
-             """
-             EXISTS (
-               WITH RECURSIVE up AS (
-                 SELECT p.id, p.parent_id, p.parent_value_id FROM groups p WHERE p.id = ?
-                 UNION ALL
-                 SELECT p.id, p.parent_id, p.parent_value_id
-                 FROM up JOIN groups p ON p.id = up.parent_id
-                 WHERE up.parent_value_id IS NOT NULL
-               )
-               SELECT 1 FROM up
-               JOIN group_memberships um ON um.group_id = up.id AND um.profile_id = ?
-             )
-             """,
-             g.parent_id,
-             ^profile_id
-           ))
+           fragment("potok_member_up(?, ?)", g.parent_id, type(^profile_id, :integer)))
     )
   end
 

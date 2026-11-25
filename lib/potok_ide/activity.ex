@@ -24,11 +24,17 @@ defmodule PotokIde.Activity do
 
   # What each filter reads. Files are messages too, so "all" tells them once.
   @filters [
-    all: ~w(message given received)a,
+    all: ~w(message given received ballot poll event rsvp group_made joined left group_reaction
+            record run_answer run_start decision admission notice follow tag)a,
     messages: ~w(message)a,
     files: ~w(file)a,
-    given: ~w(given)a,
-    received: ~w(received)a
+    given: ~w(given group_reaction)a,
+    received: ~w(received)a,
+    votes: ~w(ballot poll)a,
+    events: ~w(event rsvp)a,
+    groups: ~w(group_made joined left)a,
+    work: ~w(record run_answer run_start decision admission)a,
+    notices: ~w(notice follow tag)a
   ]
 
   # Later than anything, and no id is as high.
@@ -51,13 +57,20 @@ defmodule PotokIde.Activity do
   def page(%Profile{} = profile, %Account{} = account, opts \\ []) do
     limit = Keyword.get(opts, :limit, @page)
 
-    reader = %{
-      profile: profile,
-      account: account,
-      until: opts[:until] || @start,
-      zone: opts[:zone] || "Etc/UTC",
-      cursor: opts[:cursor]
-    }
+    sources = Keyword.fetch!(@filters, Keyword.get(opts, :filter, :all))
+
+    # Before the transaction, inside which no cache of rights is read.
+    reader =
+      Sources.prepare(
+        %{
+          profile: profile,
+          account: account,
+          until: opts[:until] || @start,
+          zone: opts[:zone] || "Etc/UTC",
+          cursor: opts[:cursor]
+        },
+        sources
+      )
 
     Repo.with_statement_timeout(
       @timeout,
@@ -66,11 +79,7 @@ defmodule PotokIde.Activity do
         # with a few memberships or a hundred thousand.
         Repo.query!("SET LOCAL plan_cache_mode = force_custom_plan")
 
-        rows =
-          @filters
-          |> Keyword.fetch!(Keyword.get(opts, :filter, :all))
-          |> Sources.query(reader, limit + 1)
-          |> Repo.all()
+        rows = sources |> Sources.query(reader, limit + 1) |> Repo.all()
 
         {shown, rest} = Enum.split(rows, limit)
         %{entries: Entries.load(shown, reader), cursor: if(rest != [], do: cursor(shown))}
