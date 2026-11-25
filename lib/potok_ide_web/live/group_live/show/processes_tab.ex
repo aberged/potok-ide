@@ -773,6 +773,25 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
                     </ul>
                   </li>
                 </ol>
+                <div
+                  :if={@manage? and @state.open == run.id and under_way?(run.last)}
+                  class="mb-3 ml-4 pl-4"
+                >
+                  <.button
+                    id={"process-run-#{run.id}-cancel"}
+                    type="button"
+                    phx-click="processes_run_cancel"
+                    phx-value-id={run.id}
+                    data-confirm={
+                      gettext("Cancel this run? It stops where it is and does not go on.")
+                    }
+                    variant="ghost"
+                    size="sm"
+                  >
+                    <.icon name="hero-x-circle" class="size-4" />
+                    {gettext("Cancel the run")}
+                  </.button>
+                </div>
               </li>
             </ul>
             <div :if={@state.more?} class="mt-3 flex justify-center">
@@ -809,6 +828,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
     """
   end
 
+  # Whether a run has not ended yet, by the last thing it did.
+  defp under_way?(%{kind: kind}), do: kind not in ~w(done failed cancelled)
+
   defp run_icon("done"), do: "hero-check-circle"
   defp run_icon("failed"), do: "hero-exclamation-circle"
   defp run_icon("cancelled"), do: "hero-x-circle"
@@ -821,7 +843,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
 
   # A step by its name, or by what it does, as its editor offers it.
   defp step(%{label: label}) when is_binary(label), do: label
-  defp step(%{type: "startEvent"}), do: gettext("Start")
+  defp step(%{type: "startEvent"}), do: gettext("The beginning")
   defp step(%{type: "endEvent"}), do: gettext("End")
 
   defp step(%{type: type, element: element}) do
@@ -1092,7 +1114,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
   defp failure_reason("too_many_items"), do: gettext("a list grew past 200 items")
   defp failure_reason("too_much_data"), do: gettext("its variables grew too large")
   defp failure_reason("too_many_fields"), do: gettext("the group has 50 fields already")
-  defp failure_reason("invalid_field"), do: gettext("the field's name is not right")
+
+  defp failure_reason("invalid_field"),
+    do: gettext("a field of the group does not take that value")
+
   defp failure_reason("poll_gone"), do: gettext("its poll was deleted")
   defp failure_reason("invalid_poll"), do: gettext("its poll could not be put to the vote")
 
@@ -1101,6 +1126,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
 
   defp failure_reason("not_a_member"), do: gettext("the member it names is not in the group")
   defp failure_reason("no_starter"), do: gettext("nobody started the run")
+  defp failure_reason("required"), do: gettext("what must be filled in was left empty")
+  defp failure_reason("unknown_entity"), do: gettext("an entity it uses is gone")
+  defp failure_reason("return_unknown"), do: gettext("the entity it hands back is gone")
+  defp failure_reason("return_too_big"), do: gettext("what it hands back is too large")
+  defp failure_reason("not_a_function"), do: gettext("it used a function that is not there")
+  defp failure_reason("invalid"), do: gettext("Potok did not take what it writes")
   defp failure_reason(_reason), do: gettext("an error")
 
   @doc "The permissions a process lacks, in words."

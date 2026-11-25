@@ -171,6 +171,62 @@ defmodule PotokIdeWeb.GroupLive.ProcessesTabTest do
     assert %ValueProcess{status: :cancelled} = Repo.get!(ValueProcess, instance.id)
   end
 
+  test "an editor cancels one run that waits, from what the runs did", ctx do
+    row = draw!(ctx)
+    instance = waiting!(ctx)
+    other = waiting!(ctx)
+
+    {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes")
+    lv |> element("#process-row-#{row.id}-runs") |> render_click()
+    refute has_element?(lv, "#process-run-#{instance.id}-cancel")
+
+    lv |> element("#process-run-#{instance.id}-open") |> render_click()
+    lv |> element("#process-run-#{instance.id}-cancel") |> render_click()
+
+    assert %ValueProcess{status: :cancelled} = Repo.get!(ValueProcess, instance.id)
+    assert %ValueProcess{status: :waiting} = Repo.get!(ValueProcess, other.id)
+    assert has_element?(lv, "#process-run-#{instance.id}-open", "Cancelled")
+    assert has_element?(lv, "#process-run-#{instance.id}-events", "cancels it")
+    refute has_element?(lv, "#process-run-#{instance.id}-cancel")
+    assert has_element?(lv, "#process-row-#{row.id}-count-waiting", "Waiting: 1")
+
+    # The beginning of a run goes by no button's name.
+    assert has_element?(lv, "#process-run-#{instance.id}-events", "The beginning")
+  end
+
+  test "a member reads a run of theirs and does not cancel it", ctx do
+    row = draw!(ctx)
+    instance = waiting!(ctx)
+
+    {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.group.id}/processes")
+    lv |> element("#process-row-#{row.id}-runs") |> render_click()
+    lv |> element("#process-run-#{instance.id}-open") |> render_click()
+    assert has_element?(lv, "#process-run-#{instance.id}-events")
+    refute has_element?(lv, "#process-run-#{instance.id}-cancel")
+
+    render_hook(lv, "processes_run_cancel", %{"id" => instance.id})
+    assert %ValueProcess{status: :waiting} = Repo.get!(ValueProcess, instance.id)
+  end
+
+  test "why a run stopped is said in words", ctx do
+    draw!(ctx)
+    instance = waiting!(ctx)
+
+    for reason <- ~w(required unknown_entity return_unknown return_too_big not_a_function invalid
+                     invalid_field poll_gone) do
+      instance
+      |> Ecto.Changeset.change(
+        status: :failed,
+        error: %{"element" => "odluka", "reason" => reason}
+      )
+      |> Repo.update!()
+
+      {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes")
+      assert has_element?(lv, "#process-instance-#{instance.id}", "Stopped at"), reason
+      refute has_element?(lv, "#process-instance-#{instance.id}", "an error"), reason
+    end
+  end
+
   test "a run another process called shows who called it, and why a caller stopped", ctx do
     {:ok, callee} =
       DrawnProcesses.create(ctx.owner, ctx.group, %{

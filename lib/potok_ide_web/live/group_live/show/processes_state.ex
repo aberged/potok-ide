@@ -387,6 +387,21 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
     end
   end
 
+  # One run stops, picked among those of its process.
+  def handle_event("processes_run_cancel", %{"id" => id}, socket) do
+    case instance_call(socket, id, &Processes.cancel/5) do
+      {:ok, instance} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, gettext("The instance is cancelled."))
+         |> load()
+         |> run_ended(instance.id)}
+
+      _refused ->
+        {:noreply, put_flash(socket, :error, gettext("Could not cancel it."))}
+    end
+  end
+
   def handle_event("processes_retry", %{"id" => id}, socket) do
     case instance_call(socket, id, &Processes.retry/5) do
       {:ok, _instance} ->
@@ -677,6 +692,28 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
     %{group: group, access: access, current_profile: profile} = socket.assigns
     {page, more?} = RunEvents.runs(group, process.id, access, profile, before)
     %{process: process, runs: earlier ++ page, more?: more?, open: nil, events: []}
+  end
+
+  # The run just cancelled, as it now stands in the open list, and its trace.
+  defp run_ended(socket, run_id) do
+    %{group: group, access: access, current_profile: profile} = socket.assigns
+
+    case socket.assigns.processes_runs do
+      %{runs: runs} = state ->
+        events = RunEvents.events(group, run_id, access, profile)
+
+        runs =
+          Enum.map(runs, fn
+            %{id: ^run_id} = run -> %{run | last: List.last(events) || run.last}
+            run -> run
+          end)
+
+        state = if state.open == run_id, do: %{state | events: events}, else: state
+        assign(socket, :processes_runs, %{state | runs: runs})
+
+      nil ->
+        socket
+    end
   end
 
   ## Other people's changes
