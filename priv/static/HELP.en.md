@@ -156,6 +156,23 @@ You share a shared profile with another profile: in the Sharing part you type it
 
 ![Profiles: current, default and the shared profile savet-cvetna](profili) ![Editing a profile: name, picture, details, description, sharing and tags](profil-uredi)
 
+## My activity {:#aktivnost}
+
+In the menu, under **My activity**, you see what your current profile does in all its groups, by the day, the newest first. Only you see it, and on a shared profile everyone who holds it. Not even the admins of groups open it. A button on the Profiles page and on your own card leads to it too.
+
+![My activity: a decision in a process, an answer to an event, reactions to a message and a vote](aktivnost)
+
+- **Messages** are yours in groups, threads and one-to-one conversations, and under Files and pictures only those that carry one.
+- **My reactions** are yours to messages and groups. **Reactions to mine** are others' to your messages: one row for a message, at the newest reaction, with the number and the names.
+- **Polls** are those you have a vote in, and for what, and those you start. Of a secret one it says only that you have a vote, as Potok does not keep for what. When each holder of a shared profile votes as themself, you see only your own vote.
+- **Events** are those you add and your answers to them, and **Groups** new groups, joining and leaving.
+- **Processes and records** are forms you fill in, decisions in processes and on requests, processes you start, and how many records you write into an app that day, without what they hold.
+- **Notices and tags** are the notices you send, the groups you follow and the tags you put.
+
+Each row leads to the thing itself: the message in its conversation, the poll, the event or the group. **Up to the day** takes you to the day you pick.
+
+The list goes by the rights you have today. When you leave a group, or are removed, all that is in it goes from the list, and comes back if you come back. So leaving a public group shows, and leaving a private one does not. A deleted message, a reaction or an answer taken back go from here too: Potok keeps nothing of its own for this list.
+
 ## Account and deleting it {:#nalog}
 
 Your account is your address and your sign-in, and your profiles are the faces you show in groups. In the account settings, the Account part links the [privacy policy](/privacy-policy), which says what Potok keeps about you, and has the **Delete account** button.

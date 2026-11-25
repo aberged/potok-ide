@@ -1,6 +1,6 @@
 # Privacy Policy for Potok
 
-Effective date: November 24, 2026
+Effective date: November 25, 2026
 
 This Privacy Policy explains how Potok collects, uses, stores and shares information when you use the Potok app for Android and iOS, the website https://potok.rs and related services.
 
@@ -50,6 +50,8 @@ When someone invites an email address that has no account yet, Potok opens an un
 - The course of a group's processes: who started them, what they wrote and what they wait for. The data of processes that ended more than 30 days ago is deleted, and a record of how they ended stays.
 - The history of a group: who made, changed or deleted something in it and when, and what it was before the change (descriptions, settings, processes, fields, the records of apps, polls and events). Of messages, reactions and notices we keep only that they were changed, added or deleted, never the text. Who voted for what is not part of the history. Members of the group see it by the same rules by which they see the things themselves; direct conversations have no history.
 - The personal memory of apps: what an app or a site in a group's description keeps for you alone, such as how far you read. Not even the group's editors see it, and you see and delete it in the account settings.
+
+The "My activity" page shows in one place what of this list the profile did in the groups it reads now: messages, the reactions to them, votes, events, records and the rest. We keep nothing new for it. Only the accounts that hold the profile see it, so on a shared profile all of them, except for a vote one of them gives through the shared profile in their own name: only that account sees it.
 
 ### Files
 

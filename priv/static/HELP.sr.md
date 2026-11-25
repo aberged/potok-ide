@@ -162,6 +162,23 @@ Deljeni profil deliš sa drugim profilom: u delu Deljenje upišeš njegovo koris
 
 ![Profili: trenutni, podrazumevani i deljeni profil savet-cvetna](profili) ![Uređivanje profila: ime, slika, detalji, opis, deljenje i tagovi](profil-uredi)
 
+## Moja aktivnost {:#aktivnost}
+
+U meniju, pod **Moja aktivnost**, vidiš šta tvoj trenutni profil radi u svim svojim grupama, po danima, od najnovijeg. Vidiš to samo ti, a na deljenom profilu svi koji ga drže. Ni administratori grupa je ne otvaraju. Do nje vodi i dugme na stranici Profili i na tvojoj kartici.
+
+![Moja aktivnost: odluka u procesu, odgovor na događaj, reakcije na poruku i glas](aktivnost)
+
+- **Poruke** su tvoje poruke u grupama, nitima i razgovorima u četiri oka, a pod Fajlovi i slike samo one sa prilogom.
+- **Moje reakcije** su tvoje na poruke i grupe. **Reakcije na moje** su tuđe na tvoje poruke: jedan red po poruci, kod najnovije reakcije, sa brojem i imenima.
+- **Glasanja** su ona u kojima imaš glas, i za šta, i ona koja pokreneš. Kod tajnog piše samo da imaš glas, jer Potok ne čuva za šta. Kad kroz deljeni profil svako glasa u svoje ime, vidiš samo svoj glas.
+- **Događaji** su oni koje dodaš i tvoji odgovori na njih, a **Grupe** nove grupe, ulasci i izlasci.
+- **Procesi i zapisi** su popunjene forme, odluke u procesima i o zahtevima, procesi koje pokreneš, i koliko zapisa upišeš u aplikaciju tog dana, bez onoga što u njima piše.
+- **Obaveštenja i tagovi** su obaveštenja koja pošalješ, grupe koje pratiš i tagovi koje staviš.
+
+Svaki red vodi na samu stvar: na poruku u razgovoru, glasanje, događaj ili grupu. **Do dana** vodi na dan koji izabereš.
+
+Pregled ide po tvojim današnjim pravima. Kad izađeš iz grupe, ili te uklone, iz njega nestaje sve što je u njoj, a vraća se ako se vratiš. Zato se izlazak iz javne grupe vidi, a iz privatne ne. Obrisana poruka, povučena reakcija i povučen odgovor nestaju i odavde: Potok za ovaj pregled ne beleži ništa posebno.
+
 ## Nalog i brisanje {:#nalog}
 
 Nalog je tvoja adresa i prijava, a profili su lica kojima se u grupama predstavljaš. U Podešavanjima naloga, u delu Nalog, je link na [politiku privatnosti](/privacy-policy), gde piše šta Potok čuva o tebi, i dugme **Obriši nalog**.

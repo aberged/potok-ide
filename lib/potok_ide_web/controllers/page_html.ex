@@ -276,7 +276,7 @@ defmodule PotokIdeWeb.PageHTML do
         title: gettext("Several profiles"),
         text:
           gettext(
-            "Personal and shared, say for a family or an association. Each tells as much about you as you like, and to whom you like."
+            "Personal and shared, say for a family or an association. Each tells as much about you as you like, and to whom you like. All you do with one is in one place."
           )
       },
       %{

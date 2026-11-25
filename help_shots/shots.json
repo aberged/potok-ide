@@ -62,6 +62,12 @@
     "url": "/groups/{groups.building}"
   },
   {
+    "name": "aktivnost",
+    "as": "jelena",
+    "url": "/activity",
+    "steps": [{ "wait": "#activity-list > li" }]
+  },
+  {
     "name": "profili",
     "as": "ana",
     "url": "/profiles"

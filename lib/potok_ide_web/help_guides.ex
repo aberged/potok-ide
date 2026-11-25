@@ -148,6 +148,8 @@ defmodule PotokIdeWeb.HelpGuides do
         lib/potok_ide/social/profile_field.ex
         lib/potok_ide/social/profile_facts.ex
         lib/potok_ide/social/profile_details.ex
+        lib/potok_ide/social/visibility.ex
+        lib/potok_ide/activity/sources.ex
         lib/potok_ide/social/group.ex
         lib/potok_ide/social.ex
       ),
@@ -167,6 +169,8 @@ defmodule PotokIdeWeb.HelpGuides do
         lib/potok_ide/social/profile_field.ex
         lib/potok_ide/social/profile_facts.ex
         lib/potok_ide/social/profile_details.ex
+        lib/potok_ide/social/visibility.ex
+        lib/potok_ide/activity/sources.ex
       )
     }
   end

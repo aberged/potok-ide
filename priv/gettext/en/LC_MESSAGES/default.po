@@ -3003,7 +3003,7 @@ msgstr ""
 msgid "Every how many years"
 msgstr ""
 
-#: lib/potok_ide_web/live/activity_live/words.ex:209
+#: lib/potok_ide_web/live/activity_live/words.ex:204
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1486
 #, elixir-autogen, elixir-format
 msgid "Going"
@@ -3025,7 +3025,7 @@ msgstr ""
 msgid "Manage events"
 msgstr ""
 
-#: lib/potok_ide_web/live/activity_live/words.ex:210
+#: lib/potok_ide_web/live/activity_live/words.ex:205
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1487
 #, elixir-autogen, elixir-format
 msgid "Maybe"
@@ -3077,7 +3077,7 @@ msgstr ""
 msgid "No events this month."
 msgstr ""
 
-#: lib/potok_ide_web/live/activity_live/words.ex:211
+#: lib/potok_ide_web/live/activity_live/words.ex:206
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1488
 #, elixir-autogen, elixir-format
 msgid "Not going"
@@ -3191,7 +3191,7 @@ msgstr ""
 msgid "Title"
 msgstr ""
 
-#: lib/potok_ide_web/live/activity_live/index.ex:433
+#: lib/potok_ide_web/live/activity_live/index.ex:443
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:100
 #: lib/potok_ide_web/live/group_live/show/values_tab.ex:112
 #, elixir-autogen, elixir-format
@@ -3272,7 +3272,7 @@ msgstr ""
 msgid "Repeats on"
 msgstr ""
 
-#: lib/potok_ide_web/live/activity_live/words.ex:182
+#: lib/potok_ide_web/live/activity_live/words.ex:177
 #: lib/potok_ide_web/live/tag_live/index.ex:440
 #, elixir-autogen, elixir-format
 msgid "(no text)"
@@ -3883,7 +3883,7 @@ msgstr ""
 msgid "Share"
 msgstr ""
 
-#: lib/potok_ide_web/live/activity_live/words.ex:203
+#: lib/potok_ide_web/live/activity_live/words.ex:198
 #: lib/potok_ide_web/live/group_live/show.ex:6804
 #, elixir-autogen, elixir-format
 msgid "%{names} and %{count} more"
@@ -4287,7 +4287,7 @@ msgstr ""
 
 #: lib/potok_ide_web/controllers/page_html.ex:278
 #, elixir-autogen, elixir-format
-msgid "Personal and shared, say for a family or an association. Each tells as much about you as you like, and to whom you like."
+msgid "Personal and shared, say for a family or an association. Each tells as much about you as you like, and to whom you like. All you do with one is in one place."
 msgstr ""
 
 #: lib/potok_ide_web/controllers/page_html.ex:237
@@ -11257,7 +11257,7 @@ msgstr ""
 msgid "A few words for whoever decides."
 msgstr ""
 
-#: lib/potok_ide_web/live/activity_live/words.ex:185
+#: lib/potok_ide_web/live/activity_live/words.ex:180
 #: lib/potok_ide_web/live/request_live/index.ex:665
 #, elixir-autogen, elixir-format
 msgid "A role since deleted"
@@ -11268,7 +11268,7 @@ msgstr ""
 msgid "A vote decides this now."
 msgstr ""
 
-#: lib/potok_ide_web/live/activity_live/words.ex:184
+#: lib/potok_ide_web/live/activity_live/words.ex:179
 #: lib/potok_ide_web/live/group_live/show/request_dialogs.ex:412
 #: lib/potok_ide_web/live/request_live/index.ex:661
 #, elixir-autogen, elixir-format
@@ -11329,7 +11329,7 @@ msgstr ""
 msgid "Give"
 msgstr ""
 
-#: lib/potok_ide_web/live/activity_live/words.ex:212
+#: lib/potok_ide_web/live/activity_live/words.ex:207
 #: lib/potok_ide_web/live/request_live/index.ex:671
 #, elixir-autogen, elixir-format
 msgid "Given"
@@ -11372,7 +11372,7 @@ msgstr ""
 msgid "Pick at least one role."
 msgstr ""
 
-#: lib/potok_ide_web/live/activity_live/words.ex:214
+#: lib/potok_ide_web/live/activity_live/words.ex:209
 #: lib/potok_ide_web/live/group_live/show/request_dialogs.ex:566
 #: lib/potok_ide_web/live/group_live/show/request_dialogs.ex:570
 #: lib/potok_ide_web/live/request_live/index.ex:679
@@ -11386,7 +11386,7 @@ msgstr ""
 msgid "Refuse"
 msgstr ""
 
-#: lib/potok_ide_web/live/activity_live/words.ex:213
+#: lib/potok_ide_web/live/activity_live/words.ex:208
 #: lib/potok_ide_web/live/request_live/index.ex:672
 #, elixir-autogen, elixir-format
 msgid "Refused"
@@ -13341,7 +13341,7 @@ msgstr ""
 msgid "Area on the map"
 msgstr ""
 
-#: lib/potok_ide_web/live/activity_live/words.ex:208
+#: lib/potok_ide_web/live/activity_live/words.ex:203
 #: lib/potok_ide_web/live/group_live/show/history_words.ex:466
 #: lib/potok_ide_web/live/group_live/show/processes_tab.ex:848
 #, elixir-autogen, elixir-format
@@ -14409,7 +14409,7 @@ msgstr ""
 
 #: lib/potok_ide_web/components/layouts.ex:363
 #: lib/potok_ide_web/live/activity_live/index.ex:40
-#: lib/potok_ide_web/live/activity_live/index.ex:301
+#: lib/potok_ide_web/live/activity_live/index.ex:311
 #: lib/potok_ide_web/live/profile_live/card.ex:46
 #: lib/potok_ide_web/live/profile_live/index.ex:51
 #, elixir-autogen, elixir-format
@@ -14466,17 +14466,17 @@ msgstr ""
 msgid "Nothing like that up to this day."
 msgstr ""
 
-#: lib/potok_ide_web/live/activity_live/index.ex:172
+#: lib/potok_ide_web/live/activity_live/index.ex:174
 #, elixir-autogen, elixir-format
 msgid "That is all. What is in groups you do not read any more is not here, and comes back if you come back to them."
 msgstr ""
 
-#: lib/potok_ide_web/live/activity_live/index.ex:157
+#: lib/potok_ide_web/live/activity_live/index.ex:159
 #, elixir-autogen, elixir-format
 msgid "There is too much to look through at once. Pick one of the kinds above."
 msgstr ""
 
-#: lib/potok_ide_web/live/activity_live/index.ex:158
+#: lib/potok_ide_web/live/activity_live/index.ex:160
 #, elixir-autogen, elixir-format
 msgid "This took too long to read. Try again in a while."
 msgstr ""
@@ -14501,7 +14501,7 @@ msgstr ""
 msgid "You have not reacted to anything yet."
 msgstr ""
 
-#: lib/potok_ide_web/live/activity_live/words.ex:223
+#: lib/potok_ide_web/live/activity_live/words.ex:218
 #, elixir-autogen, elixir-format
 msgid "Your vote: %{choice}"
 msgstr ""
@@ -14604,12 +14604,6 @@ msgctxt "activity"
 msgid "Messages"
 msgstr ""
 
-#: lib/potok_ide_web/live/activity_live/words.ex:105
-#, elixir-autogen, elixir-format
-msgctxt "activity"
-msgid "More than %{count} records in an app"
-msgstr ""
-
 #: lib/potok_ide_web/live/activity_live/words.ex:25
 #, elixir-autogen, elixir-format
 msgctxt "activity"
@@ -14646,7 +14640,7 @@ msgctxt "activity"
 msgid "Notices and tags"
 msgstr ""
 
-#: lib/potok_ide_web/live/activity_live/index.ex:163
+#: lib/potok_ide_web/live/activity_live/index.ex:165
 #, elixir-autogen, elixir-format
 msgctxt "activity"
 msgid "Older"

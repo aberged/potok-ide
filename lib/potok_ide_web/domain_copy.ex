@@ -1892,6 +1892,14 @@ defmodule PotokIdeWeb.DomainCopy do
           )
       },
       %{
+        title: dgettext("domain_map", "What a profile did, only the profile reads"),
+        text:
+          dgettext(
+            "domain_map",
+            "A <Profile>profile</Profile> reads on one page what it did over all its <Group>groups</Group>, the newest first: its <Value>values</Value> in chats, its reactions and those others put on its values, one row for a value, its <PollBallot>ballots</PollBallot> and <Poll>polls</Poll>, <Event>events</Event> and its answers to them, groups it made, joined or left, records it wrote into apps, what it did in <AppProcess>processes</AppProcess>, requests it decided, <GroupNotice>notices</GroupNotice>, <GroupFollow>followings</GroupFollow> and <Tag>tags</Tag>. Nothing is kept for it: the page reads the things themselves by the rights the profile has now, so what is deleted is gone from it, and what is in a group it does not read any more is left out until it is back. Every account that holds a shared profile reads all of it, except a ballot another holder gave as themself. Of a secret poll it says only that the profile voted, and of records how many there are, never what they hold. A run of a process counts when the profile started it by hand, decided in it or filled in its form, not when its message or record set it off."
+          )
+      },
+      %{
         title: dgettext("domain_map", "A deleted account leaves what was written"),
         text:
           dgettext(
