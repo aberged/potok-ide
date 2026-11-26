@@ -14,8 +14,10 @@ on:
         required: true
         default: internal
         type: choice
+        # v2 is the closed testing track "druga kap", where the testers are.
         options:
           - internal
+          - v2
           - alpha
           - beta
           - production

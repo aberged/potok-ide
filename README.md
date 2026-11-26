@@ -1218,7 +1218,7 @@ For exact PowerShell and macOS secret commands plus a checked Apple Developer an
 
 Inputs:
 
-* `track`: `internal` (default), `alpha`, `beta` or `production`
+* `track`: `internal` (default), `v2` (the closed testing track "druga kap", where the testers are), `alpha`, `beta` or `production`
 * `status`: `completed` (default) or `draft`, which waits for a click in Play Console
 * `upload_to_play`: `true` (default); `false` only builds the artifact
 
