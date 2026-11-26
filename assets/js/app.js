@@ -209,9 +209,37 @@ const installPasswordToggleButtons = () => {
 }
 
 const POTOK_PUSH_TOKEN_KEY = "potok:push-token"
-// The page language the device's push subscription was last saved with.
-const POTOK_PUSH_LOCALE_KEY = "potok:push-locale"
+// What this device saved last (an FCM token or a web push endpoint): the
+// log-out sends it, so the account stops pushing to this device.
+const POTOK_PUSH_DEVICE_KEY = "potok:push-device"
+// Set by "Disable" in the settings: nothing turns the app's notifications
+// back on by itself while it is there.
+const POTOK_PUSH_OFF_KEY = "potok:push-off"
+// The app has asked for the permission by itself once.
+const POTOK_PUSH_ASKED_KEY = "potok:push-asked"
 const POTOK_PUSH_CHANNEL_ID = "potok-default"
+
+const readPushStore = key => {
+  try {
+    return window.localStorage.getItem(key)
+  } catch (_error) {
+    return null
+  }
+}
+
+const writePushStore = (key, value) => {
+  try {
+    if (value === null) {
+      window.localStorage.removeItem(key)
+    } else {
+      window.localStorage.setItem(key, value)
+    }
+  } catch (_error) {
+    // Without storage the device is saved again on the next start.
+  }
+}
+
+const signedIn = () => document.body.dataset.signedIn === "true"
 
 const pushChannels = () => {
   try {
@@ -230,18 +258,25 @@ const POTOK_IOS_PUSH_REGISTRATION_ERROR_EVENT = "potokNativePushRegistrationErro
 const nativePushListeners = new Set()
 
 const NativePushManager = {
-  initialized: false,
+  ready: null,
 
   isSupported() {
     return Capacitor.isNativePlatform() && ["android", "ios"].includes(Capacitor.getPlatform())
   },
 
-  async initialize() {
-    if (!this.isSupported() || this.initialized) {
-      return this.isSupported()
+  // Every caller waits for the same setup, so nothing registers before the
+  // listeners that take the token are in place.
+  initialize() {
+    if (!this.isSupported()) {
+      return Promise.resolve(false)
     }
 
-    this.initialized = true
+    this.ready ||= this.setUp()
+    return this.ready
+  },
+
+  async setUp() {
+    keepOldPushSwitch()
 
     // One channel per kind of push, named in the page's language
     // (`PotokIdeWeb.PushChannels`): creating an existing channel renames it.
@@ -302,8 +337,24 @@ const NativePushManager = {
       openNotificationUrl(event.notification?.data?.url || event.notification?.link || "")
     })
 
+    // Wherever the token comes from, the signed-in account gets it, unless
+    // notifications were turned off in the settings or not allowed: Firebase
+    // also hands over a new token by itself, before anyone was asked.
+    nativePushListeners.add(async event => {
+      if (event.type !== "registration" || event.provider !== "fcm") return
+      if (!signedIn() || readPushStore(POTOK_PUSH_OFF_KEY)) return
+
+      try {
+        const {receive} = await NativePushNotifications.checkPermissions()
+        if (receive === "granted") await saveNativeDeviceToken(event.token)
+      } catch (error) {
+        console.warn("Unable to save this device for notifications", error)
+      }
+    })
+
     // iOS lists and removes delivered notifications only after `register()`
-    // in this session, which clearing a read conversation needs.
+    // in this session, which clearing a read conversation needs. It also
+    // brings the token, saved above.
     if (Capacitor.getPlatform() === "ios") {
       try {
         const status = await NativePushNotifications.checkPermissions()
@@ -359,6 +410,11 @@ const PushNotifications = {
     this.handleNativePushEvent = event => {
       switch (event.type) {
       case "registration":
+        // iOS registers on every start, also while turned off here.
+        if (readPushStore(POTOK_PUSH_OFF_KEY)) {
+          break
+        }
+
         if (this.nativePlatform === "ios" && event.provider !== "fcm") {
           this.setPendingState(this.i18n.finishingIphone)
           break
@@ -428,7 +484,8 @@ const PushNotifications = {
 
       const storedToken = window.localStorage.getItem(POTOK_PUSH_TOKEN_KEY)
 
-      if (permissions.receive !== "granted") {
+      // Turned off here: the device's permission stays, the subscription does not.
+      if (permissions.receive !== "granted" || readPushStore(POTOK_PUSH_OFF_KEY)) {
         this.renderIdle(message || this.i18n.disabledForDevice)
         return
       }
@@ -495,6 +552,7 @@ const PushNotifications = {
 
   async enableNativeNotifications() {
     this.setPendingState(this.i18n.requestingDevicePermission)
+    writePushStore(POTOK_PUSH_OFF_KEY, null)
 
     try {
       let permissions = await NativePushManager.checkPermissions()
@@ -579,6 +637,8 @@ const PushNotifications = {
 
       await NativePushManager.unregister()
       window.localStorage.removeItem(POTOK_PUSH_TOKEN_KEY)
+      writePushStore(POTOK_PUSH_OFF_KEY, "1")
+      forgetPushDevice()
       await this.refreshPushSubscriptions()
       this.renderIdle(this.i18n.disabledForDevice)
     } catch (error) {
@@ -603,6 +663,7 @@ const PushNotifications = {
         await subscription.unsubscribe()
       }
 
+      forgetPushDevice()
       await this.refreshPushSubscriptions()
       this.renderIdle(this.i18n.disabledForBrowser)
     } catch (error) {
@@ -675,6 +736,10 @@ const PushNotifications = {
 
   async handleNativeRegistration(token) {
     try {
+      // A token Firebase hands over by itself, while notifications are not allowed.
+      const {receive} = await NativePushManager.checkPermissions()
+      if (receive !== "granted") return
+
       await this.saveNativeToken(token)
       this.renderEnabled(this.nativePendingMessage || this.i18n.enabled)
     } catch (error) {
@@ -706,32 +771,14 @@ const PushNotifications = {
   },
 
   async saveSubscription(subscription) {
-    const response = await this.request(this.subscribeUrl, {
-      method: "POST",
-      body: JSON.stringify({subscription: subscription.toJSON()}),
-    })
-
-    rememberPushLocale()
+    const response = await saveWebPushSubscription(subscription)
     await this.refreshPushSubscriptions()
 
     return response
   },
 
   async saveNativeToken(token) {
-    window.localStorage.setItem(POTOK_PUSH_TOKEN_KEY, token)
-
-    const response = await this.request(this.subscribeUrl, {
-      method: "POST",
-      body: JSON.stringify({
-        subscription: {
-          type: "fcm",
-          token,
-          platform: this.nativePlatform,
-        },
-      }),
-    })
-
-    rememberPushLocale()
+    const response = await saveNativeDeviceToken(token)
     await this.refreshPushSubscriptions()
 
     return response
@@ -1834,46 +1881,30 @@ const registerCapacitorPushNotifications = () => {
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 
-function rememberPushLocale() {
-  try {
-    window.localStorage.setItem(POTOK_PUSH_LOCALE_KEY, document.documentElement.lang)
-  } catch (_error) {
-    // Without storage the subscription is saved again on the next load.
+// Saving takes the device to the signed-in account and keeps the session's
+// language for its notifications. The settings page and the start of a page
+// may both save one device: it goes to the server once per page load.
+const savedPushDevices = new Map()
+
+function savePushDevice(subscription, identifier) {
+  if (!savedPushDevices.has(identifier)) {
+    const saving = postPushSubscription(subscription)
+      .then(payload => {
+        writePushStore(POTOK_PUSH_DEVICE_KEY, identifier)
+        return payload
+      })
+      .catch(error => {
+        savedPushDevices.delete(identifier)
+        throw error
+      })
+
+    savedPushDevices.set(identifier, saving)
   }
+
+  return savedPushDevices.get(identifier)
 }
 
-// The server sends notifications in the language a device saved its push
-// subscription with. After the language changes, save it again.
-async function syncPushLocale() {
-  const locale = document.documentElement.lang
-  let saved = null
-
-  try {
-    saved = window.localStorage.getItem(POTOK_PUSH_LOCALE_KEY)
-  } catch (_error) {
-    return
-  }
-
-  if (!locale || saved === locale || document.body.dataset.signedIn !== "true") {
-    return
-  }
-
-  let subscription = null
-
-  if (NativePushManager.isSupported()) {
-    const token = window.localStorage.getItem(POTOK_PUSH_TOKEN_KEY)
-    if (token) subscription = {type: "fcm", token, platform: Capacitor.getPlatform()}
-  } else if ("serviceWorker" in navigator && "PushManager" in window &&
-             "Notification" in window && Notification.permission === "granted") {
-    const registration = await navigator.serviceWorker.getRegistration()
-    const existing = await registration?.pushManager.getSubscription()
-    if (existing) subscription = existing.toJSON()
-  }
-
-  if (!subscription) {
-    return
-  }
-
+async function postPushSubscription(subscription) {
   const response = await fetch("/accounts/push-subscriptions", {
     method: "POST",
     credentials: "same-origin",
@@ -1885,7 +1916,104 @@ async function syncPushLocale() {
     body: JSON.stringify({subscription}),
   })
 
-  if (response.ok) rememberPushLocale()
+  const payload = await response.json().catch(() => ({}))
+  if (!response.ok) throw new Error(payload.error || "")
+
+  return payload
+}
+
+function saveNativeDeviceToken(token) {
+  writePushStore(POTOK_PUSH_TOKEN_KEY, token)
+  return savePushDevice({type: "fcm", token, platform: Capacitor.getPlatform()}, token)
+}
+
+function saveWebPushSubscription(subscription) {
+  const json = subscription.toJSON()
+  return savePushDevice(json, json.endpoint)
+}
+
+function forgetPushDevice() {
+  writePushStore(POTOK_PUSH_DEVICE_KEY, null)
+  savedPushDevices.clear()
+}
+
+// The app asks for notifications by itself once, the first time someone is
+// signed in in it, and saves the device on every start while they are
+// allowed, so a fresh install needs no visit to the settings. A refusal is
+// left alone, and so is "Disable" in the settings.
+async function autoEnableNativePush() {
+  if (!NativePushManager.isSupported() || !signedIn()) return
+
+  await NativePushManager.initialize()
+  if (readPushStore(POTOK_PUSH_OFF_KEY)) return
+
+  let {receive} = await NativePushManager.checkPermissions()
+  const ask = receive === "prompt" && !readPushStore(POTOK_PUSH_ASKED_KEY)
+
+  if (ask) {
+    writePushStore(POTOK_PUSH_ASKED_KEY, "1")
+    receive = (await NativePushManager.requestPermissions()).receive
+  }
+
+  // iOS registered already while setting up, if notifications were allowed.
+  if (receive === "granted" && (ask || Capacitor.getPlatform() !== "ios")) {
+    await NativePushManager.register()
+  }
+}
+
+// Before the switch existed, "Disable" only dropped the token. Every save
+// left the language it was saved in, so a device with that and no token had
+// turned notifications off, and they stay off. Read once, first thing on a
+// start (`NativePushManager.setUp`), before anything registers.
+function keepOldPushSwitch() {
+  const oldLocaleKey = "potok:push-locale"
+  if (!readPushStore(oldLocaleKey)) return
+
+  if (!readPushStore(POTOK_PUSH_TOKEN_KEY)) writePushStore(POTOK_PUSH_OFF_KEY, "1")
+  writePushStore(oldLocaleKey, null)
+}
+
+// A browser asks only after a click, in the settings. A permission given
+// there is saved again on every page load: after a new sign-in, the account
+// signed in gets this browser's notifications.
+async function syncWebPushSubscription() {
+  if (NativePushManager.isSupported() || !signedIn()) return
+  if (!("serviceWorker" in navigator && "PushManager" in window && "Notification" in window)) return
+  if (Notification.permission !== "granted") return
+
+  const registration = await navigator.serviceWorker.getRegistration()
+  const existing = await registration?.pushManager.getSubscription()
+  if (existing) await saveWebPushSubscription(existing)
+}
+
+// Logging out takes this device off the account: the log-out form carries
+// what the device saved, and the server deletes it with the session. Without
+// it phoenix_html sends the form as always.
+function logOutWithPushDevice(event, link) {
+  const identifier = readPushStore(POTOK_PUSH_DEVICE_KEY)
+  if (!identifier || event.defaultPrevented || !link.dataset.to) return
+
+  event.preventDefault()
+
+  const form = document.createElement("form")
+  form.method = "post"
+  form.action = link.dataset.to
+  form.hidden = true
+
+  for (const [name, value] of [
+    ["_method", "delete"],
+    ["_csrf_token", link.dataset.csrf || csrfToken],
+    ["push_device", identifier],
+  ]) {
+    const input = document.createElement("input")
+    input.type = "hidden"
+    input.name = name
+    input.value = value
+    form.appendChild(input)
+  }
+
+  document.body.appendChild(form)
+  form.submit()
 }
 
 // The sub-groups tab hides thread sub-groups until the viewer shows them, and
@@ -2045,6 +2173,10 @@ installNotificationTray()
 // Drafts stay in this browser, which may be a shared one: logging out drops them.
 document.addEventListener("click", event => {
   if (event.target.closest?.("[data-clear-drafts]")) clearAllDrafts()
+
+  // Before phoenix_html, which listens on the window.
+  const logOut = event.target.closest?.("[data-log-out]")
+  if (logOut) logOutWithPushDevice(event, logOut)
 })
 
 // Inside a LiveView the attribute is set through a JS command: those are
@@ -2089,7 +2221,8 @@ window.addEventListener("phx:page-loading-stop", () => {
 })
 window.addEventListener("load", () => {
   void registerServiceWorker()
-  syncPushLocale().catch(error => console.warn("Unable to update the push language", error))
+  syncWebPushSubscription().catch(error => console.warn("Unable to save this browser for notifications", error))
+  autoEnableNativePush().catch(error => console.warn("Unable to turn on notifications", error))
 })
 
 window.addEventListener("phx:current_profile_updated", ({detail}) => {

@@ -425,7 +425,7 @@ msgstr ""
 
 #: lib/potok_ide_web/domain_copy.ex:839
 #, elixir-autogen, elixir-format
-msgid "One device or browser that receives notifications, through web push or FCM. It remembers the last successful send and the last error."
+msgid "One device or browser that receives notifications, through web push or FCM. The Potok app saves it by itself after a sign-in, once the phone allows notifications, and a browser from the account settings. Logging out on that device deletes it. It remembers the last successful send and the last error."
 msgstr ""
 
 #: lib/potok_ide_web/domain_copy.ex:1096

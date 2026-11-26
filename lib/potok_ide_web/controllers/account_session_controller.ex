@@ -107,7 +107,15 @@ defmodule PotokIdeWeb.AccountSessionController do
     |> password_log_in(account_params, gettext("Password updated successfully!"), fn -> :ok end)
   end
 
-  def delete(conn, _params) do
+  # The log-out of a device that gets notifications names it (`push_device`,
+  # its FCM token or web push endpoint), so the account stops pushing to it.
+  # Only a subscription of the account being logged out goes.
+  def delete(conn, params) do
+    with %{account: %{} = account} <- conn.assigns[:current_scope],
+         identifier when is_binary(identifier) <- params["push_device"] do
+      Accounts.delete_push_subscription(account, identifier)
+    end
+
     conn
     |> put_flash(:info, gettext("Logged out successfully."))
     |> AccountAuth.log_out_account()

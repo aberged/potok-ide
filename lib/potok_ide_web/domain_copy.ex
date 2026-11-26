@@ -838,7 +838,7 @@ defmodule PotokIdeWeb.DomainCopy do
   defp entity_description("PushSubscription", _edges) do
     dgettext(
       "domain_map",
-      "One device or browser that receives notifications, through web push or FCM. It remembers the last successful send and the last error."
+      "One device or browser that receives notifications, through web push or FCM. The Potok app saves it by itself after a sign-in, once the phone allows notifications, and a browser from the account settings. Logging out on that device deletes it. It remembers the last successful send and the last error."
     )
   end
 

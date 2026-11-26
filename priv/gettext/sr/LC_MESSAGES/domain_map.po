@@ -426,8 +426,8 @@ msgstr "Niko."
 
 #: lib/potok_ide_web/domain_copy.ex:839
 #, elixir-autogen, elixir-format
-msgid "One device or browser that receives notifications, through web push or FCM. It remembers the last successful send and the last error."
-msgstr "Jedan uređaj ili pregledač koji prima obaveštenja, preko veb pusha ili FCM-a. Pamti i poslednji uspeh i poslednju grešku slanja."
+msgid "One device or browser that receives notifications, through web push or FCM. The Potok app saves it by itself after a sign-in, once the phone allows notifications, and a browser from the account settings. Logging out on that device deletes it. It remembers the last successful send and the last error."
+msgstr "Jedan uređaj ili pregledač koji prima obaveštenja, preko veb pusha ili FCM-a. Aplikacija Potok ga sama sačuva posle prijave, čim telefon dozvoli obaveštenja, a pregledač iz Podešavanja naloga. Odjava na tom uređaju ga briše. Pamti i poslednji uspeh i poslednju grešku slanja."
 
 #: lib/potok_ide_web/domain_copy.ex:1096
 #, elixir-autogen, elixir-format

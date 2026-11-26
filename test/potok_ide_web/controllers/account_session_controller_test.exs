@@ -186,7 +186,52 @@ defmodule PotokIdeWeb.AccountSessionControllerTest do
       refute get_session(conn, :account_token)
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Logged out successfully"
     end
+
+    test "takes the device it names off the account and leaves the others", %{
+      conn: conn,
+      account: account
+    } do
+      {:ok, _phone} = push_device(account, "phone-token")
+      {:ok, _tablet} = push_device(account, "tablet-token")
+
+      conn =
+        conn
+        |> log_in_account(account)
+        |> delete(~p"/accounts/log-out", %{"push_device" => "phone-token"})
+
+      assert redirected_to(conn) == ~p"/"
+      assert ["tablet-token"] == account |> Accounts.list_push_subscriptions() |> tokens()
+    end
+
+    test "leaves another account's device alone", %{conn: conn, account: account} do
+      other = account_fixture()
+      {:ok, _} = push_device(other, "other-token")
+
+      conn
+      |> log_in_account(account)
+      |> delete(~p"/accounts/log-out", %{"push_device" => "other-token"})
+
+      assert ["other-token"] == other |> Accounts.list_push_subscriptions() |> tokens()
+    end
+
+    test "keeps every device without a name in the form", %{conn: conn, account: account} do
+      {:ok, _} = push_device(account, "phone-token")
+
+      conn |> log_in_account(account) |> delete(~p"/accounts/log-out")
+
+      assert ["phone-token"] == account |> Accounts.list_push_subscriptions() |> tokens()
+    end
   end
+
+  defp push_device(account, token) do
+    Accounts.upsert_push_subscription(account, %{
+      subscription_type: :fcm,
+      device_token: token,
+      device_platform: :android
+    })
+  end
+
+  defp tokens(subscriptions), do: Enum.map(subscriptions, & &1.device_token)
 
   describe "POST /accounts/log-in - password rate limits" do
     test "refuses an address after its failed attempts, even with the right password", %{

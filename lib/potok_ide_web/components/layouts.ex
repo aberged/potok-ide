@@ -440,6 +440,7 @@ defmodule PotokIdeWeb.Layouts do
                     href={~p"/accounts/log-out"}
                     method="delete"
                     data-clear-drafts
+                    data-log-out
                   >
                     {gettext("Log out")}
                   </.sidebar_link>
