@@ -5,4 +5,6 @@
     <string name="package_name">rs.potok.ide</string>
     <string name="custom_url_scheme">rs.potok.ide</string>
     <string name="default_notification_channel_id">potok-default</string>
+    <!-- The reader in a stacked conversation's notification. -->
+    <string name="notification_you">Ti</string>
 </resources>
