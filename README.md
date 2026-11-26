@@ -1228,7 +1228,7 @@ Versioning:
 * `versionName` stays in `assets/android/app/build.gradle`; raise it for a new public version such as `1.0.5` to `1.0.6`
 * a local build keeps the `versionCode` written in `build.gradle`, which is lower than the pipeline's, so Play gets its builds from the pipeline only
 
-Release notes: `assets/android/whatsnew/whatsnew-<language>` (at most 500 characters each), one file per language of the store listing (`sr`, `en-US`). Change them before a run; a language the listing does not have makes the upload fail.
+Release notes: `assets/android/whatsnew/whatsnew-<language>` (at most 500 characters each), one file per language of the store listing (only `sr` for now). Change them before a run; a language the listing does not have makes the upload fail.
 
 Required GitHub Actions secrets:
 
