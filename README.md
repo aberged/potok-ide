@@ -959,7 +959,7 @@ High-level layout:
 
 ```text
 .
-|- .github/workflows/      # iOS build/TestFlight and Fly deploy workflows
+|- .github/workflows/      # iOS build/TestFlight, Android build/Play and Fly deploy workflows
 |- assets/
 |  |- css/                 # Tailwind CSS entrypoint
 |  |- js/                  # Phoenix / LiveView JavaScript entrypoint and app SDK
@@ -1205,6 +1205,56 @@ Set `upload_to_testflight` to `false` if you only want a signed artifact without
 For iOS push-enabled builds, make sure the provisioning profile includes the Push Notifications capability and that `IOS_BUNDLE_IDENTIFIER` matches the identifier registered in both Apple Developer and Firebase.
 
 For exact PowerShell and macOS secret commands plus a checked Apple Developer and Firebase review against the current Potok bundle id, see `docs/ios-secrets-and-checklist.md`.
+
+### Android build and Google Play workflow
+
+`.github/workflows/android-build-publish.yml` does for Google Play what the iOS workflow does for TestFlight. It runs by hand on a GitHub-hosted Ubuntu runner and:
+
+* installs npm dependencies in `assets/` and writes `google-services.json` from a secret
+* syncs the Capacitor Android project with `npm run cap:sync:android` against `CAPACITOR_SERVER_URL`
+* builds the signed Android App Bundle with `./gradlew bundleRelease`, with the upload key from a secret
+* uploads the `.aab` as a GitHub artifact
+* optionally sends it to a Google Play track with the release notes in `assets/android/whatsnew/`
+
+Inputs:
+
+* `track`: `internal` (default), `alpha`, `beta` or `production`
+* `status`: `completed` (default) or `draft`, which waits for a click in Play Console
+* `upload_to_play`: `true` (default); `false` only builds the artifact
+
+Versioning:
+
+* every run gets its own `versionCode`, 100 plus the run number (`-PpotokVersionCode`), as the iOS build number comes from the run number, so Play never sees one twice
+* `versionName` stays in `assets/android/app/build.gradle`; raise it for a new public version such as `1.0.5` to `1.0.6`
+* a local build keeps the `versionCode` written in `build.gradle`, which is lower than the pipeline's, so Play gets its builds from the pipeline only
+
+Release notes: `assets/android/whatsnew/whatsnew-<language>` (at most 500 characters each), one file per language of the store listing (`sr`, `en-US`). Change them before a run; a language the listing does not have makes the upload fail.
+
+Required GitHub Actions secrets:
+
+* `CAPACITOR_SERVER_URL` (shared with iOS)
+* `ANDROID_UPLOAD_KEYSTORE_BASE64`: the upload keystore (`.jks`), base64
+* `POTOK_UPLOAD_STORE_PASSWORD`, `POTOK_UPLOAD_KEY_ALIAS`, `POTOK_UPLOAD_KEY_PASSWORD`: the same names and values as in `release-signing.properties`; Gradle reads them from the environment
+* `ANDROID_GOOGLE_SERVICES_JSON_BASE64`: `assets/android/app/google-services.json`, base64
+* `PLAY_SERVICE_ACCOUNT_JSON`: the JSON key of a Google service account allowed to release the app (needed only with `upload_to_play=true`)
+
+The service account, once:
+
+1. In Google Cloud Console (the Firebase project or any other), enable the **Google Play Android Developer API**.
+1. Under **IAM & Admin → Service accounts**, create an account (for example `potok-play-publisher`) without roles, then **Keys → Add key → JSON**, and keep the file outside the repository.
+1. In Play Console, **Users and permissions → Invite new users**: the service account's email, with app permissions for Potok to release to testing tracks, release to production and manage testing tracks. The permission can take a few hours to work.
+1. Put the JSON file's content into `PLAY_SERVICE_ACCOUNT_JSON`.
+
+Publish a new Android build:
+
+1. Commit and push the code you want to ship; raise `versionName` for a new public version and update `assets/android/whatsnew/`.
+1. Run `Android Build And Publish`, by default to internal testing:
+
+```powershell
+gh workflow run "Android Build And Publish" --repo aberged/potok-ide --ref dev -f track=internal
+```
+
+1. Check the build on a phone from internal testing, then move it to production with **Promote release** in Play Console, or run the workflow again with `track=production`.
 
 ## Maintenance Notes
 

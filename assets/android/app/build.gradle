@@ -83,7 +83,9 @@ android {
         applicationId "rs.potok.ide"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 6
+        // The Play pipeline (.github/workflows/android-build-publish.yml) gives
+        // every run its own code, 100 + the run number; a local build keeps this one.
+        versionCode((project.findProperty('potokVersionCode') ?: '6').toString().toInteger())
         versionName "1.0.5"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
