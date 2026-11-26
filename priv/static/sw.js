@@ -8,6 +8,7 @@ const STATIC_ASSETS = [
   "/images/logo.svg",
   "/images/pwa/icon.svg",
   "/images/pwa/icon-192.png",
+  "/images/pwa/badge-96.png",
 ]
 
 // `phx.digest` file names (`app-<32 hex>.js`) never change content, so they
@@ -186,13 +187,20 @@ self.addEventListener("fetch", event => {
   )
 })
 
+// The payload is Potok's (`PotokIde.PushNotifications`): `icon` is the large
+// picture (the group's, or the person's in a direct conversation), and the
+// badge is always Potok's white mark, which phones show as a mask in the
+// status bar. A message replaces the conversation's earlier notification
+// (same tag) and still rings (`renotify`).
 const defaultNotification = {
   title: "Potok",
-  body: "You have a new update.",
+  body: "",
   icon: "/images/pwa/icon-192.png",
-  badge: "/images/pwa/icon-192.png",
   url: "/",
 }
+
+const BADGE = "/images/pwa/badge-96.png"
+const RINGING_KINDS = ["message", "mention", "reply"]
 
 const parseNotificationPayload = event => {
   if (!event.data) {
@@ -208,18 +216,27 @@ const parseNotificationPayload = event => {
 
 self.addEventListener("push", event => {
   const payload = parseNotificationPayload(event)
+  const options = {
+    body: payload.body,
+    icon: payload.icon || defaultNotification.icon,
+    badge: BADGE,
+    data: {
+      url: payload.url || "/",
+      group_id: payload.group_id ?? null,
+      kind: payload.kind ?? null,
+    },
+  }
 
-  event.waitUntil(
-    self.registration.showNotification(payload.title, {
-      body: payload.body,
-      icon: payload.icon,
-      badge: payload.badge,
-      tag: payload.tag,
-      data: {
-        url: payload.url || "/",
-      },
-    })
-  )
+  if (payload.tag) {
+    options.tag = payload.tag
+    options.renotify = RINGING_KINDS.includes(payload.kind)
+  }
+
+  if (Number.isFinite(payload.timestamp)) {
+    options.timestamp = payload.timestamp
+  }
+
+  event.waitUntil(self.registration.showNotification(payload.title, options))
 })
 
 self.addEventListener("notificationclick", event => {

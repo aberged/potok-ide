@@ -624,15 +624,17 @@ defmodule PotokIde.NoticesTest do
                body: "Water is off from 8 to 12.",
                tag: tag,
                url: url,
-               badge: badge
+               icon: icon,
+               kind: "notice",
+               label: "Notice"
              } = PotokIde.PushNotifications.payload_for(payload_for, "en")
 
-      assert title == "Notice from #{ctx.public.name}"
+      assert title == ctx.public.name
       assert tag == "group-#{ctx.public.id}-notice-#{notice.id}"
       assert url == "/groups/#{ctx.public.id}/notices?notice=#{notice.id}"
-      assert badge == PotokIdeWeb.Avatars.group_badge_url(ctx.public)
-      assert badge =~ ~r"\A/avatar/group/#{ctx.public.id}\?format=png&s="
-      assert PotokIde.PushNotifications.payload_for(payload_for, "sr").title =~ ctx.public.name
+      assert icon == PotokIdeWeb.Avatars.group_badge_url(ctx.public)
+      assert icon =~ ~r"\A/avatar/group/#{ctx.public.id}\?format=png&s="
+      assert PotokIde.PushNotifications.payload_for(payload_for, "sr").label == "Obaveštenje"
     end
   end
 end

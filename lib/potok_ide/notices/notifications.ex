@@ -9,7 +9,7 @@ defmodule PotokIde.Notices.Notifications do
 
   use Gettext, backend: PotokIdeWeb.Gettext
 
-  import PotokIde.PushNotifications, only: [localized: 1]
+  import PotokIde.PushNotifications, only: [localized: 1, expires_at: 1, now_ms: 0]
 
   alias PotokIde.Notices.GroupNotice
   alias PotokIde.PlainText
@@ -17,18 +17,28 @@ defmodule PotokIde.Notices.Notifications do
 
   @excerpt_length 120
 
+  # As a channel's post in messaging apps: the group's name and picture, its
+  # words, and the label "Notice" under the title where the phone shows one.
   def notice(%Group{} = group, %GroupNotice{} = notice) do
     body = PlainText.excerpt(notice.body, :markdown, @excerpt_length)
 
+    base = %{
+      kind: "notice",
+      # One per notice, so a second one never replaces the first.
+      tag: "group-#{group.id}-notice-#{notice.id}",
+      url: "/groups/#{group.id}/notices?notice=#{notice.id}",
+      group_id: group.id,
+      icon: PotokIdeWeb.Avatars.group_badge_url(group),
+      timestamp: now_ms(),
+      expires_at: expires_at(:week)
+    }
+
     localized(fn ->
-      %{
-        title: dgettext("notifications", "Notice from %{group}", group: group.name),
+      Map.merge(base, %{
+        title: group.name,
         body: body || group.name,
-        # One per notice, so a second one never replaces the first.
-        tag: "group-#{group.id}-notice-#{notice.id}",
-        url: "/groups/#{group.id}/notices?notice=#{notice.id}",
-        badge: PotokIdeWeb.Avatars.group_badge_url(group)
-      }
+        label: dgettext("notifications", "Notice")
+      })
     end)
   end
 end

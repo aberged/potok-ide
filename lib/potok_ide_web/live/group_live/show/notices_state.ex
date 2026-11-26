@@ -90,6 +90,7 @@ defmodule PotokIdeWeb.GroupLive.Show.NoticesState do
     |> assign(:notices_oldest_id, oldest_id(notices))
     |> assign(:notices_empty?, notices == [])
     |> stream(:group_notices, notices, reset: true)
+    |> PotokIdeWeb.PushClear.notices(group.id)
   end
 
   def maybe_load(socket, _group, _active_tab), do: socket

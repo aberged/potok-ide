@@ -11,11 +11,6 @@ msgstr ""
 "Language: sr_Cyrl\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100 != 11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10||n%100>=20) ? 1 : 2);\n"
 
-#: lib/potok_ide/polls/notifications.ex:26
-#, elixir-autogen, elixir-format
-msgid "%{name} started a poll in %{group}"
-msgstr "%{name} покреће гласање у групи %{group}"
-
 #: lib/potok_ide_web/live/group_live/show/polls_tab.ex:542
 #, elixir-autogen, elixir-format
 msgid "%{voted} of %{members} voted"
@@ -379,7 +374,7 @@ msgstr "Више од половине оних који имају право �
 msgid "My groups"
 msgstr "Моје групе"
 
-#: lib/potok_ide_web/live/group_live/show.ex:659
+#: lib/potok_ide_web/live/group_live/show.ex:660
 #: lib/potok_ide_web/live/group_live/show/polls_tab.ex:31
 #, elixir-autogen, elixir-format
 msgid "My polls"
@@ -515,13 +510,17 @@ msgstr "Проценат"
 msgid "Pick an answer first."
 msgstr "Прво изабери одговор."
 
+#: lib/potok_ide/polls/notifications.ex:37
+#: lib/potok_ide/polls/notifications.ex:52
+#: lib/potok_ide/polls/notifications.ex:65
+#: lib/potok_ide/polls/notifications.ex:88
 #: lib/potok_ide_web/live/group_live/show/poll_card.ex:93
 #: lib/potok_ide_web/live/group_live/show/poll_card.ex:203
 #, elixir-autogen, elixir-format
 msgid "Poll"
 msgstr "Гласање"
 
-#: lib/potok_ide_web/live/group_live/show.ex:660
+#: lib/potok_ide_web/live/group_live/show.ex:661
 #: lib/potok_ide_web/live/group_live/show/access_catalog.ex:152
 #: lib/potok_ide_web/live/group_live/show/create_menu.ex:264
 #: lib/potok_ide_web/live/group_live/show/group_menu.ex:57
@@ -802,7 +801,7 @@ msgstr "Гласови су већ дати, па може да се проме�
 msgid "Voting ended"
 msgstr "Гласање је завршено"
 
-#: lib/potok_ide/polls/notifications.ex:53
+#: lib/potok_ide/polls/notifications.ex:64
 #, elixir-autogen, elixir-format
 msgid "Voting ended: %{question}"
 msgstr "Гласање је завршено: %{question}"
@@ -866,11 +865,6 @@ msgstr "У овој групи не можеш да гласаш."
 #, elixir-autogen, elixir-format
 msgid "You have already voted."
 msgstr "Твој глас је већ забележен."
-
-#: lib/potok_ide/polls/notifications.ex:42
-#, elixir-autogen, elixir-format
-msgid "You have not voted yet · %{group}"
-msgstr "Још нема твог гласа · %{group}"
 
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:227
 #: lib/potok_ide_web/live/group_live/show/polls_state.ex:488
@@ -960,7 +954,7 @@ msgstr "Одлука која мења улоге завршава се на р�
 msgid "A decision that changes roles stays once it has a vote."
 msgstr "Одлука која мења улоге остаје чим добије први глас."
 
-#: lib/potok_ide/polls/notifications.ex:83
+#: lib/potok_ide/polls/notifications.ex:106
 #, elixir-autogen, elixir-format
 msgid "Admin"
 msgstr "Администратор"
@@ -980,7 +974,7 @@ msgstr "Избор за улогу %{role}: изабрани је добија."
 msgid "An election for the role %{role}: the one elected takes the place of those who hold it now."
 msgstr "Избор за улогу %{role}: изабрани заузима место оних који је сада имају."
 
-#: lib/potok_ide/polls/notifications.ex:74
+#: lib/potok_ide/polls/notifications.ex:87
 #, elixir-autogen, elixir-format
 msgid "By the decision: %{question}"
 msgstr "Одлуком гласања: %{question}"
@@ -1148,12 +1142,12 @@ msgstr "Ко ће бити наш администратор?"
 msgid "You already stand in this election."
 msgstr "Већ си кандидат на овим изборима."
 
-#: lib/potok_ide/polls/notifications.ex:69
+#: lib/potok_ide/polls/notifications.ex:80
 #, elixir-autogen, elixir-format
 msgid "You no longer hold the role %{role}"
 msgstr "Више немаш улогу %{role}"
 
-#: lib/potok_ide/polls/notifications.ex:68
+#: lib/potok_ide/polls/notifications.ex:79
 #, elixir-autogen, elixir-format
 msgid "You now hold the role %{role}"
 msgstr "Сада имаш улогу %{role}"
@@ -1259,3 +1253,8 @@ msgstr "Није спроведено: захтева више нема."
 #, elixir-autogen, elixir-format
 msgid "Nothing to do: they are in the group already."
 msgstr "Нема шта да се спроведе: већ је у групи."
+
+#: lib/potok_ide/polls/notifications.ex:51
+#, elixir-autogen, elixir-format
+msgid "You have not voted yet: %{question}"
+msgstr "Још нема твог гласа: %{question}"

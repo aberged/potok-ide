@@ -49,11 +49,15 @@ defmodule PotokIdeWeb.AvatarsTest do
 
     for built <- [
           SocialNotifications.group_invitation(profile, group),
-          EventNotifications.cancelled(profile, group, event),
           PollNotifications.created(profile, group, poll)
         ],
         {_locale, payload} <- built["payloads"] do
-      assert payload.badge == badge
+      assert badge in [payload[:icon], payload[:sender_icon]]
+    end
+
+    # What happens in a group shows the group's picture, as messaging apps do.
+    for {_locale, payload} <- EventNotifications.cancelled(profile, group, event)["payloads"] do
+      assert payload.icon == Avatars.group_badge_url(group)
     end
   end
 

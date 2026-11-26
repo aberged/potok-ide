@@ -4,6 +4,12 @@ defmodule PotokIde.PushNotifications do
   alias PotokIde.PushNotifications.WebPush
 
   @default_ttl 60
+  @day 86_400
+  @week 7 * @day
+
+  # Kinds a person waits for, which the push services may deliver at once
+  # even when the device saves power.
+  @urgent_kinds ~w(message mention reply invitation event_reminder)
 
   def public_key do
     config()
@@ -45,6 +51,58 @@ defmodule PotokIde.PushNotifications do
   defp atomize(key) when is_atom(key), do: key
   defp atomize(key) when is_binary(key), do: String.to_existing_atom(key)
 
+  @doc """
+  When a payload stops being worth delivering, as unix seconds: `:day` or
+  `:week` from now, or a `DateTime` (a reminder until its event starts),
+  never sooner than five minutes from now nor later than a week. A device
+  that comes back online later does not get it, and a job that runs later
+  sends nothing (`stale?/1`).
+  """
+  def expires_at(:day), do: System.system_time(:second) + @day
+  def expires_at(:week), do: System.system_time(:second) + @week
+
+  def expires_at(%DateTime{} = until) do
+    now = System.system_time(:second)
+    until |> DateTime.to_unix() |> max(now + 300) |> min(now + @week)
+  end
+
+  @doc "Milliseconds since the epoch, for a payload's `timestamp`."
+  def now_ms, do: System.system_time(:millisecond)
+
+  @doc """
+  Seconds a push service keeps `payload` for a device that is offline: until
+  its `expires_at`, or the configured TTL for a payload without one.
+  """
+  def ttl_for(%{expires_at: expires_at}) when is_integer(expires_at),
+    do: max(expires_at - System.system_time(:second), 0)
+
+  def ttl_for(_payload), do: ttl()
+
+  @doc "Whether `payload` (a device's, or the per-language map of `localized/1`) has expired."
+  def stale?(%{"payloads" => _payloads} = localized), do: stale?(payload_for(localized, nil))
+
+  def stale?(%{expires_at: expires_at}) when is_integer(expires_at),
+    do: expires_at <= System.system_time(:second)
+
+  def stale?(_payload), do: false
+
+  @doc "Web Push `Urgency` of a payload's `kind`."
+  def urgency(%{kind: kind}) when kind in @urgent_kinds, do: "high"
+  def urgency(_payload), do: "normal"
+
+  @doc """
+  The Web Push `Topic` of a `tag`: at most 32 characters of base64url. A push
+  service keeps only the newest undelivered push of a topic, as a device
+  keeps only the newest notification of a tag.
+  """
+  def topic(tag) when is_binary(tag), do: binary_part(hashed(tag), 0, 32)
+
+  @doc "The APNs collapse id of a `tag`: the tag itself, or its hash past 64 bytes."
+  def collapse_id(tag) when is_binary(tag) and byte_size(tag) <= 64, do: tag
+  def collapse_id(tag) when is_binary(tag), do: hashed(tag)
+
+  defp hashed(tag), do: :sha256 |> :crypto.hash(tag) |> Base.url_encode64(padding: false)
+
   def send_notification(%PushSubscription{} = subscription, payload) when is_map(payload) do
     case PushSubscription.delivery_type(subscription) do
       :fcm ->
@@ -84,9 +142,9 @@ defmodule PotokIde.PushNotifications do
        when is_map(payload) do
     try do
       with {:ok, vapid} <- vapid_details(),
-           {:ok, body} <- Jason.encode(payload),
+           {:ok, body} <- Jason.encode(Map.delete(payload, :expires_at)),
            encrypted <- WebPush.encrypt(body, subscription_payload(subscription)),
-           headers <- request_headers(subscription.endpoint, encrypted, vapid),
+           headers <- request_headers(subscription.endpoint, encrypted, vapid, payload),
            {:ok, response} <-
              request_fun().(request_options(subscription.endpoint, encrypted, headers)),
            :ok <- normalize_response(response) do
@@ -125,19 +183,21 @@ defmodule PotokIde.PushNotifications do
     ]
   end
 
-  defp request_headers(endpoint, encrypted, vapid) do
+  # The VAPID token keeps its own lifetime (12 hours): the TTL says how long
+  # the push service holds the message, which may be a week.
+  defp request_headers(endpoint, encrypted, vapid, payload) do
     vapid_headers =
       WebPush.vapid_headers(
         endpoint,
         Keyword.fetch!(vapid, :subject),
         Keyword.fetch!(vapid, :public_key),
-        Keyword.fetch!(vapid, :private_key),
-        ttl()
+        Keyword.fetch!(vapid, :private_key)
       )
 
     vapid_headers
     |> Map.merge(%{
-      "TTL" => Integer.to_string(ttl()),
+      "TTL" => Integer.to_string(ttl_for(payload)),
+      "Urgency" => urgency(payload),
       "Content-Encoding" => "aesgcm",
       "Content-Type" => "application/octet-stream",
       "Encryption" => "salt=#{ub64(encrypted.salt)}"
@@ -146,6 +206,12 @@ defmodule PotokIde.PushNotifications do
       "Crypto-Key",
       "dh=#{ub64(encrypted.server_public_key)};" <> Map.fetch!(vapid_headers, "Crypto-Key")
     )
+    |> then(fn headers ->
+      case payload do
+        %{tag: tag} when is_binary(tag) -> Map.put(headers, "Topic", topic(tag))
+        _payload -> headers
+      end
+    end)
   end
 
   defp subscription_payload(%PushSubscription{} = subscription) do

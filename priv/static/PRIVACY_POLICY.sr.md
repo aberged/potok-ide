@@ -1,6 +1,6 @@
 # Politika privatnosti za Potok
 
-Datum stupanja na snagu: 25. novembar 2026.
+Datum stupanja na snagu: 26. novembar 2026.
 
 Ova Politika privatnosti opisuje kako Potok prikuplja, koristi, čuva i deli informacije kada koristite Potok aplikaciju za Android i iOS, veb-sajt https://potok.rs i povezane usluge.
 
@@ -103,8 +103,8 @@ Ljudi bez naloga i usluge koje prikazuju preglede deljenih linkova vide naziv, s
 
 - **Fly.io** pokreće Potok i njegovu bazu podataka, u Frankfurtu.
 - **Tigris** čuva fajlove i pločice mape.
-- **Google** isporučuje imejlove (Gmail) i push obaveštenja (Firebase Cloud Messaging). Obaveštenje na telefonu nosi ime pošiljaoca, naziv grupe i do 120 znakova poruke. Na iPhone-u ga Firebase predaje Apple-ovoj usluzi APNs.
-- **Proizvođač vašeg pregledača** isporučuje push obaveštenja u pregledaču; njihov sadržaj je šifrovan.
+- **Google** isporučuje imejlove (Gmail) i push obaveštenja (Firebase Cloud Messaging). Obaveštenje na telefonu nosi ime pošiljaoca, naziv grupe, adrese njihovih slika i do 120 znakova poruke. Na iPhone-u ga Firebase predaje Apple-ovoj usluzi APNs. Dok je telefon isključen, obaveštenje čeka kod njih najduže nedelju dana.
+- **Proizvođač vašeg pregledača** isporučuje push obaveštenja u pregledaču; njihov sadržaj je šifrovan, a čekaju najduže nedelju dana.
 - **OpenStreetMap** daje pločice mape, ali ih Potok preuzima preko svog servera, pa OpenStreetMap ne vidi vas.
 
 ### Sajtovi koji nisu Potok

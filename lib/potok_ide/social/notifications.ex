@@ -1,154 +1,266 @@
 defmodule PotokIde.Social.Notifications do
   @moduledoc """
-  Push payloads about values, reactions and invitations. Like
+  Push payloads about values, reactions, invitations and requests. Like
   `PotokIde.Events.Notifications`, each is built in every supported language
-  and returned as a function from a device's locale to the payload.
+  (`PotokIde.PushNotifications.localized/1`).
+
+  They look as in messaging apps: the title is the conversation (the group,
+  the other person of a direct conversation, "Group › thread"), the body
+  "name: text", the picture the group's, or the person's in a direct
+  conversation (`PotokIde.PushNotifications.Conversation`). The messages of
+  one conversation share a tag, so a newer one replaces the older, and the
+  Android app stacks them in one notification from `sender`, `sender_icon`
+  and `text`.
+
+  Every payload says its `kind`, which picks the Android channel and the Web
+  Push urgency, its `group_id`, by which a device clears a conversation's
+  notifications once it is read, and its `expires_at`.
   """
 
   use Gettext, backend: PotokIdeWeb.Gettext
 
-  import PotokIde.PushNotifications, only: [localized: 1]
+  import PotokIde.PushNotifications, only: [localized: 1, expires_at: 1, now_ms: 0]
 
+  alias PotokIde.PushNotifications.Conversation
   alias PotokIde.Social.{Group, Profile, ScheduledValue, Value}
+  alias PotokIdeWeb.Avatars
 
-  def value_created(%Profile{} = creator, %Group{} = group, %Value{} = value) do
-    localized(fn -> value_payload(creator, group, value) end)
-  end
+  @excerpt_length 120
 
-  def value_mention(%Profile{} = creator, %Group{} = group, %Value{} = value) do
+  def value_created(%Profile{} = creator, %Group{} = group, %Value{} = value),
+    do: chat(:message, creator, group, value)
+
+  def value_mention(%Profile{} = creator, %Group{} = group, %Value{} = value),
+    do: chat(:mention, creator, group, value)
+
+  def value_reply(%Profile{} = creator, %Group{} = group, %Value{} = value),
+    do: chat(:reply, creator, group, value)
+
+  @doc """
+  The tag of a conversation's messages: one per group, so the newest message
+  replaces the notification of the one before.
+  """
+  def chat_tag(group_id), do: "group-#{group_id}-chat"
+
+  defp chat(kind, %Profile{} = creator, %Group{} = group, %Value{} = value) do
+    look = Conversation.of(group, creator)
+    name = Profile.display_name(creator)
+    text = Value.excerpt(value, @excerpt_length)
+
+    url =
+      if kind == :reply,
+        do: "/groups/#{group.id}/values?value=#{value.id}",
+        else: "/groups/#{group.id}/values"
+
+    base = %{
+      kind: Atom.to_string(kind),
+      tag: chat_tag(group.id),
+      url: url,
+      group_id: group.id,
+      icon: look.icon,
+      sender: name,
+      sender_icon: avatar_url(creator),
+      # The Android app stacks a direct conversation without a group title.
+      direct: look.direct?,
+      timestamp: now_ms(),
+      expires_at: expires_at(:week)
+    }
+
     localized(fn ->
-      %{
-        value_payload(creator, group, value)
-        | title:
-            dgettext("notifications", "%{name} mentioned you in %{group}",
-              name: Profile.display_name(creator),
-              group: group.name
-            )
-      }
+      text = text || dgettext("notifications", "New message")
+
+      Map.merge(base, %{
+        title: look.title,
+        body: chat_body(kind, name, text, look.direct?),
+        text: text
+      })
     end)
   end
 
-  def value_reply(%Profile{} = creator, %Group{} = group, %Value{} = value) do
-    localized(fn ->
-      %{
-        value_payload(creator, group, value)
-        | title:
-            dgettext("notifications", "%{name} replied to you in %{group}",
-              name: Profile.display_name(creator),
-              group: group.name
-            ),
-          url: "/groups/#{group.id}/values?value=#{value.id}"
-      }
-    end)
-  end
+  defp chat_body(:message, _name, text, true = _direct?), do: text
+
+  defp chat_body(:message, name, text, false),
+    do: dgettext("notifications", "%{name}: %{text}", name: name, text: text)
+
+  defp chat_body(:mention, name, text, _direct?),
+    do: dgettext("notifications", "%{name} mentioned you: %{text}", name: name, text: text)
+
+  defp chat_body(:reply, name, text, _direct?),
+    do: dgettext("notifications", "%{name} replied to you: %{text}", name: name, text: text)
 
   @doc """
   What an app's process pushes to the people of a role, under its name; `tag`
   lets a step that runs again replace its push rather than add one.
   """
   def process_push(%Profile{} = process, %Group{} = group, text, tag, url \\ nil) do
+    look = Conversation.of(group, process)
+    name = Profile.display_name(process)
+
+    base = %{
+      kind: "process",
+      tag: tag,
+      url: url || "/groups/#{group.id}",
+      group_id: group.id,
+      icon: look.icon,
+      sender: name,
+      sender_icon: avatar_url(process),
+      text: text,
+      timestamp: now_ms(),
+      expires_at: expires_at(:day)
+    }
+
     localized(fn ->
-      %{
-        title:
-          dgettext("notifications", "%{name} in %{group}",
-            name: Profile.display_name(process),
-            group: group.name
-          ),
-        body: text,
-        tag: tag,
-        url: url || "/groups/#{group.id}",
-        badge: avatar_url(process)
-      }
+      Map.merge(base, %{
+        title: look.title,
+        body: dgettext("notifications", "%{name}: %{text}", name: name, text: text)
+      })
     end)
   end
 
   @doc "For the accounts of whoever scheduled a message that could not be sent."
   def scheduled_value_failed(%Group{} = group, %ScheduledValue{} = scheduled) do
+    look = Conversation.of(group, nil)
+
+    base = %{
+      kind: "scheduled",
+      tag: "group-#{group.id}-scheduled-#{scheduled.id}",
+      url: "/groups/#{group.id}/values",
+      group_id: group.id,
+      icon: look.icon,
+      timestamp: now_ms(),
+      expires_at: expires_at(:day)
+    }
+
     localized(fn ->
-      %{
-        title: dgettext("notifications", "A scheduled message was not sent"),
-        body: "#{group.name}: #{ScheduledValue.excerpt(scheduled)}",
-        tag: "group-#{group.id}-scheduled-#{scheduled.id}",
-        url: "/groups/#{group.id}/values"
-      }
+      Map.merge(base, %{
+        title: look.title,
+        body:
+          dgettext("notifications", "A scheduled message was not sent: %{excerpt}",
+            excerpt: ScheduledValue.excerpt(scheduled)
+          )
+      })
     end)
   end
 
-  # One tag per value, so later reactions replace the earlier notification.
+  @doc """
+  To the author of a value when someone reacts to it. One tag per value, so
+  later reactions replace the earlier notification.
+  """
   def value_reaction(%Profile{} = reactor, %Group{} = group, %Value{} = value, emoji) do
-    body =
-      case excerpt(value) do
-        nil -> group.name
-        snippet -> "#{group.name}: #{snippet}"
-      end
+    look = Conversation.of(group, reactor)
+    name = Profile.display_name(reactor)
+    snippet = Value.excerpt(value, 80)
+
+    base = %{
+      kind: "reaction",
+      tag: "group-#{group.id}-value-#{value.id}-reactions",
+      url: "/groups/#{group.id}/values",
+      group_id: group.id,
+      icon: look.icon,
+      sender: name,
+      sender_icon: avatar_url(reactor),
+      timestamp: now_ms(),
+      expires_at: expires_at(:day)
+    }
 
     localized(fn ->
-      %{
-        title:
-          dgettext("notifications", "%{name} reacted %{emoji} to your message",
-            name: reactor.username,
-            emoji: emoji
-          ),
-        body: body,
-        tag: "group-#{group.id}-value-#{value.id}-reactions",
-        url: "/groups/#{group.id}/values",
-        badge: avatar_url(reactor)
-      }
+      body =
+        case snippet do
+          nil ->
+            dgettext("notifications", "%{name} reacted %{emoji} to your message",
+              name: name,
+              emoji: emoji
+            )
+
+          snippet ->
+            dgettext("notifications", "%{name}: %{emoji} to “%{excerpt}”",
+              name: name,
+              emoji: emoji,
+              excerpt: snippet
+            )
+        end
+
+      Map.merge(base, %{title: look.title, body: body})
     end)
   end
 
   def group_invitation(%Profile{} = inviter, %Group{} = group) do
+    base = %{
+      kind: "invitation",
+      tag: "group-#{group.id}-invitation-#{inviter.id}",
+      url: "/invitations",
+      group_id: group.id,
+      icon: avatar_url(inviter),
+      timestamp: now_ms(),
+      expires_at: expires_at(:week)
+    }
+
     localized(fn ->
-      %{
+      Map.merge(base, %{
         title:
           dgettext("notifications", "%{name} invited you to %{group}",
             name: inviter.username,
             group: group.name
           ),
-        body: dgettext("notifications", "Open Potok to review this group invitation."),
-        tag: "group-#{group.id}-invitation-#{inviter.id}",
-        url: "/invitations",
-        badge: avatar_url(inviter)
-      }
+        body: dgettext("notifications", "Tap to accept or decline.")
+      })
     end)
   end
 
   def group_invitation_accepted(%Group{} = group, %Profile{} = invitee) do
+    base = %{
+      kind: "invitation",
+      tag: "group-#{group.id}-invitation-accepted",
+      url: "/groups/#{group.id}",
+      group_id: group.id,
+      icon: avatar_url(invitee),
+      timestamp: now_ms(),
+      expires_at: expires_at(:week)
+    }
+
     localized(fn ->
-      %{
-        title:
-          dgettext("notifications", "%{name} accepted your invitation", name: invitee.username),
+      Map.merge(base, %{
+        title: group.name,
         body:
-          dgettext("notifications", "%{name} joined %{group}.",
-            name: invitee.username,
-            group: group.name
-          ),
-        tag: "group-#{group.id}-invitation-accepted",
-        url: "/groups/#{group.id}",
-        badge: avatar_url(invitee)
-      }
+          dgettext("notifications", "%{name} accepted your invitation", name: invitee.username)
+      })
     end)
   end
 
   def shared_profile_invitation(%Profile{} = inviter, %Profile{} = shared_profile) do
+    base = %{
+      kind: "invitation",
+      tag: "profile-#{shared_profile.id}-invitation",
+      url: "/profiles",
+      icon: avatar_url(shared_profile),
+      timestamp: now_ms(),
+      expires_at: expires_at(:week)
+    }
+
     localized(fn ->
-      %{
+      Map.merge(base, %{
         title:
           dgettext("notifications", "%{name} shared %{profile}",
             name: inviter.username,
             profile: shared_profile.username
           ),
-        body: dgettext("notifications", "Open Potok to review this shared profile invitation."),
-        tag: "profile-#{shared_profile.id}-invitation",
-        url: "/profiles",
-        badge: avatar_url(shared_profile)
-      }
+        body: dgettext("notifications", "Open Potok to review this shared profile invitation.")
+      })
     end)
   end
 
   def shared_profile_invitation_accepted(%Profile{} = shared_profile, %Profile{} = invitee) do
+    base = %{
+      kind: "invitation",
+      tag: "profile-#{shared_profile.id}-invitation-accepted",
+      url: "/profiles",
+      icon: avatar_url(shared_profile),
+      timestamp: now_ms(),
+      expires_at: expires_at(:week)
+    }
+
     localized(fn ->
-      %{
+      Map.merge(base, %{
         title:
           dgettext("notifications", "%{name} accepted your shared profile invitation",
             name: invitee.username
@@ -157,11 +269,8 @@ defmodule PotokIde.Social.Notifications do
           dgettext("notifications", "%{name} now has access to %{profile}.",
             name: invitee.username,
             profile: shared_profile.username
-          ),
-        tag: "profile-#{shared_profile.id}-invitation-accepted",
-        url: "/profiles",
-        badge: avatar_url(shared_profile)
-      }
+          )
+      })
     end)
   end
 
@@ -172,10 +281,31 @@ defmodule PotokIde.Social.Notifications do
   """
   def app_value_created(%Group{} = group, alt, author) do
     query = if alt, do: "?d=#{alt.id}", else: ""
+    look = Conversation.of(group, author)
+
+    base =
+      %{
+        kind: "app",
+        tag: "group-#{group.id}-app-#{if(alt, do: alt.id, else: 0)}-values",
+        url: "/groups/#{group.id}/group_home#{query}",
+        group_id: group.id,
+        icon: look.icon,
+        timestamp: now_ms(),
+        expires_at: expires_at(:day)
+      }
+      |> then(fn base ->
+        case author do
+          %Profile{} ->
+            Map.merge(base, %{sender: author.username, sender_icon: avatar_url(author)})
+
+          nil ->
+            base
+        end
+      end)
 
     localized(fn ->
-      %{
-        title: dgettext("notifications", "New response in %{group}", group: group.name),
+      Map.merge(base, %{
+        title: look.title,
         body:
           case author do
             %Profile{username: name} ->
@@ -183,59 +313,14 @@ defmodule PotokIde.Social.Notifications do
 
             nil ->
               dgettext("notifications", "Someone sent a response.")
-          end,
-        tag: "group-#{group.id}-app-#{if(alt, do: alt.id, else: 0)}-values",
-        url: "/groups/#{group.id}/group_home#{query}"
-      }
-      |> then(fn payload ->
-        if author, do: Map.put(payload, :badge, avatar_url(author)), else: payload
-      end)
+          end
+      })
     end)
   end
 
-  defp value_payload(%Profile{} = creator, %Group{} = group, %Value{} = value) do
-    body =
-      case excerpt(value) do
-        nil ->
-          dgettext("notifications", "New message in %{group}", group: group.name)
-
-        snippet ->
-          dgettext("notifications", "New message in %{group}: %{excerpt}",
-            group: group.name,
-            excerpt: snippet
-          )
-      end
-
-    %{
-      title:
-        dgettext("notifications", "%{name} sent a new message",
-          name: Profile.display_name(creator)
-        ),
-      body: body,
-      tag: "group-#{group.id}-value-#{value.id}-created",
-      url: "/groups/#{group.id}/values",
-      badge: avatar_url(creator)
-    }
-  end
-
-  defp excerpt(%Value{content: content} = value),
-    do: excerpt(content) || Value.attachment_summary(value, 120)
-
-  defp excerpt(content) when is_binary(content) do
-    trimmed = String.trim(content)
-
-    cond do
-      trimmed == "" -> nil
-      String.length(trimmed) <= 120 -> trimmed
-      true -> String.slice(trimmed, 0, 117) <> "..."
-    end
-  end
-
-  defp excerpt(_content), do: nil
-
-  # Notification badges and icons cannot be SVG, which the avatar URL serves
-  # by default.
-  defp avatar_url(%Profile{} = profile), do: PotokIdeWeb.Avatars.profile_badge_url(profile)
+  # Notification pictures cannot be SVG, which the avatar URL serves by
+  # default.
+  defp avatar_url(%Profile{} = profile), do: Avatars.profile_badge_url(profile)
 
   @doc """
   What became of a request in `group`, for whoever asked, in one push:
@@ -245,6 +330,8 @@ defmodule PotokIde.Social.Notifications do
   `reason` is what the one who decided said.
   """
   def request_decided(%Group{} = group, parts, reason) do
+    base = request_base(group, parts[:url] || "/requests")
+
     localized(fn ->
       lines =
         [
@@ -260,12 +347,11 @@ defmodule PotokIde.Social.Notifications do
         ]
         |> Enum.filter(&is_binary/1)
 
-      %{
-        title: dgettext("notifications", "Your request in %{group}", group: group.name),
+      Map.merge(base, %{
+        title: group.name,
         body: Enum.join(lines, " "),
-        tag: "group-#{group.id}-request",
-        url: parts[:url] || "/requests"
-      }
+        label: dgettext("notifications", "Request")
+      })
     end)
   end
 
@@ -274,29 +360,42 @@ defmodule PotokIde.Social.Notifications do
   `:not_admitted` or `{:not_granted, role}`.
   """
   def request_vote_ended(%Group{} = group, outcome) do
+    url = if outcome == :not_admitted, do: "/requests", else: "/groups/#{group.id}"
+    base = request_base(group, url)
+
     localized(fn ->
-      {body, url} =
+      body =
         case outcome do
           :admitted ->
-            {dgettext("notifications", "The group admitted you by a vote."),
-             "/groups/#{group.id}"}
+            dgettext("notifications", "The group admitted you by a vote.")
 
           :not_admitted ->
-            {dgettext("notifications", "The vote did not admit you."), "/requests"}
+            dgettext("notifications", "The vote did not admit you.")
 
           {:not_granted, role} ->
-            {dgettext("notifications", "The vote did not give you the role %{role}.",
-               role: role_name(role)
-             ), "/groups/#{group.id}"}
+            dgettext("notifications", "The vote did not give you the role %{role}.",
+              role: role_name(role)
+            )
         end
 
-      %{
-        title: dgettext("notifications", "Your request in %{group}", group: group.name),
+      Map.merge(base, %{
+        title: group.name,
         body: body,
-        tag: "group-#{group.id}-request",
-        url: url
-      }
+        label: dgettext("notifications", "Request")
+      })
     end)
+  end
+
+  defp request_base(%Group{} = group, url) do
+    %{
+      kind: "request",
+      tag: "group-#{group.id}-request",
+      url: url,
+      group_id: group.id,
+      icon: Avatars.group_badge_url(group),
+      timestamp: now_ms(),
+      expires_at: expires_at(:week)
+    }
   end
 
   defp roles_line(_kind, empty) when empty in [nil, []], do: nil

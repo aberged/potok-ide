@@ -38,6 +38,7 @@ import { ProcessCanvas } from "./process_canvas"
 import { RootMap } from "./root_map"
 import { installLongPressLinkMenu, shareLink } from "./longpress"
 import { installPageLoader } from "./page_loader"
+import { installNotificationTray } from "./notification_tray"
 import { ReactionPicker } from "./reaction_picker"
 import {
   ShareComposer,
@@ -211,6 +212,19 @@ const POTOK_PUSH_TOKEN_KEY = "potok:push-token"
 // The page language the device's push subscription was last saved with.
 const POTOK_PUSH_LOCALE_KEY = "potok:push-locale"
 const POTOK_PUSH_CHANNEL_ID = "potok-default"
+
+const pushChannels = () => {
+  try {
+    const content = document.querySelector("meta[name='potok-push-channels']")?.getAttribute("content")
+    const channels = content ? JSON.parse(content) : []
+    if (Array.isArray(channels) && channels.length > 0) return channels
+  } catch (_error) {
+    // The default channel below.
+  }
+
+  return [{id: POTOK_PUSH_CHANNEL_ID, name: "Potok", importance: 4}]
+}
+
 const POTOK_IOS_PUSH_REGISTRATION_EVENT = "potokNativePushRegistration"
 const POTOK_IOS_PUSH_REGISTRATION_ERROR_EVENT = "potokNativePushRegistrationError"
 const nativePushListeners = new Set()
@@ -229,18 +243,15 @@ const NativePushManager = {
 
     this.initialized = true
 
+    // One channel per kind of push, named in the page's language
+    // (`PotokIdeWeb.PushChannels`): creating an existing channel renames it.
     if (Capacitor.getPlatform() === "android") {
-      try {
-        await NativePushNotifications.createChannel({
-          id: POTOK_PUSH_CHANNEL_ID,
-          name: "Potok",
-          description: "Activity and invitation updates",
-          importance: 5,
-          visibility: 1,
-          vibration: true,
-        })
-      } catch (error) {
-        console.warn("Unable to create Potok notification channel", error)
+      for (const channel of pushChannels()) {
+        try {
+          await NativePushNotifications.createChannel({...channel, visibility: 1, vibration: true})
+        } catch (error) {
+          console.warn("Unable to create Potok notification channel", channel.id, error)
+        }
       }
     }
 
@@ -290,6 +301,17 @@ const NativePushManager = {
       nativePushListeners.forEach(listener => listener({type: "action", notification: event.notification}))
       openNotificationUrl(event.notification?.data?.url || event.notification?.link || "")
     })
+
+    // iOS lists and removes delivered notifications only after `register()`
+    // in this session, which clearing a read conversation needs.
+    if (Capacitor.getPlatform() === "ios") {
+      try {
+        const status = await NativePushNotifications.checkPermissions()
+        if (status.receive === "granted") await NativePushNotifications.register()
+      } catch (error) {
+        console.warn("Unable to register for Potok notifications", error)
+      }
+    }
 
     return true
   },
@@ -2017,6 +2039,8 @@ installPageLoader()
 
 installPasswordToggleButtons()
 installGalleries()
+// A conversation's notifications leave this device once it is read.
+installNotificationTray()
 
 // Drafts stay in this browser, which may be a shared one: logging out drops them.
 document.addEventListener("click", event => {

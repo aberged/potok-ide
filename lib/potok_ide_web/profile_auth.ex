@@ -243,7 +243,14 @@ defmodule PotokIdeWeb.ProfileAuth do
                 {:halt, schedule_unread_recount(socket)}
             end
 
-          {:group_unread_counts_updated, _profile_id, _group_id} = message, socket ->
+          {:group_unread_counts_updated, _profile_id, group_id} = message, socket ->
+            # Read or written in on another page of the profile: its
+            # notifications leave this device too.
+            socket =
+              if current_profile_message?(message, socket),
+                do: PotokIdeWeb.PushClear.chat(socket, group_id),
+                else: socket
+
             cond do
               counts_unread_itself?(socket) ->
                 {:cont, socket}

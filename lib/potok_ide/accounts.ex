@@ -323,12 +323,14 @@ defmodule PotokIde.Accounts do
         payload =
           PushNotifications.localized(fn ->
             %{
+              kind: "test",
               title: dgettext("notifications", "Potok notifications are active"),
               body: dgettext("notifications", "Push notifications are enabled for your account."),
               tag: "potok-push-test",
               url: "/accounts/settings",
               icon: "/images/pwa/icon-192.png",
-              badge: "/images/pwa/icon-192.png"
+              timestamp: PushNotifications.now_ms(),
+              expires_at: PushNotifications.expires_at(DateTime.utc_now())
             }
           end)
 

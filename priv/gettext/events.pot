@@ -52,11 +52,6 @@ msgstr ""
 msgid "%{month} %{year}"
 msgstr ""
 
-#: lib/potok_ide/events/notifications.ex:20
-#, elixir-autogen, elixir-format
-msgid "%{name} added an event in %{group}"
-msgstr ""
-
 #: lib/potok_ide/events/format.ex:172
 #, elixir-autogen, elixir-format
 msgid "%{rule}, until %{date}"
@@ -128,7 +123,7 @@ msgstr ""
 msgid "August"
 msgstr ""
 
-#: lib/potok_ide/events/notifications.ex:59
+#: lib/potok_ide/events/notifications.ex:85
 #, elixir-autogen, elixir-format
 msgid "Cancelled: %{title}"
 msgstr ""
@@ -143,12 +138,12 @@ msgstr ""
 msgid "December"
 msgstr ""
 
-#: lib/potok_ide/events/notifications.ex:47
+#: lib/potok_ide/events/notifications.ex:67
 #, elixir-autogen, elixir-format
 msgid "Event cancelled: %{title}"
 msgstr ""
 
-#: lib/potok_ide/events/notifications.ex:35
+#: lib/potok_ide/events/notifications.ex:53
 #, elixir-autogen, elixir-format
 msgid "Event changed: %{title}"
 msgstr ""
@@ -221,22 +216,22 @@ msgstr ""
 msgid "Friday"
 msgstr ""
 
-#: lib/potok_ide/events/notifications.ex:88
-#: lib/potok_ide/events/notifications.ex:99
+#: lib/potok_ide/events/notifications.ex:135
+#: lib/potok_ide/events/notifications.ex:146
 #, elixir-autogen, elixir-format
 msgid "In %{count} day"
 msgid_plural "In %{count} days"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/potok_ide/events/notifications.ex:96
+#: lib/potok_ide/events/notifications.ex:143
 #, elixir-autogen, elixir-format
 msgid "In %{count} hour"
 msgid_plural "In %{count} hours"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/potok_ide/events/notifications.ex:93
+#: lib/potok_ide/events/notifications.ex:140
 #, elixir-autogen, elixir-format
 msgid "In %{count} minute"
 msgid_plural "In %{count} minutes"
@@ -338,7 +333,7 @@ msgstr ""
 msgid "September"
 msgstr ""
 
-#: lib/potok_ide/events/notifications.ex:90
+#: lib/potok_ide/events/notifications.ex:137
 #, elixir-autogen, elixir-format
 msgid "Starting now"
 msgstr ""
@@ -363,12 +358,12 @@ msgstr ""
 msgid "Thursday"
 msgstr ""
 
-#: lib/potok_ide/events/notifications.ex:84
+#: lib/potok_ide/events/notifications.ex:131
 #, elixir-autogen, elixir-format
 msgid "Today"
 msgstr ""
 
-#: lib/potok_ide/events/notifications.ex:85
+#: lib/potok_ide/events/notifications.ex:132
 #, elixir-autogen, elixir-format
 msgid "Tomorrow"
 msgstr ""

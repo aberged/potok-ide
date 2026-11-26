@@ -11,11 +11,6 @@ msgstr ""
 "Language: en\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: lib/potok_ide/polls/notifications.ex:26
-#, elixir-autogen, elixir-format
-msgid "%{name} started a poll in %{group}"
-msgstr ""
-
 #: lib/potok_ide_web/live/group_live/show/polls_tab.ex:542
 #, elixir-autogen, elixir-format
 msgid "%{voted} of %{members} voted"
@@ -379,7 +374,7 @@ msgstr ""
 msgid "My groups"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:659
+#: lib/potok_ide_web/live/group_live/show.ex:660
 #: lib/potok_ide_web/live/group_live/show/polls_tab.ex:31
 #, elixir-autogen, elixir-format
 msgid "My polls"
@@ -515,13 +510,17 @@ msgstr ""
 msgid "Pick an answer first."
 msgstr ""
 
+#: lib/potok_ide/polls/notifications.ex:37
+#: lib/potok_ide/polls/notifications.ex:52
+#: lib/potok_ide/polls/notifications.ex:65
+#: lib/potok_ide/polls/notifications.ex:88
 #: lib/potok_ide_web/live/group_live/show/poll_card.ex:93
 #: lib/potok_ide_web/live/group_live/show/poll_card.ex:203
 #, elixir-autogen, elixir-format
 msgid "Poll"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:660
+#: lib/potok_ide_web/live/group_live/show.ex:661
 #: lib/potok_ide_web/live/group_live/show/access_catalog.ex:152
 #: lib/potok_ide_web/live/group_live/show/create_menu.ex:264
 #: lib/potok_ide_web/live/group_live/show/group_menu.ex:57
@@ -802,7 +801,7 @@ msgstr ""
 msgid "Voting ended"
 msgstr ""
 
-#: lib/potok_ide/polls/notifications.ex:53
+#: lib/potok_ide/polls/notifications.ex:64
 #, elixir-autogen, elixir-format
 msgid "Voting ended: %{question}"
 msgstr ""
@@ -865,11 +864,6 @@ msgstr ""
 #: lib/potok_ide_web/live/group_live/show/polls_state.ex:471
 #, elixir-autogen, elixir-format
 msgid "You have already voted."
-msgstr ""
-
-#: lib/potok_ide/polls/notifications.ex:42
-#, elixir-autogen, elixir-format
-msgid "You have not voted yet · %{group}"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:227
@@ -960,7 +954,7 @@ msgstr ""
 msgid "A decision that changes roles stays once it has a vote."
 msgstr ""
 
-#: lib/potok_ide/polls/notifications.ex:83
+#: lib/potok_ide/polls/notifications.ex:106
 #, elixir-autogen, elixir-format
 msgid "Admin"
 msgstr ""
@@ -980,7 +974,7 @@ msgstr ""
 msgid "An election for the role %{role}: the one elected takes the place of those who hold it now."
 msgstr ""
 
-#: lib/potok_ide/polls/notifications.ex:74
+#: lib/potok_ide/polls/notifications.ex:87
 #, elixir-autogen, elixir-format
 msgid "By the decision: %{question}"
 msgstr ""
@@ -1148,12 +1142,12 @@ msgstr ""
 msgid "You already stand in this election."
 msgstr ""
 
-#: lib/potok_ide/polls/notifications.ex:69
+#: lib/potok_ide/polls/notifications.ex:80
 #, elixir-autogen, elixir-format
 msgid "You no longer hold the role %{role}"
 msgstr ""
 
-#: lib/potok_ide/polls/notifications.ex:68
+#: lib/potok_ide/polls/notifications.ex:79
 #, elixir-autogen, elixir-format
 msgid "You now hold the role %{role}"
 msgstr ""
@@ -1258,4 +1252,9 @@ msgstr ""
 #: lib/potok_ide_web/live/group_live/show/poll_card.ex:481
 #, elixir-autogen, elixir-format
 msgid "Nothing to do: they are in the group already."
+msgstr ""
+
+#: lib/potok_ide/polls/notifications.ex:51
+#, elixir-autogen, elixir-format
+msgid "You have not voted yet: %{question}"
 msgstr ""

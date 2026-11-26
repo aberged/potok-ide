@@ -2032,7 +2032,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "A <GroupMembership>membership</GroupMembership> also remembers the last of the group's <Value>values</Value> its member got a push for, and when. The next value of the group pushes them again only once they have read up to that one, or five minutes later. Picking the members and marking them is one statement, so values posted at the same moment still make one push. A mention and an answer to their value always go out and leave the mark as it was. A thread waits on its own, with its own memberships. Polls, events, reminders, notices, reactions and a process's pushes are not held back."
+            "A <GroupMembership>membership</GroupMembership> also remembers the last of the group's <Value>values</Value> its member got a push for, and when. The next value of the group pushes them again only once they have read up to that one, or five minutes later. Picking the members and marking them is one statement, so values posted at the same moment still make one push. A mention and an answer to their value always go out and leave the mark as it was. A thread waits on its own, with its own memberships. Polls, events, reminders, notices, reactions and a process's pushes are not held back. The messages of a group share one notification on a device, the newest replacing the one before, and once the member reads the group or writes in it on any page, its notifications leave every device where Potok is open."
           )
       },
       %{

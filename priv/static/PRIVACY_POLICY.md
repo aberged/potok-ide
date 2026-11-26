@@ -1,6 +1,6 @@
 # Privacy Policy for Potok
 
-Effective date: November 25, 2026
+Effective date: November 26, 2026
 
 This Privacy Policy explains how Potok collects, uses, stores and shares information when you use the Potok app for Android and iOS, the website https://potok.rs and related services.
 
@@ -103,8 +103,8 @@ People without an account and services that show previews of shared links see th
 
 - **Fly.io** runs Potok and its database, in Frankfurt.
 - **Tigris** stores files and map tiles.
-- **Google** delivers emails (Gmail) and push notifications (Firebase Cloud Messaging). A notification on a phone carries the sender's name, the group's name and up to 120 characters of the message. On an iPhone, Firebase hands it to Apple's APNs service.
-- **Your browser's maker** delivers push notifications in the browser; their content is encrypted.
+- **Google** delivers emails (Gmail) and push notifications (Firebase Cloud Messaging). A notification on a phone carries the sender's name, the group's name, the addresses of their pictures and up to 120 characters of the message. On an iPhone, Firebase hands it to Apple's APNs service. While the phone is off, a notification waits with them for a week at most.
+- **Your browser's maker** delivers push notifications in the browser; their content is encrypted, and they wait for a week at most.
 - **OpenStreetMap** provides map tiles, but Potok fetches them through its own server, so OpenStreetMap does not see you.
 
 ### Sites other than Potok

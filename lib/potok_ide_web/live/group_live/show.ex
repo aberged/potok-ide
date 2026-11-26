@@ -84,6 +84,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   alias PotokIdeWeb.NoticeComponents
   alias PotokIdeWeb.PostTemplates
   alias PotokIdeWeb.ProfileAuth
+  alias PotokIdeWeb.PushClear
   alias PotokIdeWeb.ProfileCard
   alias PotokIdeWeb.PublicPreview
   alias PotokIdeWeb.RateLimited
@@ -7178,7 +7179,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
             value_id
           )
 
-        put_private(socket, :read_marker_value_id, nil)
+        socket
+        |> put_private(:read_marker_value_id, nil)
+        |> PushClear.chat(socket.assigns.group.id)
     end
   end
 
@@ -7196,10 +7199,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
       socket.private[:unread_noted] == {group.id, profile.id} ->
         _ = Social.mark_group_values_read(profile, group)
-        socket
+        PushClear.chat(socket, group.id)
 
       true ->
-        note_unread_start(socket, profile, group)
+        socket
+        |> note_unread_start(profile, group)
+        |> PushClear.chat(group.id)
     end
   end
 

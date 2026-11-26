@@ -10,46 +10,78 @@ defmodule PotokIde.Social.NotificationsTest do
 
   @ana %Profile{id: 1, username: "ana"}
   @group %Group{id: 2, name: "Hall"}
-  @value %Value{id: 3, content: "Bring chairs"}
+  @value %Value{id: 3, content: "Bring chairs", content_format: :markdown}
 
   describe "payloads" do
-    test "are written in the language of each device" do
+    test "are titled with the group and written in the language of each device" do
       payload_for = Notifications.value_created(@ana, @group, @value)
+      en = PushNotifications.payload_for(payload_for, "en")
 
-      assert PotokIde.PushNotifications.payload_for(payload_for, "en").title ==
-               "ana sent a new message"
+      assert en.title == "Hall"
+      assert en.body == "ana: Bring chairs"
+      assert en.text == "Bring chairs"
+      assert en.sender == "ana"
+      assert en.kind == "message"
+      assert en.group_id == 2
+      assert en.tag == "group-2-chat"
+      assert en.url == "/groups/2/values"
+      assert en.icon == PotokIdeWeb.Avatars.group_badge_url(@group)
+      assert en.sender_icon == PotokIdeWeb.Avatars.profile_badge_url(@ana)
+      assert is_integer(en.timestamp) and is_integer(en.expires_at)
 
-      assert PotokIde.PushNotifications.payload_for(payload_for, "en").body ==
-               "New message in Hall: Bring chairs"
+      assert PushNotifications.payload_for(payload_for, "sr").body == "ana: Bring chairs"
 
-      assert PotokIde.PushNotifications.payload_for(payload_for, "sr").title == "ana: nova poruka"
+      assert PushNotifications.payload_for(payload_for, nil) ==
+               PushNotifications.payload_for(payload_for, "sr")
 
-      assert PotokIde.PushNotifications.payload_for(payload_for, "sr_Cyrl").body ==
-               "Нова порука у групи Hall: Bring chairs"
+      assert PushNotifications.payload_for(payload_for, "de") ==
+               PushNotifications.payload_for(payload_for, "sr")
 
-      assert PotokIde.PushNotifications.payload_for(payload_for, nil) ==
-               PotokIde.PushNotifications.payload_for(payload_for, "sr")
-
-      assert PotokIde.PushNotifications.payload_for(payload_for, "de") ==
-               PotokIde.PushNotifications.payload_for(payload_for, "sr")
-
-      assert PotokIde.PushNotifications.payload_for(payload_for, "pl") ==
-               PotokIde.PushNotifications.payload_for(payload_for, "sr")
-
-      assert PotokIde.PushNotifications.payload_for(payload_for, "en").url == "/groups/2/values"
+      assert PushNotifications.payload_for(payload_for, "pl") ==
+               PushNotifications.payload_for(payload_for, "sr")
     end
 
-    test "of a mention differ from the generic one only in the title" do
-      generic = Notifications.value_created(@ana, @group, @value)
-      mention = Notifications.value_mention(@ana, @group, @value)
+    test "of a mention and a reply say so, under the same tag as the conversation" do
+      mention =
+        PushNotifications.payload_for(Notifications.value_mention(@ana, @group, @value), "sr")
 
-      assert PotokIde.PushNotifications.payload_for(mention, "sr").title ==
-               "ana te pominje u grupi Hall"
+      reply = PushNotifications.payload_for(Notifications.value_reply(@ana, @group, @value), "sr")
 
-      assert %{PotokIde.PushNotifications.payload_for(mention, "sr") | title: nil} == %{
-               PotokIde.PushNotifications.payload_for(generic, "sr")
-               | title: nil
-             }
+      assert mention.title == "Hall"
+      assert mention.body == "ana te pominje: Bring chairs"
+      assert mention.kind == "mention"
+      assert reply.body == "ana ti odgovara: Bring chairs"
+      assert reply.kind == "reply"
+      assert reply.url == "/groups/2/values?value=3"
+      assert mention.tag == reply.tag
+      assert mention.tag == "group-2-chat"
+
+      assert PushNotifications.payload_for(
+               Notifications.value_mention(@ana, @group, @value),
+               "en"
+             ).body ==
+               "ana mentioned you: Bring chairs"
+    end
+
+    test "of a direct conversation are titled with the person, who is the one writing" do
+      direct = %Group{id: 7, name: "ana & bojan", is_direct: true}
+
+      payload =
+        PushNotifications.payload_for(Notifications.value_created(@ana, direct, @value), "sr")
+
+      assert payload.title == "ana"
+      assert payload.body == "Bring chairs"
+      assert payload.direct == true
+      assert payload.icon == PotokIdeWeb.Avatars.profile_badge_url(@ana)
+    end
+
+    test "show the words of a message, not its markdown" do
+      value = %Value{id: 3, content: "**Bring** chairs", content_format: :markdown}
+
+      payload =
+        PushNotifications.payload_for(Notifications.value_created(@ana, @group, value), "en")
+
+      assert payload.body == "ana: Bring chairs"
     end
 
     test "of reactions, invitations and shared profiles are translated" do
@@ -62,21 +94,37 @@ defmodule PotokIde.Social.NotificationsTest do
             Notifications.shared_profile_invitation(@ana, bojan),
             Notifications.shared_profile_invitation_accepted(bojan, @ana)
           ] do
-        assert PotokIde.PushNotifications.payload_for(payload_for, "en").title =~ "ana"
-        assert PotokIde.PushNotifications.payload_for(payload_for, "sr").title =~ "ana"
+        en = PushNotifications.payload_for(payload_for, "en")
+        sr = PushNotifications.payload_for(payload_for, "sr")
+        cyrl = PushNotifications.payload_for(payload_for, "sr_Cyrl")
 
-        refute PotokIde.PushNotifications.payload_for(payload_for, "sr").title ==
-                 PotokIde.PushNotifications.payload_for(payload_for, "en").title
-
-        refute PotokIde.PushNotifications.payload_for(payload_for, "sr_Cyrl").title ==
-                 PotokIde.PushNotifications.payload_for(payload_for, "en").title
+        assert en.title <> en.body =~ "ana"
+        assert sr.title <> sr.body =~ "ana"
+        refute {sr.title, sr.body} == {en.title, en.body}
+        refute {cyrl.title, cyrl.body} == {en.title, en.body}
+        assert en.kind in ["reaction", "invitation"]
       end
 
-      assert PotokIde.PushNotifications.payload_for(
-               Notifications.value_reaction(@ana, @group, @value, "👍"),
-               "en"
-             ).title ==
-               "ana reacted 👍 to your message"
+      reaction = Notifications.value_reaction(@ana, @group, @value, "👍")
+      assert PushNotifications.payload_for(reaction, "en").title == "Hall"
+      assert PushNotifications.payload_for(reaction, "en").body == "ana: 👍 to “Bring chairs”"
+      assert PushNotifications.payload_for(reaction, "sr").body == "ana: 👍 na „Bring chairs“"
+    end
+  end
+
+  describe "a thread" do
+    test "is titled with its group and the thread, and shows the group's picture" do
+      author = profile!("thread-author")
+      group = group!(author, "Zgrada")
+      {:ok, value} = Social.create_value(author, group, %{"content" => "Lift ne radi"})
+      {:ok, thread} = Social.get_or_create_value_thread(author, group, value, %{"name" => "Lift"})
+
+      payload =
+        PushNotifications.payload_for(Notifications.value_created(author, thread, @value), "sr")
+
+      assert payload.title == "Zgrada › Lift"
+      assert payload.icon == PotokIdeWeb.Avatars.group_badge_url(group)
+      assert payload.group_id == thread.id
     end
   end
 
@@ -100,12 +148,55 @@ defmodule PotokIde.Social.NotificationsTest do
 
       assert {:ok, _value} = Social.create_value(author, group, %{"content" => "Bring chairs"})
 
-      titles = sent_titles(2)
+      messages = for _request <- 1..2, do: sent_message()
+      assert Enum.map(messages, & &1.data["title"]) == ["notif-group", "notif-group"]
 
-      assert Enum.sort(titles) == [
-               "notif-author sent a new message",
-               "notif-author: нова порука"
-             ]
+      # The app draws them itself, also in the background, in its channel.
+      for message <- messages do
+        refute Map.has_key?(message, :notification)
+        assert message.data["kind"] == "message"
+        assert message.data["android_channel_id"] == "potok-messages"
+        assert message.data["badge"] == message.data["icon"]
+        assert message.data["icon"] =~ ~r"\Ahttps?://.+/avatar/group/#{group.id}\?format=png"
+        refute Map.has_key?(message.data, "expires_at")
+        assert message.android.collapse_key == "group-#{group.id}-chat"
+        assert message.android.ttl =~ ~r/\A\d+s\z/
+      end
+    end
+
+    test "an iPhone groups a conversation's notifications and replaces the older" do
+      author = profile!("ios-author")
+      member_account = account_fixture()
+      member = profile!("ios-member", member_account)
+      group = group!(author, "ios-group")
+      add_member!(author, group, member)
+      device!(member_account, "sr", :ios)
+
+      assert {:ok, _value} = Social.create_value(author, group, %{"content" => "Bring chairs"})
+
+      message = sent_message()
+      assert message.notification == %{title: "ios-group", body: "ios-author: Bring chairs"}
+      assert message.apns.payload.aps."thread-id" == "group-#{group.id}"
+      assert message.apns.payload.aps."mutable-content" == 1
+      assert message.apns.headers["apns-collapse-id"] == "group-#{group.id}-chat"
+      assert message.data["sender_icon"] =~ ~r"\Ahttps?://.+/avatar/profile/#{author.id}\?"
+    end
+
+    test "an expired payload is not sent" do
+      account = account_fixture()
+      device!(account, "en")
+
+      payload =
+        PushNotifications.localized(fn ->
+          %{title: "Old", body: "news", expires_at: System.system_time(:second) - 1}
+        end)
+
+      assert :ok =
+               PushNotifications.DeliverWorker.perform(%Oban.Job{
+                 args: %{"account_ids" => [account.id], "payload" => payload}
+               })
+
+      refute_receive {:firebase_send_request, _request}
     end
 
     test "the test notification follows the device's language" do
@@ -118,17 +209,19 @@ defmodule PotokIde.Social.NotificationsTest do
   end
 
   defp sent_titles(count) do
-    for _request <- 1..count do
-      assert_receive {:firebase_send_request, request}
-      request[:json].message.data["title"]
-    end
+    for _request <- 1..count, do: sent_message().data["title"]
   end
 
-  defp device!(account, locale) do
+  defp sent_message do
+    assert_receive {:firebase_send_request, request}
+    request[:json].message
+  end
+
+  defp device!(account, locale, platform \\ :android) do
     {:ok, subscription} =
       Accounts.upsert_push_subscription(account, %{
         subscription_type: :fcm,
-        device_platform: :android,
+        device_platform: platform,
         device_token: "fcm-notif-#{System.unique_integer([:positive])}",
         user_agent: "ExUnit",
         locale: locale

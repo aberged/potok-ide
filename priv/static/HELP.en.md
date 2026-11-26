@@ -542,6 +542,8 @@ You can also mute a group: in the group's menu tap **Mute** and pick for how lon
 
 You turn on push notifications in your account settings, separately for each browser or phone. They come for new messages, mentions, replies and reactions, invitations and decisions on your requests, events and reminders, polls and form responses. New messages of one group do not come one after another: after a notification, the next one from that group comes only once you have read the messages or five minutes have passed. A mention and a reply to your message always come. There is also a separate switch for the notices of the groups you follow.
 
+A notification looks as in other messaging apps: its title is the group, or the person in a direct conversation, and below it who wrote what. A newer message of the same group replaces the older one, and when you open the group, its notifications leave that device and the others where Potok is open. On an Android phone each kind of notification (messages, mentions and replies, calendar, polls, group notices, invitations, apps) has its own channel in the phone's settings, so you can silence each one or give it its own sound.
+
 ![Settings: push notifications](podesavanja-push)
 
 ## Apps in a group {:#aplikacije}

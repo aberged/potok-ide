@@ -8,7 +8,8 @@ defmodule PotokIde.PushNotifications.DeliverWorker do
   the payload per language), `context` and `context_id`, for the log. The
   subscriptions are read when the job runs, every device gets the payload in
   its language, and the successes are written in one statement
-  (`PotokIde.Accounts.send_push_batch/1`).
+  (`PotokIde.Accounts.send_push_batch/1`). A job that runs after the
+  payload's `expires_at` sends nothing.
   """
 
   use Oban.Worker, queue: :push, max_attempts: 3
@@ -23,7 +24,13 @@ defmodule PotokIde.PushNotifications.DeliverWorker do
   alias PotokIde.Repo
 
   @impl Oban.Worker
-  def perform(%Oban.Job{args: %{"account_ids" => account_ids, "payload" => payload} = args}) do
+  def perform(%Oban.Job{args: %{"payload" => payload} = args}) do
+    # Past its `expires_at` (a job that waited, or was tried again too late)
+    # nobody needs it any more: a reminder after its event started.
+    if PushNotifications.stale?(payload), do: :ok, else: deliver(args)
+  end
+
+  defp deliver(%{"account_ids" => account_ids, "payload" => payload} = args) do
     pairs =
       from(subscription in PushSubscription,
         where: subscription.account_id in ^account_ids,

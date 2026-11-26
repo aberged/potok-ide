@@ -151,6 +151,13 @@ defmodule PotokIdeWeb.PushSubscriptionControllerTest do
       assert request_options[:url] == params["endpoint"]
       assert Enum.any?(request_options[:headers], fn {key, _value} -> key == "Authorization" end)
       assert Enum.any?(request_options[:headers], fn {key, _value} -> key == "Crypto-Key" end)
+
+      headers = Map.new(request_options[:headers])
+      # Kept until its own expiry, not the minute of the configured TTL.
+      assert String.to_integer(headers["TTL"]) in 250..300
+      assert headers["Urgency"] == "normal"
+      assert headers["Topic"] == PotokIde.PushNotifications.topic("potok-push-test")
+      assert byte_size(headers["Topic"]) == 32
     end
 
     test "sends a test native notification through Firebase", %{conn: conn, account: account} do
@@ -187,15 +194,20 @@ defmodule PotokIdeWeb.PushSubscriptionControllerTest do
                    "android_channel_id" => "potok-default",
                    "badge" => "http://localhost:4000/images/pwa/icon-192.png",
                    "body" => "Push notifications are enabled for your account.",
-                   "icon" => "/images/pwa/icon-192.png",
+                   "icon" => "http://localhost:4000/images/pwa/icon-192.png",
+                   "kind" => "test",
                    "tag" => "potok-push-test",
                    "title" => "Potok notifications are active",
                    "url" => "/accounts/settings"
                  },
-                 android: %{priority: "high"}
+                 android: %{priority: "high", ttl: ttl, collapse_key: "potok-push-test"}
                }
              } = send_request[:json]
 
+      # Data alone: the app draws it, in the background too, and only once.
+      refute Map.has_key?(send_request[:json][:message], :notification)
+      refute Map.has_key?(send_request[:json][:message], :apns)
+      assert ttl =~ ~r/\A\d+s\z/
       assert token == params["token"]
     end
 
@@ -225,7 +237,7 @@ defmodule PotokIdeWeb.PushSubscriptionControllerTest do
                  data: %{
                    "badge" => "http://localhost:4000/images/pwa/icon-192.png",
                    "body" => "Push notifications are enabled for your account.",
-                   "icon" => "/images/pwa/icon-192.png",
+                   "icon" => "http://localhost:4000/images/pwa/icon-192.png",
                    "tag" => "potok-push-test",
                    "title" => "Potok notifications are active",
                    "url" => "/accounts/settings"
@@ -237,7 +249,9 @@ defmodule PotokIdeWeb.PushSubscriptionControllerTest do
                  apns: %{
                    headers: %{
                      "apns-priority" => "10",
-                     "apns-push-type" => "alert"
+                     "apns-push-type" => "alert",
+                     "apns-collapse-id" => "potok-push-test",
+                     "apns-expiration" => expiration
                    },
                    payload: %{
                      aps: %{
@@ -245,7 +259,8 @@ defmodule PotokIdeWeb.PushSubscriptionControllerTest do
                          title: "Potok notifications are active",
                          body: "Push notifications are enabled for your account."
                        },
-                       sound: "default"
+                       sound: "default",
+                       "mutable-content": 1
                      }
                    }
                  }
@@ -253,6 +268,7 @@ defmodule PotokIdeWeb.PushSubscriptionControllerTest do
              } = send_request[:json]
 
       refute Map.has_key?(send_request[:json][:message], :android)
+      assert String.to_integer(expiration) > System.system_time(:second)
       assert token == params["token"]
     end
 

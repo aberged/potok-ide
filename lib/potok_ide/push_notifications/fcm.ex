@@ -171,49 +171,51 @@ defmodule PotokIde.PushNotifications.FCM do
     signing_input <> "." <> Base.url_encode64(signature, padding: false)
   end
 
+  # Android gets the payload as data alone, so the app draws every
+  # notification itself (`PotokMessagingService`: the picture, the tag that
+  # replaces, the messages of a group in one), also in the background. With
+  # a `notification` block Firebase drew it there instead, and in the
+  # foreground the Capacitor plugin drew a second one. iOS shows the alert of
+  # `apns`; a notification service extension adds the picture.
   defp build_message_body(%PushSubscription{} = subscription, payload, credentials) do
-    notification =
-      payload
-      |> notification_payload()
-
+    android? = subscription.device_platform == :android
+    notification = if android?, do: nil, else: notification_payload(payload)
     sound = payload_value(payload, [:android_sound, :sound])
-    ttl = duration_value(payload_value(payload, [:android_ttl, :ttl]))
-    collapse_key = payload_value(payload, [:android_collapse_key, :collapse_key, :collapseKey])
+    ttl = PushNotifications.ttl_for(payload)
+    tag = payload_value(payload, [:tag])
 
     android_image =
       payload
       |> payload_value([:android_image, :image])
       |> absolute_url()
 
-    # Convert badge URL to absolute (large base64 images already converted to /avatar/profile/:id in social context)
-    badge =
-      payload
-      |> payload_value([:badge])
-      |> absolute_url()
+    icon = payload |> payload_value([:icon, :badge]) |> absolute_url()
 
     data_payload =
       payload
+      |> Map.drop([:expires_at, "expires_at"])
       |> maybe_put_map_value(:android_image, android_image)
       |> maybe_put_map_value(:android_sound, sound)
-      |> maybe_put_map_value(:badge, badge)
+      |> maybe_put_map_value(:icon, icon)
+      |> maybe_put_map_value(
+        :sender_icon,
+        payload |> payload_value([:sender_icon]) |> absolute_url()
+      )
+      # Releases up to 1.0.4 draw their large icon from `badge`.
+      |> maybe_put_map_value(:badge, icon)
 
     data_payload =
-      if subscription.device_platform == :android do
-        Map.put_new(data_payload, :android_channel_id, credentials.channel_id)
-      else
-        data_payload
-      end
+      if android?,
+        do: Map.put(data_payload, :android_channel_id, channel_id(payload, credentials)),
+        else: data_payload
 
     android_payload =
-      if subscription.device_platform == :android do
-        %{
-          priority: "high"
-        }
-        |> maybe_put(:ttl, ttl)
-        |> maybe_put(:collapse_key, collapse_key)
+      if android? do
+        %{priority: "high", ttl: duration_value(ttl)}
+        |> maybe_put(:collapse_key, tag)
       end
 
-    apns_payload = ios_apns_payload(subscription, notification, sound)
+    apns_payload = ios_apns_payload(subscription, notification, sound, payload, ttl)
 
     {:ok,
      %{
@@ -223,14 +225,31 @@ defmodule PotokIde.PushNotifications.FCM do
            data: stringify_payload(data_payload)
          }
          |> maybe_put(:notification, notification, is_map(notification))
-         |> maybe_put(
-           :android,
-           android_payload,
-           is_map(android_payload) and map_size(android_payload) > 0
-         )
+         |> maybe_put(:android, android_payload, is_map(android_payload))
          |> maybe_put(:apns, apns_payload, is_map(apns_payload))
      }}
   end
+
+  @doc """
+  The Android notification channel of a payload's `kind`. The app creates
+  the channels with names in the page's language (`assets/js/app.js`), and
+  each can be silenced or given its own sound in the phone's settings.
+  """
+  def channel_for(kind) do
+    case kind do
+      "message" -> "potok-messages"
+      kind when kind in ["mention", "reply", "reaction"] -> "potok-mentions"
+      kind when kind in ["event", "event_reminder"] -> "potok-calendar"
+      "poll" -> "potok-polls"
+      "notice" -> "potok-notices"
+      kind when kind in ["invitation", "request", "role"] -> "potok-invitations"
+      kind when kind in ["app", "process"] -> "potok-apps"
+      _other -> nil
+    end
+  end
+
+  defp channel_id(payload, credentials),
+    do: channel_for(payload_value(payload, [:kind])) || credentials.channel_id
 
   defp notification_payload(payload) when is_map(payload) do
     %{}
@@ -242,25 +261,46 @@ defmodule PotokIde.PushNotifications.FCM do
     end
   end
 
-  defp ios_apns_payload(%PushSubscription{device_platform: :ios}, notification, sound)
+  # `thread-id` groups a conversation's notifications, the collapse id lets a
+  # newer one replace the one of the same tag, `mutable-content` hands it to
+  # the notification service extension for the picture.
+  defp ios_apns_payload(
+         %PushSubscription{device_platform: :ios},
+         notification,
+         sound,
+         payload,
+         ttl
+       )
        when is_map(notification) do
-    aps =
-      %{}
-      |> maybe_put(:alert, notification)
-      |> maybe_put(:sound, sound || "default")
+    alert = maybe_put(notification, :subtitle, payload_value(payload, [:label]))
 
-    %{
-      headers: %{
+    aps =
+      %{alert: alert, sound: sound || "default", "mutable-content": 1}
+      |> maybe_put(:"thread-id", thread_id(payload_value(payload, [:group_id])))
+
+    headers =
+      %{
         "apns-priority" => "10",
-        "apns-push-type" => "alert"
-      },
-      payload: %{
-        aps: aps
+        "apns-push-type" => "alert",
+        "apns-expiration" => Integer.to_string(System.system_time(:second) + ttl)
       }
-    }
+      |> then(fn headers ->
+        case payload_value(payload, [:tag]) do
+          tag when is_binary(tag) ->
+            Map.put(headers, "apns-collapse-id", PushNotifications.collapse_id(tag))
+
+          _tag ->
+            headers
+        end
+      end)
+
+    %{headers: headers, payload: %{aps: aps}}
   end
 
-  defp ios_apns_payload(_subscription, _notification, _sound), do: nil
+  defp ios_apns_payload(_subscription, _notification, _sound, _payload, _ttl), do: nil
+
+  defp thread_id(group_id) when is_integer(group_id), do: "group-#{group_id}"
+  defp thread_id(_group_id), do: nil
 
   defp normalize_access_token_response(%Req.Response{status: status, body: body})
        when status in 200..299 do

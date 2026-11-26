@@ -11,72 +11,95 @@ defmodule PotokIde.Polls.Notifications do
   use Gettext, backend: PotokIdeWeb.Gettext
 
   import Ecto.Query
-  import PotokIde.PushNotifications, only: [localized: 1]
+  import PotokIde.PushNotifications, only: [localized: 1, expires_at: 1, now_ms: 0]
 
   alias PotokIde.Polls
   alias PotokIde.Polls.{Poll, PollBallot}
-  alias PotokIde.PushNotifications.Dispatch
+  alias PotokIde.PushNotifications.{Conversation, Dispatch}
   alias PotokIde.Repo
   alias PotokIde.Social.{AccountProfile, Group, GroupMutes, GroupRole, Profile}
 
+  # As in `PotokIde.Social.Notifications`: the title is the group, the body
+  # starts with 📊, the label "Poll" goes under the title where the phone
+  # shows one.
   def created(%Profile{} = creator, %Group{} = group, %Poll{} = poll) do
+    look = Conversation.of(group, creator)
+    name = Profile.display_name(creator)
+
+    base =
+      base(group, poll, look, tag(poll), :week)
+      |> Map.merge(%{sender: name, sender_icon: PotokIdeWeb.Avatars.profile_badge_url(creator)})
+
     localized(fn ->
-      %{
-        title:
-          dgettext("polls", "%{name} started a poll in %{group}",
-            name: creator.username,
-            group: group.name
-          ),
-        body: poll.question,
-        tag: tag(poll),
-        url: url(poll),
-        badge: PotokIdeWeb.Avatars.profile_badge_url(creator)
-      }
+      Map.merge(base, %{
+        title: look.title,
+        body: "📊 #{name}: #{poll.question}",
+        label: dgettext("polls", "Poll")
+      })
     end)
   end
 
   def reminder(%Group{} = group, %Poll{} = poll) do
+    look = Conversation.of(group, nil)
+    base = base(group, poll, look, "#{tag(poll)}-reminder", :day)
+
     localized(fn ->
-      %{
-        title: poll.question,
-        body: dgettext("polls", "You have not voted yet · %{group}", group: group.name),
-        tag: "#{tag(poll)}-reminder",
-        url: url(poll),
-        badge: group_badge(group)
-      }
+      Map.merge(base, %{
+        title: look.title,
+        body:
+          "📊 " <>
+            dgettext("polls", "You have not voted yet: %{question}", question: poll.question),
+        label: dgettext("polls", "Poll")
+      })
     end)
   end
 
   def closed(%Group{} = group, %Poll{} = poll) do
+    look = Conversation.of(group, nil)
+    base = base(group, poll, look, "#{tag(poll)}-closed", :day)
+
     localized(fn ->
-      %{
-        title: dgettext("polls", "Voting ended: %{question}", question: poll.question),
-        body: group.name,
-        tag: "#{tag(poll)}-closed",
-        url: url(poll),
-        badge: group_badge(group)
-      }
+      Map.merge(base, %{
+        title: look.title,
+        body: "📊 " <> dgettext("polls", "Voting ended: %{question}", question: poll.question),
+        label: dgettext("polls", "Poll")
+      })
     end)
   end
 
   def role_changed(%Group{} = group, %Poll{} = poll, change, %GroupRole{} = role) do
+    look = Conversation.of(group, nil)
+    base = base(group, poll, look, "#{tag(poll)}-role", :week) |> Map.put(:kind, "role")
+
     localized(fn ->
       name = role_name(role)
 
-      title =
+      held =
         case change do
           :granted -> dgettext("polls", "You now hold the role %{role}", role: name)
           :revoked -> dgettext("polls", "You no longer hold the role %{role}", role: name)
         end
 
-      %{
-        title: title,
-        body: dgettext("polls", "By the decision: %{question}", question: poll.question),
-        tag: "#{tag(poll)}-role",
-        url: url(poll),
-        badge: group_badge(group)
-      }
+      Map.merge(base, %{
+        title: look.title,
+        body:
+          held <>
+            " · " <> dgettext("polls", "By the decision: %{question}", question: poll.question),
+        label: dgettext("polls", "Poll")
+      })
     end)
+  end
+
+  defp base(%Group{} = group, %Poll{} = poll, look, tag, expires) do
+    %{
+      kind: "poll",
+      tag: tag,
+      url: url(poll),
+      group_id: group.id,
+      icon: look.icon,
+      timestamp: now_ms(),
+      expires_at: expires_at(expires)
+    }
   end
 
   defp role_name(%GroupRole{} = role) do
@@ -173,6 +196,4 @@ defmodule PotokIde.Polls.Notifications do
   defp tag(%Poll{id: id, group_id: group_id}), do: "group-#{group_id}-poll-#{id}"
 
   defp url(%Poll{id: id, group_id: group_id}), do: "/groups/#{group_id}/polls?poll=#{id}"
-
-  defp group_badge(%Group{} = group), do: PotokIdeWeb.Avatars.group_badge_url(group)
 end
