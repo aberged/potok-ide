@@ -39,6 +39,14 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Potok uses the camera when you take a photo or a video to send to a group or to use as a profile picture.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Potok uses your location only when you tap “My location”, to put a group or an event on the map.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Potok uses the microphone only for the sound of a video you record and send to a group.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Potok saves to your photo library the photos and videos you choose to keep.</string>
 	<key>PotokAppGroup</key>
 	<string>$(POTOK_APP_GROUP)</string>
 	<key>UILaunchStoryboardName</key>

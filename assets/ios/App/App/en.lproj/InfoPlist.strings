@@ -1,0 +1,5 @@
+/* The reasons iOS shows when Potok first asks for a permission (Info.plist). */
+"NSCameraUsageDescription" = "Potok uses the camera when you take a photo or a video to send to a group or to use as a profile picture.";
+"NSLocationWhenInUseUsageDescription" = "Potok uses your location only when you tap “My location”, to put a group or an event on the map.";
+"NSMicrophoneUsageDescription" = "Potok uses the microphone only for the sound of a video you record and send to a group.";
+"NSPhotoLibraryAddUsageDescription" = "Potok saves to your photo library the photos and videos you choose to keep.";

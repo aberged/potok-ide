@@ -1,0 +1,5 @@
+/* Razlozi koje iOS pokazuje kad Potok prvi put traži dozvolu (Info.plist). Ćirilica je u sr.lproj. */
+"NSCameraUsageDescription" = "Potok koristi kameru kad snimaš fotografiju ili video koji šalješ u grupu ili postavljaš za sliku profila.";
+"NSLocationWhenInUseUsageDescription" = "Potok koristi tvoju lokaciju samo kad dodirneš „Moja lokacija“, da postavi grupu ili događaj na mapu.";
+"NSMicrophoneUsageDescription" = "Potok koristi mikrofon samo za zvuk videa koji snimaš i šalješ u grupu.";
+"NSPhotoLibraryAddUsageDescription" = "Potok čuva u tvoju galeriju fotografije i video snimke koje želiš da sačuvaš.";

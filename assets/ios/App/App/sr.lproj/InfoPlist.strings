@@ -1,0 +1,6 @@
+/* Razlozi koje iOS pokazuje kad Potok prvi put traži dozvolu (Info.plist), ćirilicom: iOS zove ćirilicu sr, latinicu sr-Latn. Pravi se iz sr-Latn.lproj. */
+"NSCameraUsageDescription" = "Поток користи камеру кад снимаш фотографију или видео који шаљеш у групу или постављаш за слику профила.";
+"NSLocationWhenInUseUsageDescription" = "Поток користи твоју локацију само кад додирнеш „Моја локација“, да постави групу или догађај на мапу.";
+"NSMicrophoneUsageDescription" = "Поток користи микрофон само за звук видеа који снимаш и шаљеш у групу.";
+"NSPhotoLibraryAddUsageDescription" = "Поток чува у твоју галерију фотографије и видео снимке које желиш да сачуваш.";
+
