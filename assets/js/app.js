@@ -2392,6 +2392,33 @@ window.addEventListener("phx:unread_notices_count_updated", ({detail}) => {
   noticesBadge.textContent = count > 999 ? "999+" : String(count)
 })
 
+// The last page of this tab outside Profiles, where choosing a profile there
+// goes back to (the `.CloseProfiles` hook reads the same key). Only a signed-in
+// page counts; any other one forgets it, so the next account to sign in here
+// does not land in the last one's group.
+const PROFILES_RETURN_KEY = "potok:profiles-return"
+
+const rememberProfilesReturn = () => {
+  const {pathname, search, hash} = window.location
+
+  if (pathname === "/profiles" || pathname.startsWith("/profiles/")) {
+    return
+  }
+
+  try {
+    if (document.getElementById("app-sidebar-account")) {
+      window.sessionStorage.setItem(PROFILES_RETURN_KEY, `${pathname}${search}${hash}`)
+    } else {
+      window.sessionStorage.removeItem(PROFILES_RETURN_KEY)
+    }
+  } catch (_error) {
+    // Ignore storage failures (private mode/quota/etc.).
+  }
+}
+
+rememberProfilesReturn()
+window.addEventListener("phx:page-loading-stop", rememberProfilesReturn)
+
 registerCapacitorMagicLinks()
 registerCapacitorBackButton()
 registerCapacitorPushNotifications()

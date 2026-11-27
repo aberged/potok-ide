@@ -144,7 +144,7 @@ U razgovoru stoje zapisnici i pravila kućnog reda (svi su i u kartici Fajlovi),
 
 ## Profili {:#profili}
 
-Na stranici Profili vidiš trenutni i podrazumevani profil i spisak svih svojih profila. Dodirom na profil u spisku menjaš onaj kojim se služiš, a „Kreiraj profil“ pravi novi.
+Na stranici Profili vidiš trenutni i podrazumevani profil i spisak svih svojih profila. Dodirom na profil u spisku menjaš onaj kojim se služiš, a stranica se zatvara i vraća te tamo odakle si došao. „Kreiraj profil“ pravi novi.
 
 Korisničko ime ima od 2 do 16 slova, brojeva i znakova `_`, `.` i `-`. Slika profila se smanjuje na 200 × 200, a fajlovi veći od 5 MB se odbijaju. Profil ima i opis „O meni“, detalje i javne tagove.
 
@@ -189,7 +189,7 @@ Grupa nikad ne ostaje bez poslednjeg administratora: ako si jedini administrator
 
 ## Početna i pronalaženje grupa {:#pocetna}
 
-Početna strana ima dve kartice: Razgovori, sa razgovorima u četiri oka, i Grupe. Svaka grupa pokazuje broj nepročitanih poruka, poslednju poruku, broj članova i podgrupa i svoje tagove. Preko 99 nepročitanih piše 99+. Kad uđeš u grupu, njene ranije poruke možeš da čitaš, ali se ne broje kao nepročitane: broje se one koje stignu posle. Katanac znači da je grupa privatna, a globus da je javna. Grupe koje si prikačio stoje na vrhu kartice Grupe, u traci iznad spiska, sa brojem nepročitanih poruka u svemu ispod njih, pa do njih stižeš jednim dodirom.
+Početna strana ima dve kartice, dve ikonice gore levo: razgovore u četiri oka (dve osobe) i grupe (tri osobe). Svaka grupa pokazuje broj nepročitanih poruka, poslednju poruku, broj članova i podgrupa i svoje tagove. Preko 99 nepročitanih piše 99+. Kad uđeš u grupu, njene ranije poruke možeš da čitaš, ali se ne broje kao nepročitane: broje se one koje stignu posle. Katanac znači da je grupa privatna, a globus da je javna. Grupe koje si prikačio stoje na vrhu kartice Grupe, u traci iznad spiska, sa brojem nepročitanih poruka u svemu ispod njih, pa do njih stižeš jednim dodirom.
 
 Iznad spiska su filteri: javne grupe u kojima nisi član, niti, grupe u kojima si član, koje si napravio ili koje pratiš, vrsta grupe i pretraga po nazivu. Grupe koje pratiš ostaju na spisku i kad sakriješ javne grupe. Pretraga nalazi grupu i kad kucaš bez kvačica, latinicom ili ćirilicom. Grupe se mogu prikazati kao spisak ili kao fascikle.
 

@@ -176,6 +176,61 @@ defmodule PotokIdeWeb.ProfileLive.Index do
         </div>
       </.page_container>
 
+      <%!-- A chosen profile closes the page: back to the page of this tab it was
+           opened from (app.js remembers it), or to the groups. --%>
+      <div id="profiles-close" phx-hook=".CloseProfiles" hidden></div>
+      <script :type={Phoenix.LiveView.ColocatedHook} name=".CloseProfiles">
+        // The same key as in app.js, which writes it.
+        const RETURN_KEY = "potok:profiles-return"
+
+        const returnPath = () => {
+          try {
+            return window.sessionStorage.getItem(RETURN_KEY)
+          } catch (_error) {
+            return null
+          }
+        }
+
+        const routeOf = url => `${url.pathname}${url.search}${url.hash}`
+        const profilesPage = url => url.pathname === "/profiles" || url.pathname.startsWith("/profiles/")
+
+        // The entry of that page right behind the pages of Profiles (a new or an
+        // edited profile among them), so going back to it takes them off the history.
+        const entryBehind = target => {
+          const navigation = window.navigation
+          if (!navigation?.currentEntry) return null
+
+          const entries = navigation.entries()
+
+          for (let index = navigation.currentEntry.index - 1; index >= 0; index--) {
+            if (!entries[index]?.url) return null
+
+            const url = new URL(entries[index].url)
+            if (routeOf(url) === target) return entries[index]
+            if (!profilesPage(url)) return null
+          }
+
+          return null
+        }
+
+        export default {
+          mounted() {
+            this.handleEvent("profiles_close", () => {
+              const target = returnPath() || "/groups"
+              const entry = entryBehind(target)
+
+              // Every page outside Profiles is in another live session, so it loads
+              // anew either way; replacing keeps Profiles out of the way back.
+              if (entry) {
+                window.navigation.traverseTo(entry.key)
+              } else {
+                window.location.replace(target)
+              }
+            })
+          },
+        }
+      </script>
+
       <ProfileComponents.welcome_dialog
         :if={@welcome_open}
         form={@profile_form}
@@ -241,7 +296,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
          |> put_private(:previous_current_profile, profile)
          |> ProfileAuth.sync_profile_subscription(previous_profile)
          |> push_current_profile_updated(profile)
-         |> put_flash(:info, gettext("Profile selected."))}
+         |> push_event("profiles_close", %{})}
     end
   end
 

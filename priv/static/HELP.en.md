@@ -138,7 +138,7 @@ The chat holds the minutes and the house rules (all of them are also in the File
 
 ## Profiles {:#profili}
 
-On the Profiles page you see your current and default profile and a list of all your profiles. Tapping a profile in the list changes the one you are using, and "Create profile" makes a new one.
+On the Profiles page you see your current and default profile and a list of all your profiles. Tapping a profile in the list changes the one you are using, and the page closes and takes you back to where you came from. "Create profile" makes a new one.
 
 A username has 2 to 16 letters, digits and the characters `_`, `.` and `-`. A profile picture is resized to 200 × 200, and files over 5 MB are rejected. A profile also has a description, "About me", details and public tags.
 
@@ -183,7 +183,7 @@ A group never loses its last admin: if you are the only admin of a group that ha
 
 ## Home and finding groups {:#pocetna}
 
-The home page has two tabs: Conversations, with your one-to-one conversations, and Groups. Each group shows its unread messages, its newest message, its numbers of members and sub-groups, and its tags. Past 99 unread it says 99+. When you join a group you can read its earlier messages, but they do not count as unread: the ones that come after do. A lock means the group is private, and a globe that it is public. The groups you pinned stand at the top of the Groups tab, in a strip above the list, with the number of unread messages in everything below them, so one tap takes you to them.
+The home page has two tabs, two icons at the top left: one-to-one conversations (two people) and groups (three people). Each group shows its unread messages, its newest message, its numbers of members and sub-groups, and its tags. Past 99 unread it says 99+. When you join a group you can read its earlier messages, but they do not count as unread: the ones that come after do. A lock means the group is private, and a globe that it is public. The groups you pinned stand at the top of the Groups tab, in a strip above the list, with the number of unread messages in everything below them, so one tap takes you to them.
 
 Above the list are the filters: public groups you are not a member of, threads, groups you are a member of, created or follow, the kind of group and a search by name. The groups you follow stay on the list even when you hide public groups. The search finds a group even when you type without diacritics, in Latin or in Cyrillic. Groups can be shown as a list or as folders.
 

@@ -1049,8 +1049,11 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> log_in_account(account)
         |> live(~p"/groups/#{root_group.id}")
 
-      assert has_element?(lv, "#group-sub-groups-kind-direct")
-      assert has_element?(lv, "#group-sub-groups-kind-other")
+      # Only icons: the names are for screen readers and the tooltip.
+      assert has_element?(lv, "#group-sub-groups-kind-direct[aria-label='Conversations']")
+      assert has_element?(lv, "#group-sub-groups-kind-other[aria-label='Groups']")
+      refute has_element?(lv, "#group-sub-groups-kind-direct", "Conversations")
+      refute has_element?(lv, "#group-sub-groups-kind-other", "Groups")
       assert has_element?(lv, "#group-sub-groups-kind-direct-unread-badge", "1")
       assert has_element?(lv, "#group-sub-groups-kind-other-unread-badge", "1")
 

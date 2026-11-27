@@ -381,10 +381,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
                     phx-click="switch_sub_groups_kind"
                     phx-value-kind="direct"
                     aria-pressed={to_string(@sub_groups_kind == "direct")}
+                    aria-label={gettext("Conversations")}
+                    title={gettext("Conversations")}
                     class={root_kind_class(@sub_groups_kind == "direct")}
                   >
-                    <.icon name="hero-users" class="size-4 shrink-0" />
-                    {gettext("Conversations")}
+                    <.icon name="hero-users" class="size-5 shrink-0" />
                     <.count_badge
                       :if={@direct_sub_groups_unread_count > 0}
                       id="group-sub-groups-kind-direct-unread-badge"
@@ -397,10 +398,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
                     phx-click="switch_sub_groups_kind"
                     phx-value-kind="other"
                     aria-pressed={to_string(@sub_groups_kind == "other")}
+                    aria-label={gettext("Groups")}
+                    title={gettext("Groups")}
                     class={root_kind_class(@sub_groups_kind == "other")}
                   >
-                    <.icon name="hero-user-group" class="size-4 shrink-0" />
-                    {gettext("Groups")}
+                    <.icon name="hero-user-group" class="size-5 shrink-0" />
                     <.count_badge
                       :if={@other_sub_groups_unread_count > 0}
                       id="group-sub-groups-kind-other-unread-badge"
@@ -506,7 +508,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 type="button"
                 phx-click="invite_account"
                 aria-label={gettext("Open invite account tab")}
-                class="cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                class="-my-1 cursor-pointer rounded-full p-1 transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
               >
                 <.icon
                   name="hero-user-plus"
@@ -7691,7 +7693,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp root_kind_class(active?) do
     [
-      "inline-flex h-9 min-w-0 cursor-pointer items-center gap-1.5 rounded-full px-3 text-sm font-semibold transition duration-150 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+      "inline-flex h-9 min-w-11 cursor-pointer items-center justify-center gap-1.5 rounded-full px-3 text-sm font-semibold transition duration-150 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
       if(active?,
         do: "bg-base-100 text-base-content shadow-sm",
         else: "text-base-content/65 hover:text-base-content"
@@ -7731,7 +7733,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   # makes room for it around the icon without taking more room in the header.
   defp header_shortcut_class(active?) do
     [
-      "relative -m-1 inline-flex cursor-pointer items-center justify-center rounded-full p-1 transition duration-150 hover:bg-base-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+      "relative -my-1 inline-flex cursor-pointer items-center justify-center rounded-full p-1 transition duration-150 hover:bg-base-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
       active? && "ring-1 ring-base-content/30"
     ]
   end

@@ -132,15 +132,16 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
         |> live(~p"/profiles")
 
       assert html =~ "alpha-prof"
-      refute html =~ "Profile selected."
       assert has_element?(lv, "#profiles-summary #profiles-current", "alpha-prof")
+      assert has_element?(lv, "#profiles-close[phx-hook]")
 
-      result =
-        lv
-        |> element("button[phx-click=use][phx-value-id='#{second_profile.id}']")
-        |> render_click()
+      lv
+      |> element("button[phx-click=use][phx-value-id='#{second_profile.id}']")
+      |> render_click()
 
-      assert result =~ "Profile selected."
+      # The page closes in the browser, once the profile is saved.
+      assert_push_event(lv, "profiles_close", %{})
+      assert Accounts.get_account!(account.id).current_profile_id == second_profile.id
       assert has_element?(lv, "#profiles-current", "beta-prof")
       refute has_element?(lv, "#profiles-current", "alpha-prof")
     end
@@ -184,6 +185,8 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
         |> render_click()
 
       assert result =~ "Default profile updated."
+      # Making a profile the default leaves the page open.
+      refute_push_event(lv, "profiles_close", %{})
       assert result =~ "Default profile:"
       assert has_element?(lv, "#profiles-summary #profiles-default", "default-b")
       refute has_element?(lv, "#profiles-default", "default-a")
