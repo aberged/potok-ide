@@ -887,5 +887,14 @@
       { "wait": "[id^='value-link-preview-'][data-kind='questionnaire'] img" },
       { "pause": 1200 }
     ]
+  },
+  {
+    "name": "poruka-link",
+    "as": "ana",
+    "url": "/groups/{groups.building_council}",
+    "steps": [
+      { "wait": "[id^='value-link-message-image-']" },
+      { "pause": 1200 }
+    ]
   }
 ]

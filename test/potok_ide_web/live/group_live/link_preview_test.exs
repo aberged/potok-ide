@@ -189,6 +189,145 @@ defmodule PotokIdeWeb.GroupLive.LinkPreviewTest do
     end
   end
 
+  describe "a link to a message" do
+    setup ctx do
+      # `ctx.group` is the chat with the link; the message is in `source`,
+      # whose members alone may read it.
+      {:ok, source} =
+        Social.create_group(ctx.profile, Social.get_root_group!(), %{
+          "name" => "Savet zgrade",
+          "description" => "",
+          "description_format" => :markdown
+        })
+
+      {:ok, message} =
+        Social.create_value(
+          ctx.profile,
+          source,
+          %{"content" => "Tajni dogovor: **sastanak** u subotu"},
+          [picture!(source)]
+        )
+
+      {reader_account, reader} = account_with_profile!("lp-msg-reader")
+      {outsider_account, outsider} = account_with_profile!("lp-msg-outsider")
+
+      for profile <- [reader, outsider] do
+        {:ok, invitation} = Social.invite_profile_to_group(ctx.profile, ctx.group, profile)
+        {:ok, _accepted} = Social.accept_group_invitation(invitation, profile)
+      end
+
+      {:ok, invitation} = Social.invite_profile_to_group(ctx.profile, source, reader)
+      {:ok, _accepted} = Social.accept_group_invitation(invitation, reader)
+
+      %{
+        source: source,
+        message: message,
+        reader_conn: log_in_account(build_conn(), reader_account),
+        outsider_conn: log_in_account(build_conn(), outsider_account),
+        url: PotokIdeWeb.Endpoint.url() <> "/groups/#{source.id}/values?value=#{message.id}"
+      }
+    end
+
+    test "shows the message to whoever may read it, and nothing of it to the others", ctx do
+      {:ok, value} =
+        Social.create_value(ctx.profile, ctx.group, %{"content" => "vidi #{ctx.url}"})
+
+      {:ok, lv, _html} = live(ctx.reader_conn, ~p"/groups/#{ctx.group.id}/values")
+
+      card = "#value-link-message-#{value.id}"
+      assert has_element?(lv, card, "Savet zgrade")
+      assert has_element?(lv, card, "lp-live-owner")
+
+      assert has_element?(
+               lv,
+               "#value-link-message-text-#{value.id}",
+               "Tajni dogovor: sastanak u subotu"
+             )
+
+      [picture] = Repo.preload(ctx.message, :attachments).attachments
+
+      assert has_element?(
+               lv,
+               ~s(#value-link-message-image-#{value.id}[src="/files/#{picture.id}"])
+             )
+
+      assert has_element?(
+               lv,
+               ~s(a#value-link-message-link-#{value.id}[href="/groups/#{ctx.source.id}/values?value=#{ctx.message.id}"])
+             )
+
+      refute has_element?(lv, "#value-link-preview-#{value.id}")
+      refute has_element?(lv, "#value-link-message-dismiss-#{value.id}")
+
+      {:ok, outsider_lv, _html} = live(ctx.outsider_conn, ~p"/groups/#{ctx.group.id}/values")
+
+      assert has_element?(outsider_lv, "#value-#{value.id}")
+      refute has_element?(outsider_lv, "#value-link-message-#{value.id}")
+      refute has_element?(outsider_lv, "#value-link-preview-#{value.id}")
+      refute render(outsider_lv) =~ "Tajni dogovor"
+      refute render(outsider_lv) =~ "/files/#{picture.id}"
+    end
+
+    test "checks each viewer when the card comes after the value", ctx do
+      {:ok, lv, _html} = live(ctx.reader_conn, ~p"/groups/#{ctx.group.id}/values")
+      {:ok, outsider_lv, _html} = live(ctx.outsider_conn, ~p"/groups/#{ctx.group.id}/values")
+
+      {:ok, value} = Social.create_value(ctx.profile, ctx.group, %{"content" => ctx.url})
+
+      assert has_element?(lv, "#value-link-message-#{value.id}", "Tajni dogovor")
+      assert has_element?(outsider_lv, "#value-#{value.id}")
+      refute render(outsider_lv) =~ "Tajni dogovor"
+    end
+
+    test "follows the message: an edit shows on the next load, a deleted one leaves no card",
+         ctx do
+      {:ok, value} = Social.create_value(ctx.profile, ctx.group, %{"content" => ctx.url})
+
+      {:ok, _edited} =
+        Social.update_value(ctx.profile, ctx.message, %{"content" => "Sastanak je u nedelju"})
+
+      {:ok, lv, _html} = live(ctx.reader_conn, ~p"/groups/#{ctx.group.id}/values")
+      assert has_element?(lv, "#value-link-message-#{value.id}", "Sastanak je u nedelju")
+      refute render(lv) =~ "Tajni dogovor"
+
+      {:ok, _deleted} =
+        Social.delete_value(ctx.profile, Repo.get!(Value, ctx.message.id))
+
+      {:ok, lv, _html} = live(ctx.reader_conn, ~p"/groups/#{ctx.group.id}/values")
+      assert has_element?(lv, "#value-#{value.id}")
+      refute has_element?(lv, "#value-link-message-#{value.id}")
+    end
+
+    test "to a message of the same chat shows it in the feed, and its author may remove it",
+         ctx do
+      {:ok, value} =
+        Social.create_value(ctx.profile, ctx.source, %{"content" => "kao što rekoh #{ctx.url}"})
+
+      {:ok, lv, _html} = live(ctx.conn, ~p"/groups/#{ctx.source.id}/values")
+
+      assert has_element?(
+               lv,
+               ~s(button#value-link-message-link-#{value.id}[phx-click*="potok:show-value"])
+             )
+
+      lv |> element("#value-link-message-dismiss-#{value.id}") |> render_click()
+
+      refute has_element?(lv, "#value-link-message-#{value.id}")
+      assert Repo.get!(Value, value.id).link_preview_dismissed
+    end
+  end
+
+  # A picture already in storage, as an upload leaves it.
+  defp picture!(group) do
+    key = PotokIde.Storage.new_key(group.id)
+    path = Path.join(System.tmp_dir!(), "potok-upload-#{System.unique_integer([:positive])}")
+    File.write!(path, "png")
+    :ok = PotokIde.Storage.put_file(key, path)
+    File.rm!(path)
+
+    %{storage_key: key, filename: "podrum.png", content_type: "image/png", byte_size: 3}
+  end
+
   defp account_with_profile!(username) do
     account = account_fixture()
 

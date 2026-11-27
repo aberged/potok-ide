@@ -384,6 +384,223 @@ defmodule PotokIde.Social.LinkPreviewsTest do
     end
   end
 
+  describe "a link to a message" do
+    setup do
+      owner = profile!("lp-msg-owner")
+      source = group!(owner, "lp-msg-source")
+
+      {:ok, message} =
+        Social.create_value(owner, source, %{"content" => "Tajni dogovor za subotu"})
+
+      %{owner: owner, source: source, message: message, chat: group!(owner, "lp-msg-chat")}
+    end
+
+    defp message_url(group_id, value_id, path \\ "/values"),
+      do: PotokIdeWeb.Endpoint.url() <> "/groups/#{group_id}#{path}?value=#{value_id}"
+
+    defp preview_in!(owner, chat, content) do
+      {:ok, value} = Social.create_value(owner, chat, %{"content" => content})
+      Repo.get!(Value, value.id).link_preview
+    end
+
+    test "keeps which message it names and none of its text", ctx do
+      url = message_url(ctx.source.id, ctx.message.id)
+      source_id = ctx.source.id
+      message_id = ctx.message.id
+
+      assert %{
+               "url" => ^url,
+               "kind" => "message",
+               "group_id" => ^source_id,
+               "value_id" => ^message_id
+             } = preview = preview_in!(ctx.owner, ctx.chat, "vidi #{url}")
+
+      refute inspect(preview) =~ "Tajni"
+      refute inspect(preview) =~ "lp-msg"
+      refute Map.has_key?(preview, "guest")
+      refute_received {:fetched, _path}
+
+      # Nothing of it shows as a card by itself: the page draws the message.
+      assert LinkPreviews.visible(preview, true) == nil
+      assert LinkPreviews.members_only_group_id(preview) == nil
+    end
+
+    test "with no tab names the message too", ctx do
+      url = message_url(ctx.source.id, ctx.message.id, "")
+
+      assert %{"kind" => "message"} = preview_in!(ctx.owner, ctx.chat, url)
+    end
+
+    test "in a public group carries the card a guest gets of the group", ctx do
+      {:ok, public} =
+        Social.create_group(ctx.owner, Social.get_root_group!(), %{
+          "name" => "Komšije",
+          "description" => "Dogovaramo akcije.",
+          "description_format" => :markdown,
+          "is_public" => true
+        })
+
+      {:ok, message} = Social.create_value(ctx.owner, public, %{"content" => "Samo za članove"})
+
+      assert %{"kind" => "message", "guest" => guest} =
+               preview = preview_in!(ctx.owner, ctx.chat, message_url(public.id, message.id))
+
+      assert %{"title" => "Komšije", "site_name" => "Potok"} = guest
+      refute inspect(preview) =~ "Samo za članove"
+      assert LinkPreviews.visible(preview, true) == guest
+    end
+
+    test "in a form's chat is the message's, not the form's", ctx do
+      {:ok, %{group: form}} =
+        Social.create_group_from_preset(ctx.owner, Social.get_root_group!(), "questionnaire", %{
+          "name" => "Prijave",
+          "inherits_members" => false
+        })
+
+      {:ok, message} = Social.create_value(ctx.owner, form, %{"content" => "Pitanje o formi"})
+
+      assert %{"kind" => "message"} =
+               preview_in!(ctx.owner, ctx.chat, message_url(form.id, message.id))
+    end
+
+    test "that names no chat message of that group is passed over", ctx do
+      {:ok, data} =
+        Social.create_value(ctx.owner, ctx.source, %{
+          "is_data" => true,
+          "content" => "data",
+          "data" => %{"a" => 1}
+        })
+
+      for url <- [
+            message_url(ctx.chat.id, ctx.message.id),
+            message_url(ctx.source.id, data.id),
+            message_url(ctx.source.id, ctx.message.id + 1_000_000),
+            message_url(ctx.source.id, ctx.message.id, "/files"),
+            message_url(ctx.source.id, "x"),
+            PotokIdeWeb.Endpoint.url() <> "/groups/#{ctx.source.id}/values?value=%zz"
+          ] do
+        assert preview_in!(ctx.owner, ctx.chat, url) == nil, url
+      end
+    end
+
+    # A notice reaches followers no page asks about: there the link stays as
+    # it was, the card a guest gets of a public group or none.
+    test "outside a chat names no message", ctx do
+      url = message_url(ctx.source.id, ctx.message.id)
+
+      assert LinkPreviews.fetch(url) == :error
+
+      assert LinkPreviews.first_url("#{url} https://example.com/next") ==
+               "https://example.com/next"
+
+      assert {:ok, %{"kind" => "message"}} = LinkPreviews.fetch(url, message_links: true)
+    end
+  end
+
+  describe "readable_linked_values/2" do
+    setup do
+      owner = profile!("rl-owner")
+      member = profile!("rl-member")
+      stranger = profile!("rl-stranger")
+      group = group!(owner, "rl-group")
+      add_member!(owner, group, member)
+
+      {:ok, message} = Social.create_value(owner, group, %{"content" => "Za članove"})
+
+      %{owner: owner, member: member, stranger: stranger, group: group, message: message}
+    end
+
+    defp reads(profile, %Value{id: id}) do
+      case Social.readable_linked_values(profile, [id]) do
+        %{^id => {%Value{id: ^id}, picture?}} -> {:reads, picture?}
+        map when map == %{} -> :nothing
+      end
+    end
+
+    test "a member reads a message of the group, with its pictures, others do not", ctx do
+      assert reads(ctx.member, ctx.message) == {:reads, true}
+      assert reads(ctx.stranger, ctx.message) == :nothing
+      assert Social.readable_linked_values(nil, [ctx.message.id]) == %{}
+      assert Social.readable_linked_values(ctx.member, []) == %{}
+    end
+
+    test "comes with the author, the group and the files", ctx do
+      %{} = map = Social.readable_linked_values(ctx.member, [ctx.message.id])
+      {value, true} = map[ctx.message.id]
+
+      assert value.creator.id == ctx.owner.id
+      assert value.group.id == ctx.group.id
+      assert value.attachments == []
+    end
+
+    test "anyone reads an open chat, but for an event that is not public", ctx do
+      open =
+        create_group_with!(ctx.owner, "rl-open", %{"is_public" => true, "has_public_chat" => true})
+
+      {:ok, message} = Social.create_value(ctx.owner, open, %{"content" => "Otvoreno"})
+      assert reads(ctx.stranger, message) == {:reads, true}
+
+      event =
+        EventsFixtures.create_event!(
+          ctx.owner,
+          open,
+          EventsFixtures.event_attrs(Date.add(EventsFixtures.today(), 3), %{
+            "title" => "Sastanak članova"
+          }),
+          announce: true
+        )
+
+      announcement = Repo.get!(Value, event.value_id)
+      assert reads(ctx.stranger, announcement) == :nothing
+      assert reads(ctx.owner, announcement) == {:reads, true}
+    end
+
+    test "a public group with a closed chat is read by its members alone", ctx do
+      public = create_group_with!(ctx.owner, "rl-public", %{"is_public" => true})
+      {:ok, message} = Social.create_value(ctx.owner, public, %{"content" => "Zatvoreno"})
+
+      assert reads(ctx.stranger, message) == :nothing
+    end
+
+    test "the group's members read its threads, but get their pictures only in them", ctx do
+      {:ok, thread} =
+        Social.get_or_create_value_thread(ctx.owner, ctx.group, ctx.message, %{"name" => "nit"})
+
+      {:ok, reply} = Social.create_value(ctx.owner, thread, %{"content" => "U niti"})
+
+      assert reads(ctx.owner, reply) == {:reads, true}
+      assert reads(ctx.member, reply) == {:reads, false}
+      assert reads(ctx.stranger, reply) == :nothing
+    end
+
+    test "a direct conversation is read by its two alone, named for the reader", ctx do
+      {:ok, direct} = Social.get_or_create_direct_group(ctx.owner, ctx.member)
+      {:ok, message} = Social.create_value(ctx.owner, direct, %{"content" => "Samo nas dvoje"})
+
+      assert reads(ctx.member, message) == {:reads, true}
+      assert reads(ctx.stranger, message) == :nothing
+
+      %{} = map = Social.readable_linked_values(ctx.member, [message.id])
+      {value, true} = map[message.id]
+
+      assert PotokIdeWeb.MessageLinks.card(value, true, ctx.member).group_name == "rl-owner"
+    end
+
+    test "a deleted message and an app's data value are read by nobody", ctx do
+      {:ok, data} =
+        Social.create_value(ctx.owner, ctx.group, %{
+          "is_data" => true,
+          "content" => "data",
+          "data" => %{"a" => 1}
+        })
+
+      assert reads(ctx.owner, data) == :nothing
+
+      {:ok, _deleted} = Social.delete_value(ctx.owner, ctx.message)
+      assert reads(ctx.owner, ctx.message) == :nothing
+    end
+  end
+
   describe "update_value/3" do
     test "fetches again only when the first link changes" do
       owner = profile!("lp-edit-owner")
@@ -480,6 +697,20 @@ defmodule PotokIde.Social.LinkPreviewsTest do
         "description" => "",
         "description_format" => :markdown
       })
+
+    group
+  end
+
+  defp create_group_with!(owner, name, attrs) do
+    {:ok, group} =
+      Social.create_group(
+        owner,
+        Social.get_root_group!(),
+        Map.merge(
+          %{"name" => name, "description" => "", "description_format" => :markdown},
+          attrs
+        )
+      )
 
     group
   end

@@ -220,13 +220,13 @@ You write a message in the field at the bottom and send it with the arrow. On a 
 - **Reactions**: one emoji on a message. Tapping a reaction adds or removes your own.
 - **Mentions**: type @ and the name of a member or a role, and @everyone mentions everyone. The message stands out for whoever is mentioned, and they get a notification.
 - **Editing and deleting**: you can edit and delete your own messages, and whoever has the permission deletes other people's too. An edited message says "edited" beside its time, and pressing and holding it shows when it was edited. That a message was edited or deleted stays in the [group's history](#istorija), without its text.
-- **Links** get a preview, and long messages fold until you open them. A link to a form shows the form's title and subtitle to whoever may open it.
+- **Links** get a preview, and long messages fold until you open them. A link to a form shows the form's title and subtitle to whoever may open it. A link to a message shows its author, text and first picture to whoever may read it, as the message is now: you see an edit, and a deleted message has no card. The others see the card of a public group, or only the link.
 - **Message link** opens the chat right at that message. You copy it or send it on, and it opens only for those who may read that chat.
 - **Report**: someone else's message that breaks the rules goes to the group's admins with **Report to admins**. You pick a reason and, if you like, add a note, and the author does not learn who reported it. A direct conversation has no reports: there you [block the profile](#blokiranje-profila).
 
 On a phone, press and hold a message: a sheet opens with quick reactions and every action. On a computer, the same actions appear when you move the mouse over a message.
 
-![Pressing and holding a message](poruka-meni) ![A reply: the quote is above the field you write in](poruke-odgovor) ![A thread opened from a message](nit)
+![Pressing and holding a message](poruka-meni) ![A reply: the quote is above the field you write in](poruke-odgovor) ![A thread opened from a message](nit) ![A link to a message from another chat: author, text and picture](poruka-link)
 
 The + button next to the field adds files, starts a poll or [schedules a message](#zakazane-poruke). One message carries up to 10 files, up to 100 MB each. Pictures, video and sound open right in the chat, and you can also drag files into the window. In the Android app, you send a GIF or a sticker straight from the keyboard. On a computer, you add emoji with the smiley button next to the arrow: pick them one after another, and they go where the cursor is.
 

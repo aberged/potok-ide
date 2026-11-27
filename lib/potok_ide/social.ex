@@ -4288,8 +4288,9 @@ defmodule PotokIde.Social do
   end
 
   # A chat's page knows its viewer, so a value's link to a form may get a card
-  # only the form's members see (`LinkPreviews.visible/2`).
-  @value_links [closed_forms: true]
+  # only the form's members see (`LinkPreviews.visible/2`), and a link to a
+  # message one only those who may read it see (`PotokIdeWeb.MessageLinks`).
+  @value_links [closed_forms: true, message_links: true]
 
   # An edit that changes the first link drops the old link's preview; the
   # new one is fetched once the edit is saved. Forced, since `value` may have
@@ -4496,6 +4497,91 @@ defmodule PotokIde.Social do
   end
 
   def get_thread_origin(_profile, _group), do: nil
+
+  @doc """
+  Whether `value_id` is a chat value of group `group_id`, for a link to it
+  (`PotokIdeWeb.MessageLinks.ref/1`), whoever may read it: never one of the
+  root or an app's data value.
+  """
+  def linked_chat_value?(group_id, value_id) when is_integer(group_id) and is_integer(value_id) do
+    Repo.exists?(
+      from(v in Value,
+        join: g in assoc(v, :group),
+        where:
+          v.id == ^value_id and v.group_id == ^group_id and v.is_data == false and
+            g.is_root == false
+      )
+    )
+  end
+
+  @doc """
+  The chat values among `value_ids` that `profile` may read, for the cards of
+  links to them (`PotokIdeWeb.MessageLinks`), as `%{value_id => {value,
+  picture?}}`. A member of the value's group reads it, and so does anyone in
+  an open chat, but for the announcement of an event that is not public,
+  which the chat hides from them. A member of the group a thread was opened
+  in reads the thread's values too, as opening the link takes them in
+  (`join_thread/2`), but gets no picture: `/files` gives one only to the
+  thread's members (`get_attachment_for_download/2`). Values come with their
+  author, group (a direct conversation with its two members, for its name),
+  event and files. Two queries, three with a direct conversation, none for
+  no ids.
+  """
+  def readable_linked_values(_profile, []), do: %{}
+
+  def readable_linked_values(%Profile{} = profile, value_ids) when is_list(value_ids) do
+    values =
+      from(v in Value,
+        join: g in assoc(v, :group),
+        where: v.id in ^value_ids and v.is_data == false and g.is_root == false,
+        preload: [:event, group: g, creator: :app_process, attachments: ^attachments_in_order()]
+      )
+      |> Repo.all()
+
+    asked =
+      values
+      |> Enum.flat_map(fn %Value{group: group} ->
+        if group.parent_value_id, do: [group.id, group.parent_id], else: [group.id]
+      end)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.uniq()
+
+    members = member_group_ids_among(profile, asked)
+
+    readable =
+      for value <- values, sees = linked_value_sight(value, members), do: {value, sees}
+
+    directs =
+      for {%Value{group: %Group{is_direct: true} = group}, _sees} <- readable,
+          uniq: true,
+          do: group
+
+    named = directs |> Repo.preload(:members) |> Map.new(&{&1.id, &1})
+
+    Map.new(readable, fn {value, sees} ->
+      {value.id, {%{value | group: Map.get(named, value.group_id, value.group)}, sees == :all}}
+    end)
+  end
+
+  def readable_linked_values(_profile, _value_ids), do: %{}
+
+  # How much of a linked value `members` (the viewer's groups among the
+  # value's group and the one above a thread) lets the viewer see.
+  defp linked_value_sight(%Value{group: group} = value, members) do
+    cond do
+      MapSet.member?(members, group.id) ->
+        :all
+
+      Group.open_chat?(group) ->
+        if match?(%PotokIde.Events.Event{is_public: false}, value.event), do: nil, else: :all
+
+      not is_nil(group.parent_value_id) and MapSet.member?(members, group.parent_id) ->
+        :text
+
+      true ->
+        nil
+    end
+  end
 
   @doc """
   Adds the profile's `emoji` reaction to a chat value, or removes it when the

@@ -14,12 +14,14 @@ defmodule PotokIde.LinkPreviews do
   link to a form gets the form's own card (`PotokIdeWeb.FormLinks`): one any
   reader may see, or, where the caller asks for it with `closed_forms: true`
   (a chat, whose page knows its viewer), one only the form's members see
-  (`visible/2`).
+  (`visible/2`). With `message_links: true` (a chat too), a link to a chat
+  message keeps only which message it names (`PotokIdeWeb.MessageLinks`),
+  and the page shows the message to whoever may read it.
   """
 
   alias PotokIde.LinkPreviews.HTTP
   alias PotokIde.UTF8
-  alias PotokIdeWeb.{FormLinks, PublicPreview}
+  alias PotokIdeWeb.{FormLinks, MessageLinks, PublicPreview}
 
   @cache_ttl :timer.hours(6)
   @max_title_length 200
@@ -120,7 +122,9 @@ defmodule PotokIde.LinkPreviews do
   otherwise. Never raises: previews are best effort.
 
   With `closed_forms: true`, a link to a form may get a card only the form's
-  members see (`visible/2`); without it, only one any reader may see.
+  members see (`visible/2`); without it, only one any reader may see. With
+  `message_links: true`, a link to a chat message gets the message's ref
+  (`PotokIdeWeb.MessageLinks.ref/1`).
   """
   def fetch(url, opts \\ []) when is_binary(url) do
     cond do
@@ -130,9 +134,20 @@ defmodule PotokIde.LinkPreviews do
     end
   end
 
-  # A form's card, or the card a guest gets. A card for the form's members
-  # carries the guest's, which the others see in its place.
+  # A message's card, a form's, or the card a guest gets. A card for the
+  # form's members, or for whoever reads the message, carries the guest's,
+  # which the others see in its place. A message's comes first: a link to a
+  # message in a form's chat names the form too.
   defp own_preview(url, opts) do
+    with true <- Keyword.get(opts, :message_links, false),
+         {:ok, ref} <- MessageLinks.ref(url) do
+      {:ok, put_guest_card(ref, url)}
+    else
+      _ -> form_or_guest_preview(url, opts)
+    end
+  end
+
+  defp form_or_guest_preview(url, opts) do
     case FormLinks.card(url) do
       {:ok, %{"open" => true} = card} ->
         {:ok, card}
@@ -158,16 +173,24 @@ defmodule PotokIde.LinkPreviews do
   What `viewer_member?` lets a viewer see of a kept preview: all of it, but
   for a form's card only its members see, which shows to members and leaves
   the others the card a guest gets, if there is one. nil for nothing.
+
+  A message's card (`MessageLinks`) holds no text to show: the page draws
+  the message itself for those who may read it, and here it is only the
+  card a guest gets.
   """
   def visible(%{"url" => url} = preview, viewer_member?) when is_binary(url) do
-    if is_nil(members_only_group_id(preview)) or viewer_member? == true,
-      do: preview,
-      else: visible(preview["guest"], false)
+    cond do
+      MessageLinks.value_id(preview) -> visible(preview["guest"], false)
+      is_nil(members_only_group_id(preview)) or viewer_member? == true -> preview
+      true -> visible(preview["guest"], false)
+    end
   end
 
   def visible(_preview, _viewer_member?), do: nil
 
   @doc "The form whose members alone see the card `preview`, or nil for a card anyone sees."
+  def members_only_group_id(%{"kind" => "message"}), do: nil
+
   def members_only_group_id(%{"group_id" => group_id} = preview) when is_integer(group_id),
     do: if(preview["open"] == true, do: nil, else: group_id)
 

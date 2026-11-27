@@ -84,6 +84,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   }
 
   alias PotokIdeWeb.Distance
+  alias PotokIdeWeb.MessageLinks
   alias PotokIdeWeb.NoticeComponents
   alias PotokIdeWeb.PostTemplates
   alias PotokIdeWeb.ProfileAuth
@@ -4817,15 +4818,21 @@ defmodule PotokIdeWeb.GroupLive.Show do
       socket
       |> put_private(:my_reactions, mine)
       |> put_private(:value_tags, tags)
-      |> then(&if(how == :reset, do: put_private(&1, :link_groups, %{}), else: &1))
+      |> then(fn socket ->
+        if how == :reset,
+          do: socket |> put_private(:link_groups, %{}) |> put_private(:link_messages, %{}),
+          else: socket
+      end)
 
     with_link_access(socket, values)
   end
 
-  # Which form cards on these values the viewer sees: one only a form's
-  # members see (`PotokIdeWeb.FormLinks`) shows to its members. What the page
-  # learnt is kept until the feed loads again, so a value a broadcast brings
-  # again (an edit, a reaction) asks nothing.
+  # Which link cards on these values the viewer sees: one only a form's
+  # members see (`PotokIdeWeb.FormLinks`) shows to its members, and a link to
+  # a message shows the message, as it is now, to whoever may read it
+  # (`PotokIdeWeb.MessageLinks`). What the page learnt is kept until the feed
+  # loads again, so a value a broadcast brings again (an edit, a reaction)
+  # asks nothing, and a message edited since shows as it was until then.
   defp with_link_access(socket, values) do
     known = socket.private[:link_groups] || %{}
 
@@ -4843,8 +4850,16 @@ defmodule PotokIdeWeb.GroupLive.Show do
         Enum.reduce(asked, known, &Map.put(&2, &1, MapSet.member?(members, &1)))
       end
 
+    {socket, messages} = linked_messages(socket, values)
+
     values =
       Enum.map(values, fn value ->
+        value =
+          case MessageLinks.value_id(value.link_preview) do
+            nil -> value
+            value_id -> %{value | link_message: Map.get(messages, value_id)}
+          end
+
         case LinkPreviews.members_only_group_id(value.link_preview) do
           nil -> value
           group_id -> %{value | link_preview_visible: Map.get(known, group_id, false)}
@@ -4852,6 +4867,39 @@ defmodule PotokIdeWeb.GroupLive.Show do
       end)
 
     {put_private(socket, :link_groups, known), values}
+  end
+
+  # The messages links on these values name, as cards for the viewer
+  # (`MessageLinks.card/3`), nil for one it may not read: read once per load
+  # of the feed.
+  defp linked_messages(socket, values) do
+    known = socket.private[:link_messages] || %{}
+    profile = socket.assigns.current_profile
+
+    asked =
+      values
+      |> Enum.map(&MessageLinks.value_id(&1.link_preview))
+      |> Enum.reject(&(is_nil(&1) or Map.has_key?(known, &1)))
+      |> Enum.uniq()
+
+    known =
+      if asked == [] do
+        known
+      else
+        readable = Social.readable_linked_values(profile, asked)
+
+        Enum.reduce(asked, known, fn value_id, known ->
+          card =
+            case Map.get(readable, value_id) do
+              {value, picture?} -> MessageLinks.card(value, picture?, profile)
+              nil -> nil
+            end
+
+          Map.put(known, value_id, card)
+        end)
+      end
+
+    {put_private(socket, :link_messages, known), known}
   end
 
   defp with_known_facts(socket, %Value{id: id} = value) do

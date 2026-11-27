@@ -226,13 +226,13 @@ Poruku pišeš u polje na dnu i šalješ strelicom. Na telefonu, dok kucaš, gor
 - **Reakcije**: jedan emoji na poruku. Dodirom na reakciju dodaješ ili skidaš svoju.
 - **Pominjanje**: napiši @ i ime člana ili uloge, a @everyone pominje sve. Pomenutom se poruka istakne i stiže mu obaveštenje.
 - **Izmena i brisanje**: svoje poruke možeš da izmeniš i obrišeš, a ko ima dozvolu, briše i tuđe. Izmenjena poruka pored vremena kaže „izmenjeno“, a dugi pritisak pokazuje i kad je izmenjena. Da je poruka izmenjena ili obrisana ostaje u [istoriji grupe](#istorija), bez teksta.
-- **Linkovi** dobijaju pregled, a dugačke poruke se skupljaju dok ih ne otvoriš. Link ka formi pokazuje naslov i podnaslov forme onima koji smeju da je otvore.
+- **Linkovi** dobijaju pregled, a dugačke poruke se skupljaju dok ih ne otvoriš. Link ka formi pokazuje naslov i podnaslov forme onima koji smeju da je otvore. Link ka poruci pokazuje autora, tekst i prvu sliku poruke onima koji smeju da je čitaju, i to onakvu kakva je sada: izmenu vidiš, a obrisana poruka nema karticu. Ostali vide karticu javne grupe ili samo link.
 - **Link poruke** otvara razgovor baš na toj poruci. Kopiraš ga ili pošalješ dalje, a otvara se samo onima koji smeju da čitaju taj razgovor.
 - **Prijava**: tuđu poruku koja krši pravila prijaviš administratorima grupe stavkom **Prijavi adminima**. Biraš razlog i, ako hoćeš, dopišeš napomenu, a autor ne saznaje ko je prijavio. U razgovoru u četiri oka prijave nema: tamo [blokiraš profil](#blokiranje-profila).
 
 Na telefonu dugo pritisni poruku: otvara se list sa brzim reakcijama i svim radnjama. Na računaru se iste radnje pojavljuju kad pređeš mišem preko poruke.
 
-![Dugi pritisak na poruku](poruka-meni) ![Odgovor: citat je iznad polja za pisanje](poruke-odgovor) ![Nit otvorena iz poruke](nit)
+![Dugi pritisak na poruku](poruka-meni) ![Odgovor: citat je iznad polja za pisanje](poruke-odgovor) ![Nit otvorena iz poruke](nit) ![Link ka poruci iz drugog razgovora: autor, tekst i slika](poruka-link)
 
 Dugme + pored polja dodaje fajlove, pokreće glasanje ili [zakazuje poruku](#zakazane-poruke). Jedna poruka nosi do 10 fajlova, do 100 MB svaki. Slike, video i zvuk otvaraju se pravo u razgovoru, a fajlove možeš i da prevučeš u prozor. U aplikaciji za Android GIF ili nalepnicu šalješ pravo sa tastature. Na računaru emodžije dodaješ dugmetom sa smajlijem pored strelice: biraš ih jedan za drugim, a idu tamo gde je kursor.
 

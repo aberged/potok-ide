@@ -413,6 +413,9 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("Value", "link_preview_visible"),
     do: dgettext("domain_map", "whether the viewer sees the card of a form for its members")
 
+  defp own_field("Value", "link_message"),
+    do: dgettext("domain_map", "the message a link names, as the viewer may read it now")
+
   defp own_field("Value", "alt_description_id"), do: dgettext("domain_map", "app description")
   defp own_field("Value", "collection"), do: dgettext("domain_map", "collection of app data")
   defp own_field("Value", "anonymous"), do: dgettext("domain_map", "anonymous when written")
@@ -2164,6 +2167,14 @@ defmodule PotokIdeWeb.DomainCopy do
           dgettext(
             "domain_map",
             "A link to a form in a <Value>value</Value> gets a card with the form's own title and subtitle, read from its settings when the value is posted. The page asks for each reader whether they may open the form: its members may, and everyone may when the form takes non-members in a public <Group>group</Group>. The others see the card a guest would get, when the group is public, and otherwise only the link. A <GroupNotice>notice</GroupNotice> reaches followers nobody asks about, so it carries only a card anyone may see."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "A link to a message shows it to whoever may read it"),
+        text:
+          dgettext(
+            "domain_map",
+            "A link to a chat message in a <Value>value</Value> keeps only which message it names, never its text, author or files, so a private message is never copied into another <Group>group</Group>. The page reads the message for each reader as it is now. A member of its group reads it, and so does anyone in an open chat, but for the announcement of an event that is not public. A member of the group a thread was opened in reads the thread's messages too, without their pictures until opening the thread takes them in. An edit shows on the next load, and a deleted message leaves no card. The others see the card a guest would get of a public group, or only the link. Only a chat does this: a <GroupNotice>notice</GroupNotice> shows such a link as before."
           )
       },
       %{

@@ -206,12 +206,12 @@ msgstr ""
 msgid "A person and a role"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1122
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1130
 #, elixir-autogen, elixir-format
 msgid "A poll says which roles vote, which see the results and the details, and how unique and shared profiles vote."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1128
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1136
 #, elixir-autogen, elixir-format
 msgid "A process asks a role by a form or a decision, and sends it a push, if it may mention roles."
 msgstr ""
@@ -294,7 +294,7 @@ msgstr ""
 msgid "Alternative description"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1110
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1118
 #, elixir-autogen, elixir-format
 msgid "An alternative description can be seen by some roles only, along with those who may edit the group."
 msgstr ""
@@ -739,7 +739,7 @@ msgstr ""
 msgid "Membership"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1134
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1142
 #, elixir-autogen, elixir-format
 msgid "Mentioning a role in a message tells everyone who holds it, with the permission Mention roles."
 msgstr ""
@@ -943,7 +943,7 @@ msgstr ""
 msgid "Role assignment"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1104
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1112
 #, elixir-autogen, elixir-format
 msgid "Roles also work outside these %{n} permissions"
 msgstr ""
@@ -1112,7 +1112,7 @@ msgstr ""
 msgid "The rules are copied from the <a1>domain map</a1> and from the code."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1116
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1124
 #, elixir-autogen, elixir-format
 msgid "The rules of an app's collections say which roles write, and which read everything."
 msgstr ""
@@ -2409,7 +2409,7 @@ msgstr ""
 msgid "the write and its processes, together"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1094
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1102
 #, elixir-autogen, elixir-format
 msgid "<b>A deleted account</b> leaves its profile as \"Deleted user\", a member of no group and with no role. A group never loses its last Admin, so the person first makes someone else Admin of each group they alone hold."
 msgstr ""
@@ -2539,17 +2539,17 @@ msgstr ""
 msgid "Leaves the group"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1070
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1078
 #, elixir-autogen, elixir-format
 msgid "<b>A profile's card</b> opens on a group's page for those the group already shows the profile to: a member to a member, the author of a message to whoever reads the chat, someone asking to join to whoever decides it, and someone blocked to whoever may remove members."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1062
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1070
 #, elixir-autogen, elixir-format
 msgid "<b>A profile's details</b> each say who sees them: only the accounts that hold the profile, picked groups, all its groups or everyone signed in. A group counts when both are its members, leaving out the root, direct conversations, threads and an app's records. Whoever the profile invites into a group, and whoever decides its request to join one, sees it as a member of that group would."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1078
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1086
 #, elixir-autogen, elixir-format
 msgid "<b>Finding a profile</b> follows what it chose: everyone, whoever knows its exact username or shares a group with it, or only whoever shares a group with it. A refusal looks like a name nobody has. The suggestions when inviting offer only people the inviter shares a group with and profiles open to everyone."
 msgstr ""
@@ -2574,7 +2574,7 @@ msgstr ""
 msgid "Reads what changed"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1086
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1094
 #, elixir-autogen, elixir-format
 msgid "<b>What a profile did</b> over all its groups (`Activity`) is read by the accounts that hold it and by nobody else: being an Admin of a group opens no one's. Each thing is there by the rights the profile has today: a message if it reads the chat or may open the thread, a poll, an event and a group by their own rules, and a record or a run of an app if it sees the app's description. What is in a group it left is not there, and is again once it is back. Of a shared profile each holder reads all of it, but of the ballots given by holders as themselves only their own."
 msgstr ""
@@ -2602,4 +2602,9 @@ msgstr ""
 #: lib/potok_ide_web/controllers/page_html/help_access.html.heex:954
 #, elixir-autogen, elixir-format
 msgid "Whoever reads a chat reports a message someone else wrote, once, but not in a direct conversation (`ValueReports`). Those who hold Admin in its group handle it: for a thread, in the group it hangs from, and in a group without an admin, in the nearest one above that has. They delete the message, also in a thread where they hold no role, or dismiss the report."
+msgstr ""
+
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1062
+#, elixir-autogen, elixir-format
+msgid "<b>A link to a message</b> in a chat shows its author, text and first picture only to those who may read it: the members of its group, and everyone in an open chat, unless it announces an event that is not public. Those in the group a thread was opened in read the thread's messages too, but see their pictures only once they open the thread. The message is read anew for every reader and never copied: an edit shows, a deleted one leaves no card. The others see the card a guest would get, or only the link."
 msgstr ""

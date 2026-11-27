@@ -681,8 +681,19 @@ defmodule HelpShots.World do
       vote(p.(name), poll, choice)
     end
 
-    post(p.("petar"), building, "Evo kako izgledaju sve tri boje na zidu.", ago(1, 20, 55),
-      files: [{building, swatches(files_dir, "boje-ulaza.png")}]
+    swatches =
+      post(p.("petar"), building, "Evo kako izgledaju sve tri boje na zidu.", ago(1, 20, 55),
+        files: [{building, swatches(files_dir, "boje-ulaza.png")}]
+      )
+
+    # A link to Petar's message in the council, where its members see the
+    # message itself (the help's "poruka-link"). Ana's own, so no picture
+    # gains an unread mark.
+    post(
+      p.("ana"),
+      council,
+      "Petar je poslao [uzorke boja](#{PotokIdeWeb.Endpoint.url()}/groups/#{building.id}/values?value=#{swatches.id}), da se dogovorimo pre sastanka.",
+      ago(1, 21, 0)
     )
 
     post(ivana, building, "I pravila kućnog reda, da budu pri ruci.", ago(1, 21, 5),

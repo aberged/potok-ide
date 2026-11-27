@@ -2068,6 +2068,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       |> assign(:reply_parent, reply_parent(assigns.value))
       |> assign(:thread, value_thread(assigns.value))
       |> assign(:has_text?, String.trim(assigns.value.content || "") != "")
+      |> assign(:link_message, assigns.value.link_message)
       |> assign(:link_preview, value_link_preview(assigns.value))
       |> assign(:event, value_event(assigns.value))
       |> assign(:poll?, match?(%Value{poll: %Poll{}}, assigns.value))
@@ -2080,6 +2081,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         :time_beside_text?,
         assigns.has_text? and is_nil(assigns.event) and not assigns.poll? and
           not assigns.expandable? and is_nil(assigns.link_preview) and
+          is_nil(assigns.link_message) and
           assigns.media == [] and assigns.audios == [] and assigns.files == []
       )
 
@@ -2474,6 +2476,16 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           </button>
         </div>
 
+        <.message_link_card
+          :if={@link_message}
+          item_id={@value.id}
+          message={@link_message}
+          here={@link_message.group_id == @value.group_id}
+          mine={@mine?}
+          can_dismiss={@mine? and !@editing?}
+          class={(@has_text? or @reply_parent) && "mt-2.5"}
+        />
+
         <.link_preview_card
           :if={@link_preview}
           item_id={@value.id}
@@ -2486,7 +2498,10 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         <div
           :if={@media != [] or @audios != [] or @files != []}
           id={"value-attachments-#{@value.id}"}
-          class={["flex flex-col gap-2", (@has_text? or @link_preview) && "mt-2.5"]}
+          class={[
+            "flex flex-col gap-2",
+            ((@has_text? or @link_preview) || @link_message) && "mt-2.5"
+          ]}
         >
           <div :if={@media != []} class="flex flex-wrap gap-2">
             <a
@@ -2662,6 +2677,9 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   # A preview fetched by `Social` once the value was posted (`PotokIde.LinkPreviews`).
   # A form's card for its members only shows where the page found the viewer
   # is one (`Value.link_preview_visible`); the others see the guest's card.
+  # A message the viewer may read shows instead (`Value.link_message`).
+  defp value_link_preview(%Value{link_message: %{}}), do: nil
+
   defp value_link_preview(%Value{link_preview: preview, link_preview_visible: member?}),
     do: LinkPreviews.visible(preview, member?)
 
@@ -2849,6 +2867,150 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       }
     </script>
     """
+  end
+
+  attr :item_id, :integer, required: true, doc: "the id of the value with the link"
+  attr :message, :map, required: true, doc: "`PotokIdeWeb.MessageLinks.card/3`"
+  attr :here, :boolean, default: false, doc: "the message is in the chat on the page"
+  attr :mine, :boolean, default: false
+  attr :can_dismiss, :boolean, default: false
+  attr :class, :any, default: nil
+
+  @doc """
+  The card of a link to a chat message the viewer may read
+  (`PotokIdeWeb.MessageLinks`): the group, the author and when, the text and
+  the first picture, all as the message is now. A message of the chat on the
+  page is shown in the feed, as a reply's quote does; any other opens its
+  chat. Its × removes the preview, as on any card.
+  """
+  def message_link_card(assigns) do
+    ~H"""
+    <div
+      id={"value-link-message-#{@item_id}"}
+      data-value-id={@message.value_id}
+      class={["group/preview relative w-80 max-w-full sm:w-96", @class]}
+    >
+      <%!-- `.ValuesFeed` jumps to a message of this chat, or asks the server to load the chat around it. --%>
+      <button
+        :if={@here}
+        id={"value-link-message-link-#{@item_id}"}
+        type="button"
+        phx-click={
+          JS.dispatch("potok:show-value", to: "#group-values-feed", detail: %{id: @message.value_id})
+        }
+        title={gettext("Show original message")}
+        class={message_link_classes(@mine)}
+      >
+        <.message_link_body
+          item_id={@item_id}
+          message={@message}
+          mine={@mine}
+          can_dismiss={@can_dismiss}
+        />
+      </button>
+      <.link
+        :if={!@here}
+        id={"value-link-message-link-#{@item_id}"}
+        navigate={@message.path}
+        class={message_link_classes(@mine)}
+      >
+        <.message_link_body
+          item_id={@item_id}
+          message={@message}
+          mine={@mine}
+          can_dismiss={@can_dismiss}
+        />
+      </.link>
+      <%!-- Outside the link, so removing the preview does not open it. Revealed on hover where there is one. --%>
+      <button
+        :if={@can_dismiss}
+        id={"value-link-message-dismiss-#{@item_id}"}
+        type="button"
+        phx-click="dismiss_link_preview"
+        phx-value-id={@item_id}
+        title={gettext("Remove preview")}
+        aria-label={gettext("Remove preview")}
+        class="absolute top-2 right-2 inline-flex size-7 items-center justify-center rounded-full bg-base-100/85 text-base-content/70 shadow-sm backdrop-blur transition duration-150 ease-out hover:bg-base-100 hover:text-base-content active:scale-95 focus-visible:opacity-100 pointer-fine:opacity-0 pointer-fine:group-hover/preview:opacity-100 phx-click-loading:pointer-events-none phx-click-loading:animate-pulse"
+      >
+        <.icon name="hero-x-mark" class="size-4" />
+      </button>
+    </div>
+    """
+  end
+
+  attr :item_id, :integer, required: true
+  attr :message, :map, required: true
+  attr :mine, :boolean, required: true
+  attr :can_dismiss, :boolean, required: true
+
+  defp message_link_body(assigns) do
+    ~H"""
+    <span class={["flex items-start gap-3 px-3 py-2.5 text-left", @can_dismiss && "pr-10"]}>
+      <span class="min-w-0 flex-1">
+        <span class="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide opacity-90">
+          <.icon name="hero-chat-bubble-left-ellipsis" class="size-3.5 shrink-0" />
+          <span class="truncate">{gettext("Message") <> " · " <> (@message.group_name || "")}</span>
+        </span>
+        <span class="mt-1.5 flex min-w-0 items-center gap-1.5 text-xs">
+          <span class={[
+            "flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-full border text-[9px] font-semibold uppercase",
+            if(@mine,
+              do: "border-primary-content/25 bg-primary-content/15",
+              else: "border-base-300 bg-base-300 text-base-content/75"
+            )
+          ]}>
+            <img
+              :if={@message.avatar_url}
+              src={@message.avatar_url}
+              alt=""
+              loading="lazy"
+              class="size-full object-cover"
+            />
+            <span :if={!@message.avatar_url}>
+              {profile_initials(initials_name(@message.author))}
+            </span>
+          </span>
+          <span class="truncate font-semibold">{Profile.display_name(@message.author)}</span>
+          <.local_time
+            id={"value-link-message-at-#{@item_id}"}
+            datetime={@message.at}
+            class="shrink-0 tabular-nums opacity-75"
+          />
+        </span>
+        <span
+          :if={@message.text}
+          id={"value-link-message-text-#{@item_id}"}
+          class="mt-1 line-clamp-4 text-sm leading-snug wrap-break-word"
+        >
+          {@message.text}
+        </span>
+      </span>
+      <img
+        :if={@message.picture_id}
+        id={"value-link-message-image-#{@item_id}"}
+        src={~p"/files/#{@message.picture_id}"}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        class={[
+          "size-16 shrink-0 self-center rounded-xl border object-cover shadow-sm sm:size-20",
+          if(@mine, do: "border-primary-content/25", else: "border-base-300")
+        ]}
+      />
+    </span>
+    """
+  end
+
+  defp message_link_classes(mine) do
+    [
+      "block w-full overflow-hidden rounded-2xl border border-l-4 transition duration-150 ease-out hover:-translate-y-px hover:shadow-md",
+      if(mine,
+        do:
+          "border-primary-content/25 border-l-primary-content/60 bg-primary-content/10 text-primary-content hover:bg-primary-content/15",
+        else:
+          "border-base-300 border-l-primary bg-base-200/60 text-base-content hover:bg-base-200"
+      )
+    ]
   end
 
   # The kind of a group a card names (`PotokIdeWeb.FormLinks`): only a form's
