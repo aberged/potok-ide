@@ -194,7 +194,12 @@ const subgroupPage = options => ({
   from: options.from ?? null,
   to: options.to ?? null,
   around_id: options.aroundId ?? null,
+  brief: options.brief === true,
 })
+
+// `under`: the direct sub-group (its id) the calls on the groups below act in,
+// as a site keeps its articles in its sections; left out, the app's group.
+const underParam = options => (options?.under == null ? {} : {under: options.under})
 
 // Calls whose answer depends on the viewer, who can take as long as they
 // like, or on a file on its way: they wait without a timeout.
@@ -638,7 +643,7 @@ const listParams = (options = {}) => ({
 // `lat` and `lng` both null take its place on a map away, `pin` null shows its
 // kind's. `inheritRoleKeys` (keys from `listRoles`) narrows inheriting to the
 // members who hold one of those roles here; empty takes them all.
-const childParams = ({name, description, descriptionFormat, isPublic, inheritsMembers, inheritRoleKeys, picture, lat, lng, pin} = {}) =>
+const childParams = ({name, description, descriptionFormat, isPublic, inheritsMembers, inheritRoleKeys, picture, lat, lng, pin, under} = {}) =>
   Object.fromEntries(
     Object.entries({
       name,
@@ -651,6 +656,7 @@ const childParams = ({name, description, descriptionFormat, isPublic, inheritsMe
       lat,
       lng,
       pin,
+      under,
     }).filter(([_field, value]) => value !== undefined)
   )
 
@@ -870,7 +876,19 @@ const potok = {
   // in, `to` does not. `aroundId` gives the groups around that one instead of
   // the first page, however far down it lies, and `has_newer` says there is more
   // above them.
-  listSubgroups: (name, options = {}) => call("list_subgroups", {name, ...subgroupPage(options)}),
+  // `name` may also be that sub-group's id, which stays when it is renamed.
+  // `brief: true` gives each group's `summary` (the text of its card, plain)
+  // instead of its whole `description_html`.
+  listSubgroups: (name, options = {}) =>
+    call("list_subgroups", {
+      ...(typeof name === "number" ? {id: name} : {name}),
+      ...subgroupPage(options),
+    }),
+
+  // One group `listSubgroups` could return, or a direct sub-group, with its
+  // `parent_id`: what an app opens from its address (`getLinkedGroup`)
+  // without knowing where it stands. `{brief: true}` as in `listSubgroups`.
+  getSubgroup: (id, options = {}) => call("get_subgroup", {id, brief: options.brief === true}),
 
   // Takes the viewer to this group's parent, a sub-group of it or a group
   // `listSubgroups` can return: to its chat, with `tab: "description"` to its
@@ -932,11 +950,19 @@ const potok = {
   // viewer's name, so they need a viewer who may edit this group
   // (`can_manage_children` in `getGroup`). Up to 50 per call (default 20),
   // the newest publication first; page with `beforeId`.
-  listChildren: (options = {}) => call("list_children", subgroupPage(options)),
+  // Each takes `under`, a direct sub-group's id, to act on the groups right
+  // under that one instead: a site writes its articles into its sections. Not
+  // a sub-group that is an app, nor one keeping the app's files.
+  listChildren: (options = {}) =>
+    call("list_children", {...subgroupPage(options), ...underParam(options)}),
 
-  getChild: id => call("get_child", {id}),
+  getChild: (id, options = {}) => call("get_child", {id, ...underParam(options)}),
 
-  createChild: attrs => call("create_child", childParams(attrs)),
+  // `editorsOnly: true` makes a group where only those who may edit it add
+  // groups, as a site's section: members cannot put their own groups among
+  // its articles.
+  createChild: ({editorsOnly, ...attrs} = {}) =>
+    call("create_child", {...childParams(attrs), ...(editorsOnly === true ? {editors_only: true} : {})}),
 
   // Up to 100 children at once, all or none: `invalid_group` with the `index`
   // of the one that failed, and nothing saved. A child whose `key` (1 to 64
@@ -951,10 +977,24 @@ const potok = {
       ...(options.onExisting === undefined ? {} : {on_existing: options.onExisting}),
     }),
 
-  updateChild: (id, attrs) => call("update_child", {...childParams(attrs), id}),
+  // With `{updatedAt}` (the `updated_at` the app read) a save after someone
+  // else's gives `{ok: false, error: "conflict", group}` instead of writing
+  // over it. Whether the group goes to guests and takes outsiders in its chat
+  // follows this group each time (`for_guests`, `public_chat`).
+  updateChild: (id, attrs, options = {}) =>
+    call("update_child", {
+      ...childParams(attrs),
+      id,
+      ...(options.updatedAt == null ? {} : {updated_at: options.updatedAt}),
+    }),
 
   // Closes the group again, and its inherited members leave.
-  withdrawChild: id => call("withdraw_child", {id}),
+  withdrawChild: (id, options = {}) => call("withdraw_child", {id, ...underParam(options)}),
+
+  // Gives the groups this app keeps (its sub-groups and the groups right under
+  // them) this group's guests and open chat again, where they differ: for when
+  // those changed after the groups were made. `{ok: true, updated, skipped}`.
+  applyAccessToChildren: () => call("apply_access_to_children"),
 
   // The description as it will be shown, sanitized on the server.
   previewDescription: (description, options = {}) =>

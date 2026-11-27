@@ -306,6 +306,19 @@ defmodule PotokIde.Social.Group do
   def closed?(%__MODULE__{is_public: false, inherits_members: false}), do: true
   def closed?(%__MODULE__{}), do: false
 
+  @doc """
+  Whether the group has not reached its readers yet: closed, or private and
+  inheriting only the parent's members who hold certain roles, as a draft
+  that a site's editors share (`inherit_role_keys`). `published_at` is set
+  when it stops being one, and cleared when it becomes one again.
+  """
+  def draft?(%__MODULE__{} = group),
+    do: draft?(group.is_public, group.inherits_members, group.inherit_role_keys)
+
+  def draft?(is_public, inherits_members, inherit_role_keys) do
+    not is_public and (not inherits_members or (inherit_role_keys || []) != [])
+  end
+
   @doc "Whether the group has a place on a map."
   def placed?(%__MODULE__{latitude: lat, longitude: lng}), do: is_number(lat) and is_number(lng)
 

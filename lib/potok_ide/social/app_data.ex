@@ -118,6 +118,18 @@ defmodule PotokIde.Social.AppData do
     end)
   end
 
+  @doc """
+  Whether a viewer who is not a member reads the config: where a collection
+  takes non-members (`public_config?/2`), or where the app says its config
+  is public (`"public": true`), as a site's menus and theme are for whoever
+  opens it. Only in a public group: nobody else reaches the app. Its `secret`
+  still goes only to editors (`config_payload/2`).
+  """
+  def readable_config?(config, %Group{} = group) do
+    public_config?(config, group) or
+      (group.is_public and match?(%Value{data: %{"public" => true}}, config))
+  end
+
   @doc "The config as the holder of `access` may see it: its secret part goes only to editors."
   def config_payload(nil, _access), do: nil
 
@@ -139,6 +151,7 @@ defmodule PotokIde.Social.AppData do
   def save_config(%Profile{} = profile, %Group{} = group, alt, data, revision) do
     with {:ok, data} <- decode(data),
          :ok <- fits(data, @max_config_bytes),
+         :ok <- public_flag(data),
          {:ok, rules} <- ValueRules.normalize(data["rules"]) do
       History.transaction([actor: profile], fn ->
         lock_app(group, alt)
@@ -994,6 +1007,12 @@ defmodule PotokIde.Social.AppData do
   end
 
   def decode(_data), do: {:error, :invalid_value}
+
+  # `readable_config?/2` opens the config only on a real `true`.
+  defp public_flag(%{"public" => public}) when not is_boolean(public),
+    do: {:error, :invalid_value}
+
+  defp public_flag(_data), do: :ok
 
   defp fits(data, max) do
     if byte_size(Jason.encode!(data)) <= max, do: :ok, else: {:error, :too_large}

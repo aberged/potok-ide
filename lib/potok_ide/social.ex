@@ -752,6 +752,63 @@ defmodule PotokIde.Social do
   end
 
   @doc """
+  Makes a sub-group of `parent` where only its editors add groups, as a site
+  keeps its sections (`AppApi`, `create_child` with `editors_only`): in a
+  manifest of its own, `everyone` loses `create_subgroups`, as in a feed's
+  `.feed`, and every role that may edit the group (`edit_group`) gets it,
+  unless that role denies it outright. Without the second step an editor who
+  is not an admin could not write there. All of it or nothing.
+
+  The manifest is a copy: a role added above later reaches the group only
+  when an admin adds it there too.
+  """
+  def create_editors_only_group(%Profile{} = creator, %Group{} = parent, attrs) do
+    Repo.transaction(fn ->
+      with {:ok, group, created} <-
+             insert_preset_group(
+               creator,
+               parent,
+               Map.new(attrs),
+               GroupPresets.taken_from_everyone_in_feed()
+             ),
+           :ok <- give_editors(creator, group, :create_subgroups) do
+        {group, created}
+      else
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
+    |> case do
+      {:ok, {group, created}} ->
+        Enum.each(created, fn {parent, group, changes} ->
+          broadcast_group_created(creator, parent, group, changes)
+        end)
+
+        {:ok, group}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  # The group's manifest is its own by now (`take_from_everyone/3`).
+  defp give_editors(%Profile{} = creator, %Group{} = group, permission) do
+    group
+    |> Access.effective_manifest()
+    |> Map.fetch!(:roles)
+    |> Enum.filter(fn role ->
+      role.key not in [GroupRole.admin_key(), GroupRole.everyone_key()] and
+        :edit_group in role.allowed and permission not in role.allowed and
+        permission not in role.denied
+    end)
+    |> Enum.reduce_while(:ok, fn role, :ok ->
+      case set_group_role_permission(creator, group, role.key, permission, :allow) do
+        {:ok, _role} -> {:cont, :ok}
+        {:error, _reason} = error -> {:halt, error}
+      end
+    end)
+  end
+
+  @doc """
   Makes `children` under `parent` in one transaction, all or none: what an app
   brings in by the hundred (`AppApi`, `create_children`). Each child is attrs
   as for `create_group/3`, with an optional `"external_key"`, the app's own
@@ -1549,16 +1606,62 @@ defmodule PotokIde.Social do
 
   defp app_file_group?(%Group{} = parent, id), do: id in app_file_group_ids(parent)
 
-  # A closed group that opens up reaches its readers now, however long it waited.
+  # A draft that opens up reaches its readers now, however long it waited; one
+  # that turns back into a draft has not been published until it opens again.
   defp mark_published(changeset, %Group{} = group) do
-    opens? =
-      Group.closed?(group) and
-        (Ecto.Changeset.get_field(changeset, :is_public) or
-           Ecto.Changeset.get_field(changeset, :inherits_members))
+    draft? =
+      Group.draft?(
+        Ecto.Changeset.get_field(changeset, :is_public),
+        Ecto.Changeset.get_field(changeset, :inherits_members),
+        Ecto.Changeset.get_field(changeset, :inherit_role_keys)
+      )
 
-    if opens?,
-      do: Ecto.Changeset.put_change(changeset, :published_at, DateTime.utc_now(:second)),
-      else: changeset
+    case {Group.draft?(group), draft?} do
+      {true, false} ->
+        Ecto.Changeset.put_change(changeset, :published_at, DateTime.utc_now(:second))
+
+      {false, true} ->
+        Ecto.Changeset.put_change(changeset, :published_at, nil)
+
+      _same ->
+        changeset
+    end
+  end
+
+  @doc """
+  Gives the groups an app keeps below `group` the `flags` it passes
+  (`"has_public_chat"`, `"description_for_guests"`) where they differ: its
+  direct sub-groups but apps and its file groups, and the groups right under
+  those, as a site keeps sections and their articles. Each goes through
+  `update_group/3`, so one that `editor` may not edit is skipped. Returns
+  `%{updated: count, skipped: count}`.
+  """
+  def align_children_access(%Profile{} = editor, %Group{} = group, flags) when is_map(flags) do
+    file_ids = app_file_group_ids(group)
+
+    section_ids =
+      visible_plain_groups(editor)
+      |> where([g], g.parent_id == ^group.id and not g.uses_api and g.id not in ^file_ids)
+      |> select([g], g.id)
+      |> Repo.all()
+
+    has_public_chat = Map.fetch!(flags, "has_public_chat")
+    for_guests = Map.fetch!(flags, "description_for_guests")
+
+    visible_plain_groups(editor)
+    |> where([g], g.id in ^section_ids or g.parent_id in ^section_ids)
+    |> where(
+      [g],
+      g.has_public_chat != ^has_public_chat or g.description_for_guests != ^for_guests
+    )
+    |> order_by([g], asc: g.id)
+    |> Repo.all()
+    |> Enum.reduce(%{updated: 0, skipped: 0}, fn target, counts ->
+      case update_group(editor, target, flags) do
+        {:ok, _group} -> Map.update!(counts, :updated, &(&1 + 1))
+        {:error, _reason} -> Map.update!(counts, :skipped, &(&1 + 1))
+      end
+    end)
   end
 
   @doc """

@@ -256,6 +256,13 @@ defmodule PotokIdeWeb.PublicPreview do
   @doc "Whether the card of `group` says something of its own, not only what it is."
   def describes_itself?(%Group{} = group), do: group_text(group) != nil
 
+  @doc """
+  The text of the group's card, as plain text of at most #{@description_length}
+  characters, or nil: what a list in an app shows of a group instead of its
+  whole description (`listSubgroups` with `brief`).
+  """
+  def summary(%Group{} = group), do: group_text(group)
+
   # The description of a group with the API on is the code of an app, so its
   # card only says what the app says about itself, in the meta tags of any page.
   # HTML of any group can do that too, when its first lines are not a summary.

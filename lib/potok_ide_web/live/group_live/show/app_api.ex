@@ -120,8 +120,9 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   @max_subgroup_limit 50
 
   @signed_in_methods ~w(
-    list_subgroups open_group open_map get_group list_children get_child
+    list_subgroups get_subgroup open_group open_map get_group list_children get_child
     create_child create_children update_child withdraw_child preview_description
+    apply_access_to_children
     list_templates render_template
     toggle_group_reaction share_group list_polls get_poll open_poll open_poll_form
     save_config update_value delete_value delete_values grade_value list_roles
@@ -135,7 +136,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   # What a guest may call of those: reads, with a guest's sight (`Social`
   # takes nil for the viewer there). The rest stays refused for a guest.
   @guest_methods ~w(
-    get_group list_subgroups open_group share_group show_group list_polls get_poll
+    get_group list_subgroups get_subgroup open_group share_group show_group list_polls get_poll
     map_config list_places list_places_at place_shapes
   )
 
@@ -285,7 +286,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     config = AppData.get_config(group, alt)
     rules = AppData.rules(config)
 
-    if access.member? or AppData.public_config?(config, group) do
+    if access.member? or AppData.readable_config?(config, group) do
       now = DateTime.utc_now(:second)
       account = scope && scope.account
 
@@ -859,12 +860,27 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   defp run("list_subgroups", params, socket) do
     %{group: group, current_profile: profile} = socket.assigns
 
-    with name when is_binary(name) <- params["name"],
-         %Group{} = parent <- Social.get_visible_child_group_by_name(group, profile, name),
+    with %Group{} = parent <- subgroups_parent(group, profile, params),
          {:ok, reply} <- subgroups_reply(parent, profile, params) do
       {reply, socket}
     else
       {:error, reply} -> {reply, socket}
+      _not_found -> {error("not_found", nil), socket}
+    end
+  end
+
+  # One group `listSubgroups` can return, or a direct sub-group, wherever it
+  # lies: what an app opens from an address (`?at=`) without knowing under
+  # which sub-group it stands. `parent_id` tells it.
+  defp run("get_subgroup", params, socket) do
+    %{group: group, current_profile: profile} = socket.assigns
+
+    with id when is_integer(id) <- non_negative_integer(params["id"]),
+         %Group{} = found <- Social.get_visible_child_or_grandchild_group(group, profile, id),
+         false <- found.id in Social.app_file_group_ids(group) do
+      [payload] = subgroup_payloads([found], profile, params["brief"] == true)
+      {%{ok: true, group: Map.put(payload, :parent_id, found.parent_id)}, socket}
+    else
       _not_found -> {error("not_found", nil), socket}
     end
   end
@@ -1118,10 +1134,11 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   end
 
   defp run("list_children", params, socket) do
-    %{group: group, current_profile: profile} = socket.assigns
+    profile = socket.assigns.current_profile
 
     with :ok <- require_child_manager(socket),
-         {:ok, reply} <- subgroups_reply(group, profile, params) do
+         {:ok, parent} <- children_parent(params, socket),
+         {:ok, reply} <- subgroups_reply(parent, profile, params) do
       {reply, socket}
     else
       {:error, reply} -> {reply, socket}
@@ -1141,9 +1158,11 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     %{group: group, current_profile: profile} = socket.assigns
 
     with :ok <- require_child_manager(socket),
+         {:ok, parent} <- children_parent(params, socket),
          {:ok, place} <- child_place(params),
          {:ok, socket} <- take_write_token(socket) do
-      Social.create_group(profile, group, new_child_attrs(params, place, group))
+      profile
+      |> insert_child(parent, new_child_attrs(params, place, group), params["editors_only"])
       |> child_reply(socket)
     else
       {:error, reply} -> {reply, socket}
@@ -1183,14 +1202,38 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   end
 
   defp run("update_child", params, socket) do
-    profile = socket.assigns.current_profile
+    %{group: group, current_profile: profile} = socket.assigns
 
     with :ok <- require_child_manager(socket),
          {:ok, child} <- fetch_editable_child(params, socket),
+         :ok <- unchanged_since(child, params["updated_at"], profile),
          {:ok, place} <- child_place(params),
          {:ok, socket} <- take_write_token(socket) do
-      Social.update_group(profile, child, Map.merge(child_attrs(params), place))
+      attrs =
+        params
+        |> child_attrs()
+        |> Map.merge(place)
+        |> Map.merge(access_flags(group))
+
+      Social.update_group(profile, child, attrs)
       |> child_reply(socket)
+    else
+      {:error, reply} -> {reply, socket}
+    end
+  end
+
+  # What a group below goes to guests and outsiders with follows the app's
+  # group, also when that changed after the group was made: one write for all
+  # the groups the app keeps that its editor may change.
+  defp run("apply_access_to_children", _params, socket) do
+    %{group: group, current_profile: profile} = socket.assigns
+
+    with :ok <- require_child_manager(socket),
+         {:ok, socket} <- take_write_token(socket) do
+      %{updated: updated, skipped: skipped} =
+        Social.align_children_access(profile, group, access_flags(group))
+
+      {%{ok: true, updated: updated, skipped: skipped}, socket}
     else
       {:error, reply} -> {reply, socket}
     end
@@ -1701,15 +1744,82 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   end
 
   defp fetch_child(params, socket) do
+    profile = socket.assigns.current_profile
+
+    with {:ok, parent} <- children_parent(params, socket),
+         id when is_integer(id) <- non_negative_integer(params["id"]),
+         %Group{} = child <- Social.get_visible_child_group(parent, profile, id) do
+      {:ok, child}
+    else
+      {:error, reply} -> {:error, reply}
+      _not_found -> {:error, error("not_found", nil)}
+    end
+  end
+
+  # Where the calls that keep groups below act: the app's own group, or with
+  # `under` one of its direct sub-groups, as a site writes its articles into
+  # its sections. Never a sub-group that is an app or keeps the app's files:
+  # those belong to code and to Potok.
+  defp children_parent(%{"under" => under}, socket) when not is_nil(under) do
     %{group: group, current_profile: profile} = socket.assigns
 
-    with id when is_integer(id) <- non_negative_integer(params["id"]),
-         %Group{} = child <- Social.get_visible_child_group(group, profile, id) do
-      {:ok, child}
+    with id when is_integer(id) <- non_negative_integer(under),
+         %Group{uses_api: false} = section <- Social.get_visible_child_group(group, profile, id),
+         false <- section.id in Social.app_file_group_ids(group) do
+      {:ok, section}
     else
       _not_found -> {:error, error("not_found", nil)}
     end
   end
+
+  defp children_parent(_params, socket), do: {:ok, socket.assigns.group}
+
+  # The direct sub-group `listSubgroups` reads under: by its id, which stays
+  # when it is renamed, or by its name.
+  defp subgroups_parent(group, profile, params) do
+    case {non_negative_integer(params["id"]), params["name"]} do
+      {id, _name} when is_integer(id) ->
+        Social.get_visible_child_group(group, profile, id)
+
+      {nil, name} when is_binary(name) ->
+        Social.get_visible_child_group_by_name(group, profile, name)
+
+      _neither ->
+        nil
+    end
+  end
+
+  defp insert_child(profile, parent, attrs, true),
+    do: Social.create_editors_only_group(profile, parent, attrs)
+
+  defp insert_child(profile, parent, attrs, _plain),
+    do: Social.create_group(profile, parent, attrs)
+
+  # A save that started from an older read, while someone else saved, would
+  # write over their work: the app sends the `updated_at` it read.
+  defp unchanged_since(_child, nil, _profile), do: :ok
+
+  defp unchanged_since(%Group{updated_at: updated_at} = child, since, profile)
+       when is_binary(since) do
+    case DateTime.from_iso8601(since) do
+      {:ok, ^updated_at, _offset} ->
+        :ok
+
+      {:ok, _other, _offset} ->
+        {:error,
+         %{
+           ok: false,
+           error: "conflict",
+           message: gettext("Someone else saved this in the meantime."),
+           group: child_payload(child, profile)
+         }}
+
+      {:error, _reason} ->
+        {:error, error("invalid_date", nil)}
+    end
+  end
+
+  defp unchanged_since(_child, _since, _profile), do: {:error, error("invalid_date", nil)}
 
   # A group that is an app keeps its code away from other apps.
   defp fetch_editable_child(params, socket) do
@@ -1740,8 +1850,14 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     params
     |> child_attrs()
     |> Map.merge(place)
-    |> Map.put("has_public_chat", group.has_public_chat)
-    |> Map.put("description_for_guests", group.description_for_guests)
+    |> Map.merge(access_flags(group))
+  end
+
+  defp access_flags(%Group{} = group) do
+    %{
+      "has_public_chat" => group.has_public_chat,
+      "description_for_guests" => group.description_for_guests
+    }
   end
 
   defp child_place(params) do
@@ -2203,14 +2319,18 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   # description would run there with the viewer's rights. An app in a sub-group
   # has no text to show, only what it says about itself. A guest reads the text
   # of a group open to guests only, and learns nothing of who made it.
+  # A brief one carries the text of the group's card instead (`summary`), as a
+  # list of a site's articles needs no more and a whole page of them would be
+  # heavy; the same rule for guests.
   defp subgroup_payload(%Group{} = group, stats) do
+    readable? = stats.profile != nil or Group.guest_description?(group)
+
     %{
       id: group.id,
       name: group.name,
       description_html:
-        if(stats.profile || Group.guest_description?(group),
-          do: Components.description_html(group)
-        ),
+        if(readable? and not stats.brief?, do: Components.description_html(group)),
+      summary: if(readable? and stats.brief?, do: PublicPreview.summary(group)),
       app_description: if(group.uses_api, do: PublicPreview.own_description(group)),
       uses_api: group.uses_api,
       picture_url: Avatars.group_avatar_url(group),
@@ -2229,10 +2349,11 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
 
   # What is read per group goes in one query for the page. The names of who
   # reacted stay on the group's page: an app needs only how many.
-  defp subgroup_payloads(groups, profile) do
+  defp subgroup_payloads(groups, profile, brief? \\ false) do
     ids = Enum.map(groups, & &1.id)
 
     stats = %{
+      brief?: brief?,
       profile: profile,
       comments: Social.group_comment_counts(ids),
       reactions: Social.group_reaction_summaries(ids, profile),
@@ -2264,6 +2385,9 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
       member_count: Social.count_group_members(child),
       updated_at: child.updated_at,
       key: child.external_key,
+      parent_id: child.parent_id,
+      for_guests: child.description_for_guests,
+      public_chat: child.has_public_chat,
       lat: child.latitude,
       lng: child.longitude,
       pin: GroupPins.pin(child)
@@ -2320,7 +2444,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
       {:ok,
        %{
          ok: true,
-         groups: subgroup_payloads(groups, profile),
+         groups: subgroup_payloads(groups, profile, params["brief"] == true),
          has_more: has_more?,
          has_newer: has_newer?
        }}
