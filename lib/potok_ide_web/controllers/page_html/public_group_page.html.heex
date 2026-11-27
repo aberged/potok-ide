@@ -1,7 +1,11 @@
+<%!-- On a phone the group takes the screen: one bar of its own instead of the
+ landing's header, the rest in that bar's menu, and an app under it as far as
+ the screen goes, the only thing that scrolls. --%>
 <Layouts.guest
   flash={@flash}
   current_locale={@current_locale}
   available_locales={@available_locales}
+  fill={@guest.app_session != nil}
 >
   <:header_action>
     <.link
@@ -13,8 +17,133 @@
     </.link>
   </:header_action>
 
-  <div id="guest-group" class="mx-auto flex w-full max-w-5xl flex-col px-5 pb-12 sm:px-8">
-    <header id="guest-group-header" class="lp-rise flex items-center gap-4 pb-5">
+  <:phone_bar>
+    <div class="flex items-center gap-2.5 py-2 pr-2 pl-4">
+      <img
+        id="guest-bar-image"
+        src={PotokIdeWeb.Avatars.group_avatar_url(@guest.group)}
+        alt=""
+        class="size-9 shrink-0 rounded-full border border-base-300 bg-base-100 object-cover"
+      />
+      <div class="min-w-0 flex-1">
+        <p id="guest-bar-name" class="truncate text-[0.9375rem] leading-5 font-semibold">
+          {@guest.group.name}
+        </p>
+        <p class="flex min-w-0 items-center gap-1 text-xs leading-4 text-base-content/65">
+          <Layouts.mark id="guest-bar-mark" class="size-3.5 shrink-0" />
+          <span class="truncate">
+            {gettext("Public group")} · <span class="font-brand font-bold">potok</span>
+          </span>
+        </p>
+      </div>
+      <.link
+        id="guest-bar-login"
+        href={~p"/accounts/log-in"}
+        class="lp-button-quiet shrink-0 gap-1.5 px-3.5 py-1.5 text-sm"
+      >
+        <.icon :if={@guest.app_session} name="hero-shield-check-mini" class="size-4" />
+        {gettext("Log in")}
+      </.link>
+      <button
+        id="guest-menu-button"
+        type="button"
+        popovertarget="guest-menu"
+        aria-label={gettext("Open menu")}
+        title={gettext("Open menu")}
+        class="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-base-content/70 transition duration-150 hover:bg-base-content/5 hover:text-base-content focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none active:scale-95"
+      >
+        <.icon name="hero-bars-3" class="size-5" />
+      </button>
+    </div>
+
+    <%!-- A popover: the top layer without a script, closed by a tap beside it. --%>
+    <div
+      id="guest-menu"
+      popover
+      role="dialog"
+      aria-labelledby="guest-menu-title"
+      class="lp-sheet"
+    >
+      <header class="flex items-center gap-2.5 pt-3 pr-3 pb-2 pl-5">
+        <Layouts.mark id="guest-menu-mark" class="size-7 shrink-0" />
+        <p id="guest-menu-title" class="min-w-0 flex-1 font-brand text-lg font-bold">potok</p>
+        <button
+          id="guest-menu-close"
+          type="button"
+          popovertarget="guest-menu"
+          popovertargetaction="hide"
+          aria-label={gettext("Close")}
+          title={gettext("Close")}
+          class="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-base-content/70 transition duration-150 hover:bg-base-content/5 hover:text-base-content focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none active:scale-95"
+        >
+          <.icon name="hero-x-mark" class="size-5" />
+        </button>
+      </header>
+
+      <div class="flex flex-col gap-1 px-3 pb-3">
+        <p :if={@guest.app_session} id="guest-menu-app-note" class="lp-note mx-1 mb-2">
+          <.icon name="hero-shield-check" class="mt-1 size-4 shrink-0 text-(--lp-accent)" />
+          <span>
+            {gettext(
+              "The group made this app. Potok never asks for your password inside an app: log in only with the button at the top."
+            )}
+          </span>
+        </p>
+        <.link id="guest-menu-about" href={~p"/"} class="lp-sheet-row">
+          <.icon name="hero-sparkles" class="size-5 shrink-0 text-base-content/55" />
+          {gettext("What is Potok?")}
+        </.link>
+        <.link id="guest-menu-invitation" href={~p"/" <> "#landing-join"} class="lp-sheet-row">
+          <.icon name="hero-envelope" class="size-5 shrink-0 text-base-content/55" />
+          <span class="min-w-0">
+            <span class="block">{gettext("No account yet?")}</span>
+            <span class="block text-xs font-normal text-base-content/65">
+              {gettext("Potok is invitation only for now.")}
+            </span>
+          </span>
+        </.link>
+      </div>
+
+      <div class="flex flex-col items-center gap-3 border-t border-base-content/8 px-5 pt-4">
+        <Layouts.locale_switcher
+          current_locale={@current_locale}
+          available_locales={@available_locales}
+        />
+        <Layouts.theme_toggle />
+      </div>
+
+      <div class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 px-5 pt-4 text-sm text-base-content/65">
+        <.link id="guest-menu-help" href={~p"/pomoc"} class="underline-offset-4 hover:underline">
+          {gettext("Help")}
+        </.link>
+        <.link id="guest-menu-terms" href={~p"/terms"} class="underline-offset-4 hover:underline">
+          {gettext("Terms of use")}
+        </.link>
+        <.link
+          id="guest-menu-privacy"
+          href={~p"/privacy-policy"}
+          class="underline-offset-4 hover:underline"
+        >
+          {gettext("Privacy policy")}
+        </.link>
+      </div>
+    </div>
+  </:phone_bar>
+
+  <div
+    id="guest-group"
+    class={[
+      "mx-auto flex w-full max-w-5xl flex-col px-5 pb-12 sm:px-8",
+      if(@guest.app_session,
+        do: "compact:min-h-0 compact:flex-1 compact:px-0 compact:pb-0",
+        else: "compact:px-4 compact:pt-4"
+      )
+    ]}
+  >
+    <header
+      id="guest-group-header"
+      class="lp-rise flex items-center gap-4 pb-5 compact:hidden"
+    >
       <img
         id="guest-group-image"
         src={PotokIdeWeb.Avatars.group_avatar_url(@guest.group)}
@@ -33,7 +162,13 @@
       :if={length(@guest.entries) > 1}
       id="guest-descriptions"
       aria-label={gettext("Descriptions")}
-      class="lp-rise -mx-5 flex gap-2 overflow-x-auto px-5 pt-1 pb-4 [scrollbar-width:none] sm:mx-0 sm:px-0"
+      class={[
+        "lp-rise -mx-5 flex gap-2 overflow-x-auto px-5 pt-1 pb-4 [scrollbar-width:none] sm:mx-0 sm:px-0",
+        if(@guest.app_session,
+          do: "compact:mx-0 compact:shrink-0 compact:px-4 compact:py-2",
+          else: "compact:-mx-4 compact:px-4 compact:pt-0 compact:pb-3"
+        )
+      ]}
     >
       <a
         :for={entry <- @guest.entries}
@@ -48,7 +183,14 @@
     </nav>
 
     <%= if @guest.app_session do %>
-      <section id="guest-app" class="lp-app-box lp-rise">
+      <%!-- On a phone the app has the screen under the bar, edge to edge. --%>
+      <section
+        id="guest-app"
+        class={[
+          "lp-app-box lp-rise compact:h-auto compact:min-h-0 compact:flex-1 compact:rounded-none compact:border-x-0 compact:border-b-0",
+          length(@guest.entries) < 2 && "compact:border-t-0"
+        ]}
+      >
         {live_render(@conn, PotokIdeWeb.GroupLive.GuestApp,
           session: @guest.app_session,
           container: {:div, class: "flex min-h-0 flex-1 flex-col"}
@@ -56,7 +198,7 @@
       </section>
       <p
         id="guest-app-note"
-        class="mt-3 flex items-start gap-2 text-xs leading-5 text-base-content/65"
+        class="mt-3 flex items-start gap-2 text-xs leading-5 text-base-content/65 compact:hidden"
       >
         <.icon name="hero-shield-check" class="mt-0.5 size-4 shrink-0" />
         <span>
@@ -79,7 +221,10 @@
 
     <section
       id="guest-join"
-      class="lp-note lp-rise mt-12 flex-col gap-4 p-5! sm:flex-row sm:items-center"
+      class={[
+        "lp-note lp-rise mt-12 flex-col gap-4 p-5! sm:flex-row sm:items-center",
+        @guest.app_session && "compact:hidden"
+      ]}
     >
       <div class="min-w-0 flex-1">
         <p class="font-semibold text-base-content">
@@ -100,7 +245,13 @@
         </.link>
       </div>
     </section>
-    <p id="guest-join-invitation-note" class="mt-3 text-sm leading-6 text-base-content/65">
+    <p
+      id="guest-join-invitation-note"
+      class={[
+        "mt-3 text-sm leading-6 text-base-content/65",
+        @guest.app_session && "compact:hidden"
+      ]}
+    >
       {gettext("No account yet?")}
       <.link href={~p"/" <> "#landing-join"} class="lp-link">
         {gettext("Potok is invitation only for now.")}

@@ -579,6 +579,11 @@ defmodule PotokIdeWeb.Layouts do
   menu it has the landing page's own header and footer, and since the body
   never scrolls, the page is its own scroll area.
 
+  On a phone (`compact:`) a page may put a bar of its own in place of the
+  header (`phone_bar`), which stays at the top, and with `fill` its content
+  takes the rest of the screen and scrolls itself, with no footer under it:
+  an app in a public group's description.
+
   ## Examples
 
       <Layouts.guest flash={@flash} current_locale={@current_locale} centered>
@@ -598,21 +603,43 @@ defmodule PotokIdeWeb.Layouts do
     default: false,
     doc: "links the header back to the landing page, for pages without a `header_action`"
 
+  attr :fill, :boolean,
+    default: false,
+    doc:
+      "on a phone with a `phone_bar`, the content takes the screen under the bar and scrolls itself, with no footer"
+
   slot :inner_block, required: true
   slot :header_action, doc: "a link at the right end of the header"
 
+  slot :phone_bar,
+    doc:
+      "on a phone, a bar of the page's own instead of the header: it stays at the top and takes the safe area there"
+
   def guest(assigns) do
+    assigns = assign(assigns, :fill, assigns.fill and assigns.phone_bar != [])
+
     ~H"""
     <div
       id="guest"
-      class="landing h-dvh overflow-y-auto overscroll-contain bg-base-100 text-base-content"
+      data-fill={@fill && "true"}
+      class={[
+        "landing h-dvh overflow-y-auto overscroll-contain bg-base-100 text-base-content",
+        @fill && "compact:overflow-hidden"
+      ]}
     >
-      <div class="relative isolate flex min-h-full flex-col overflow-x-clip pt-(--app-safe-area-top) pr-(--app-safe-area-right) pb-(--app-safe-area-bottom) pl-(--app-safe-area-left)">
+      <div class={[
+        "relative isolate flex min-h-full flex-col overflow-x-clip pt-(--app-safe-area-top) pr-(--app-safe-area-right) pb-(--app-safe-area-bottom) pl-(--app-safe-area-left)",
+        @phone_bar != [] && "compact:pt-0",
+        @fill && "compact:h-full compact:overflow-y-clip"
+      ]}>
         <div class="lp-glow absolute inset-x-0 top-0 -z-10 h-[42rem]" aria-hidden="true"></div>
 
         <header
           id="guest-header"
-          class="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-5 py-5 sm:px-8"
+          class={[
+            "mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-5 py-5 sm:px-8",
+            @phone_bar != [] && "compact:hidden"
+          ]}
         >
           <a href={~p"/"} class="group flex items-center gap-2.5" aria-label="Potok">
             <.mark
@@ -632,14 +659,28 @@ defmodule PotokIdeWeb.Layouts do
           </.link>
         </header>
 
+        <%!-- The safe area above is the bar's, so the page does not show
+         through it once the bar sticks. --%>
+        <div
+          :if={@phone_bar != []}
+          id="guest-bar"
+          class="sticky top-0 z-20 hidden shrink-0 border-b border-base-content/8 bg-base-100/85 pt-(--app-safe-area-top) backdrop-blur compact:block"
+        >
+          {render_slot(@phone_bar)}
+        </div>
+
         <main class={[
           "flex-1",
-          @centered && "flex flex-col items-center justify-center px-5 py-10 sm:py-16"
+          @centered && "flex flex-col items-center justify-center px-5 py-10 sm:py-16",
+          @fill && "compact:flex compact:min-h-0 compact:flex-col"
         ]}>
           {render_slot(@inner_block)}
         </main>
 
-        <footer id="guest-footer" class="border-t border-base-content/8">
+        <footer
+          id="guest-footer"
+          class={["border-t border-base-content/8", @fill && "compact:hidden"]}
+        >
           <div class="mx-auto flex max-w-5xl flex-col gap-6 px-5 py-10 sm:px-8 md:flex-row md:items-center md:justify-between">
             <div>
               <div class="flex items-center gap-2">

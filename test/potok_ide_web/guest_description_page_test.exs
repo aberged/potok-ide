@@ -69,6 +69,24 @@ defmodule PotokIdeWeb.GuestDescriptionPageTest do
     refute found?(document, "[data-phx-session]")
   end
 
+  test "gives a phone one bar of the group, with the rest in its menu", %{
+    conn: conn,
+    group: group
+  } do
+    document = conn |> get(~p"/groups/#{group.id}") |> document()
+
+    assert text(document, "#guest-bar-name") =~ "Mesna zajednica"
+    assert found?(document, "#guest-bar-login[href='/accounts/log-in']")
+    assert found?(document, "#guest-menu-button[popovertarget='guest-menu']")
+    assert found?(document, "#guest-menu[popover] #guest-menu-about[href='/']")
+    assert found?(document, "#guest-menu a[href='/locale/en']")
+    assert found?(document, "#guest-menu [data-phx-theme='dark']")
+    # Only an app needs the word about passwords, and the screen to itself.
+    refute found?(document, "#guest-menu-app-note")
+    refute found?(document, "#guest-bar-login .hero-shield-check-mini")
+    refute found?(document, "#guest[data-fill]")
+  end
+
   test "keeps the card's meta tags and stays out of search engines", %{conn: conn, group: group} do
     document = conn |> get(~p"/groups/#{group.id}") |> document()
 
@@ -95,6 +113,7 @@ defmodule PotokIdeWeb.GuestDescriptionPageTest do
 
     assert found?(document, "#public-group")
     refute found?(document, "#guest-group")
+    refute found?(document, "#guest-bar")
   end
 
   test "a private group stays behind the login, switch or not", %{conn: conn, owner: owner} do
@@ -283,6 +302,10 @@ defmodule PotokIdeWeb.GuestDescriptionPageTest do
       document = ctx.conn |> get(~p"/groups/#{app.id}?#{[at: ctx.story.id]}") |> document()
 
       assert found?(document, "#guest-app")
+      # On a phone the app takes the screen and the word about passwords moves to the menu.
+      assert found?(document, "#guest[data-fill]")
+      assert found?(document, "#guest-menu #guest-menu-app-note")
+      assert found?(document, "#guest-bar-login .hero-shield-check-mini")
       assert og(document, "title") == "Most"
       assert og(document, "site_name") == "Vesti · Potok"
     end
