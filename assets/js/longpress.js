@@ -33,20 +33,62 @@ const toAbsoluteUrl = href => {
 // there; this fills in the link and shows the actions that apply to it.
 const ACTION_SHEET_ID = "lp-action-sheet"
 
+// A short note of the root layout that the link is copied. It is a popover, so
+// it shows above a dialog that is still open, and it goes away by itself.
+const COPIED_ID = "lp-copied"
+const COPIED_MS = 1600
+const COPIED_FADE_MS = 200
+let copiedTimer = null
+
+const showCopied = () => {
+  const note = document.getElementById(COPIED_ID)
+  if (typeof note?.showPopover !== "function") return
+
+  const text = note.querySelector("[data-copied-text]")
+  clearTimeout(copiedTimer)
+  delete note.dataset.leaving
+  if (!note.matches(":popover-open")) note.showPopover()
+  // Written after it shows, so a screen reader reads it out.
+  text.textContent = ""
+  requestAnimationFrame(() => (text.textContent = text.dataset.text))
+
+  copiedTimer = setTimeout(() => {
+    note.dataset.leaving = ""
+    copiedTimer = setTimeout(() => {
+      note.hidePopover()
+      delete note.dataset.leaving
+    }, COPIED_FADE_MS)
+  }, COPIED_MS)
+}
+
 const linkActions = {
   open: url => window.location.assign(url),
   browser: url => void Browser.open({ url }),
-  copy: url => void navigator.clipboard?.writeText(url),
+  copy: url => void navigator.clipboard?.writeText(url).then(showCopied, () => {}),
   // On the web it is Web Share, and a closed share sheet comes back as a failure.
   share: url => void Share.share({ url }).catch(() => {}),
 }
 
-const showLinkActionSheet = (urlString, isExternal) => {
+// What belongs to the viewer's own visit and never to a link for others: an
+// admin's preview as someone else and a share waiting to be posted.
+const VISIT_PARAMS = ["as", "share"]
+
+// The address of the page as it is now. An app changes it after the server
+// drew the page (`linkGroup`, `linkPage` in app.js), so it is read at the click.
+const currentPageUrl = () => {
+  const url = new URL(window.location.href)
+  VISIT_PARAMS.forEach(name => url.searchParams.delete(name))
+  return url.toString()
+}
+
+// `current`: the link is the page itself, which "Open link" would only reload.
+const showLinkActionSheet = (urlString, isExternal, { current = false } = {}) => {
   const dialog = document.getElementById(ACTION_SHEET_ID)
   if (!dialog) return
 
   dialog.dataset.url = urlString
   dialog.querySelector(`#${ACTION_SHEET_ID}-url`).textContent = urlString
+  dialog.querySelector('[data-lp-action="open"]').hidden = current
   dialog.querySelector('[data-lp-action="browser"]').hidden = !isExternal
   dialog.querySelector('[data-lp-action="share"]').hidden =
     !Capacitor.isNativePlatform() && !navigator.share
@@ -57,11 +99,11 @@ const showLinkActionSheet = (urlString, isExternal) => {
 // For a link that comes from an app in the page. The web gets the sheet, so the
 // copying and sharing start with a click on the page itself: iOS Safari does not
 // count the click in the frame, which came before a trip to the server.
-export const shareLink = url => {
+export const shareLink = (url, options = {}) => {
   if (Capacitor.isNativePlatform()) {
     linkActions.share(url)
   } else {
-    showLinkActionSheet(url, false)
+    showLinkActionSheet(url, false, options)
   }
 }
 
@@ -87,11 +129,16 @@ export const openAppLink = href => {
 }
 
 const installLinkActionSheet = () => {
-  // A button that shares the link of what it stands for, with no trip to the
-  // server: iOS Safari only lets the click itself copy or share.
+  // A button that shares the link of what it stands for, or of the page it is
+  // on (`data-share-current`), with no trip to the server: iOS Safari only lets
+  // the click itself copy or share.
   document.addEventListener("click", event => {
-    const button = event.target.closest?.("[data-share-link]")
-    if (button) shareLink(button.dataset.shareLink)
+    if (event.target.closest?.("[data-share-current]")) {
+      shareLink(currentPageUrl(), { current: true })
+    } else {
+      const button = event.target.closest?.("[data-share-link]")
+      if (button) shareLink(button.dataset.shareLink)
+    }
   })
 
   const dialog = document.getElementById(ACTION_SHEET_ID)

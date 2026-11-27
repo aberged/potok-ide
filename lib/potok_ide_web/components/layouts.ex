@@ -139,6 +139,19 @@ defmodule PotokIdeWeb.Layouts do
               />
             </span>
             <div class="ml-auto flex min-w-0 items-center gap-4">
+              <%!-- The phone app has no address bar: this shares or copies the
+                   page's link as it is at the click (`longpress.js`). --%>
+              <button
+                id="nav-share-page"
+                type="button"
+                data-share-current
+                aria-label={gettext("Share this page's link")}
+                title={gettext("Share this page's link")}
+                class="flex cursor-pointer transition-transform duration-150 active:scale-90"
+                hidden={is_nil(@current_profile)}
+              >
+                <.icon name="hero-share" class="size-6" />
+              </button>
               <.link
                 id="nav-tags-link"
                 navigate={~p"/tags"}

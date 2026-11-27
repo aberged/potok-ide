@@ -2231,16 +2231,17 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
              `ValueSheet`, which clicks these same buttons. --%>
         <%!-- On others' messages it stands clear of the author's name above
              the bubble, which opens their card. --%>
+        <%!-- Everyone who sees the value may take its link, but not while editing it. --%>
         <div
           :if={
-            @can_react or @can_reply or @can_thread or @can_tag or @can_delete? or @can_block? or
-              @can_report? or @can_block_profile? or (@mine? and !@editing?)
+            !@editing? or @can_react or @can_reply or @can_thread or @can_tag or @can_delete? or
+              @can_block? or @can_report? or @can_block_profile?
           }
           id={"value-actions-#{@value.id}"}
           class={[
             "pointer-events-none absolute -top-4 z-10 flex w-max items-center gap-0.5 rounded-full border border-base-300 bg-base-100 p-0.5 text-base-content opacity-0 shadow-md transition-opacity duration-100",
             "group-hover/value:pointer-events-auto group-hover/value:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100",
-            if(@mine?, do: "right-1", else: "left-[max(8.5rem,calc(100%-11rem))]")
+            if(@mine?, do: "right-1", else: "left-[max(8.5rem,calc(100%-12.5rem))]")
           ]}
         >
           <.icon_button
@@ -2286,6 +2287,18 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             kind={:value}
             item_id={@value.id}
             data-value-action="tags"
+          />
+          <%!-- Opens the chat at this value, for whoever may read it; shared or
+               copied on the click itself (`longpress.js`). --%>
+          <.icon_button
+            :if={!@editing?}
+            id={"value-link-#{@value.id}"}
+            type="button"
+            data-share-link={url(~p"/groups/#{@value.group_id}/values?#{[value: @value.id]}")}
+            data-value-action="link"
+            icon="hero-link"
+            label={gettext("Message link")}
+            size="xs"
           />
           <%!-- An event's or a poll's card is changed where it lives. --%>
           <.icon_button

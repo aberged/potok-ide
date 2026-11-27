@@ -28,7 +28,7 @@ Potok runs in the browser, on a computer and on a phone, and there is an app for
 
 ### Finding your way {:#snalazenje}
 
-The top bar is always the same. The house leads to the home page and counts your unread messages. The bell leads to the notices of the groups you follow, # to tags, and the two icons right of it to invitations and requests. The hand counts the requests to join and for roles that you decide and all that waits for you in your groups' processes. Your picture leads to your profiles.
+The top bar is always the same. The house leads to the home page and counts your unread messages. The bell leads to the notices of the groups you follow. The share icon left of # gives the link of the page you are on, to copy or send, also in the app, which has no address bar. # leads to tags, and the two icons right of it to invitations and requests. The hand counts the requests to join and for roles that you decide and all that waits for you in your groups' processes. Your picture leads to your profiles.
 
 The button with three lines opens the menu: every part of the app, your account settings, the language (Serbian in Latin or Cyrillic, or English), the light or dark theme, this help and what Potok costs. On a wide screen the menu stands on the left, with no need to open it. The two arrows at its top put it away when you need more room, and the three lines bring it back.
 
@@ -221,6 +221,7 @@ You write a message in the field at the bottom and send it with the arrow. On a 
 - **Mentions**: type @ and the name of a member or a role, and @everyone mentions everyone. The message stands out for whoever is mentioned, and they get a notification.
 - **Editing and deleting**: you can edit and delete your own messages, and whoever has the permission deletes other people's too. An edited message says "edited" beside its time, and pressing and holding it shows when it was edited. That a message was edited or deleted stays in the [group's history](#istorija), without its text.
 - **Links** get a preview, and long messages fold until you open them. A link to a form shows the form's title and subtitle to whoever may open it.
+- **Message link** opens the chat right at that message. You copy it or send it on, and it opens only for those who may read that chat.
 - **Report**: someone else's message that breaks the rules goes to the group's admins with **Report to admins**. You pick a reason and, if you like, add a note, and the author does not learn who reported it. A direct conversation has no reports: there you [block the profile](#blokiranje-profila).
 
 On a phone, press and hold a message: a sheet opens with quick reactions and every action. On a computer, the same actions appear when you move the mouse over a message.

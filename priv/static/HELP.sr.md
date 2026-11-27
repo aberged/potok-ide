@@ -34,7 +34,7 @@ Potok radi u pregledaču, na računaru i na telefonu, a postoji i aplikacija za 
 
 ### Snalaženje {:#snalazenje}
 
-Gornja traka je uvek ista. Kućica vodi na početnu stranu i broji nepročitane poruke. Zvono vodi na obaveštenja grupa koje pratiš, # na tagove, a dve ikone desno od njega na pozivnice i zahteve. Ruka broji zahteve za pristup i za uloge o kojima odlučuješ i sve što te čeka u procesima tvojih grupa. Tvoja slika vodi na profile.
+Gornja traka je uvek ista. Kućica vodi na početnu stranu i broji nepročitane poruke. Zvono vodi na obaveštenja grupa koje pratiš. Ikona deljenja levo od # daje link stranice na kojoj si, da ga kopiraš ili pošalješ, i u aplikaciji, gde adresne trake nema. # vodi na tagove, a dve ikone desno od njega na pozivnice i zahteve. Ruka broji zahteve za pristup i za uloge o kojima odlučuješ i sve što te čeka u procesima tvojih grupa. Tvoja slika vodi na profile.
 
 Dugme sa tri crte otvara meni: svi delovi aplikacije, podešavanja naloga, jezik (latinica, ćirilica ili engleski), svetla ili tamna tema, ova pomoć i koliko Potok košta. Na širokom ekranu meni stoji levo i ne treba ga otvarati. Dve strelice na njegovom vrhu ga sklanjaju kad ti treba više mesta, a tri crte ga vraćaju.
 
@@ -227,6 +227,7 @@ Poruku pišeš u polje na dnu i šalješ strelicom. Na telefonu, dok kucaš, gor
 - **Pominjanje**: napiši @ i ime člana ili uloge, a @everyone pominje sve. Pomenutom se poruka istakne i stiže mu obaveštenje.
 - **Izmena i brisanje**: svoje poruke možeš da izmeniš i obrišeš, a ko ima dozvolu, briše i tuđe. Izmenjena poruka pored vremena kaže „izmenjeno“, a dugi pritisak pokazuje i kad je izmenjena. Da je poruka izmenjena ili obrisana ostaje u [istoriji grupe](#istorija), bez teksta.
 - **Linkovi** dobijaju pregled, a dugačke poruke se skupljaju dok ih ne otvoriš. Link ka formi pokazuje naslov i podnaslov forme onima koji smeju da je otvore.
+- **Link poruke** otvara razgovor baš na toj poruci. Kopiraš ga ili pošalješ dalje, a otvara se samo onima koji smeju da čitaju taj razgovor.
 - **Prijava**: tuđu poruku koja krši pravila prijaviš administratorima grupe stavkom **Prijavi adminima**. Biraš razlog i, ako hoćeš, dopišeš napomenu, a autor ne saznaje ko je prijavio. U razgovoru u četiri oka prijave nema: tamo [blokiraš profil](#blokiranje-profila).
 
 Na telefonu dugo pritisni poruku: otvara se list sa brzim reakcijama i svim radnjama. Na računaru se iste radnje pojavljuju kad pređeš mišem preko poruke.

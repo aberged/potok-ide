@@ -190,5 +190,22 @@
         </section>
       </div>
     </dialog>
+    <%!-- Says for a moment that a link is copied (`longpress.js`). A popover,
+         so it also shows above a dialog that is still open, and high enough to
+         leave the chat's composer clear. --%>
+    <div
+      id="lp-copied"
+      popover="manual"
+      class="pointer-events-none inset-x-0 top-auto bottom-[calc(6rem+var(--app-safe-area-bottom))] mx-auto my-0 max-w-[calc(100%-2rem)] overflow-hidden rounded-full border-0 bg-base-content px-4 py-2 text-sm font-medium text-base-100 shadow-lg shadow-base-content/20 transition duration-200 ease-out starting:translate-y-2 starting:opacity-0 data-leaving:translate-y-2 data-leaving:opacity-0"
+    >
+      <.icon name="hero-check-circle" class="mr-1.5 size-5 align-middle opacity-80" />
+      <span
+        role="status"
+        data-copied-text
+        data-text={gettext("Link copied")}
+        class="align-middle"
+      >
+      </span>
+    </div>
   </body>
 </html>
