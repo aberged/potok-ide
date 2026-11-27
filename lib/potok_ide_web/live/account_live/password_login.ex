@@ -20,6 +20,7 @@ defmodule PotokIdeWeb.AccountLive.PasswordLogin do
             else: gettext("Enter your email and password to sign in.")
         }
         invitation_note={!@current_scope}
+        terms_note={!@current_scope}
       >
         <.form
           for={@form}

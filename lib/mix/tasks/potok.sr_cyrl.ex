@@ -1,7 +1,7 @@
 defmodule Mix.Tasks.Potok.SrCyrl do
   @moduledoc """
-  Generates the Cyrillic Serbian translations (`sr_Cyrl`), privacy policy, the
-  overview of where Potok comes from (`/origin`), the help page (`/pomoc`) and
+  Generates the Cyrillic Serbian translations (`sr_Cyrl`), privacy policy, terms
+  of use, the overview of where Potok comes from (`/origin`), the help page (`/pomoc`) and
   its tutorials (`/pomoc/<slug>`) from the Latin ones (`sr`).
 
   `sr` is the reference: edit it, then run this task. The `sr_Cyrl` files are
@@ -19,6 +19,8 @@ defmodule Mix.Tasks.Potok.SrCyrl do
   @target "priv/gettext/sr_Cyrl/LC_MESSAGES"
   @policy_source "priv/static/PRIVACY_POLICY.sr.md"
   @policy_target "priv/static/PRIVACY_POLICY.sr_Cyrl.md"
+  @terms_source "priv/static/TERMS.sr.md"
+  @terms_target "priv/static/TERMS.sr_Cyrl.md"
   @origin_source "priv/static/ORIGIN.sr.md"
   @origin_target "priv/static/ORIGIN.sr_Cyrl.md"
   @help_source "priv/static/HELP.sr.md"
@@ -99,6 +101,7 @@ defmodule Mix.Tasks.Potok.SrCyrl do
 
     [
       {@policy_target, @policy_source |> File.read!() |> transliterate()},
+      {@terms_target, @terms_source |> File.read!() |> transliterate()},
       {@origin_target, @origin_source |> File.read!() |> transliterate(@origin_kept)},
       {@help_target, @help_source |> File.read!() |> transliterate(@help_kept)}
       | tutorials() ++ translations

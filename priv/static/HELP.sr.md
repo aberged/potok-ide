@@ -24,7 +24,7 @@ Za sada se u Potok ulazi uz pozivnicu. Neko ko je već tu upiše tvoj imejl, a t
 
 Od tada je nalog tvoj: postavi lozinku u podešavanjima ili se svaki put prijavljuj magičnim linkom koji ti stiže na imejl i važi petnaest minuta.
 
-Na stranici za prijavu upišeš imejl i lozinku. Ako uključiš „Ostavi me prijavljenim na ovom uređaju“, Potok te pamti dve nedelje.
+Na stranici za prijavu upišeš imejl i lozinku. Ako uključiš „Ostavi me prijavljenim na ovom uređaju“, Potok te pamti dve nedelje. Prijavom prihvataš [uslove korišćenja](/terms) i [politiku privatnosti](/privacy-policy): šta na Potoku ne sme, kako idu prijave i šta Potok čuva o tebi.
 
 ![Prijava lozinkom; ispod je link za prijavu magičnim linkom](prijava)
 
@@ -181,7 +181,7 @@ Pregled ide po tvojim današnjim pravima. Kad izađeš iz grupe, ili te uklone, 
 
 ## Nalog i brisanje {:#nalog}
 
-Nalog je tvoja adresa i prijava, a profili su lica kojima se u grupama predstavljaš. U Podešavanjima naloga, u delu Nalog, je link na [politiku privatnosti](/privacy-policy), gde piše šta Potok čuva o tebi, i dugme **Obriši nalog**.
+Nalog je tvoja adresa i prijava, a profili su lica kojima se u grupama predstavljaš. U Podešavanjima naloga, u delu Nalog, su linkovi na [uslove korišćenja](/terms), gde piše šta na Potoku ne sme i kako idu prijave, i na [politiku privatnosti](/privacy-policy), gde piše šta Potok čuva o tebi, i dugme **Obriši nalog**.
 
 Pre brisanja vidiš šta nestaje, a šta ostaje. Nestaju nalog, njegove prijave i uređaji, tvoja članstva, praćenja, reakcije, tagovi i pozivnice. Tvoje poruke, fajlovi, glasanja i događaji ostaju u grupama pod imenom „Obrisan korisnik“, bez tvog imena, slike, opisa i detalja. Profil koji deliš sa drugim nalozima ostaje njima. Grupe u kojima si jedini član nestaju s nalogom.
 
@@ -367,7 +367,7 @@ Spisak blokiranih, sa dugmetom **Odblokiraj**, vide na kartici Članovi oni koji
 
 ### Prijave {:#prijave}
 
-Prijavljena poruka stiže administratorima grupe u kojoj je napisana. Dobijaju obaveštenje, a prijava ih čeka na stranici **Zahtevi**, pod karticom **Prijave**, sa razlogom, napomenom i imenom onoga ko je prijavio; ruka u gornjoj traci broji i nju. Administrator poruku otvara u razgovoru, briše je za sve ili odbacuje prijavu, a obrisana poruka odnosi i svoje prijave. Prijava poruke iz niti ide administratorima grupe iz koje nit polazi, i oni tu poruku brišu i kad u niti nemaju ulogu. Grupa bez administratora šalje prijave prvoj grupi iznad sebe koja ga ima. Istu poruku prijavljuješ samo jednom, a prijave se ne upisuju u istoriju grupe.
+Prijavljena poruka stiže administratorima grupe u kojoj je napisana. Dobijaju obaveštenje, a prijava ih čeka na stranici **Zahtevi**, pod karticom **Prijave**, sa razlogom, napomenom i imenom onoga ko je prijavio; ruka u gornjoj traci broji i nju. Administrator poruku otvara u razgovoru, briše je za sve ili odbacuje prijavu, a obrisana poruka odnosi i svoje prijave. Prijava poruke iz niti ide administratorima grupe iz koje nit polazi, i oni tu poruku brišu i kad u niti nemaju ulogu. Grupa bez administratora šalje prijave prvoj grupi iznad sebe koja ga ima. Istu poruku prijavljuješ samo jednom, a prijave se ne upisuju u istoriju grupe. Nezakonit sadržaj, ili prijavu na koju administratori ne reaguju, pošalji i Potoku, na imejl iz [uslova korišćenja](/terms): takve prijave Potok pregleda u roku od 24 sata.
 
 ### Blokiranje profila {:#blokiranje-profila}
 

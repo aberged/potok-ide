@@ -20,6 +20,8 @@ defmodule PotokIdeWeb.AccountLive.LoginTest do
       assert has_element?(lv, "#guest-footer")
       assert has_element?(lv, "#login-magic-card #login_form_magic")
       assert has_element?(lv, "#login-magic-card-invitation-note a[href='/#landing-join']")
+      assert has_element?(lv, "#login-magic-card-terms-note a[href='/terms']")
+      assert has_element?(lv, "#login-magic-card-terms-note a[href='/privacy-policy']")
     end
 
     test "renders PWA metadata in the shared root layout", %{conn: conn} do

@@ -19,6 +19,8 @@ defmodule PotokIdeWeb.AccountLive.PasswordLoginTest do
 
       assert has_element?(lv, "#guest-header #guest-about-link[href='/']")
       assert has_element?(lv, "#guest-footer #guest-privacy-link")
+      assert has_element?(lv, "#guest-footer #guest-terms-link[href='/terms']")
+      assert has_element?(lv, "#login-password-card-terms-note a[href='/terms']")
       assert has_element?(lv, "#login-password-card #login_form_password")
       assert has_element?(lv, "#login-password-card-invitation-note a[href='/#landing-join']")
     end

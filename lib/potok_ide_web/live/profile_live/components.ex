@@ -208,6 +208,10 @@ defmodule PotokIdeWeb.ProfileLive.Components do
     default: true,
     doc: "false for one more profile of an account that has some (Invitations)"
 
+  attr :terms_note, :boolean,
+    default: false,
+    doc: "says that making the profile accepts the terms of use (the guest page of an invitation)"
+
   @doc """
   The first profile of an account, in a modal `<dialog>`: a name and a
   picture, and with an invitation, the group the profile goes into. The page
@@ -411,6 +415,12 @@ defmodule PotokIdeWeb.ProfileLive.Components do
                   gettext("You can add a description and more profiles later, on the Profiles page."),
                 else: gettext("You can add a description later, on the Profiles page.")}
             </p>
+            <Layouts.terms_note
+              :if={@terms_note}
+              id="welcome-terms-note"
+              lead={pgettext("login terms", "By creating the profile, you accept the")}
+              class="mt-2"
+            />
           </.form>
         </section>
       </div>

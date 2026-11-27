@@ -31,6 +31,7 @@ defmodule PotokIdeWeb.PageControllerTest do
           "#landing-join-login[href='/accounts/log-in']",
           "#guest-header #landing-login-link",
           "#guest-footer #guest-privacy-link[href='/privacy-policy']",
+          "#guest-footer #guest-terms-link[href='/terms']",
           "#guest-footer #guest-help-link[href='/pomoc']",
           "#landing-features > a#landing-help-link[href='/pomoc']",
           "meta[name=description]"
@@ -550,6 +551,30 @@ defmodule PotokIdeWeb.PageControllerTest do
       assert LazyHTML.query(document, "#privacy-back[href='/']") |> Enum.count() == 1
       refute html =~ "potok-ide.fly.dev"
       refute html =~ "placeholder"
+    end
+  end
+
+  test "GET /terms shows the terms of use in the selected locale", %{conn: conn} do
+    for {locale, heading} <- [
+          {"en", "Terms of Use for Potok"},
+          {"sr", "Uslovi korišćenja za Potok"},
+          {"sr_Cyrl", "Услови коришћења за Поток"}
+        ] do
+      html = conn |> get(~p"/terms?#{[locale: locale]}") |> html_response(200)
+      document = LazyHTML.from_document(html)
+
+      assert document |> LazyHTML.query(".terms-of-use h1") |> LazyHTML.text() |> String.trim() ==
+               heading
+
+      # The terms take the privacy policy in, and App Review looks for the
+      # 24 hours in which reports that reach Potok are dealt with.
+      assert Enum.count(
+               LazyHTML.query(document, ".terms-of-use a[href='https://potok.rs/privacy-policy']")
+             ) == 1
+
+      assert document |> LazyHTML.query(".terms-of-use") |> LazyHTML.text() =~ "24"
+      assert Enum.count(LazyHTML.query(document, "#terms-back[href='/']")) == 1
+      refute html =~ "PREDLOG"
     end
   end
 

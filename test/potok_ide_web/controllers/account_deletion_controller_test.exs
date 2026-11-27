@@ -138,6 +138,7 @@ defmodule PotokIdeWeb.AccountDeletionControllerTest do
       {:ok, lv, _html} = live(conn, ~p"/accounts/settings")
 
       assert has_element?(lv, "#settings-account a[href='/privacy-policy']")
+      assert has_element?(lv, "#settings-account a[href='/terms']")
       refute has_element?(lv, "#delete-account-form")
 
       lv |> element("#delete-account-start") |> render_click()

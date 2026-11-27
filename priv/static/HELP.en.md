@@ -18,7 +18,7 @@ For now, you join Potok by invitation. Someone who is already here enters your e
 
 From then on the account is yours: set a password in the settings, or log in each time with a magic link that comes to your email and is valid for fifteen minutes.
 
-On the log-in page you enter your email and password. If you turn on "Keep me logged in on this device", Potok remembers you for two weeks.
+On the log-in page you enter your email and password. If you turn on "Keep me logged in on this device", Potok remembers you for two weeks. By logging in you accept the [terms of use](/terms) and the [privacy policy](/privacy-policy): what is not allowed on Potok, how reports work and what Potok keeps about you.
 
 ![Logging in with a password; the link below it logs in with a magic link](prijava)
 
@@ -175,7 +175,7 @@ The list goes by the rights you have today. When you leave a group, or are remov
 
 ## Account and deleting it {:#nalog}
 
-Your account is your address and your sign-in, and your profiles are the faces you show in groups. In the account settings, the Account part links the [privacy policy](/privacy-policy), which says what Potok keeps about you, and has the **Delete account** button.
+Your account is your address and your sign-in, and your profiles are the faces you show in groups. In the account settings, the Account part links the [terms of use](/terms), which say what is not allowed on Potok and how reports work, and the [privacy policy](/privacy-policy), which says what Potok keeps about you, and has the **Delete account** button.
 
 Before deleting you see what goes and what stays. The account goes, with its sign-ins and devices, your memberships, follows, reactions, tags and invitations. Your messages, files, polls and events stay in the groups under the name "Deleted user", with no name, picture, description or details of yours. A profile you share with other accounts stays theirs. Groups where you are the only member go with the account.
 
@@ -361,7 +361,7 @@ The list of blocked profiles, with **Unblock**, is on the Members tab for those 
 
 ### Reports {:#prijave}
 
-A reported message reaches the admins of the group it was written in. They get a notification, and the report waits for them on the **Requests** page, under the **Reports** tab, with the reason, the note and the name of whoever reported it; the hand in the top bar counts it too. An admin opens the message in the chat, deletes it for everyone or dismisses the report, and a deleted message takes its reports along. A report of a message in a thread goes to the admins of the group the thread hangs from, who delete that message even when they hold no role in the thread. A group without an admin sends its reports to the nearest group above it that has one. You report the same message only once, and reports are not written in the group's history.
+A reported message reaches the admins of the group it was written in. They get a notification, and the report waits for them on the **Requests** page, under the **Reports** tab, with the reason, the note and the name of whoever reported it; the hand in the top bar counts it too. An admin opens the message in the chat, deletes it for everyone or dismisses the report, and a deleted message takes its reports along. A report of a message in a thread goes to the admins of the group the thread hangs from, who delete that message even when they hold no role in the thread. A group without an admin sends its reports to the nearest group above it that has one. You report the same message only once, and reports are not written in the group's history. Send illegal content, or a report the admins do not act on, to Potok as well, at the email in the [terms of use](/terms): Potok reviews such reports within 24 hours.
 
 ### Blocking a profile {:#blokiranje-profila}
 

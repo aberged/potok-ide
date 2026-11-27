@@ -9,14 +9,19 @@ defmodule PotokIdeWeb.PageController do
   alias PotokIdeWeb.HelpGuides
   alias PotokIdeWeb.StackCopy
 
-  plug :assign_nav_counts when action in [:privacy]
+  plug :assign_nav_counts when action in [:privacy, :terms]
 
-  # `mix potok.sr_cyrl` writes the Cyrillic policy from the Latin one.
-  for {locale, file} <- %{
-        "en" => "PRIVACY_POLICY.md",
-        "sr" => "PRIVACY_POLICY.sr.md",
-        "sr_Cyrl" => "PRIVACY_POLICY.sr_Cyrl.md"
-      } do
+  # The privacy policy and the terms of use. `mix potok.sr_cyrl` writes the
+  # Cyrillic texts from the Latin ones.
+  for {page, files} <- %{
+        privacy: %{
+          "en" => "PRIVACY_POLICY.md",
+          "sr" => "PRIVACY_POLICY.sr.md",
+          "sr_Cyrl" => "PRIVACY_POLICY.sr_Cyrl.md"
+        },
+        terms: %{"en" => "TERMS.md", "sr" => "TERMS.sr.md", "sr_Cyrl" => "TERMS.sr_Cyrl.md"}
+      },
+      {locale, file} <- files do
     path = Path.expand("../../../priv/static/#{file}", __DIR__)
     @external_resource path
 
@@ -27,7 +32,7 @@ defmodule PotokIdeWeb.PageController do
       |> Earmark.as_html!(breaks: true)
       |> HtmlSanitizeEx.html5()
 
-    defp privacy_policy_html(unquote(locale)), do: unquote(html)
+    defp legal_html(unquote(page), unquote(locale)), do: unquote(html)
   end
 
   # The overview of the apps the movement organized itself with, which Potok
@@ -167,6 +172,10 @@ defmodule PotokIdeWeb.PageController do
     do: redirect(conn, to: ~p"/pomoc/#{slug}")
 
   def privacy(conn, _params) do
-    render(conn, :privacy, privacy_policy_html: privacy_policy_html(conn.assigns.current_locale))
+    render(conn, :privacy, privacy_policy_html: legal_html(:privacy, conn.assigns.current_locale))
+  end
+
+  def terms(conn, _params) do
+    render(conn, :terms, terms_html: legal_html(:terms, conn.assigns.current_locale))
   end
 end

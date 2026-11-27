@@ -45,6 +45,7 @@ defmodule PotokIdeWeb.AccountLive.ConfirmationTest do
       assert has_element?(lv, "#login-confirmation-card #login_form")
       assert has_element?(lv, "#guest-about-link")
       refute has_element?(lv, "#login-confirmation-card-invitation-note")
+      assert has_element?(lv, "#login-confirmation-card-terms-note a[href='/terms']")
     end
 
     test "auto-submits for already logged in confirmed account", %{
@@ -166,6 +167,8 @@ defmodule PotokIdeWeb.AccountLive.ConfirmationTest do
       assert has_element?(lv, "#welcome-remember-me[checked]")
       assert has_element?(lv, "#welcome-submit", "Create profile and join the group")
       assert has_element?(lv, "#welcome-card h1", "Zgrada Lipa 5")
+      assert has_element?(lv, "#welcome-card-terms-note a[href='/terms']")
+      assert has_element?(lv, "#welcome-terms-note a[href='/terms']")
       refute has_element?(lv, "#confirmation_form")
     end
 

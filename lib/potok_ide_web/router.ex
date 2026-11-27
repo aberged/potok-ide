@@ -77,6 +77,7 @@ defmodule PotokIdeWeb.Router do
     get "/locale/:locale", LocaleController, :update
     get "/", PageController, :home
     get "/privacy-policy", PageController, :privacy
+    get "/terms", PageController, :terms
     get "/domain", PageController, :domain
     get "/stack", PageController, :stack
     get "/origin", PageController, :origin

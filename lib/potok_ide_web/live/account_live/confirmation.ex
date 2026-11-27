@@ -23,6 +23,7 @@ defmodule PotokIdeWeb.AccountLive.Confirmation do
         image={@invitation && Avatars.group_avatar_url(@invitation.group)}
         title={if @invitation, do: @invitation.group.name, else: gettext("Welcome!")}
         subtitle={welcome_subtitle(@invitation, @account)}
+        terms_note
       >
         <.button
           id="welcome-open"
@@ -41,6 +42,7 @@ defmodule PotokIdeWeb.AccountLive.Confirmation do
         invitation={@invitation}
         remember_me={@remember_me}
         button_variant="landing"
+        terms_note
       />
 
       <%!-- The log-in itself, once the profile is made: a plain POST, as only
@@ -74,6 +76,7 @@ defmodule PotokIdeWeb.AccountLive.Confirmation do
         id="login-confirmation-card"
         title={gettext("Welcome!")}
         subtitle={@account.email}
+        terms_note={!@current_scope}
       >
         <div :if={@auto_submit} class="lp-note">
           <.icon name="hero-arrow-path" class="lp-accent size-5 shrink-0 animate-spin" />

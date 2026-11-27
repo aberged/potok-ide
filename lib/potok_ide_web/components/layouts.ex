@@ -672,6 +672,13 @@ defmodule PotokIdeWeb.Layouts do
                   {gettext("Help")}
                 </.link>
                 <.link
+                  id="guest-terms-link"
+                  href={~p"/terms"}
+                  class="text-sm text-base-content/65 underline-offset-4 transition hover:text-base-content hover:underline"
+                >
+                  {gettext("Terms of use")}
+                </.link>
+                <.link
                   id="guest-privacy-link"
                   href={~p"/privacy-policy"}
                   class="text-sm text-base-content/65 underline-offset-4 transition hover:text-base-content hover:underline"
@@ -701,6 +708,10 @@ defmodule PotokIdeWeb.Layouts do
   attr :invitation_note, :boolean,
     default: false,
     doc: "tells visitors without an account, under the card, how to get one"
+
+  attr :terms_note, :boolean,
+    default: false,
+    doc: "says under the card that logging in accepts the terms of use and the privacy policy"
 
   slot :inner_block, required: true
 
@@ -736,7 +747,37 @@ defmodule PotokIdeWeb.Layouts do
           {gettext("Potok is invitation only for now.")}
         </.link>
       </p>
+      <%!-- Accounts open only by invitation, so logging in is where one
+           first uses Potok: the place to accept its terms. --%>
+      <.terms_note
+        :if={@terms_note}
+        id={"#{@id}-terms-note"}
+        lead={pgettext("login terms", "By logging in, you accept the")}
+        class="lp-rise mt-4"
+      />
     </div>
+    """
+  end
+
+  @doc """
+  A line on the guest pages that what one is about to do accepts the terms of
+  use and the privacy policy, with links to both.
+  """
+  attr :id, :string, required: true
+  attr :lead, :string, required: true, doc: "the words before the links"
+  attr :class, :any, default: nil
+
+  def terms_note(assigns) do
+    ~H"""
+    <p
+      id={@id}
+      class={[@class, "text-center text-xs leading-5 text-pretty text-base-content/60"]}
+    >
+      {@lead}
+      <.link href={~p"/terms"} class="lp-link">{pgettext("login terms", "terms of use")}</.link>
+      {pgettext("login terms", "and the")}
+      <.link href={~p"/privacy-policy"} class="lp-link">{pgettext("login terms", "privacy policy")}</.link>.
+    </p>
     """
   end
 

@@ -442,10 +442,19 @@ defmodule PotokIdeWeb.AccountLive.Settings do
           <.card_title
             icon="hero-user-circle"
             title={gettext("Account")}
-            subtitle={gettext("What Potok keeps about you, and deleting the account.")}
+            subtitle={
+              gettext("The terms of use, what Potok keeps about you, and deleting the account.")
+            }
             class="mb-4"
           />
           <div class="flex flex-wrap items-center gap-3">
+            <.link
+              id="settings-terms-link"
+              href={~p"/terms"}
+              class="text-sm underline underline-offset-4 text-base-content/75 transition hover:text-base-content"
+            >
+              {gettext("Terms of use")}
+            </.link>
             <.link
               id="settings-privacy-link"
               href={~p"/privacy-policy"}

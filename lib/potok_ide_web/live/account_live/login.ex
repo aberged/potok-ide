@@ -20,6 +20,7 @@ defmodule PotokIdeWeb.AccountLive.Login do
             else: gettext("Enter your email and we'll send you a sign-in link.")
         }
         invitation_note={!@current_scope}
+        terms_note={!@current_scope}
       >
         <div :if={@local_mail_note?} class="lp-note mb-6">
           <.icon name="hero-information-circle" class="lp-accent size-5 shrink-0" />
