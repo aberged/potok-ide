@@ -36,7 +36,7 @@ import { KeyboardMedia } from "./keyboard_media"
 import { LocationPicker } from "./location_picker"
 import { ProcessCanvas } from "./process_canvas"
 import { RootMap } from "./root_map"
-import { installLongPressLinkMenu, shareLink } from "./longpress"
+import { installLongPressLinkMenu, openAppLink, shareLink } from "./longpress"
 import { installPageLoader } from "./page_loader"
 import { installNotificationTray } from "./notification_tray"
 import { ReactionPicker } from "./reaction_picker"
@@ -1050,6 +1050,12 @@ const GroupAppFrame = {
         return
       }
 
+      // A link to a new tab, from the app or a site in it, in the phone app.
+      if (message.event === "open_link") {
+        openAppLink(message.url)
+        return
+      }
+
       if (typeof message.id === "number") {
         void this.handleCall(message)
       }
@@ -1135,6 +1141,8 @@ const GroupAppFrame = {
       theme: this.theme(),
       storage: this.readStorage(),
       page: this.host() === "page" ? linkedPage() : null,
+      // In the phone app the frame hands its new-tab links to the page.
+      native: Capacitor.isNativePlatform(),
     })
   },
 

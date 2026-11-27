@@ -65,6 +65,27 @@ export const shareLink = url => {
   }
 }
 
+// What a link from an app may open: a web address, mail or a phone number.
+const APP_LINK_PROTOCOLS = new Set(["http:", "https:", "mailto:", "tel:"])
+const APP_LINK_MAX_LENGTH = 4096
+
+// A link that an app opens in a new tab (`open_link` from `potok_app_sdk.js`).
+// The phone app's WebView opens no windows, and the frame's sandbox keeps it
+// from leading the page, so on a phone the page opens it as it opens a link in
+// the chat: Capacitor sends another host to the browser and keeps Potok's own
+// in the app. Only right after a tap: the tap in the frame counts for the page
+// too, so an app cannot send its reader away on its own.
+export const openAppLink = href => {
+  if (!Capacitor.isNativePlatform()) return
+  if (navigator.userActivation && !navigator.userActivation.isActive) return
+  if (typeof href !== "string" || href.length > APP_LINK_MAX_LENGTH) return
+
+  const url = toAbsoluteUrl(href)
+  if (!url || !APP_LINK_PROTOCOLS.has(url.protocol)) return
+
+  window.location.assign(url.href)
+}
+
 const installLinkActionSheet = () => {
   // A button that shares the link of what it stands for, with no trip to the
   // server: iOS Safari only lets the click itself copy or share.

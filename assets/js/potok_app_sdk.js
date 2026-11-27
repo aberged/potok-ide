@@ -44,6 +44,68 @@ let markParentReady
 const parentReady = new Promise(resolve => { markParentReady = resolve })
 window.parent.postMessage({potok: 1, event: "hello"}, "*")
 
+// In Potok's phone app the WebView opens no windows, so a link to a new tab
+// (every link of an app, by `<base target="_blank">`) or `window.open` would
+// lead the page instead, which the sandbox refuses: nothing happened. There
+// the page's "ready" says `native`, and such a link goes to the page, which
+// opens it as it opens a link in the chat. On the web nothing changes.
+let nativeApp = false
+const LINK_PROTOCOLS = /^(https?|mailto|tel):$/i
+
+const opensWindow = target => {
+  const name = String(target ?? "").trim()
+  if (name.toLowerCase() === "_blank") return true
+  if (name === "" || name.startsWith("_")) return false
+
+  // A frame of the app's own keeps the links that name it.
+  return !Array.from(document.querySelectorAll("iframe[name]")).some(frame => frame.name === name)
+}
+
+const outsideUrl = href => {
+  try {
+    const url = new URL(href, document.baseURI)
+    return LINK_PROTOCOLS.test(url.protocol) ? url.href : null
+  } catch (_error) {
+    return null
+  }
+}
+
+const openOutside = url => window.parent.postMessage({potok: 1, event: "open_link", url}, "*")
+
+// On `window`, so the app's own handlers come first: a click it took for
+// itself stays its own.
+window.addEventListener("click", event => {
+  if (!nativeApp || event.defaultPrevented || event.button !== 0) return
+
+  const link = event.target?.closest?.("a[href], area[href]")
+  if (!link || link.hasAttribute("download")) return
+
+  const target = link.getAttribute("target") ?? document.querySelector("base[target]")?.getAttribute("target")
+  if (!opensWindow(target)) return
+
+  // An SVG link keeps its address in `href.baseVal`.
+  const url = outsideUrl(typeof link.href === "string" ? link.href : link.href?.baseVal)
+  if (!url) return
+
+  event.preventDefault()
+  openOutside(url)
+})
+
+const openWindow = window.open
+
+window.open = function (url, target, ...rest) {
+  if (nativeApp && url != null && String(url) !== "") {
+    const href = opensWindow(target == null || target === "" ? "_blank" : target) ? outsideUrl(String(url)) : null
+
+    if (href) {
+      openOutside(href)
+      return null
+    }
+  }
+
+  return openWindow.call(window, url, target, ...rest)
+}
+
 // A sandboxed frame has an opaque origin, so reading `localStorage` throws.
 // Apps get an in-memory Storage instead: the parent keeps `localStorage` per
 // group, sends it with "ready" and saves it again after every change.
@@ -362,6 +424,13 @@ const handleSiteMessage = event => {
     return
   }
 
+  // The site's link to a new tab, in the phone app (see `nativeApp`).
+  if (message.event === "open_link") {
+    const url = nativeApp && siteFrames.has(frame) && typeof message.url === "string" ? outsideUrl(message.url) : null
+    if (url) openOutside(url)
+    return
+  }
+
   if (message.event === "hello") {
     siteFrames.add(frame)
 
@@ -373,6 +442,7 @@ const handleSiteMessage = event => {
         lang: document.documentElement.lang,
         methods: siteMethods(frame),
         app: ownAppId,
+        native: nativeApp,
       })
     )
     return
@@ -410,6 +480,7 @@ window.addEventListener("message", event => {
   if (!message || message.potok !== 1) return
 
   if (message.event === "ready") {
+    nativeApp = message.native === true
     seedLocalStorage(message.storage)
     applyTheme(message.theme)
     placeSites(message.page)

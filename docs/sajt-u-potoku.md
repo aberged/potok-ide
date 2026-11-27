@@ -96,10 +96,10 @@ Sajt javlja na kojoj je stranici čitalac: `{potok: 1, event: "page", page}`, gd
 Ceo adapter, bez zavisnosti. Sajtovi napravljeni po `PDF-U-SAJT.md` nose ga kao `assets/potok.js`, prvu skriptu svake stranice.
 
 - Ne radi ništa dok ne vidi znak Potoka: stranica je u okviru i roditelj je odgovorio, ili je prethodna stranica u istom okviru ostavila stanje u `window.name`.
-- `window.name` ostaje isti dok se u okviru prelazi sa stranice na stranicu. Adapter tu upisuje temu i jezik, pa naredna stranica zna oba odmah, bez čekanja na odgovor. Na prvoj stranici stižu porukom.
+- `window.name` ostaje isti dok se u okviru prelazi sa stranice na stranicu. Adapter tu upisuje temu, jezik i to da li je sajt u Potokovoj aplikaciji za telefon, pa naredna stranica zna sve odmah, bez čekanja na odgovor. Na prvoj stranici stižu porukom.
 - Na `<html>` stavlja klase `potok` i `potok-pismo`. Po njima sajt sakriva svoje dugme za temu, odnosno za pismo: u Potoku se bira u Potoku.
 - Ono što Potok odredi ne upisuje u `localStorage`.
-- Link ka drugom hostu i ka PDF-u otvara u novoj kartici.
+- Link ka drugom hostu i ka PDF-u otvara u novoj kartici. U Potokovoj aplikaciji za telefon okvir ne može da otvori karticu (`ready` tada nosi `native: true`), pa takav link, i svaki sa `target="_blank"`, šalje Potoku: `{potok: 1, event: "open_link", url}`. Potok ga otvara kao link u poruci: drugi host u pregledaču, svoju adresu u aplikaciji. Bez dodira ne otvara ništa.
 - Posle `hello` javlja stranicu (`page`), i ponovo na `hashchange` i `popstate`; `stranica()` je javlja na zahtev sajta.
 - Dodatne funkcije kreću iz `SAJT_POTOK.spremno.then(…)` i zovu `SAJT_POTOK.poziv("ime", parametri)`. Van Potoka se `spremno` nikad ne ispuni, pa sajt bez njih mora da radi.
 
@@ -125,6 +125,7 @@ Ceo adapter, bez zavisnosti. Sajtovi napravljeni po `PDF-U-SAJT.md` nose ga kao 
     tema: undefined,    /* "light" / "dark" / null (sistemska); undefined dok se Potok ne javi */
     jezik: null,        /* "sr" / "sr-Cyrl" / "en" */
     pismo: null,        /* "lat" / "cir"; null kad Potok ne određuje pismo (engleski, van Potoka) */
+    nativno: false,     /* true u Potokovoj aplikaciji za telefon: link u novu karticu ide Potoku */
     metode: [],         /* pozivi koje je opis grupe dozvolio ovom sajtu (data-potok-api) */
     spremno: new Promise(function (ispuni) { javiSpremno = ispuni; }),   /* van Potoka se nikad ne ispuni */
     poziv: poziv,
@@ -152,6 +153,7 @@ Ceo adapter, bez zavisnosti. Sajtovi napravljeni po `PDF-U-SAJT.md` nose ga kao 
       if (P.tema) html.setAttribute("data-theme", P.tema);
       else html.removeAttribute("data-theme");
     }
+    if ("native" in stanje) P.nativno = stanje.native === true;
     if (typeof stanje.lang === "string" && stanje.lang) {
       P.jezik = stanje.lang;
       P.pismo = pismoZa(stanje.lang);
@@ -159,7 +161,7 @@ Ceo adapter, bez zavisnosti. Sajtovi napravljeni po `PDF-U-SAJT.md` nose ga kao 
     html.classList.add("potok");
     if (P.pismo) html.classList.add("potok-pismo");
     else html.classList.remove("potok-pismo");
-    try { window.name = JSON.stringify({ potok: 1, theme: P.tema, lang: P.jezik }); } catch (e) { /* bez pamćenja */ }
+    try { window.name = JSON.stringify({ potok: 1, theme: P.tema, lang: P.jezik, native: P.nativno }); } catch (e) { /* bez pamćenja */ }
     if (otisak() !== pre) document.dispatchEvent(new Event(DOGADJAJ));
   }
 
@@ -182,7 +184,7 @@ Ceo adapter, bez zavisnosti. Sajtovi napravljeni po `PDF-U-SAJT.md` nose ga kao 
 
     if (m.event === "ready") {
       if (Array.isArray(m.methods)) P.metode = m.methods.slice();
-      primeni({ theme: m.theme, lang: m.lang });
+      primeni({ theme: m.theme, lang: m.lang, native: m.native === true });
       javiSpremno(m);
       return;
     }
@@ -211,12 +213,20 @@ Ceo adapter, bez zavisnosti. Sajtovi napravljeni po `PDF-U-SAJT.md` nose ga kao 
 
   /* ---------- linkovi ---------- */
   /* Strana stranica ne sme da se učita u ovaj okvir, jer bi dobila iste pozive kao sajt, a PDF se u
-     njemu ne prikazuje. Takvi linkovi zato idu u novu karticu. */
+     njemu ne prikazuje. Takvi linkovi zato idu u novu karticu. U Potokovoj aplikaciji za telefon okvir
+     ne može da otvori karticu, pa takav link (i svaki sa target="_blank") šalje Potoku, koji ga otvara
+     u pregledaču. */
   document.addEventListener("click", function (e) {
     if (!P.uPotoku || e.button !== 0) return;
     var a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
     if (!a || typeof a.host !== "string" || !/^(https?|file):$/.test(a.protocol)) return;
-    if (a.host !== window.location.host || /\.pdf$/i.test(a.pathname)) {
+    var drugde = a.host !== window.location.host || /\.pdf$/i.test(a.pathname);
+    if (P.nativno && /^https?:$/.test(a.protocol) && (drugde || a.target === "_blank")) {
+      e.preventDefault();
+      roditelj.postMessage({ potok: 1, event: "open_link", url: a.href }, "*");
+      return;
+    }
+    if (drugde) {
       a.target = "_blank";
       a.rel = "noopener";
     }
