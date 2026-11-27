@@ -97,8 +97,15 @@ defmodule PotokIdeWeb.PageControllerTest do
                1
     end
 
-    test "is open to accounts that are logged in", %{conn: conn} do
-      conn |> log_in_account(account_fixture()) |> get(~p"/domain") |> html_response(200)
+    test "is open to accounts that are logged in, and leads them back to the app", %{conn: conn} do
+      document = conn |> log_in_account(account_fixture()) |> domain_page()
+
+      assert Enum.count(
+               LazyHTML.query(document, "#guest-header #guest-back-link[href='/groups']")
+             ) ==
+               1
+
+      assert Enum.empty?(LazyHTML.query(document, "#guest-about-link"))
     end
 
     test "hands the diagram its data", %{conn: conn} do
@@ -218,8 +225,17 @@ defmodule PotokIdeWeb.PageControllerTest do
       end
     end
 
-    test "is open to guests and accounts alike", %{conn: conn} do
-      assert conn |> log_in_account(account_fixture()) |> get(~p"/stack") |> html_response(200)
+    test "is open to guests and accounts alike, and leads accounts back to the app",
+         %{conn: conn} do
+      guest = stack_page(conn)
+
+      assert count(guest, "#guest-header #guest-about-link[href='/']") == 1
+      assert count(guest, "#guest-back-link") == 0
+
+      account = conn |> log_in_account(account_fixture()) |> stack_page()
+
+      assert count(account, "#guest-header #guest-back-link[href='/groups']") == 1
+      assert count(account, "#guest-about-link") == 0
     end
 
     test "keeps the tools' names in Latin in the Cyrillic version", %{conn: conn} do
@@ -284,8 +300,11 @@ defmodule PotokIdeWeb.PageControllerTest do
       assert origin_text(document, "#origin-text h1") =~ ~r/^Potok — /
     end
 
-    test "is open to accounts that are logged in", %{conn: conn} do
-      assert conn |> log_in_account(account_fixture()) |> get(~p"/origin") |> html_response(200)
+    test "is open to accounts that are logged in, and leads them back to the app", %{conn: conn} do
+      document = conn |> log_in_account(account_fixture()) |> origin_page("sr")
+
+      assert count(document, "#guest-header #guest-back-link[href='/groups']") == 1
+      assert count(document, "#guest-about-link") == 0
     end
   end
 

@@ -72,27 +72,56 @@ const HeaderDrawer = {
   },
 }
 
+// The menu is open while it holds the focus. A choice closes it, and so does
+// any tap outside the card, its button included (daisyUI lets taps go through
+// the button while the menu is open, so that a browser takes the focus away).
+// WebKit on an iPhone does not take the focus away on a tap on something that
+// cannot take it, so without this the menu stayed open until something was
+// chosen.
 const DropdownMenu = {
   mounted() {
+    this.button = this.el.querySelector(":scope > button")
+    this.content = this.el.querySelector("[data-dropdown-content]")
+
+    const close = () => {
+      if (document.activeElement && this.el.contains(document.activeElement)) {
+        document.activeElement.blur()
+      }
+    }
+
     this.handleClick = event => {
       const trigger = event.target.closest("[data-dropdown-close], [data-dropdown-content] a")
 
-      if (!trigger || !this.el.contains(trigger)) {
-        return
+      if (this.closedByTap) {
+        // The tap that closed the menu ends in a click on its button, which
+        // would open it again (WebKit focuses the button on that click).
+        this.closedByTap = false
+        requestAnimationFrame(close)
+      } else if (trigger && this.el.contains(trigger)) {
+        requestAnimationFrame(close)
+      } else if (this.button?.contains(event.target) && !this.el.contains(document.activeElement)) {
+        // Safari may leave a tapped button without the focus.
+        this.button.focus()
       }
+    }
 
-      requestAnimationFrame(() => {
-        if (document.activeElement && this.el.contains(document.activeElement)) {
-          document.activeElement.blur()
-        }
-      })
+    this.handlePointerDown = event => {
+      const open = document.activeElement && this.el.contains(document.activeElement)
+      this.closedByTap = false
+
+      if (open && !this.content?.contains(event.target)) {
+        close()
+        this.closedByTap = this.el.contains(event.target)
+      }
     }
 
     this.el.addEventListener("click", this.handleClick)
+    document.addEventListener("pointerdown", this.handlePointerDown, true)
   },
 
   destroyed() {
     this.el.removeEventListener("click", this.handleClick)
+    document.removeEventListener("pointerdown", this.handlePointerDown, true)
   },
 }
 
@@ -1851,11 +1880,30 @@ const registerCapacitorRoutePersistence = () => {
   })
 }
 
-// Android's back button closes the topmost open dialog the way Escape does:
-// a cancelable `cancel` event first, so a dialog that closes through the
-// server can take over. A listener turns off Capacitor's own handling, so
-// going back is done here too; with nowhere to go back to, the app goes to
-// the background like other Android apps, and comes back on the same page.
+// Closes a dialog the way Escape does: a cancelable `cancel` event first, so
+// a dialog that closes through the server can take over.
+const closeDialogAsEscape = dialog => {
+  if (dialog.dispatchEvent(new Event("cancel", {cancelable: true}))) {
+    dialog.close()
+  }
+}
+
+// Closes the menu that slides over the page on a phone, if it is open.
+const closeAppDrawer = () => {
+  const toggle = document.getElementById("app-drawer-toggle")
+
+  if (!toggle?.checked) {
+    return false
+  }
+
+  toggle.checked = false
+  return true
+}
+
+// Android's back button closes the topmost open dialog, then the menu. A
+// listener turns off Capacitor's own handling, so going back is done here
+// too; with nowhere to go back to, the app goes to the background like other
+// Android apps, and comes back on the same page.
 const registerCapacitorBackButton = () => {
   if (Capacitor.getPlatform() !== "android") {
     return
@@ -1866,14 +1914,31 @@ const registerCapacitorBackButton = () => {
     const dialog = dialogs[dialogs.length - 1]
 
     if (dialog) {
-      if (dialog.dispatchEvent(new Event("cancel", {cancelable: true}))) {
-        dialog.close()
-      }
+      closeDialogAsEscape(dialog)
+    } else if (closeAppDrawer()) {
+      return
     } else if (canGoBack) {
       window.history.back()
     } else {
       void App.minimizeApp()
     }
+  })
+}
+
+// Going back through the history (the swipe from the edge on iOS, a browser's
+// back button) leaves the page that dialogs and the menu were open over, so
+// they close too; otherwise a dialog whose `open` LiveView keeps would stay
+// over the page it went back to. LiveView sends `phx:navigate` with `pop`
+// only when the page changed (not for an anchor of the same page), before it
+// patches, while the old page is still connected.
+const registerHistoryClosesOverlays = () => {
+  window.addEventListener("phx:navigate", ({detail}) => {
+    if (!detail?.pop) {
+      return
+    }
+
+    Array.from(document.querySelectorAll("dialog[open]")).reverse().forEach(closeDialogAsEscape)
+    closeAppDrawer()
   })
 }
 
@@ -2421,6 +2486,7 @@ window.addEventListener("phx:page-loading-stop", rememberProfilesReturn)
 
 registerCapacitorMagicLinks()
 registerCapacitorBackButton()
+registerHistoryClosesOverlays()
 registerCapacitorPushNotifications()
 registerCapacitorRoutePersistence()
 registerSystemBarsStyle()

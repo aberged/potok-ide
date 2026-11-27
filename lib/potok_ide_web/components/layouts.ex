@@ -614,7 +614,12 @@ defmodule PotokIdeWeb.Layouts do
 
   attr :about_link, :boolean,
     default: false,
-    doc: "links the header back to the landing page, for pages without a `header_action`"
+    doc:
+      "links the header back to the landing page, for pages without a `header_action`; with a signed-in `current_scope`, back to the app"
+
+  attr :current_scope, :map,
+    default: nil,
+    doc: "the visitor's scope: a signed-in one turns `about_link` into a way back to the app"
 
   attr :fill, :boolean,
     default: false,
@@ -662,8 +667,18 @@ defmodule PotokIdeWeb.Layouts do
             <span class="font-brand text-xl font-bold">potok</span>
           </a>
           {render_slot(@header_action)}
+          <%!-- The phone app has no browser bar to go back with, so a signed-in
+           visitor gets a way back into the app. --%>
           <.link
-            :if={@about_link && @header_action == []}
+            :if={@about_link && @header_action == [] && signed_in?(@current_scope)}
+            id="guest-back-link"
+            href={~p"/groups"}
+            class="inline-flex items-center gap-1.5 rounded-full border border-base-content/15 px-4 py-2 text-sm font-medium transition duration-200 hover:border-base-content/30 hover:bg-base-content/5 active:scale-[0.98]"
+          >
+            <.icon name="hero-arrow-left" class="size-4" /> {gettext("Back to Potok")}
+          </.link>
+          <.link
+            :if={@about_link && @header_action == [] && !signed_in?(@current_scope)}
             id="guest-about-link"
             href={~p"/"}
             class="rounded-full border border-base-content/15 px-4 py-2 text-sm font-medium transition duration-200 hover:border-base-content/30 hover:bg-base-content/5 active:scale-[0.98]"
@@ -900,6 +915,9 @@ defmodule PotokIdeWeb.Layouts do
   defp home_path(_current_scope, %{} = _current_profile), do: ~p"/groups"
   defp home_path(%{account: %{}}, nil), do: ~p"/profiles"
   defp home_path(_current_scope, _current_profile), do: ~p"/accounts/log-in"
+
+  defp signed_in?(%{account: %{}}), do: true
+  defp signed_in?(_current_scope), do: false
 
   @doc """
   Shows the flash group with standard titles and content.

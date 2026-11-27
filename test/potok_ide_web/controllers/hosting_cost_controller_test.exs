@@ -62,6 +62,8 @@ defmodule PotokIdeWeb.HostingCostControllerTest do
     assert has?(document, "#costs-notes")
     refute has?(document, "#invoice-form")
     refute has?(document, "[id^=costs-month-edit]")
+    assert has?(document, "#guest-header #guest-back-link[href='/groups']")
+    refute has?(document, "#guest-about-link")
   end
 
   test "says when there is nothing to show yet", %{conn: conn} do
