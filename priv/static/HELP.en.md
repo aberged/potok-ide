@@ -227,7 +227,7 @@ On a phone, press and hold a message: a sheet opens with quick reactions and eve
 
 ![Pressing and holding a message](poruka-meni) ![A reply: the quote is above the field you write in](poruke-odgovor) ![A thread opened from a message](nit)
 
-The + button next to the field adds files, starts a poll or [schedules a message](#zakazane-poruke). One message carries up to 10 files, up to 100 MB each. Pictures, video and sound open right in the chat, and you can also drag files into the window. In the Android app, you send a GIF or a sticker straight from the keyboard.
+The + button next to the field adds files, starts a poll or [schedules a message](#zakazane-poruke). One message carries up to 10 files, up to 100 MB each. Pictures, video and sound open right in the chat, and you can also drag files into the window. In the Android app, you send a GIF or a sticker straight from the keyboard. On a computer, you add emoji with the smiley button next to the arrow: pick them one after another, and they go where the cursor is.
 
 If you start writing and leave the group, the text waits for you when you come back. This browser keeps the draft, for each profile and group, and the list of groups shows "Draft:" and your text in place of the latest message. When you send the message the draft goes, and when you log out they all go.
 

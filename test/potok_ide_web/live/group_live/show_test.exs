@@ -3312,6 +3312,53 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       refute has_element?(lv, "#value-reactions-#{value.id}")
     end
 
+    test "the composer's emoji button writes into its text, also in an edit", %{
+      lv: lv,
+      value: value
+    } do
+      assert has_element?(
+               lv,
+               "#group-value-form #group-value-emoji[data-emoji-insert='group-value-content'][aria-controls='reaction-picker']"
+             )
+
+      lv |> element("#value-edit-#{value.id}") |> render_click()
+
+      assert has_element?(
+               lv,
+               "#edit-value-form-#{value.id} #edit-value-emoji-#{value.id}[data-emoji-insert='edit-value-content-#{value.id}']"
+             )
+
+      refute has_element?(lv, "#group-value-emoji")
+    end
+
+    test "the picker comes with the composer for a member who may write but not react", %{
+      conn: conn,
+      profile: owner,
+      group: group,
+      value: value
+    } do
+      {account, member} = account_with_profile!("emoji-writer")
+      {:ok, invitation} = Social.invite_profile_to_group(owner, group, member)
+      {:ok, _accepted} = Social.accept_group_invitation(invitation, member)
+
+      {:ok, _manifest} = Social.create_own_group_manifest(owner, group)
+      {:ok, role} = Social.create_group_role(owner, group, %{"name" => "bez-reakcija"})
+      {:ok, _role} = Social.set_group_role_permission(owner, group, role.key, :react, :deny)
+      {:ok, _} = Social.assign_group_member_role(owner, group, member.id, role.key)
+
+      {:ok, lv, _html} = conn |> log_in_account(account) |> live(~p"/groups/#{group.id}/values")
+
+      refute has_element?(lv, "#value-react-#{value.id}")
+      assert has_element?(lv, "#group-value-emoji[data-emoji-insert='group-value-content']")
+      assert has_element?(lv, "#reaction-picker[phx-hook='ReactionPicker']")
+
+      {:ok, _role} = Social.set_group_role_permission(owner, group, role.key, :post_values, :deny)
+      {:ok, lv, _html} = conn |> log_in_account(account) |> live(~p"/groups/#{group.id}/values")
+
+      refute has_element?(lv, "#group-value-emoji")
+      refute has_element?(lv, "#reaction-picker")
+    end
+
     test "the picker event adds a reaction and clicking the pill removes it", %{
       lv: lv,
       value: value

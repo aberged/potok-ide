@@ -202,6 +202,15 @@
   }
 }
 
+/* Devices with a mouse: the same test as Enter sending a message in the
+   chat. Touch keyboards have emoji of their own, so the composer's emoji
+   button stands only here. */
+@custom-variant mouse {
+  @media (hover: hover) {
+    @slot;
+  }
+}
+
 /* On wide screens the menu stands at the side until it is hidden
    (`data-sidebar="hidden"` on <html>, kept per device by the script in
    root.html.heex). Phones open it over the page instead. `sidebar-shown:`

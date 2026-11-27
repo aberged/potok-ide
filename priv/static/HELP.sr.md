@@ -233,7 +233,7 @@ Na telefonu dugo pritisni poruku: otvara se list sa brzim reakcijama i svim radn
 
 ![Dugi pritisak na poruku](poruka-meni) ![Odgovor: citat je iznad polja za pisanje](poruke-odgovor) ![Nit otvorena iz poruke](nit)
 
-Dugme + pored polja dodaje fajlove, pokreće glasanje ili [zakazuje poruku](#zakazane-poruke). Jedna poruka nosi do 10 fajlova, do 100 MB svaki. Slike, video i zvuk otvaraju se pravo u razgovoru, a fajlove možeš i da prevučeš u prozor. U aplikaciji za Android GIF ili nalepnicu šalješ pravo sa tastature.
+Dugme + pored polja dodaje fajlove, pokreće glasanje ili [zakazuje poruku](#zakazane-poruke). Jedna poruka nosi do 10 fajlova, do 100 MB svaki. Slike, video i zvuk otvaraju se pravo u razgovoru, a fajlove možeš i da prevučeš u prozor. U aplikaciji za Android GIF ili nalepnicu šalješ pravo sa tastature. Na računaru emodžije dodaješ dugmetom sa smajlijem pored strelice: biraš ih jedan za drugim, a idu tamo gde je kursor.
 
 Ako počneš da pišeš pa odeš iz grupe, tekst te čeka kad se vratiš. Nacrt čuva ovaj pregledač, za svaki profil i grupu, a u spisku grupa umesto poslednje poruke piše „Nacrt:“ i tvoj tekst. Kad pošalješ poruku, nacrt nestaje, a kad se odjaviš, nestaju svi.
 

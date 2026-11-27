@@ -1410,7 +1410,8 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
   @doc """
   The page's one emoji picker: the `ReactionPicker` hook opens it from any
-  `[data-reaction-trigger]`, and for an app that asks (`pickEmoji`). The chat and
+  `[data-reaction-trigger]`, from the chat composer's emoji button
+  (`[data-emoji-insert]`), and for an app that asks (`pickEmoji`). The chat and
   the description take turns on the page, so each of them holds it.
   """
   attr :id, :string, default: "reaction-picker"
@@ -1424,6 +1425,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       hidden
       role="dialog"
       aria-label={gettext("Add reaction")}
+      data-label={gettext("Add reaction")}
       data-locale="en"
       data-data-source={~p"/emoji/en.json"}
       data-i18n={Jason.encode!(emoji_picker_i18n())}

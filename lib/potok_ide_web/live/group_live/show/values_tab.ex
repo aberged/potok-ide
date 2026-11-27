@@ -219,7 +219,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
           </div>
         </div>
 
-        <Components.reaction_picker :if={@can_react} />
+        <%!-- Reactions and the composer's emoji button share the picker. --%>
+        <Components.reaction_picker :if={@can_react or @can_post or @editing_value} />
 
         <.value_sheet />
 
@@ -325,6 +326,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                 <.composer_row
                   field={@edit_value_form[:content]}
                   input_id={"edit-value-content-#{@editing_value.id}"}
+                  emoji_id={"edit-value-emoji-#{@editing_value.id}"}
                   submit_id={"edit-value-submit-#{@editing_value.id}"}
                   submit_icon="hero-check"
                   submit_label={gettext("Save changes")}
@@ -428,6 +430,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                 <.composer_row
                   field={@new_value_form[:content]}
                   input_id="group-value-content"
+                  emoji_id="group-value-emoji"
                   submit_id="group-value-submit"
                   submit_icon={if(@schedule_at, do: "hero-clock", else: "hero-paper-airplane")}
                   submit_label={
@@ -1372,6 +1375,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
   attr :field, Phoenix.HTML.FormField, required: true
   attr :input_id, :string, required: true
+  attr :emoji_id, :string, required: true
   attr :submit_id, :string, required: true
   attr :submit_icon, :string, required: true
   attr :submit_label, :string, required: true
@@ -1382,6 +1386,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
   # The text and its submit button, the same for a new value and an edit. Past
   # the height limit the text scrolls, so the button never leaves the screen.
+  # With a mouse an emoji button stands before the submit button: it opens the
+  # page's emoji picker (`ReactionPicker`), which puts emoji at the caret.
   defp composer_row(assigns) do
     ~H"""
     <div class="flex items-end gap-1 sm:gap-1.5 [&_.fieldset]:p-0">
@@ -1400,6 +1406,25 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
         phx-hook=".SubmitOnEnter"
         data-focus-on-mount={to_string(@focus_on_mount)}
       />
+      <div class="hidden shrink-0 mouse:block">
+        <button
+          id={@emoji_id}
+          type="button"
+          data-emoji-insert={@input_id}
+          aria-haspopup="dialog"
+          aria-controls="reaction-picker"
+          aria-expanded="false"
+          phx-mounted={JS.ignore_attributes(["aria-expanded"])}
+          aria-label={gettext("Add emoji")}
+          title={gettext("Add emoji")}
+          class={[
+            icon_button_class("ghost", "md"),
+            "aria-expanded:bg-base-content/10 aria-expanded:text-base-content"
+          ]}
+        >
+          <.icon name="hero-face-smile" class="size-5" />
+        </button>
+      </div>
       <.icon_button
         id={@submit_id}
         type="submit"

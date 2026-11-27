@@ -221,7 +221,7 @@ msgstr ""
 msgid "Delete"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2357
+#: lib/potok_ide_web/live/group_live/show/components.ex:2359
 #, elixir-autogen, elixir-format
 msgid "Delete this message? The poll goes with it, with all its votes."
 msgstr ""
@@ -387,7 +387,7 @@ msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:383
 #: lib/potok_ide_web/live/group_live/show/polls_tab.ex:44
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1482
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1507
 #, elixir-autogen, elixir-format
 msgid "New poll"
 msgstr ""
