@@ -1,6 +1,6 @@
 # Privacy Policy for Potok
 
-Effective date: November 26, 2026
+Effective date: November 27, 2026
 
 This Privacy Policy explains how Potok collects, uses, stores and shares information when you use the Potok app for Android and iOS, the website https://potok.rs and related services.
 
@@ -18,6 +18,7 @@ If you have questions about this Privacy Policy or privacy requests, contact us 
 - We do not sell your personal information.
 - We use Firebase only to deliver push notifications.
 - JPEG, PNG and WebP photos lose what they say about where and with what they were taken before they are sent.
+- Only the group's admins know who reported a message, not its author.
 - You can delete your account yourself, in the settings or at https://potok.rs/brisanje-naloga.
 
 ## 3. Information we keep
@@ -43,7 +44,7 @@ When someone invites an email address that has no account yet, Potok opens an un
 - Places of groups and events: a point, an area or a route you draw on the map or bring from a file
 - Messages, replies, threads and one-to-one conversations, and the data used to search messages
 - Scheduled messages: their text, files and the time they go out, until they are sent or deleted. Only the accounts with the profile in whose name they are scheduled see them.
-- Reactions, pinned groups, tags (public and private, and those you put on profiles), follows, notices and who read them, how far you read a chat, and blocks
+- Reactions, pinned groups, tags (public and private, and those you put on profiles), follows, notices and who read them, how far you read a chat, and blocks in groups
 - Events and answers to them
 - Polls and votes: in a secret poll we keep only that a profile voted, not what for; the list of voters can be downloaded by whoever the poll's rules let see the details
 - Data a group's apps write, such as form responses. When a response is "anonymous", others do not see who sent it, but the server still knows.
@@ -52,6 +53,12 @@ When someone invites an email address that has no account yet, Potok opens an un
 - The personal memory of apps: what an app or a site in a group's description keeps for you alone, such as how far you read. Not even the group's editors see it, and you see and delete it in the account settings.
 
 The "My activity" page shows in one place what of this list the profile did in the groups it reads now: messages, the reactions to them, votes, events, records and the rest. We keep nothing new for it. Only the accounts that hold the profile see it, so on a shared profile all of them, except for a vote one of them gives through the shared profile in their own name: only that account sees it.
+
+### Reports and blocks
+
+- **Reporting a message:** which message was reported and in which group, who reported it and when, the reason (spam or advertising; insult, threat or harassment; violence, hate or sexual content; something else) and a note of up to 500 characters if you write one, and whether and when an admin dismissed the report. Reports are not part of a group's history.
+- **Blocking a profile:** which profile blocked which and when. Blocks are not part of a group's history either.
+- **Reporting to us:** the email you send us under the [Terms of Use](https://potok.rs/terms), with the address it came from and what you write in it.
 
 ### Files
 
@@ -77,6 +84,7 @@ We use information to:
 - Create and maintain your account and confirm it is you, among other ways by links we send by email
 - Let you create and edit profiles, groups, memberships, messages and everything else Potok offers
 - Deliver the push notifications you turned on
+- Let group admins and us deal with reports and enforce the [Terms of Use](https://potok.rs/terms)
 - Protect the service, prevent abuse and fix errors
 - Comply with legal obligations
 
@@ -86,7 +94,7 @@ We process personal data on the basis of:
 
 - Performance of a contract, when we provide the service you use
 - Your consent, when you turn on push notifications
-- Legitimate interests, for the security of the service, preventing abuse and fixing errors
+- Legitimate interests, for the security of the service, dealing with reports, preventing abuse and fixing errors
 - Legal obligations
 
 ## 6. Who else sees information
@@ -94,6 +102,10 @@ We process personal data on the basis of:
 ### Other users
 
 What you post in a group is seen by those the group's roles allow. Your profile, memberships and posts are seen in the groups and collaboration features you use. A profile's details and description are seen only by those you meant each of them for. You choose who can find your profile: everyone logged in, those who know its exact username or share a group with you, or only those who share a group with you. The answer to an invitation by email, into a group or to Potok, does not tell whoever sends it whether you have an account at that address, nor your profiles: for a group they see the address they typed, and your profile only once you accept the invitation with it. When you invite someone into a group or ask to join one, the invited, or those who decide the request, see your details as that group's members do. Public groups are seen by everyone who is logged in.
+
+A report of a message is seen by the admins of the group the message was written in: the message, the reason, the note and the profile that reported it. A report of a message in a thread is seen by the admins of the group the thread hangs from, and a report from a group without an admin by the admins of the nearest group above it that has one. The push notification about a report carries the group's name, the reason and the beginning of the message, without the name of whoever reported it. The author of the message does not learn who reported it, and of your own report you see only that you sent it.
+
+A block of a profile is seen by you. The blocked profile gets no notification of it, but sees that it can no longer write in your one-to-one conversation.
 
 ### Anyone with a link
 
@@ -117,6 +129,7 @@ People without an account and services that show previews of shared links see th
 
 - When required by law, legal process or a valid request from a public authority
 - To protect the rights, safety and integrity of Potok, our users or the public
+- When we report illegal content to the authorities, as the Terms of Use provide
 - In connection with a merger, acquisition or sale, as permitted by applicable law
 
 ## 7. Cookies and local storage
@@ -130,6 +143,9 @@ Potok uses only cookies that keep you logged in: the session cookie and, if you 
 - Push notifications waiting for delivery are deleted a day after they are sent.
 - A scheduled message becomes an ordinary message once it is sent. One that could not be sent is kept until you send or delete it, and it also goes when you leave the group.
 - A link preview is kept for 6 hours.
+- A report of a message goes when the message is deleted. A dismissed report is kept as long as the message, so the same profile does not report the same message again.
+- A block is kept until you lift it.
+- A report sent by email is kept as long as it takes to deal with it.
 - The data of processes is deleted 30 days after they end.
 - The history of a group stays as long as the group. Of one thing we keep at most the last 200 old versions. An admin can empty them earlier, and you can empty those of a record you wrote into an app yourself; what stays is only that there was a change.
 - An unconfirmed account opened by an invitation is deleted after 90 days.
@@ -139,8 +155,8 @@ Potok uses only cookies that keep you logged in: the session cookie and, if you 
 
 You delete your account in the account settings, in the Account part, or at https://potok.rs/brisanje-naloga, where you enter your address and get a link that works for an hour. Before deleting you see what goes and what stays.
 
-- **Gone:** the account, its sign-ins and devices, your memberships and roles, follows, reactions, tags, invitations, scheduled messages with their files and the personal memory of apps, the history of your reactions and the old versions of the records you wrote into apps, and the groups where you are the only member.
-- **Stays:** the messages, files, polls, events and notices you posted in groups, and in the history of a group that you changed something in it, under the name "Deleted user", without your username, picture, description or details. A profile you share with other accounts stays theirs.
+- **Gone:** the account, its sign-ins and devices, your memberships and roles, follows, reactions, tags, invitations, scheduled messages with their files and the personal memory of apps, the reports of messages you sent, the blocks you set and those by which others blocked you, the history of your reactions and the old versions of the records you wrote into apps, and the groups where you are the only member.
+- **Stays:** the messages, files, polls, events and notices you posted in groups, and in the history of a group that you changed something in it, under the name "Deleted user", without your username, picture, description or details. Other people's reports of your messages stay with those messages. A profile you share with other accounts stays theirs, with its reports and blocks.
 
 A group never loses its admin: if you are the only admin of a group that has other people in it, make someone else an admin before deleting. After the deletion, one last email comes to your address.
 
