@@ -66,22 +66,22 @@ msgstr "%{name}: нов одговор"
 msgid "Someone sent a response."
 msgstr "Стигао је нов одговор."
 
-#: lib/potok_ide/social/notifications.ex:414
+#: lib/potok_ide/social/notifications.ex:444
 #, elixir-autogen, elixir-format
 msgid "Admin"
 msgstr "Администратор"
 
-#: lib/potok_ide/social/notifications.ex:404
+#: lib/potok_ide/social/notifications.ex:434
 #, elixir-autogen, elixir-format
 msgid "Given: %{roles}."
 msgstr "Додељено: %{roles}."
 
-#: lib/potok_ide/social/notifications.ex:410
+#: lib/potok_ide/social/notifications.ex:440
 #, elixir-autogen, elixir-format
 msgid "Put to a vote: %{roles}."
 msgstr "На гласању: %{roles}."
 
-#: lib/potok_ide/social/notifications.ex:407
+#: lib/potok_ide/social/notifications.ex:437
 #, elixir-autogen, elixir-format
 msgid "Refused: %{roles}."
 msgstr "Одбијено: %{roles}."
@@ -243,3 +243,18 @@ msgstr "Гласања"
 #, elixir-autogen, elixir-format
 msgid "When someone mentions you, replies to you or reacts to your message"
 msgstr "Кад те неко помене, одговори ти или реагује на твоју поруку"
+
+#: lib/potok_ide/social/notifications.ex:408
+#, elixir-autogen, elixir-format
+msgid "A message was reported (%{reason})."
+msgstr "Пријављена је порука (%{reason})."
+
+#: lib/potok_ide/social/notifications.ex:404
+#, elixir-autogen, elixir-format
+msgid "A message was reported (%{reason}): %{text}"
+msgstr "Пријављена је порука (%{reason}): %{text}"
+
+#: lib/potok_ide/social/notifications.ex:414
+#, elixir-autogen, elixir-format
+msgid "Report"
+msgstr "Пријава"

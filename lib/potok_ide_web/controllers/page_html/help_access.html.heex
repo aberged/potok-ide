@@ -937,6 +937,28 @@
         </dd>
       </div>
       <div>
+        <dt>{dgettext("help_guides", "Blocks a profile for themself")}</dt>
+        <dd>
+          <.hg_text text={
+            dgettext(
+              "help_guides",
+              "Every person, from the other profile's card or from their direct conversation (`ProfileBlocks`). It closes that conversation for both and opens no new one; it touches no group they share. Only the one who blocked lifts it."
+            )
+          } />
+        </dd>
+      </div>
+      <div>
+        <dt>{dgettext("help_guides", "Handles a reported message")}</dt>
+        <dd>
+          <.hg_text text={
+            dgettext(
+              "help_guides",
+              "Whoever reads a chat reports a message someone else wrote, once, but not in a direct conversation (`ValueReports`). Those who hold Admin in its group handle it: for a thread, in the group it hangs from, and in a group without an admin, in the nearest one above that has. They delete the message, also in a thread where they hold no role, or dismiss the report."
+            )
+          } />
+        </dd>
+      </div>
+      <div>
         <dt>{dgettext("help_guides", "Leaves the group")}</dt>
         <dd>
           <.hg_text text={
@@ -968,6 +990,14 @@
               dgettext(
                 "help_guides",
                 "<b>A direct conversation</b> stands under the root and uses the root's manifest. Whoever opens it is recorded as Admin, but roles are not assigned in it and it gets no manifest of its own."
+              )
+            } />
+          </li>
+          <li>
+            <.hg_text text={
+              dgettext(
+                "help_guides",
+                "<b>A closed direct conversation</b>: while either of the two has blocked the other, both stay its members and read it, but hold no permission there, Admin included (`closed?`), and no new one opens between them."
               )
             } />
           </li>

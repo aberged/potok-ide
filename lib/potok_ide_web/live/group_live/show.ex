@@ -22,11 +22,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
     Discovery,
     EmailInvitations,
     Profile,
+    ProfileBlocks,
     ProfileDetails,
     ProfileFacts,
     ScheduledValue,
     Value,
     ValueAttachment,
+    ValueReports,
     ValueRules
   }
 
@@ -67,6 +69,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     ProcessForm,
     ProcessesState,
     ProcessesTab,
+    ReportDialog,
     RequestDialogs,
     RequestRules,
     RolesTab,
@@ -789,6 +792,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 unread_divider={@unread_divider}
                 is_member={@is_member}
                 access={@access}
+                direct_blocked_id={@direct_blocked_id}
                 attachments={@uploads.attachments}
                 can_attach={can_attach?(@access)}
                 keyboard_media={
@@ -1034,6 +1038,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
         card={:dialog}
       />
       <ProfileCard.dialog card={@profile_card} />
+      <ReportDialog.dialog report={@report_dialog} />
       <HistoryTab.dialog open={@history_open} manifest={@access.manifest} />
       <ProcessForm.dialog state={@process_form} />
       <ProcessesTab.start_dialog start={@processes_start} />
@@ -1206,6 +1211,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:request_dialog, nil)
          |> assign(:decision_dialog, nil)
          |> assign(:profile_card, nil)
+         |> assign(:report_dialog, nil)
          |> assign(:group_tags, [])
          |> assign(:group_reactions, [])
          |> assign(:can_react_to_group, false)
@@ -2141,14 +2147,44 @@ defmodule PotokIdeWeb.GroupLive.Show do
           {:ok, direct} ->
             {:noreply, push_navigate(socket, to: ~p"/groups/#{direct.id}/values")}
 
-          {:error, _reason} ->
+          {:error, reason} ->
             {:noreply,
              socket
              |> assign(:profile_card, nil)
-             |> put_flash(:error, gettext("Unable to open a direct group right now."))}
+             |> put_flash(:error, ProfileCard.direct_error(reason))}
         end
 
       _closed ->
+        {:noreply, socket}
+    end
+  end
+
+  # The composer of a direct conversation the viewer closed lifts the block;
+  # the page hears of it and reads its access again (`ProfileBlocks`).
+  def handle_event("unblock_direct", _params, socket) do
+    case socket.assigns do
+      %{direct_blocked_id: blocked_id, current_profile: viewer} when is_integer(blocked_id) ->
+        :ok = ProfileBlocks.unblock(viewer, blocked_id)
+        {:noreply, put_flash(socket, :info, gettext("Profile unblocked."))}
+
+      _assigns ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event(event, _params, socket)
+      when event in ["profile_card_block", "profile_card_unblock"] do
+    %{profile_card: card, current_profile: viewer, current_scope: %{account: account}} =
+      socket.assigns
+
+    case card && ProfileCard.apply_block(event, card, viewer) do
+      {kind, message} ->
+        {:noreply,
+         socket
+         |> assign(:profile_card, ProfileDetails.card(account, viewer, card.profile))
+         |> put_flash(kind, message)}
+
+      nil ->
         {:noreply, socket}
     end
   end
@@ -2232,6 +2268,80 @@ defmodule PotokIdeWeb.GroupLive.Show do
           {:error, _reason} ->
             {:noreply, put_flash(socket, :error, gettext("Could not block."))}
         end
+    end
+  end
+
+  # Someone else's message, to the admins who handle reports here
+  # (`ValueReports`): the dialog asks why first.
+  def handle_event("report_value_open", %{"id" => id}, socket) do
+    %{current_profile: profile, access: access, group: group} = socket.assigns
+
+    with %Value{} = value <- loaded_value(socket, id),
+         true <- ValueReports.can_report?(profile, access, group, value) do
+      if ValueReports.reported?(profile, value.id) do
+        {:noreply,
+         put_flash(
+           socket,
+           :info,
+           gettext("Your report of this message is with the admins already.")
+         )}
+      else
+        form = to_form(ValueReports.change_report(), as: :report)
+        {:noreply, assign(socket, :report_dialog, %{value: value, form: form})}
+      end
+    else
+      _none -> {:noreply, put_flash(socket, :error, gettext("Message not found."))}
+    end
+  end
+
+  def handle_event("report_value_close", _params, socket),
+    do: {:noreply, assign(socket, :report_dialog, nil)}
+
+  def handle_event("report_value_submit", %{"report" => params}, socket) do
+    %{current_profile: profile, report_dialog: dialog} = socket.assigns
+
+    case dialog && ValueReports.report(profile, dialog.value, params) do
+      {:ok, _report} ->
+        {:noreply,
+         socket
+         |> assign(:report_dialog, nil)
+         |> put_flash(:info, gettext("Thank you. The admins of the group have your report."))}
+
+      {:error, :already_reported} ->
+        {:noreply,
+         socket
+         |> assign(:report_dialog, nil)
+         |> put_flash(:info, gettext("Your report of this message is with the admins already."))}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        form = to_form(Map.put(changeset, :action, :insert), as: :report)
+        {:noreply, assign(socket, :report_dialog, %{dialog | form: form})}
+
+      {:error, _reason} ->
+        {:noreply,
+         socket
+         |> assign(:report_dialog, nil)
+         |> put_flash(:error, gettext("Unable to report this message right now."))}
+
+      nil ->
+        {:noreply, socket}
+    end
+  end
+
+  # In a direct conversation, the other person's message blocks them, which
+  # closes the conversation for both (`ProfileBlocks`).
+  def handle_event("block_value_profile", %{"id" => id}, socket) do
+    %{current_profile: profile, group: group} = socket.assigns
+
+    with true <- group.is_direct,
+         %Value{creator: %Profile{kind: :person} = author} <- loaded_value(socket, id),
+         true <- author.id != profile.id,
+         :ok <- ProfileBlocks.block(profile, author) do
+      {:noreply,
+       put_flash(socket, :info, gettext("Profile blocked. Your direct conversation is closed."))}
+    else
+      _none ->
+        {:noreply, put_flash(socket, :error, gettext("Unable to block this profile right now."))}
     end
   end
 
@@ -6960,21 +7070,33 @@ defmodule PotokIdeWeb.GroupLive.Show do
         |> assign(:access_preview, state)
         |> assign(:access, shown)
         |> assign(:is_member, shown.member?)
+        |> assign(:direct_blocked_id, nil)
 
       :ended ->
         socket
         |> assign(:access, own)
         |> assign(:is_member, own.member?)
+        |> assign(:direct_blocked_id, nil)
         |> put_flash(:info, gettext("The preview ended, as it no longer holds."))
         |> push_navigate(to: preview_exit_path(socket, group))
     end
   end
 
-  defp assign_access(socket, %Access{} = access, _group) do
+  defp assign_access(socket, %Access{} = access, group) do
+    group = group || socket.assigns[:group]
+
     socket
     |> assign(:access, access)
     |> assign(:is_member, access.member?)
+    |> assign(:direct_blocked_id, direct_blocked_id(socket, access, group))
   end
+
+  # In a direct conversation closed by a block, the other member when the
+  # viewer is who blocked them: the composer offers to lift it.
+  defp direct_blocked_id(socket, %Access{closed?: true}, %Group{id: group_id}),
+    do: ProfileBlocks.blocked_member_id(socket.assigns.current_profile, group_id)
+
+  defp direct_blocked_id(_socket, _access, _group), do: nil
 
   # While a preview lasts, every event passes `AccessPreview.guard/3`.
   defp guard_preview(%{assigns: %{access_preview: %{}}} = socket),

@@ -152,7 +152,7 @@ U kartici Detalji upisuješ ime i prezime, zanimanje ili organizaciju, mesto, te
 
 ![Detalji profila: ime i prezime za sve grupe, telefon samo za zgradu](profil-detalji)
 
-Karticu profila otvaraš dodirom na člana u kartici Članovi ili na ime autora poruke. Na njoj su slika i korisničko ime, detalji i opis koje ti taj profil pokazuje, tvoji tagovi i grupe u kojima ste oboje, i dugme **Pošalji poruku**. Ista kartica je i na adresi `/u/korisničko-ime`, a na stranici Pozivnice do nje vodi ime onoga ko te poziva. Kad nekoga pozoveš u grupu, ili tražiš da uđeš u nju, pozvani i oni koji odlučuju o zahtevu vide tvoje detalje kao članovi te grupe.
+Karticu profila otvaraš dodirom na člana u kartici Članovi ili na ime autora poruke. Na njoj su slika i korisničko ime, detalji i opis koje ti taj profil pokazuje, tvoji tagovi i grupe u kojima ste oboje, i dugme **Pošalji poruku**, a pored njega **Blokiraj** (vidi [Blokiranje profila](#blokiranje-profila)). Ista kartica je i na adresi `/u/korisničko-ime`, a na stranici Pozivnice do nje vodi ime onoga ko te poziva. Kad nekoga pozoveš u grupu, ili tražiš da uđeš u nju, pozvani i oni koji odlučuju o zahtevu vide tvoje detalje kao članovi te grupe.
 
 ![Kartica profila: ime, zanimanje, mesto i zajedničke grupe](kartica-profila)
 
@@ -227,6 +227,7 @@ Poruku pišeš u polje na dnu i šalješ strelicom. Na telefonu, dok kucaš, gor
 - **Pominjanje**: napiši @ i ime člana ili uloge, a @everyone pominje sve. Pomenutom se poruka istakne i stiže mu obaveštenje.
 - **Izmena i brisanje**: svoje poruke možeš da izmeniš i obrišeš, a ko ima dozvolu, briše i tuđe. Izmenjena poruka pored vremena kaže „izmenjeno“, a dugi pritisak pokazuje i kad je izmenjena. Da je poruka izmenjena ili obrisana ostaje u [istoriji grupe](#istorija), bez teksta.
 - **Linkovi** dobijaju pregled, a dugačke poruke se skupljaju dok ih ne otvoriš. Link ka formi pokazuje naslov i podnaslov forme onima koji smeju da je otvore.
+- **Prijava**: tuđu poruku koja krši pravila prijaviš administratorima grupe stavkom **Prijavi adminima**. Biraš razlog i, ako hoćeš, dopišeš napomenu, a autor ne saznaje ko je prijavio. U razgovoru u četiri oka prijave nema: tamo [blokiraš profil](#blokiranje-profila).
 
 Na telefonu dugo pritisni poruku: otvara se list sa brzim reakcijama i svim radnjama. Na računaru se iste radnje pojavljuju kad pređeš mišem preko poruke.
 
@@ -363,6 +364,14 @@ Javna grupa sa otvorenim razgovorom može da blokira profil koji u njemu smeta: 
 Spisak blokiranih, sa dugmetom **Odblokiraj**, vide na kartici Članovi oni koji smeju da uklanjaju članove. Samo oni vide i blokade u istoriji pristupa.
 
 ![Blokirani profili na kartici Članovi](blokirani)
+
+### Prijave {:#prijave}
+
+Prijavljena poruka stiže administratorima grupe u kojoj je napisana. Dobijaju obaveštenje, a prijava ih čeka na stranici **Zahtevi**, pod karticom **Prijave**, sa razlogom, napomenom i imenom onoga ko je prijavio; ruka u gornjoj traci broji i nju. Administrator poruku otvara u razgovoru, briše je za sve ili odbacuje prijavu, a obrisana poruka odnosi i svoje prijave. Prijava poruke iz niti ide administratorima grupe iz koje nit polazi, i oni tu poruku brišu i kad u niti nemaju ulogu. Grupa bez administratora šalje prijave prvoj grupi iznad sebe koja ga ima. Istu poruku prijavljuješ samo jednom, a prijave se ne upisuju u istoriju grupe.
+
+### Blokiranje profila {:#blokiranje-profila}
+
+Profil koji ti smeta blokiraš na njegovoj kartici, dugmetom **Blokiraj**, ili u vašem razgovoru u četiri oka, stavkom **Blokiraj profil** na njegovoj poruci. Dok je bilo ko od vas dvoje blokirao drugog, razgovor u četiri oka može da se čita, ali u njega više niko ne piše, ne reaguje i ne menja poruke, a novi ne može da se otvori. Ništa drugo se ne menja: u zajedničkim grupama se i dalje srećete, a tamo odlučuju administratori. Blokadu skida samo onaj ko ju je postavio, dugmetom **Odblokiraj** na kartici ili u samom razgovoru.
 
 ### Sve dozvole {:#dozvole}
 

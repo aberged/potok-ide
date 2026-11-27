@@ -451,7 +451,7 @@ msgstr ""
 
 #: lib/potok_ide/events/format.ex:100
 #: lib/potok_ide_web/live/activity_live/index.ex:444
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:113
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:129
 #, elixir-autogen, elixir-format
 msgid "Yesterday"
 msgstr ""

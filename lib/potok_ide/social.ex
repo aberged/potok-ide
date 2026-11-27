@@ -63,6 +63,7 @@ defmodule PotokIde.Social do
     Notifications,
     PinnedGroups,
     Profile,
+    ProfileBlocks,
     ProfileDetails,
     ProfileInvitation,
     ScheduledValue,
@@ -71,6 +72,7 @@ defmodule PotokIde.Social do
     ValueAttachment,
     ValuePreview,
     ValueReaction,
+    ValueReports,
     Visibility
   }
 
@@ -1026,51 +1028,58 @@ defmodule PotokIde.Social do
     root_group = get_root_group!()
 
     case find_direct_group(Repo, root_group, current_profile, other_profile) do
+      # A closed one too: what was written stays readable (`ProfileBlocks`).
       %Group{} = group ->
         {:ok, group}
 
       nil ->
-        attrs = %{
-          "name" => direct_group_name(current_profile, other_profile),
-          "description" => "",
-          "description_format" => :markdown,
-          "home_page" => :chat,
-          "has_public_chat" => true,
-          "is_direct" => true,
-          "is_public" => false,
-          "creator_id" => current_profile.id,
-          "parent_id" => root_group.id,
-          "is_root" => false
-        }
+        if ProfileBlocks.between?(current_profile.id, other_profile.id),
+          do: {:error, :blocked},
+          else: insert_direct_group(root_group, current_profile, other_profile)
+    end
+  end
 
-        Multi.new()
-        |> Multi.insert(:group, Group.changeset(%Group{}, attrs))
-        |> Multi.insert(:current_membership, fn %{group: group} ->
-          GroupMembership.changeset(%GroupMembership{}, %{
-            group_id: group.id,
-            profile_id: current_profile.id
-          })
-        end)
-        |> Multi.insert(:other_membership, fn %{group: group} ->
-          GroupMembership.changeset(%GroupMembership{}, %{
-            group_id: group.id,
-            profile_id: other_profile.id
-          })
-        end)
-        |> insert_admin_role(current_profile)
-        |> Repo.transaction()
-        |> case do
-          # Only the two can see it: their pages count their unread values
-          # again on the news of the membership, which also brings the chat
-          # into their list. Every other page on the root used to reload.
-          {:ok, %{group: group}} ->
-            broadcast_group_membership_changed(current_profile.id, group.id, :added)
-            broadcast_group_membership_changed(other_profile.id, group.id, :added)
-            {:ok, group}
+  defp insert_direct_group(%Group{} = root_group, %Profile{} = current_profile, other_profile) do
+    attrs = %{
+      "name" => direct_group_name(current_profile, other_profile),
+      "description" => "",
+      "description_format" => :markdown,
+      "home_page" => :chat,
+      "has_public_chat" => true,
+      "is_direct" => true,
+      "is_public" => false,
+      "creator_id" => current_profile.id,
+      "parent_id" => root_group.id,
+      "is_root" => false
+    }
 
-          {:error, _step, reason, _changes} ->
-            {:error, reason}
-        end
+    Multi.new()
+    |> Multi.insert(:group, Group.changeset(%Group{}, attrs))
+    |> Multi.insert(:current_membership, fn %{group: group} ->
+      GroupMembership.changeset(%GroupMembership{}, %{
+        group_id: group.id,
+        profile_id: current_profile.id
+      })
+    end)
+    |> Multi.insert(:other_membership, fn %{group: group} ->
+      GroupMembership.changeset(%GroupMembership{}, %{
+        group_id: group.id,
+        profile_id: other_profile.id
+      })
+    end)
+    |> insert_admin_role(current_profile)
+    |> Repo.transaction()
+    |> case do
+      # Only the two can see it: their pages count their unread values
+      # again on the news of the membership, which also brings the chat
+      # into their list. Every other page on the root used to reload.
+      {:ok, %{group: group}} ->
+        broadcast_group_membership_changed(current_profile.id, group.id, :added)
+        broadcast_group_membership_changed(other_profile.id, group.id, :added)
+        {:ok, group}
+
+      {:error, _step, reason, _changes} ->
+        {:error, reason}
     end
   end
 
@@ -3176,8 +3185,9 @@ defmodule PotokIde.Social do
   @doc """
   The header badges in one query: pending invitations, what waits for the
   profile under Requests (requests to join and for roles it may decide,
-  `count_pending_group_join_requests/1`, and the tasks of
-  drawn processes that wait for it, `PotokIde.Processes.waiting_sql/1`),
+  `count_pending_group_join_requests/1`, the tasks of
+  drawn processes that wait for it, `PotokIde.Processes.waiting_sql/1`, and
+  the open reports of the groups it is an admin of, `ValueReports.open_count/1`),
   unread values (the root group's count) and unread notices. The same
   numbers as `count_pending_invitations/1`,
   `count_pending_group_join_requests_for_approver/1` with
@@ -3269,11 +3279,17 @@ defmodule PotokIde.Social do
       #{unread_sql},
       #{Notices.unread_count_sql("$1")},
       #{Notices.notice_mark_sql()},
-      (SELECT COUNT(*) FROM (#{PotokIde.Processes.waiting_sql("$1")}) w)
+      (SELECT COUNT(*) FROM (#{PotokIde.Processes.waiting_sql("$1")}) w),
+      (
+        SELECT COUNT(*) FROM value_reports vr
+        JOIN group_member_roles r
+          ON r.group_id = vr.group_id AND r.profile_id = $1 AND r.role_key = '#{GroupRole.admin_key()}'
+        WHERE vr.dismissed_at IS NULL
+      )
     """
 
     case Repo.query(sql, [profile_id, account_id],
-           cache_statement: "social_nav_counts_v11_#{unread?}"
+           cache_statement: "social_nav_counts_v12_#{unread?}"
          ) do
       {:ok,
        %{
@@ -3289,7 +3305,8 @@ defmodule PotokIde.Social do
              unread_as_of,
              unread_notices,
              unread_notices_as_of,
-             waiting
+             waiting,
+             reports
            ]
          ]
        }} ->
@@ -3300,7 +3317,7 @@ defmodule PotokIde.Social do
             join_request_counts
             |> Enum.map(fn [group_id, count] -> {group_id, count} end)
             |> approvable_join_request_total(profile)
-            |> Kernel.+(waiting),
+            |> Kernel.+(waiting + reports),
           root_unread: unread,
           root_unread_as_of: CountMark.from_ids(unread_as_of),
           unread_notices: unread_notices,
@@ -4054,6 +4071,8 @@ defmodule PotokIde.Social do
         access = Access.for_profile(profile, group)
 
         cond do
+          # A closed direct conversation stays as it was (`ProfileBlocks`).
+          access.closed? -> {:error, :not_permitted}
           access.member? -> do_update_value(profile, group, access, value, attrs)
           not Access.can_post_in_chat?(profile, access, group) -> {:error, :not_permitted}
           edited_just_now?(value) -> {:error, :too_many_values}
@@ -4118,6 +4137,17 @@ defmodule PotokIde.Social do
     end
   end
 
+  @doc """
+  Deletes a reported value for an admin who handles its report
+  (`ValueReports.delete_value/2`), who may lack the role in a thread it is
+  in. A decision stays, as with `delete_value/2`.
+  """
+  def moderate_value(%Profile{} = admin, %Value{} = value) do
+    if carries_decision?(value),
+      do: {:error, :decision},
+      else: remove_value(value, actor: admin)
+  end
+
   defp carries_decision?(%Value{id: value_id}) do
     Repo.exists?(
       from(p in Poll,
@@ -4138,6 +4168,8 @@ defmodule PotokIde.Social do
     # poll is deleted with it.
     reply_ids = reply_ids(value)
     poll = Repo.one(from(p in Poll, where: p.value_id == ^value.id))
+    # Its reports go with it; their admins count again after.
+    report_group_ids = ValueReports.open_group_ids(value.id)
 
     Multi.new()
     |> Multi.delete_all(
@@ -4179,6 +4211,7 @@ defmodule PotokIde.Social do
         maybe_broadcast_last_value_removed(deleted_value, last_value_at)
         broadcast_values_updated(reply_ids)
         if poll, do: Polls.broadcast_deleted(poll)
+        ValueReports.reports_changed(report_group_ids)
         {:ok, deleted_value}
 
       {:error, _step, reason, _changes} ->

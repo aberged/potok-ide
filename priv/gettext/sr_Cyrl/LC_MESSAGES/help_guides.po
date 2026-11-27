@@ -121,22 +121,22 @@ msgstr "3. Дозволе"
 msgid "4 · Everyone in the sub-group finds out"
 msgstr "4 · Сви у подгрупи сазнају"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:968
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:990
 #, elixir-autogen, elixir-format
 msgid "<b>A direct conversation</b> stands under the root and uses the root's manifest. Whoever opens it is recorded as Admin, but roles are not assigned in it and it gets no manifest of its own."
 msgstr "<b>Директан разговор</b> стоји под кореном и користи коренски манифест. Ко га отвори, записан је као Администратор, али се у њему улоге не додељују и свој манифест се не прави."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1008
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1038
 #, elixir-autogen, elixir-format
 msgid "<b>A guest</b> has no profile, and so no permissions. They see a public group's name, picture and part of its description, and the whole description only if the group opened it to guests."
 msgstr "<b>Гост</b> нема профил, па ни дозволе. Види име, слику и део описа јавне групе, а цео опис само ако га је група отворила гостима."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:976
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1006
 #, elixir-autogen, elixir-format
 msgid "<b>A process's profile</b> is a member only where the process puts it, with what Everyone may, until an Admin assigns it another role. It is not inherited and is not counted when something goes to the people with a permission."
 msgstr "<b>Профил процеса</b> је члан само где га процес стави, са оним што сме Сви, док му Администратор не додели још неку улогу. Не наслеђује се и не броји се кад нешто иде људима са неком дозволом."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:960
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:982
 #, elixir-autogen, elixir-format
 msgid "<b>A thread</b> is a group under the group of its message: it uses that group's manifest, and its members are only the participants, with the roles they hold in the group. Whoever opens it is its Admin, and so can make it a manifest of its own."
 msgstr "<b>Нит</b> је група испод групе своје поруке: користи њен манифест, а чланови су само учесници, са улогама које држе у групи. Ко је отвори, њен је Администратор, па јој може направити и свој манифест."
@@ -206,12 +206,12 @@ msgstr "Нова вредност апликације"
 msgid "A person and a role"
 msgstr "Особа и улога"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1092
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1122
 #, elixir-autogen, elixir-format
 msgid "A poll says which roles vote, which see the results and the details, and how unique and shared profiles vote."
 msgstr "Гласање каже које улоге гласају, које виде резултате и појединости, и како гласају јединствени и дељени профили."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1098
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1128
 #, elixir-autogen, elixir-format
 msgid "A process asks a role by a form or a decision, and sends it a push, if it may mention roles."
 msgstr "Процес пита улогу формом или одлуком, и шаље јој пуш, ако сме да помиње улоге."
@@ -294,7 +294,7 @@ msgstr "Све су то методе објекта `window.potok`. Свака 
 msgid "Alternative description"
 msgstr "Алтернативни опис"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1080
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1110
 #, elixir-autogen, elixir-format
 msgid "An alternative description can be seen by some roles only, along with those who may edit the group."
 msgstr "Алтернативни опис може да виде само неке улоге, уз оне који смеју да уређују групу."
@@ -739,7 +739,7 @@ msgstr "Чланови и улоге"
 msgid "Membership"
 msgstr "Чланство"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1104
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1134
 #, elixir-autogen, elixir-format
 msgid "Mentioning a role in a message tells everyone who holds it, with the permission Mention roles."
 msgstr "Помињање улоге у поруци јавља свима који је држе, уз дозволу Помињање улога."
@@ -943,7 +943,7 @@ msgstr "Улога"
 msgid "Role assignment"
 msgstr "Додела улоге"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1074
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1104
 #, elixir-autogen, elixir-format
 msgid "Roles also work outside these %{n} permissions"
 msgstr "Улоге раде и ван ових %{n} дозвола"
@@ -974,7 +974,7 @@ msgstr "Подешавања"
 msgid "Settings and people"
 msgstr "Подешавања и људи"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:956
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:978
 #, elixir-autogen, elixir-format
 msgid "Special cases"
 msgstr "Посебни случајеви"
@@ -1112,7 +1112,7 @@ msgstr "Корен и Месна заједница имају своје ман
 msgid "The rules are copied from the <a1>domain map</a1> and from the code."
 msgstr "Правила су преписана са <a1>мапе домена</a1> и из кода."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1086
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1116
 #, elixir-autogen, elixir-format
 msgid "The rules of an app's collections say which roles write, and which read everything."
 msgstr "Правила колекција апликације кажу које улоге пишу, а које читају све."
@@ -2409,7 +2409,7 @@ msgstr "исти опис? токен за упис (%{burst} / %{window} с)"
 msgid "the write and its processes, together"
 msgstr "упис и процеси колекције, заједно"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1064
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1094
 #, elixir-autogen, elixir-format
 msgid "<b>A deleted account</b> leaves its profile as \"Deleted user\", a member of no group and with no role. A group never loses its last Admin, so the person first makes someone else Admin of each group they alone hold."
 msgstr "<b>Обрисан налог</b> оставља свој профил као „Обрисан корисник“, без чланства у иједној групи и без улога. Група никад не остаје без последњег Админа, па особа прво неког другог постави за Админа сваке групе коју држи сама."
@@ -2439,7 +2439,7 @@ msgstr "Мајстор је јаван, па га зову процеси гру
 msgid "a group field stays here; a signal, if asked"
 msgstr "поље групе остаје овде; сигнал, ако се тражи"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1024
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1054
 #, elixir-autogen, elixir-format
 msgid "<b>A link to a form</b> in a message shows the form's title and subtitle only to those who may open it: its members, and everyone when a public group's form takes non-members. The others see the card a guest would get, or only the link."
 msgstr "<b>Линк ка форми</b> у поруци показује наслов и поднаслов форме само онима који смеју да је отворе: њеним члановима, и свима кад форма јавне групе прима и оне који нису чланови. Остали виде картицу коју би добио гост, или само линк."
@@ -2454,7 +2454,7 @@ msgstr "Прави шаблоне групе"
 msgid "Whoever may edit the group (`edit_group`), except in a direct conversation or a thread. The templates serve every group below it too, where whoever writes a description uses them but cannot change them."
 msgstr "Ко сме да уређује групу (`edit_group`), осим у директном разговору и нити. Шаблони важе и у свакој групи испод ње, где их користи ко пише опис, али не може да их мења."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:984
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1014
 #, elixir-autogen, elixir-format
 msgid "<b>A decision of a poll</b> that gives or takes a role is put to every member who may vote, with a quorum and a deadline, and is carried out as the poll ends. The role it gave keeps the poll (`poll_id`). In a group run by its founders only an Admin raises one; a process raises one through its owner, an Admin, and holds no more than Everyone all the same."
 msgstr "<b>Одлука гласања</b> која додељује или одузима улогу ставља се пред све чланове који смеју да гласају, са кворумом и роком, и спроводи се кад се гласање заврши. Улога коју је дала памти то гласање (`poll_id`). У групи коју воде оснивачи такву одлуку расписује само Администратор; процес је расписује преко свог власника, Администратора, и свеједно нема више од улоге Сви."
@@ -2474,12 +2474,12 @@ msgstr "Уводи избор администратора"
 msgid "The group's Admin turns it on (`elects_admins`). From then on Admin comes and goes only by a decision of a poll, only so is an admin removed from the group, though they may leave of their own accord, and the admins it had stay for the time being, until a decision takes the role from them or an election puts its winner in the holders' place (`effect_replace`). Only a decision turns it off."
 msgstr "Укључује га Администратор групе (`elects_admins`). Од тада се Администратор добија и губи само одлуком гласања, само тако се администратор уклања из групе, мада сам може да оде, а досадашњи администратори остају привремено, док им одлука не одузме улогу или избор не постави изабраног на место носилаца (`effect_replace`). Гаси га само одлука."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:992
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1022
 #, elixir-autogen, elixir-format
 msgid "<b>A request</b> that goes to a vote raises a poll in the name of whoever asked, by the rule written down beforehand, and the poll's decision gives the role or, for admission, takes them in as it closes. An invitation still brings someone in at once, so a group that admits only by a vote gives nobody the right to invite."
 msgstr "<b>Захтев</b> који иде на гласање расписује гласање у име онога ко тражи, по правилу записаном унапред, а одлука гласања додељује улогу или, за пријем, уводи у групу кад се гласање затвори. Позивница и даље одмах уводи у групу, па група која прима само гласањем никоме не даје право да позива."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1000
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1030
 #, elixir-autogen, elixir-format
 msgid "<b>A shared profile</b> that one account holds votes as that person. Held by several, it votes as the poll says: once for all of them, each holder through it as themself, or not at all."
 msgstr "<b>Дељени профил</b> који држи један налог гласа као та особа. Кад га држи више налога, гласа како каже гласање: једном за све њих, кроз њега сваки носилац у своје име, или никако."
@@ -2509,7 +2509,7 @@ msgstr "Пише како се добија улога и како група п
 msgid "It decides no request to join or for a role: that is for whoever manages requests, or for a vote."
 msgstr "Не одлучује ни о једном захтеву за приступ или за улогу: то је посао онога ко управља захтевима, или гласања."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1016
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1046
 #, elixir-autogen, elixir-format
 msgid "<b>A preview of the group as others see it</b> is for its admins only, as an admin already sees whatever a role sees. In it nothing changes: every event that would write stops, an upload is refused, no read marker moves and the app of a description does not run."
 msgstr "<b>Преглед групе како је други виде</b> имају само њени администратори, јер администратор ионако види све што види и улога. У њему се ништа не мења: зауставља се сваки догађај који би нешто уписао, отпремање се одбија, ознака прочитаног се не помера, а апликација из описа се не покреће."
@@ -2529,27 +2529,27 @@ msgstr "У апликацији исто ради преглед приступ�
 msgid "Keeps what changed"
 msgstr "Бележи шта се променило"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:943
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:965
 #, elixir-autogen, elixir-format
 msgid "Every member, by themself (`leave_group`), but not at the root, in a direct conversation or in a thread. A member held through the parent leaves there, and the last admin stays. In a group that elects its admins an admin may leave too, which resigns the role. The history keeps who left, with the roles they held."
 msgstr "Сваки члан, сам (`leave_group`), али не у корену, у директном разговору ни у нити. Члан наслеђен из групе изнад излази у њој, а последњи администратор остаје. У групи која бира администраторе и администратор може да оде, и тако даје оставку. Историја памти ко је отишао, са улогама које је имао."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:940
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:962
 #, elixir-autogen, elixir-format
 msgid "Leaves the group"
 msgstr "Напушта групу"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1040
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1070
 #, elixir-autogen, elixir-format
 msgid "<b>A profile's card</b> opens on a group's page for those the group already shows the profile to: a member to a member, the author of a message to whoever reads the chat, someone asking to join to whoever decides it, and someone blocked to whoever may remove members."
 msgstr "<b>Картица профила</b> се на страници групе отвара онима којима група тај профил већ показује: члан члану, аутор поруке ономе ко чита разговор, онај ко тражи улазак ономе ко о томе одлучује, а блокирани ономе ко сме да уклања чланове."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1032
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1062
 #, elixir-autogen, elixir-format
 msgid "<b>A profile's details</b> each say who sees them: only the accounts that hold the profile, picked groups, all its groups or everyone signed in. A group counts when both are its members, leaving out the root, direct conversations, threads and an app's records. Whoever the profile invites into a group, and whoever decides its request to join one, sees it as a member of that group would."
 msgstr "<b>Детаљи профила</b> сваки за себе кажу ко их види: само налози који користе профил, изабране групе, све његове групе или сви пријављени. Група се рачуна кад су оба њени чланови, не рачунајући корен, директне разговоре, нити и записе апликација. Кога профил позове у групу, и ко одлучује о његовом захтеву за улазак, види га као члан те групе."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1048
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1078
 #, elixir-autogen, elixir-format
 msgid "<b>Finding a profile</b> follows what it chose: everyone, whoever knows its exact username or shares a group with it, or only whoever shares a group with it. A refusal looks like a name nobody has. The suggestions when inviting offer only people the inviter shares a group with and profiles open to everyone."
 msgstr "<b>Проналажење профила</b> иде по његовом избору: сви, ко зна његово тачно корисничко име или је с њим у некој групи, или само ко је с њим у некој групи. Одбијање изгледа као име које нико нема. Предлози при позивању нуде само људе са којима је онај ко позива у некој групи и профиле отворене за све."
@@ -2574,7 +2574,32 @@ msgstr "Толико старих верзија једног записа чу�
 msgid "Reads what changed"
 msgstr "Чита шта се променило"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1056
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:1086
 #, elixir-autogen, elixir-format
 msgid "<b>What a profile did</b> over all its groups (`Activity`) is read by the accounts that hold it and by nobody else: being an Admin of a group opens no one's. Each thing is there by the rights the profile has today: a message if it reads the chat or may open the thread, a poll, an event and a group by their own rules, and a record or a run of an app if it sees the app's description. What is in a group it left is not there, and is again once it is back. Of a shared profile each holder reads all of it, but of the ballots given by holders as themselves only their own."
 msgstr "<b>Оно што је профил радио</b> у свим својим групама (`Activity`) читају налози који га држе и нико други: ко је Админ групе, не отвара ничије. Свака ствар је ту по правима која профил има данас: порука ако чита разговор или сме да отвори нит, гласање, догађај и група по својим правилима, а запис или ток апликације ако види опис апликације. Онога што је у групи из које је изашао нема, а опет је ту кад се врати. Од дељеног профила сваки држалац чита све, а од гласова које држаоци дају у своје име само свој."
+
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:998
+#, elixir-autogen, elixir-format
+msgid "<b>A closed direct conversation</b>: while either of the two has blocked the other, both stay its members and read it, but hold no permission there, Admin included (`closed?`), and no new one opens between them."
+msgstr "<b>Затворен разговор у четири ока</b>: док је било који од њих двоје блокирао другог, оба профила остају његови чланови и читају га, али тамо немају ниједну дозволу, ни Администратор (`closed?`), а између њих се не отвара нови."
+
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:940
+#, elixir-autogen, elixir-format
+msgid "Blocks a profile for themself"
+msgstr "Блокира профил за себе"
+
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:943
+#, elixir-autogen, elixir-format
+msgid "Every person, from the other profile's card or from their direct conversation (`ProfileBlocks`). It closes that conversation for both and opens no new one; it touches no group they share. Only the one who blocked lifts it."
+msgstr "Свака особа, са картице другог профила или из њиховог разговора у четири ока (`ProfileBlocks`). Блокада тај разговор затвара за оба профила и не отвара нови; не дира ниједну групу у којој су заједно. Скида је само онај ко ју је поставио."
+
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:951
+#, elixir-autogen, elixir-format
+msgid "Handles a reported message"
+msgstr "Решава пријављену поруку"
+
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:954
+#, elixir-autogen, elixir-format
+msgid "Whoever reads a chat reports a message someone else wrote, once, but not in a direct conversation (`ValueReports`). Those who hold Admin in its group handle it: for a thread, in the group it hangs from, and in a group without an admin, in the nearest one above that has. They delete the message, also in a thread where they hold no role, or dismiss the report."
+msgstr "Ко чита разговор групе, пријављује поруку коју је написао неко други, једном, али не у разговору у четири ока (`ValueReports`). Пријаву решавају они који имају улогу Администратор у њеној групи: за нит, у групи из које нит полази, а у групи без администратора, у најближој групи изнад која га има. Они бришу поруку, и у нити у којој немају улогу, или одбацују пријаву."

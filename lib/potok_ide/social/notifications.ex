@@ -386,6 +386,36 @@ defmodule PotokIde.Social.Notifications do
     end)
   end
 
+  @doc """
+  For the admins of `group`: someone reported a message (`ValueReports`). It
+  says why and what the message says, never who reported it; the Requests
+  page lists it.
+  """
+  def value_reported(%Group{} = group, %Value{} = value, reason) do
+    base = request_base(group, "/requests?section=reports")
+    excerpt = Value.excerpt(value, @excerpt_length)
+
+    localized(fn ->
+      reason = PotokIde.Social.ValueReports.reason_label(reason)
+
+      body =
+        if excerpt,
+          do:
+            dgettext("notifications", "A message was reported (%{reason}): %{text}",
+              reason: reason,
+              text: excerpt
+            ),
+          else: dgettext("notifications", "A message was reported (%{reason}).", reason: reason)
+
+      Map.merge(base, %{
+        tag: "group-#{group.id}-report",
+        title: group.name,
+        body: body,
+        label: dgettext("notifications", "Report")
+      })
+    end)
+  end
+
   defp request_base(%Group{} = group, url) do
     %{
       kind: "request",

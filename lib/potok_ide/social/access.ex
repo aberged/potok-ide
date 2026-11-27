@@ -12,6 +12,9 @@ defmodule PotokIde.Social.Access do
   - A profile that is not a member holds nothing. Only reacting to a public group
     and an open chat (`Group.open_chat?/1`, `can_post_in_chat?/3`) reach past the
     members, while "everyone" allows it and the profile is not blocked.
+  - In a direct conversation that one of the two blocked the other
+    (`PotokIde.Social.ProfileBlocks`), both stay members, who read it, and
+    hold nothing (`closed?`).
 
   Pure reads: changes and broadcasts live in `PotokIde.Social`.
   """
@@ -30,7 +33,8 @@ defmodule PotokIde.Social.Access do
     GroupMemberRole,
     GroupMembership,
     GroupRole,
-    Profile
+    Profile,
+    ProfileBlocks
   }
 
   # Manifests change rarely and every page mount needs one; see `forget_manifests/1`.
@@ -48,7 +52,8 @@ defmodule PotokIde.Social.Access do
             role_keys: [],
             permissions: MapSet.new(),
             manifest: nil,
-            blocked?: false
+            blocked?: false,
+            closed?: false
 
   @type t :: %__MODULE__{
           member?: boolean(),
@@ -56,7 +61,8 @@ defmodule PotokIde.Social.Access do
           role_keys: [String.t()],
           permissions: MapSet.t(atom()),
           manifest: %GroupManifest{} | nil,
-          blocked?: boolean()
+          blocked?: boolean(),
+          closed?: boolean()
         }
 
   @doc """
@@ -168,11 +174,15 @@ defmodule PotokIde.Social.Access do
   @doc """
   The access these facts add up to under `manifest`, with no database: a
   member's from the role keys assigned to them (`{:member, keys}`), or that of
-  a profile that is not a member (`{:outsider, blocked?}`). `for_profile/3`
-  applies it to what it reads, and the calculator of the help page
-  (`PotokIdeWeb.HelpGuides.calc/0`) to its example.
+  a profile that is not a member (`{:outsider, blocked?}`), or that of a member
+  of a closed direct conversation (`:closed`), who reads it and holds nothing.
+  `for_profile/3` applies it to what it reads, and the calculator of the help
+  page (`PotokIdeWeb.HelpGuides.calc/0`) to its example.
   """
   def from_facts(manifest, {:member, keys}), do: build(manifest, keys)
+
+  def from_facts(manifest, :closed),
+    do: %__MODULE__{member?: true, manifest: manifest, closed?: true}
 
   def from_facts(manifest, {:outsider, blocked?}),
     do: %__MODULE__{manifest: manifest, blocked?: blocked?}
@@ -183,8 +193,8 @@ defmodule PotokIde.Social.Access do
   @doc "How long who holds which roles is kept, in milliseconds."
   def facts_ttl, do: @facts_ttl
 
-  # `{:member, role_keys}` or `{:outsider, blocked?}`: what the profile's
-  # access is made of besides the manifest. A transaction reads its own
+  # `{:member, role_keys}`, `{:outsider, blocked?}` or `:closed`: what the
+  # profile's access is made of besides the manifest. A transaction reads its own
   # writes, so it never takes them from the cache.
   defp membership_facts(profile_id, %Group{id: group_id} = group) do
     if Repo.in_transaction?() do
@@ -223,8 +233,13 @@ defmodule PotokIde.Social.Access do
 
     case assigned do
       # A block only says something where a non-member can do anything at all.
-      [] -> {:outsider, group.is_public and blocked_in_group?(profile_id, group_id)}
-      keys -> {:member, Enum.reject(keys, &is_nil/1)}
+      [] ->
+        {:outsider, group.is_public and blocked_in_group?(profile_id, group_id)}
+
+      keys ->
+        if group.is_direct and ProfileBlocks.direct_group_closed?(group_id),
+          do: :closed,
+          else: {:member, Enum.reject(keys, &is_nil/1)}
     end
   end
 
@@ -386,11 +401,20 @@ defmodule PotokIde.Social.Access do
       |> Enum.filter(&(&1.is_public and not is_map_key(assigned, &1.id)))
       |> blocked_group_ids(profile_id)
 
+    closed_ids =
+      for(%Group{is_direct: true, id: id} <- groups, is_map_key(assigned, id), do: id)
+      |> ProfileBlocks.closed_direct_group_ids()
+
     Map.new(groups, fn %Group{id: id} ->
       facts =
         case assigned do
-          %{^id => keys} -> {:member, Enum.reject(keys, &is_nil/1)}
-          %{} -> {:outsider, MapSet.member?(blocked_ids, id)}
+          %{^id => keys} ->
+            if MapSet.member?(closed_ids, id),
+              do: :closed,
+              else: {:member, Enum.reject(keys, &is_nil/1)}
+
+          %{} ->
+            {:outsider, MapSet.member?(blocked_ids, id)}
         end
 
       {id, facts}

@@ -297,7 +297,7 @@ defmodule PotokIdeWeb.PageHTML do
         title: gettext("Privacy"),
         text:
           gettext(
-            "No ads or tracking, photos lose their location before they are sent, and you delete your account whenever you like. You choose who finds you."
+            "No ads or tracking, photos lose their location before they are sent, and you delete your account whenever you like. You choose who finds you. You block whoever bothers you, and report a message that breaks the rules to the group's admins."
           )
       }
     ]

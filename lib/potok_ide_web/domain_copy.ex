@@ -557,6 +557,13 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("ValueReaction", "emoji"), do: dgettext("domain_map", "emoji")
   defp own_field("GroupReaction", "emoji"), do: dgettext("domain_map", "emoji")
   defp own_field("GroupBlock", "blocked_by_id"), do: dgettext("domain_map", "who blocked")
+  defp own_field("ProfileBlock", "blocker_id"), do: dgettext("domain_map", "who blocked")
+  defp own_field("ProfileBlock", "blocked_id"), do: dgettext("domain_map", "who is blocked")
+  defp own_field("ValueReport", "reporter_id"), do: dgettext("domain_map", "who reported")
+  defp own_field("ValueReport", "reason"), do: dgettext("domain_map", "why")
+  defp own_field("ValueReport", "note"), do: dgettext("domain_map", "note")
+  defp own_field("ValueReport", "dismissed_at"), do: dgettext("domain_map", "dismissed at")
+  defp own_field("ValueReport", "dismissed_by_id"), do: dgettext("domain_map", "who dismissed it")
   defp own_field("GroupShortcut", "parent_id"), do: dgettext("domain_map", "group it stands in")
   defp own_field("GroupShortcut", "target_id"), do: dgettext("domain_map", "group it opens")
   defp own_field("PinnedGroup", "profile_id"), do: dgettext("domain_map", "who pinned it")
@@ -776,6 +783,7 @@ defmodule PotokIdeWeb.DomainCopy do
   def entity_name("Profile"), do: dgettext("domain_map", "Profile")
   def entity_name("AccountProfile"), do: dgettext("domain_map", "Account–profile link")
   def entity_name("ProfileField"), do: dgettext("domain_map", "Profile detail")
+  def entity_name("ProfileBlock"), do: dgettext("domain_map", "Profile block")
   def entity_name("Group"), do: dgettext("domain_map", "Group")
   def entity_name("GroupManifest"), do: dgettext("domain_map", "Manifest")
   def entity_name("GroupRole"), do: dgettext("domain_map", "Role")
@@ -786,6 +794,7 @@ defmodule PotokIdeWeb.DomainCopy do
   def entity_name("ValueAttachment"), do: dgettext("domain_map", "File")
   def entity_name("ValueReaction"), do: dgettext("domain_map", "Reaction")
   def entity_name("ScheduledValue"), do: dgettext("domain_map", "Scheduled message")
+  def entity_name("ValueReport"), do: dgettext("domain_map", "Report")
   def entity_name("GroupReaction"), do: dgettext("domain_map", "Group reaction")
   def entity_name("GroupBlock"), do: dgettext("domain_map", "Block")
   def entity_name("GroupShortcut"), do: dgettext("domain_map", "Shortcut")
@@ -928,6 +937,20 @@ defmodule PotokIdeWeb.DomainCopy do
     dgettext(
       "domain_map",
       "A file attached to a value. The bytes are in storage, and the row keeps what the browser reported about the file."
+    )
+  end
+
+  defp entity_description("ProfileBlock", _edges) do
+    dgettext(
+      "domain_map",
+      "A profile that blocked another. While either of the two has blocked the other, their direct conversation stays readable and nobody writes in it, and neither opens a new one. It touches nothing else: the two still meet in the groups they share. Only the one who blocked sees it and lifts it."
+    )
+  end
+
+  defp entity_description("ValueReport", _edges) do
+    dgettext(
+      "domain_map",
+      "A message someone reported to the admins of its group, with a reason and a note. The admins see it until one of them dismisses it or deletes the message, which takes the report along. A profile reports the same message only once, and the author never learns who reported it."
     )
   end
 
@@ -1470,6 +1493,14 @@ defmodule PotokIdeWeb.DomainCopy do
     dgettext("domain_map", "The sum is not negative, and the note has up to 500 characters.")
   end
 
+  def check_text("profile_blocks_not_self") do
+    dgettext("domain_map", "A profile does not block itself.")
+  end
+
+  def check_text("value_reports_note_length") do
+    dgettext("domain_map", "The note of a report has at most 500 characters.")
+  end
+
   def check_text(_name), do: nil
 
   @doc "The short names on the arrows of the core view."
@@ -1993,6 +2024,18 @@ defmodule PotokIdeWeb.DomainCopy do
           dgettext(
             "domain_map",
             "While a <Group>group</Group> is public, its chat can reach past the members. A signed-in profile that is not a member then reads its <Value>values</Value> and files, and writes and reacts as far as `everyone` may. It sends no files, opens no threads and has a limit on how much it writes. Its message pushes only to those it mentions or answers, and a reply reaches it the same way. A <GroupBlock>block</GroupBlock> stops one profile from writing and reacting there, asking to join or being invited. A member answers to their roles, so blocking one also removes them from the group."
+          )
+      },
+      %{
+        title:
+          dgettext(
+            "domain_map",
+            "A block closes a direct conversation, a report goes to the admins"
+          ),
+        text:
+          dgettext(
+            "domain_map",
+            "A <Profile>profile</Profile> may block another one: a <ProfileBlock>profile block</ProfileBlock>. While either of the two has blocked the other, both stay members of their direct conversation and read what was written, but hold no permission there, so nobody writes, reacts or edits, and neither opens a new one. Only the one who blocked lifts it, from the card of the other profile or from the conversation itself. Whoever reads a chat may report a <Value>value</Value> someone else wrote: a <ValueReport>report</ValueReport>, once, with a reason. It goes to those who hold `admin` in the <Group>group</Group>; for a thread, in the group it hangs from, and when a group has no admin, in the nearest one above it that has. They get a push and find it under Requests, and they delete the value, also in a thread where they hold no role, or dismiss the report. A direct conversation has no reports: its member blocks instead. Neither is written in a group's history, and a deleted account takes its blocks and reports along."
           )
       },
       %{

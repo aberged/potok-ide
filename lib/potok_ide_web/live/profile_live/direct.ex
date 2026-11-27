@@ -46,9 +46,9 @@ defmodule PotokIdeWeb.ProfileLive.Direct do
             {:ok, group} ->
               push_navigate(socket, to: ~p"/groups/#{group.id}/values")
 
-            {:error, _reason} ->
+            {:error, reason} ->
               socket
-              |> put_flash(:error, gettext("Unable to open a direct group right now."))
+              |> put_flash(:error, PotokIdeWeb.ProfileCard.direct_error(reason))
               |> push_navigate(to: ~p"/profiles")
           end
       end

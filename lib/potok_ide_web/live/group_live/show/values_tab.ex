@@ -39,6 +39,11 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
   attr :is_member, :boolean, required: true
   attr :access, Access, required: true
+
+  attr :direct_blocked_id, :integer,
+    default: nil,
+    doc: "in a direct conversation the viewer closed by a block, the profile it blocked"
+
   attr :attachments, Phoenix.LiveView.UploadConfig, required: true
   attr :can_attach, :boolean, default: false
 
@@ -61,6 +66,17 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
       |> assign(:can_react, Access.can_react_in_chat?(profile, access, group))
       |> assign(:can_delete_any, Access.can?(access, :delete_values))
       |> assign(:can_block, Access.can?(access, :remove_members) and Group.open_chat?(group))
+      # Others' messages go to the admins; a direct conversation has a block instead.
+      |> assign(
+        :can_report,
+        match?(%Profile{kind: :person}, profile) and not group.is_direct and
+          Access.can_read_chat?(access, group)
+      )
+      |> assign(
+        :can_block_profile,
+        group.is_direct and match?(%Profile{kind: :person}, profile) and not access.closed? and
+          not direct_gone?(group)
+      )
       |> assign(:can_start_poll, PollForm.chat_entry?(group, access))
       |> assign(
         :can_schedule,
@@ -157,6 +173,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                 can_join_thread={@is_member}
                 can_delete_any={@can_delete_any}
                 can_block={@can_block}
+                can_report={@can_report}
+                can_block_profile={@can_block_profile}
                 can_tag={@is_member}
                 outsider={!@is_member}
                 unread_divider={unread_divider_count(@unread_divider, value)}
@@ -443,11 +461,36 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
           class="relative z-10 flex shrink-0 items-center gap-2 border-t border-base-300/70 bg-base-100/95 px-4 py-4 text-sm text-base-content/65 backdrop-blur sm:px-6"
         >
           <.icon name="hero-no-symbol" class="size-4 shrink-0" />
-          {cond do
-            @direct_gone? -> gettext("This person deleted their account.")
-            @is_member -> gettext("Your roles in this group do not allow posting messages.")
-            true -> gettext("You cannot write in this group.")
-          end}
+          <span class="min-w-0 flex-1">
+            {cond do
+              @direct_gone? ->
+                gettext("This person deleted their account.")
+
+              @access.closed? and @direct_blocked_id ->
+                gettext("You blocked this profile: nobody writes in this conversation any more.")
+
+              @access.closed? ->
+                gettext("Nobody can write in this conversation any more.")
+
+              @is_member ->
+                gettext("Your roles in this group do not allow posting messages.")
+
+              true ->
+                gettext("You cannot write in this group.")
+            end}
+          </span>
+          <.button
+            :if={@access.closed? and @direct_blocked_id}
+            id="direct-unblock"
+            type="button"
+            phx-click="unblock_direct"
+            variant="soft"
+            size="sm"
+            class="shrink-0"
+          >
+            <.icon name="hero-lock-open" class="size-4" />
+            <span>{gettext("Unblock")}</span>
+          </.button>
         </div>
 
         <script :type={Phoenix.LiveView.ColocatedHook} name=".ValuesFeed">

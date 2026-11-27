@@ -2019,6 +2019,15 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :can_join_thread, :boolean, default: false, doc: "may open the value's existing thread"
   attr :can_delete_any, :boolean, default: false, doc: "may delete other members' values"
   attr :can_block, :boolean, default: false, doc: "may block the value's author in the group"
+
+  attr :can_report, :boolean,
+    default: false,
+    doc: "may report others' values to the group's admins (`ValueReports`)"
+
+  attr :can_block_profile, :boolean,
+    default: false,
+    doc: "in a direct conversation, may block the other person (`ProfileBlocks`)"
+
   attr :can_tag, :boolean, default: false, doc: "may open the value's tags (members)"
   attr :outsider, :boolean, default: false, doc: "the viewer is not a member of the group"
 
@@ -2039,6 +2048,12 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       |> assign(
         :can_block?,
         assigns.can_block and not mine? and not app_process_here?(assigns.value)
+      )
+      |> assign(:can_report?, assigns.can_report and not mine? and not editing?)
+      |> assign(
+        :can_block_profile?,
+        assigns.can_block_profile and not mine? and
+          match?(%Profile{kind: :person}, assigns.value.creator)
       )
       |> assign(:mentions_me?, mentions_profile?(assigns.value, assigns.current_profile))
       |> assign(:expandable?, value_expandable?(assigns.value))
@@ -2217,7 +2232,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         <div
           :if={
             @can_react or @can_reply or @can_thread or @can_tag or @can_delete? or @can_block? or
-              (@mine? and !@editing?)
+              @can_report? or @can_block_profile? or (@mine? and !@editing?)
           }
           id={"value-actions-#{@value.id}"}
           class={[
@@ -2296,6 +2311,36 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             }
             icon="hero-no-symbol"
             label={gettext("Block in this group")}
+            variant="danger"
+            size="xs"
+          />
+          <%!-- Goes to the group's admins (`ValueReports`), through a dialog. --%>
+          <.icon_button
+            :if={@can_report?}
+            id={"value-report-#{@value.id}"}
+            type="button"
+            phx-click="report_value_open"
+            phx-value-id={@value.id}
+            data-value-action="report"
+            icon="hero-flag"
+            label={gettext("Report to admins")}
+            size="xs"
+          />
+          <.icon_button
+            :if={@can_block_profile?}
+            id={"value-block-profile-#{@value.id}"}
+            type="button"
+            phx-click="block_value_profile"
+            phx-value-id={@value.id}
+            data-value-action="block-profile"
+            data-confirm={
+              gettext(
+                "Block %{username}? Neither of you will write in this conversation any more.",
+                username: Profile.display_name(@value.creator)
+              )
+            }
+            icon="hero-no-symbol"
+            label={gettext("Block profile")}
             variant="danger"
             size="xs"
           />

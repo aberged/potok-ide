@@ -2,13 +2,14 @@ defmodule PotokIdeWeb.ProfileCard do
   @moduledoc """
   A profile's card as one viewer sees it (`PotokIde.Social.ProfileDetails.card/3`):
   the name and picture, the details and description shown to them, the tags
-  they see, the groups both are in and a button to write to it. The page
+  they see, the groups both are in, a button to write to it and one to block
+  it or lift the block (`profile_card_block`, `profile_card_unblock`). The page
   `/u/:username` and the dialog of the group page (`dialog/1`) show the same.
   """
 
   use PotokIdeWeb, :html
 
-  alias PotokIde.Social.ProfileField
+  alias PotokIde.Social.{ProfileBlocks, ProfileField}
   alias PotokIdeWeb.GroupLive.Show.Components, as: GroupComponents
   alias PotokIdeWeb.ProfileLive.Components, as: ProfileComponents
   alias PotokIdeWeb.TagComponents
@@ -92,22 +93,98 @@ defmodule PotokIdeWeb.ProfileCard do
         {gettext("This profile shows you nothing more.")}
       </p>
 
-      <.button
-        :if={@card.can_message?}
-        id={"#{@id}-message"}
-        type="button"
-        phx-click={@message_event}
-        phx-value-id={@card.profile.id}
-        phx-disable-with={gettext("Opening...")}
-        variant="primary"
-        class="w-full sm:w-auto"
+      <div
+        :if={@card.can_message? or @card.can_block?}
+        id={"#{@id}-actions"}
+        class="flex flex-col gap-2 sm:flex-row sm:items-center"
       >
-        <.icon name="hero-chat-bubble-left-right" class="size-4" />
-        <span>{gettext("Send a message")}</span>
-      </.button>
+        <.button
+          :if={@card.can_message?}
+          id={"#{@id}-message"}
+          type="button"
+          phx-click={@message_event}
+          phx-value-id={@card.profile.id}
+          phx-disable-with={gettext("Opening...")}
+          variant="primary"
+          class="w-full sm:w-auto"
+        >
+          <.icon name="hero-chat-bubble-left-right" class="size-4" />
+          <span>{gettext("Send a message")}</span>
+        </.button>
+
+        <%!-- A block closes the direct conversation of the two (`ProfileBlocks`). --%>
+        <.button
+          :if={@card.can_block? and not @card.blocked?}
+          id={"#{@id}-block"}
+          type="button"
+          phx-click="profile_card_block"
+          phx-value-id={@card.profile.id}
+          data-confirm={
+            gettext(
+              "Block this profile? Neither of you will write in your direct conversation any more, and nobody opens a new one. You still meet in the groups you share."
+            )
+          }
+          variant="danger"
+          class="w-full sm:ml-auto sm:w-auto"
+        >
+          <.icon name="hero-no-symbol" class="size-4" />
+          <span>{gettext("Block")}</span>
+        </.button>
+
+        <.button
+          :if={@card.blocked?}
+          id={"#{@id}-unblock"}
+          type="button"
+          phx-click="profile_card_unblock"
+          phx-value-id={@card.profile.id}
+          variant="soft"
+          class="w-full sm:ml-auto sm:w-auto"
+        >
+          <.icon name="hero-lock-open" class="size-4" />
+          <span>{gettext("Unblock")}</span>
+        </.button>
+      </div>
+
+      <p
+        :if={@card.blocked?}
+        id={"#{@id}-blocked-note"}
+        class="text-xs text-base-content/60"
+      >
+        {gettext("You blocked this profile: your direct conversation is closed.")}
+      </p>
     </div>
     """
   end
+
+  @doc """
+  Does what the card's block buttons ask (`profile_card_block`,
+  `profile_card_unblock`) for `viewer`, as the card allows it, and returns
+  the flash to show: `{kind, message}`, or nil when the card offers no such
+  button. The caller loads the card again.
+  """
+  def apply_block(
+        "profile_card_block",
+        %{can_block?: true, blocked?: false, profile: target},
+        viewer
+      ) do
+    case ProfileBlocks.block(viewer, target) do
+      :ok -> {:info, gettext("Profile blocked. Your direct conversation is closed.")}
+      {:error, _reason} -> {:error, gettext("Unable to block this profile right now.")}
+    end
+  end
+
+  def apply_block("profile_card_unblock", %{blocked?: true, profile: target}, viewer) do
+    :ok = ProfileBlocks.unblock(viewer, target.id)
+    {:info, gettext("Profile unblocked.")}
+  end
+
+  def apply_block(_event, _card, _viewer), do: nil
+
+  @doc "Why a direct conversation did not open (`Social.get_or_create_direct_group/2`)."
+  def direct_error(:blocked),
+    do: gettext("You cannot write to this profile: one of you blocked the other.")
+
+  def direct_error(_reason), do: gettext("Unable to open a direct group right now.")
 
   attr :field, :map, required: true
 
@@ -160,7 +237,8 @@ defmodule PotokIdeWeb.ProfileCard do
 
   @doc """
   The card in a top-layer `<dialog>` of the group page, which handles
-  `profile_card_close` and `profile_card_message`.
+  `profile_card_close`, `profile_card_message`, `profile_card_block` and
+  `profile_card_unblock`.
   """
   def dialog(assigns) do
     ~H"""

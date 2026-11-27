@@ -27,6 +27,7 @@ defmodule PotokIde.Social.ProfileDetails do
     Group,
     GroupMembership,
     Profile,
+    ProfileBlocks,
     ProfileFacts,
     ProfileField
   }
@@ -136,14 +137,23 @@ defmodule PotokIde.Social.ProfileDetails do
   @doc """
   What `viewer` (the current profile of `account`) sees on the card of
   `target`: its visible fields, whether it reads the description, the tags
-  the viewer sees on it, up to #{@max_card_groups} of the groups both are in, and
-  whether the viewer may write to it. Who may open the card at all is the
+  the viewer sees on it, up to #{@max_card_groups} of the groups both are in,
+  whether the viewer may write to it, and whether it may block it or blocked
+  it already (`PotokIde.Social.ProfileBlocks`): a block leaves the button to
+  write only while their direct conversation exists, to read it. Who may open the card at all is the
   caller's to say (`card_in_group?/3`, `PotokIde.Social.Discovery`), which
   may hand over the facts it read already instead of the account.
   """
   def card(account_or_facts, viewer, target)
 
   def card(%ProfileFacts{} = facts, viewer, %Profile{} = target) do
+    can_block? =
+      match?(%Profile{kind: :person}, viewer) and target.kind == :person and
+        viewer.id != target.id and not facts.holder?
+
+    blocked? = can_block? and ProfileBlocks.blocked?(viewer.id, target.id)
+    closed? = blocked? or (can_block? and ProfileBlocks.between?(viewer.id, target.id))
+
     %{
       profile: target,
       facts: facts,
@@ -152,7 +162,10 @@ defmodule PotokIde.Social.ProfileDetails do
       tags: card_tags(viewer, target),
       shared_groups: shared_groups(facts),
       can_message?:
-        match?(%Profile{kind: :person}, viewer) and Discovery.may_message?(facts, target)
+        match?(%Profile{kind: :person}, viewer) and Discovery.may_message?(facts, target) and
+          (facts.direct? or not closed?),
+      can_block?: can_block?,
+      blocked?: blocked?
     }
   end
 

@@ -21,12 +21,16 @@ defmodule PotokIde.Accounts.Deletion do
       receipts, pinned groups, reactions, answers to events and their
       settings, the tags it owns and those put on it, invitations it sent or
       got, join requests, account invitations it sent (they hold the
-      addresses of people who never signed up), blocks of it, the hidden
+      addresses of people who never signed up), blocks of it in groups, the
+      profiles it blocked and the blocks of it by others
+      (`PotokIde.Social.ProfileBlocks`), the messages it reported
+      (`PotokIde.Social.ValueReports`), the hidden
       values that ask an app for pushes, the personal memory of apps
       (`PotokIde.Social.AppProfileStore`), the messages it scheduled with
       their files (`PotokIde.Social.ScheduledValues`), and the history of its
       reactions (`PotokIde.History`);
-    * emptied: who added a tag, who blocked someone, who invited an account,
+    * emptied: who added a tag, who blocked someone, who dismissed a report,
+      who invited an account,
       the old versions of the records it wrote into apps;
     * kept: values (an app's and "anonymous" ones too), files, polls and
       ballots (the ballot loses only its account, so no count changes),
@@ -328,6 +332,9 @@ defmodule PotokIde.Accounts.Deletion do
           {"group_request_decisions", :profile_id},
           {"group_account_invitations", :inviter_id},
           {"group_blocks", :profile_id},
+          {"profile_blocks", :blocker_id},
+          {"profile_blocks", :blocked_id},
+          {"value_reports", :reporter_id},
           {"app_profile_entries", :profile_id},
           {"profile_fields", :profile_id}
         ] do
@@ -345,6 +352,7 @@ defmodule PotokIde.Accounts.Deletion do
     for {table, column} <- [
           {"taggings", :added_by_id},
           {"group_blocks", :blocked_by_id},
+          {"value_reports", :dismissed_by_id},
           {"accounts", :invited_by_id}
         ] do
       from(r in table, where: field(r, ^column) in type(^ids, {:array, :integer}))

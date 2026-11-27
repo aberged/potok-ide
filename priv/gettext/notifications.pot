@@ -66,22 +66,22 @@ msgstr ""
 msgid "Someone sent a response."
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:414
+#: lib/potok_ide/social/notifications.ex:444
 #, elixir-autogen, elixir-format
 msgid "Admin"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:404
+#: lib/potok_ide/social/notifications.ex:434
 #, elixir-autogen, elixir-format
 msgid "Given: %{roles}."
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:410
+#: lib/potok_ide/social/notifications.ex:440
 #, elixir-autogen, elixir-format
 msgid "Put to a vote: %{roles}."
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:407
+#: lib/potok_ide/social/notifications.ex:437
 #, elixir-autogen, elixir-format
 msgid "Refused: %{roles}."
 msgstr ""
@@ -242,4 +242,19 @@ msgstr ""
 #: lib/potok_ide_web/push_channels.ex:28
 #, elixir-autogen, elixir-format
 msgid "When someone mentions you, replies to you or reacts to your message"
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:408
+#, elixir-autogen, elixir-format
+msgid "A message was reported (%{reason})."
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:404
+#, elixir-autogen, elixir-format
+msgid "A message was reported (%{reason}): %{text}"
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:414
+#, elixir-autogen, elixir-format
+msgid "Report"
 msgstr ""

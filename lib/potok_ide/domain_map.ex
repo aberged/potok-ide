@@ -29,7 +29,12 @@ defmodule PotokIde.DomainMap do
        PotokIde.GmailRefreshToken
      ]},
     {"profiles",
-     [PotokIde.Social.Profile, PotokIde.Social.AccountProfile, PotokIde.Social.ProfileField]},
+     [
+       PotokIde.Social.Profile,
+       PotokIde.Social.AccountProfile,
+       PotokIde.Social.ProfileField,
+       PotokIde.Social.ProfileBlock
+     ]},
     {"group",
      [
        PotokIde.Social.Group,
@@ -49,6 +54,7 @@ defmodule PotokIde.DomainMap do
        PotokIde.Social.ValueAttachment,
        PotokIde.Social.ValueReaction,
        PotokIde.Social.ScheduledValue,
+       PotokIde.Social.ValueReport,
        PotokIde.Social.GroupValueRead,
        PotokIde.Social.AppProcess,
        PotokIde.Processes.ValueProcess,

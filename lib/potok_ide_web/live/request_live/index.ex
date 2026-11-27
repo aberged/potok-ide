@@ -3,12 +3,12 @@ defmodule PotokIdeWeb.RequestLive.Index do
 
   alias PotokIde.Processes
   alias PotokIde.Social
-  alias PotokIde.Social.{Access, GroupRequests}
+  alias PotokIde.Social.{Access, GroupRequests, Profile, Value, ValueReports}
   alias PotokIdeWeb.GroupLive.Show.{Components, RequestDialogs}
   alias PotokIdeWeb.ProfileAuth
   @approved_requests_per_page 10
   @created_requests_per_page 10
-  @sections ~w(pending processes approved created)
+  @sections ~w(pending processes reports approved created)
 
   @impl true
   def render(assigns) do
@@ -37,14 +37,14 @@ defmodule PotokIdeWeb.RequestLive.Index do
           {gettext("Requests")}
           <:subtitle>
             {gettext(
-              "Group access requests you can approve, the ones you made, and the forms and decisions of processes that wait for you."
+              "Group access requests you can approve, the ones you made, the forms and decisions of processes that wait for you, and the messages reported to you as an admin."
             )}
           </:subtitle>
         </.page_header>
 
         <Components.settings_tabs
           id="requests-sections"
-          tabs={sections()}
+          tabs={sections(@reports_count, @section)}
           current={@section}
           event="set_section"
           tab_id_prefix="requests-tab"
@@ -52,6 +52,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
             %{
               "pending" => length(@requests) + length(@role_requests),
               "processes" => @waiting_count,
+              "reports" => @reports_count,
               "approved" => @approved_requests_pagination.total_count,
               "created" => @created_requests_pagination.total_count
             }
@@ -321,6 +322,118 @@ defmodule PotokIdeWeb.RequestLive.Index do
                       class="size-4 shrink-0 text-base-content/40 transition-transform group-hover/task:translate-x-0.5"
                     />
                   </.link>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </Components.settings_card>
+
+        <%!-- Messages reported to the groups the profile is an admin of (`ValueReports`). --%>
+        <Components.settings_card
+          id="requests-reports"
+          tab_id="requests-tab-reports"
+          active={@section == "reports"}
+          icon="hero-flag"
+          title={gettext("Reported messages")}
+          subtitle={
+            gettext(
+              "Messages members reported to you as an admin, the newest first. Delete one that breaks the rules, or dismiss the report."
+            )
+          }
+        >
+          <div
+            :if={@report_groups == []}
+            id="requests-reports-empty"
+            class="rounded-2xl border border-base-300/60 bg-base-100/70 px-4 py-3 text-sm text-base-content/70"
+          >
+            {gettext("No reports wait for you.")}
+          </div>
+
+          <div :if={@report_groups != []} class="space-y-3">
+            <div
+              :for={%{group: group, reports: reports} <- @report_groups}
+              id={"report-group-#{group.id}"}
+              class="space-y-3 rounded-2xl border border-error/25 bg-gradient-to-br from-error/5 to-base-100 p-4"
+            >
+              <Components.group_identity
+                group={group}
+                current_profile={@current_profile}
+                avatar_size="size-10"
+                text_class="text-sm"
+              />
+              <ul class="space-y-2">
+                <li
+                  :for={report <- reports}
+                  id={"report-#{report.id}"}
+                  class="space-y-2.5 rounded-2xl bg-base-100/90 p-3 shadow-xs"
+                >
+                  <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                    <span class="inline-flex items-center gap-1 rounded-full bg-error/10 px-2 py-0.5 font-semibold text-error">
+                      <.icon name="hero-flag-micro" class="size-3.5" />
+                      {ValueReports.reason_label(report.reason)}
+                    </span>
+                    <span class="text-base-content/60">
+                      {gettext("reported by %{name}", name: Profile.display_name(report.reporter))}
+                    </span>
+                    <span class="text-base-content/45">·</span>
+                    <Components.local_time
+                      id={"report-#{report.id}-time"}
+                      datetime={report.inserted_at}
+                    />
+                  </div>
+
+                  <blockquote class="rounded-xl border-l-4 border-base-300 bg-base-200/60 px-3 py-2 text-sm">
+                    <span class="block text-xs font-semibold text-base-content/70">
+                      {Profile.display_name(report.value.creator)}
+                    </span>
+                    <span class="line-clamp-4 wrap-break-word text-base-content/85">
+                      {Value.excerpt(report.value, 400) || gettext("A message")}
+                    </span>
+                  </blockquote>
+
+                  <p
+                    :if={report.note != ""}
+                    id={"report-#{report.id}-note"}
+                    class="wrap-break-word text-sm text-base-content/75"
+                  >
+                    „{report.note}“
+                  </p>
+
+                  <div class="flex flex-wrap items-center gap-2">
+                    <.button
+                      id={"report-#{report.id}-open"}
+                      navigate={
+                        ~p"/groups/#{report.value.group_id}/values?#{[value: report.value_id]}"
+                      }
+                      variant="secondary"
+                      size="sm"
+                    >
+                      <.icon name="hero-arrow-top-right-on-square" class="size-4" />
+                      <span>{gettext("Open")}</span>
+                    </.button>
+                    <.button
+                      id={"report-#{report.id}-delete"}
+                      type="button"
+                      phx-click="report_delete_value"
+                      phx-value-id={report.id}
+                      data-confirm={gettext("Delete this message for everyone?")}
+                      variant="danger"
+                      size="sm"
+                    >
+                      <.icon name="hero-trash" class="size-4" />
+                      <span>{gettext("Delete message")}</span>
+                    </.button>
+                    <.button
+                      id={"report-#{report.id}-dismiss"}
+                      type="button"
+                      phx-click="report_dismiss"
+                      phx-value-id={report.id}
+                      variant="ghost"
+                      size="sm"
+                    >
+                      {gettext("Dismiss")}
+                    </.button>
+                  </div>
                 </li>
               </ul>
             </div>
@@ -707,6 +820,8 @@ defmodule PotokIdeWeb.RequestLive.Index do
       |> assign(:section, if(params["section"] in @sections, do: params["section"], else: nil))
       |> assign(:waiting_groups, [])
       |> assign(:waiting_count, 0)
+      |> assign(:report_groups, [])
+      |> assign(:reports_count, 0)
       |> assign(:approved_requests_pagination, default_approved_requests_pagination())
       |> stream(:approved_requests, [], reset: true)
       |> assign(:created_requests_pagination, default_created_requests_pagination())
@@ -716,18 +831,25 @@ defmodule PotokIdeWeb.RequestLive.Index do
 
     socket = assign_requests(socket, socket.assigns.current_profile)
 
-    # The hand counts what waits in processes too: with nothing to approve,
-    # the page opens on that.
-    section =
-      socket.assigns.section ||
-        if(
-          socket.assigns.requests == [] and socket.assigns.role_requests == [] and
-            socket.assigns.waiting_count > 0,
-          do: "processes",
-          else: "pending"
-        )
+    # The hand counts what waits in processes and the reports too: with
+    # nothing to approve, the page opens on those.
+    nothing_to_approve? = socket.assigns.requests == [] and socket.assigns.role_requests == []
 
-    {:ok, socket |> assign(:section, section) |> refresh_waiting(socket.assigns.current_profile)}
+    section =
+      cond do
+        socket.assigns.section -> socket.assigns.section
+        nothing_to_approve? and socket.assigns.waiting_count > 0 -> "processes"
+        nothing_to_approve? and socket.assigns.reports_count > 0 -> "reports"
+        true -> "pending"
+      end
+
+    profile = socket.assigns.current_profile
+
+    {:ok,
+     socket
+     |> assign(:section, section)
+     |> refresh_waiting(profile)
+     |> refresh_reports(profile)}
   end
 
   @impl true
@@ -740,6 +862,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
      case section do
        "pending" -> socket
        "processes" -> refresh_waiting(socket, profile)
+       "reports" -> refresh_reports(socket, profile)
        "approved" -> refresh_approved_requests(socket, profile)
        "created" -> refresh_created_requests(socket, profile)
      end}
@@ -905,6 +1028,14 @@ defmodule PotokIdeWeb.RequestLive.Index do
     end
   end
 
+  def handle_event("report_dismiss", %{"id" => id}, socket) do
+    handle_report(socket, id, &ValueReports.dismiss/2, gettext("Report dismissed."))
+  end
+
+  def handle_event("report_delete_value", %{"id" => id}, socket) do
+    handle_report(socket, id, &ValueReports.delete_value/2, gettext("Message deleted."))
+  end
+
   def handle_event("reject", %{"id" => id}, socket) do
     handle_request_action(
       socket,
@@ -932,9 +1063,12 @@ defmodule PotokIdeWeb.RequestLive.Index do
   def handle_info({:pending_group_join_requests_count_updated, _profile_id, _count}, socket),
     do: {:noreply, socket}
 
-  # What waits for the profile in some group's processes changed.
-  def handle_info({:profile_waiting_updated, _profile_id}, socket),
-    do: {:noreply, refresh_waiting(socket, socket.assigns.current_profile)}
+  # What waits for the profile in some group's processes, or the reports it
+  # handles as an admin, changed.
+  def handle_info({:profile_waiting_updated, _profile_id}, socket) do
+    profile = socket.assigns.current_profile
+    {:noreply, socket |> refresh_waiting(profile) |> refresh_reports(profile)}
+  end
 
   def handle_info({:profile_invitations_updated, _profile_id}, socket), do: {:noreply, socket}
 
@@ -990,6 +1124,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
     |> assign(:my_role_requests, [])
     |> assign(:my_decisions, [])
     |> assign(waiting_groups: [], waiting_count: 0)
+    |> assign(report_groups: [], reports_count: 0)
     |> assign(:approved_requests_pagination, default_approved_requests_pagination())
     |> stream(:approved_requests, [], reset: true)
     |> assign(:created_requests_pagination, default_created_requests_pagination())
@@ -1004,6 +1139,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
     |> assign(:my_role_requests, GroupRequests.roles_requests_of(profile))
     |> assign(:my_decisions, GroupRequests.decisions_of(profile, 20))
     |> refresh_waiting(profile)
+    |> refresh_reports(profile)
     |> refresh_approved_requests(profile)
     |> refresh_created_requests(profile)
   end
@@ -1101,20 +1237,61 @@ defmodule PotokIdeWeb.RequestLive.Index do
     end
   end
 
+  # The reports the profile handles as an admin: the count always, for the
+  # tab, and the list while the tab is on screen.
+  defp refresh_reports(socket, nil), do: assign(socket, report_groups: [], reports_count: 0)
+
+  defp refresh_reports(socket, profile) do
+    if socket.assigns.section == "reports" do
+      groups = ValueReports.list_open(profile)
+      count = groups |> Enum.map(&length(&1.reports)) |> Enum.sum()
+      assign(socket, report_groups: groups, reports_count: count)
+    else
+      assign(socket, report_groups: [], reports_count: ValueReports.open_count(profile))
+    end
+  end
+
+  defp handle_report(socket, id, action, message) do
+    profile = socket.assigns.current_profile
+
+    with {report_id, ""} <- Integer.parse(to_string(id)),
+         :ok <- action.(profile, report_id) do
+      {:noreply, socket |> put_flash(:info, message) |> refresh_reports(profile)}
+    else
+      {:error, :decision} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           gettext("A message that carries a decision of the group stays.")
+         )}
+
+      _error ->
+        {:noreply,
+         socket
+         |> put_flash(:error, gettext("This report is no longer open."))
+         |> refresh_reports(profile)}
+    end
+  end
+
   # A form opens in its group's page at once; a decision waits on its tab.
   defp waiting_path(group, %{form?: true, id: id}),
     do: ~p"/groups/#{group.id}/processes?#{[form: id]}"
 
   defp waiting_path(group, _decision), do: ~p"/groups/#{group.id}/processes"
 
-  # The tabs, in order: `{key, panel id, label, danger?}`.
-  defp sections do
+  # The tabs, in order: `{key, panel id, label, danger?}`. Reports are an
+  # admin's, so their tab shows only while some wait or it is open.
+  defp sections(reports_count, section) do
     [
       {"pending", "requests-pending", pgettext("requests tab", "To approve"), false},
       {"processes", "requests-processes", pgettext("requests tab", "Processes"), false},
+      (reports_count > 0 or section == "reports") &&
+        {"reports", "requests-reports", pgettext("requests tab", "Reports"), true},
       {"approved", "requests-approved", pgettext("requests tab", "Approved"), false},
       {"created", "requests-created", pgettext("requests tab", "My requests"), false}
     ]
+    |> Enum.filter(& &1)
   end
 
   defp approved_requests_page(%{} = profile, pagination, search, total_count \\ nil) do

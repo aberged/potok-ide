@@ -146,7 +146,7 @@ In the Details card you write your first and last name, occupation or organizati
 
 ![Profile details: the name for all groups, the phone for the building alone](profil-detalji)
 
-You open a profile's card by tapping a member in the Members tab or the name of a message's author. It shows the picture and username, the details and description that profile shows you, your tags, the groups you are both in, and a **Send a message** button. The same card is at `/u/username`, and on the Invitations page the name of whoever invites you leads to it. When you invite someone into a group, or ask to join one, the invited and those who decide the request see your details as the group's members do.
+You open a profile's card by tapping a member in the Members tab or the name of a message's author. It shows the picture and username, the details and description that profile shows you, your tags, the groups you are both in, a **Send a message** button and, beside it, **Block** (see [Blocking a profile](#blokiranje-profila)). The same card is at `/u/username`, and on the Invitations page the name of whoever invites you leads to it. When you invite someone into a group, or ask to join one, the invited and those who decide the request see your details as the group's members do.
 
 ![Profile card: name, occupation, place and the groups you share](kartica-profila)
 
@@ -221,6 +221,7 @@ You write a message in the field at the bottom and send it with the arrow. On a 
 - **Mentions**: type @ and the name of a member or a role, and @everyone mentions everyone. The message stands out for whoever is mentioned, and they get a notification.
 - **Editing and deleting**: you can edit and delete your own messages, and whoever has the permission deletes other people's too. An edited message says "edited" beside its time, and pressing and holding it shows when it was edited. That a message was edited or deleted stays in the [group's history](#istorija), without its text.
 - **Links** get a preview, and long messages fold until you open them. A link to a form shows the form's title and subtitle to whoever may open it.
+- **Report**: someone else's message that breaks the rules goes to the group's admins with **Report to admins**. You pick a reason and, if you like, add a note, and the author does not learn who reported it. A direct conversation has no reports: there you [block the profile](#blokiranje-profila).
 
 On a phone, press and hold a message: a sheet opens with quick reactions and every action. On a computer, the same actions appear when you move the mouse over a message.
 
@@ -357,6 +358,14 @@ A public group with an open chat can block a profile that disturbs it: whoever h
 The list of blocked profiles, with **Unblock**, is on the Members tab for those who may remove members. Only they see the blocks in the access history too.
 
 ![Blocked profiles on the Members tab](blokirani)
+
+### Reports {:#prijave}
+
+A reported message reaches the admins of the group it was written in. They get a notification, and the report waits for them on the **Requests** page, under the **Reports** tab, with the reason, the note and the name of whoever reported it; the hand in the top bar counts it too. An admin opens the message in the chat, deletes it for everyone or dismisses the report, and a deleted message takes its reports along. A report of a message in a thread goes to the admins of the group the thread hangs from, who delete that message even when they hold no role in the thread. A group without an admin sends its reports to the nearest group above it that has one. You report the same message only once, and reports are not written in the group's history.
+
+### Blocking a profile {:#blokiranje-profila}
+
+You block a profile that bothers you on its card, with **Block**, or in your direct conversation, with **Block profile** on its message. While either of you has blocked the other, the direct conversation stays readable, but nobody writes, reacts or edits in it any more, and no new one opens. Nothing else changes: you still meet in the groups you share, where the admins decide. Only the one who blocked lifts the block, with **Unblock** on the card or in the conversation itself.
 
 ### All permissions {:#dozvole}
 

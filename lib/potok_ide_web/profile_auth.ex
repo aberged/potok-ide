@@ -11,6 +11,7 @@ defmodule PotokIdeWeb.ProfileAuth do
   alias PotokIde.Processes
   alias PotokIde.Social
   alias PotokIde.Social.EmailInvitations
+  alias PotokIde.Social.ValueReports
 
   # Same debounce as the group page's refreshes; 0 (the test config) recounts
   # right after the message. A random part of the spread is added so that a
@@ -163,8 +164,11 @@ defmodule PotokIdeWeb.ProfileAuth do
           {:pending_group_join_requests_count_updated, profile_id, count},
           %{assigns: %{current_profile: current_profile}} = socket
           when not is_nil(current_profile) and current_profile.id == profile_id ->
-            # The hand counts what waits in processes beside join requests.
-            count = count + Processes.waiting_total(current_profile)
+            # The hand counts what waits in processes and the reports an
+            # admin handles beside join requests.
+            count =
+              count + Processes.waiting_total(current_profile) +
+                ValueReports.open_count(current_profile)
 
             {:cont,
              socket
@@ -732,6 +736,6 @@ defmodule PotokIdeWeb.ProfileAuth do
   # tasks of drawn processes that wait for it (`Social.nav_counts/2`).
   defp pending_group_join_requests_count(profile) do
     Social.count_pending_group_join_requests_for_approver(profile) +
-      Processes.waiting_total(profile)
+      Processes.waiting_total(profile) + ValueReports.open_count(profile)
   end
 end

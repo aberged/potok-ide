@@ -106,12 +106,27 @@ defmodule PotokIdeWeb.ProfileLive.Card do
           {:ok, direct} ->
             {:noreply, push_navigate(socket, to: ~p"/groups/#{direct.id}/values")}
 
-          {:error, _reason} ->
-            {:noreply,
-             put_flash(socket, :error, gettext("Unable to open a direct group right now."))}
+          {:error, reason} ->
+            {:noreply, put_flash(socket, :error, ProfileCard.direct_error(reason))}
         end
 
       _no_card ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event(event, _params, socket)
+      when event in ["profile_card_block", "profile_card_unblock"] do
+    %{card: card, current_profile: viewer, current_scope: %{account: account}} = socket.assigns
+
+    case card && ProfileCard.apply_block(event, card, viewer) do
+      {kind, message} ->
+        {:noreply,
+         socket
+         |> assign(:card, ProfileDetails.card(account, viewer, card.profile))
+         |> put_flash(kind, message)}
+
+      nil ->
         {:noreply, socket}
     end
   end
