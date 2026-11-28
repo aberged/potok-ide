@@ -1416,10 +1416,18 @@ const GroupAppFrame = {
       return
     }
 
-    // Stripped before its size is announced, which the upload must match.
-    const named = await stripForUpload(
-      file instanceof File ? file : new File([file], "file", {type: file.type})
-    )
+    // A file picked in the frame belongs to the frame's process, and Chrome
+    // sends a file picked from the disk by its path, which this page may not
+    // read: through the service worker the tab is killed
+    // (RESULT_CODE_KILLED_BAD_MESSAGE), without it the upload fails. The page
+    // sends a file of its own instead, which reads the frame's and copies
+    // nothing into memory. The metadata go before the size is announced, which
+    // the upload must match.
+    const own = new File([file], file.name || "file", {
+      type: file.type,
+      lastModified: file.lastModified,
+    })
+    const named = await stripForUpload(own)
     let prepared
 
     try {
