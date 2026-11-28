@@ -27,6 +27,7 @@ const pollListeners = new Set()
 const waitingListeners = new Set()
 const subgroupListeners = new Set()
 const sheetListeners = new Set()
+const linkListeners = new Set()
 // listener -> the collection it follows (null: all of them).
 const collectionListeners = new Map()
 // call id -> progress callback of a file on its way.
@@ -543,6 +544,17 @@ window.addEventListener("message", event => {
     return
   }
 
+  if (message.event === "linked_group") {
+    linkListeners.forEach(listener => {
+      try {
+        listener({group_id: message.group_id ?? null, entry: message.entry ?? null})
+      } catch (error) {
+        console.error(error)
+      }
+    })
+    return
+  }
+
   if (message.event === "group_sheet_closed") {
     sheetListeners.forEach(listener => {
       try {
@@ -946,11 +958,27 @@ const potok = {
 
   // Puts a group in the page's address, so that the address opens this app on
   // it: what a feed does with the story on screen. The app itself finds the
-  // group again, with `getLinkedGroup`.
-  linkGroup: id => call("link_group", {id}),
+  // group again, with `getLinkedGroup`. With `{push: true}` it is a new
+  // entry of the browser's history, as a site goes to another page: Back
+  // brings the address before it, and the app hears of that through
+  // `onLinkedGroupChange` instead of the page leaving. `id` null takes the
+  // group out of the address. Resolves to `{ok: true, entry}`.
+  linkGroup: (id, options = {}) => call("link_group", {id, push: options.push === true}),
 
-  // Resolves to `{ok: true, group_id}`: the group in the address, or null.
+  // Resolves to `{ok: true, group_id, entry}`: the group in the address, or
+  // null, and the entry of the history the app pushed for it (a number), or
+  // null: an app that remembers where each entry had scrolled finds it again.
   getLinkedGroup: () => call("linked_group"),
+
+  // Calls `listener` with `{group_id, entry}` when Back or Forward brings the
+  // page to another of the entries the app pushed (`linkGroup` with `push`),
+  // or to the address it opened with: show that group, or the start for null.
+  onLinkedGroupChange(listener) {
+    if (typeof listener !== "function") return () => {}
+
+    linkListeners.add(listener)
+    return () => linkListeners.delete(listener)
+  },
 
   // For a guest (`getCurrentProfile()` is null): takes the page to Potok's
   // log-in, which brings them back to this group afterwards. Resolves to

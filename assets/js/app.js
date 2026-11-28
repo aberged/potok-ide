@@ -1003,22 +1003,88 @@ const positiveId = value => (Number.isSafeInteger(value) && value > 0 ? value : 
 const linkedGroupId = () =>
   positiveId(Number(new URLSearchParams(window.location.search).get(APP_LINK_PARAM)))
 
-// `history.state` is LiveView's, for the way back to this entry.
-const linkGroup = id => {
-  if (positiveId(id) === null) {
+// The entry of the history an app is on: a number its pushed entries carry
+// (`potokEntry`), so the app can find its place again (where it had scrolled)
+// when Back or Forward brings it there; null for an entry it did not push.
+const linkedEntry = () => {
+  const entry = window.history.state?.potokEntry
+  return Number.isSafeInteger(entry) ? entry : null
+}
+
+let lastEntry = 0
+const nextEntry = () => {
+  lastEntry = Math.max(lastEntry + 1, Date.now())
+  return lastEntry
+}
+
+// `history.state` is LiveView's, for the way back to this entry. With `push`
+// the group gets an entry of its own, so Back comes back to the one before
+// (`registerAppHistory`): a site's pages. It keeps LiveView's state, its
+// position too, so when LiveView itself goes back to such an entry (after
+// the viewer left the page) it finds what it put there. `id` null takes the
+// group out of the address.
+const linkGroup = (id, push = false) => {
+  if (id !== null && positiveId(id) === null) {
     return {ok: false, error: "invalid_group"}
   }
 
   const url = new URL(window.location.href)
-  url.searchParams.set(APP_LINK_PARAM, id)
+  if (id === null) url.searchParams.delete(APP_LINK_PARAM)
+  else url.searchParams.set(APP_LINK_PARAM, id)
 
   try {
+    if (push && url.href !== window.location.href) {
+      const entry = nextEntry()
+      window.history.pushState({...(window.history.state || {}), potokEntry: entry}, "", url)
+      persistCurrentCapacitorRoute()
+      return {ok: true, entry}
+    }
+
     window.history.replaceState(window.history.state, "", url)
-    return {ok: true}
+    return {ok: true, entry: linkedEntry()}
   } catch (_error) {
     // Safari refuses too many of these in a row.
     return {ok: false, error: "rate_limited"}
   }
+}
+
+// The app on the page that owns its entries of the history, while it lives
+// (`GroupAppFrame`, host "page").
+let appHistoryFrame = null
+
+// Back and Forward between the entries an app pushed (`linkGroup` with
+// `push`) stay inside the app: the frame hears of it, and LiveView must not,
+// as it would patch the page or load it again, and the app with it. So this
+// listener comes before LiveView's (`liveSocket.connect()` adds that one),
+// in the capture phase, and stops the event for an entry of the same page
+// whose address differs only in the app's `?at=`. Anything else (another
+// page, another tab, another description) goes on to LiveView as before. On
+// a guest's page, which has no LiveView of its own around the app, LiveView
+// would fail on such an entry, so this is needed there too. What LiveView
+// would have done on its way back is done here: the dialogs and the menu
+// close, and the phone app keeps the address.
+const registerAppHistory = () => {
+  window.addEventListener(
+    "popstate",
+    event => {
+      const frame = appHistoryFrame
+      if (!frame || !frame.ownsAddress()) return
+
+      event.stopImmediatePropagation()
+      closeOverlaysOnPop()
+      persistCurrentCapacitorRoute()
+      frame.post({potok: 1, event: "linked_group", group_id: linkedGroupId(), entry: linkedEntry()})
+    },
+    {capture: true}
+  )
+}
+
+// The address of a page without the app's `?at=`.
+const addressWithoutLink = location => {
+  const url = new URL(location.href)
+  url.searchParams.delete(APP_LINK_PARAM)
+  url.hash = ""
+  return url.href
 }
 
 // A link to a page of a site in an app's frame: `?page=<path>`. The SDK checks
@@ -1097,6 +1163,12 @@ const GroupAppFrame = {
     window.addEventListener("message", this.handleMessage)
     this.postReady()
 
+    // Only the app of the page has the address to itself.
+    if (this.host() === "page") {
+      this.address = addressWithoutLink(window.location)
+      appHistoryFrame = this
+    }
+
     this.themeObserver = new MutationObserver(() => {
       this.post({potok: 1, event: "theme", theme: this.theme()})
     })
@@ -1160,7 +1232,13 @@ const GroupAppFrame = {
     this.post({potok: 1, event: "reconnected"})
   },
 
+  // Whether the page's address is still this app's, but for its `?at=`.
+  ownsAddress() {
+    return this.address === addressWithoutLink(window.location)
+  },
+
   destroyed() {
+    if (appHistoryFrame === this) appHistoryFrame = null
     window.removeEventListener("message", this.handleMessage)
     this.themeObserver?.disconnect()
     this.pendingUploads.forEach(({resolve}) => resolve({ok: false, error: "disconnected"}))
@@ -1282,13 +1360,23 @@ const GroupAppFrame = {
 
     // The page's address belongs to the app under the sheet, not to the one in it.
     if (method === "linked_group") {
-      const groupId = this.host() === "page" ? linkedGroupId() : null
-      this.post({potok: 1, id, ok: true, group_id: groupId})
+      const page = this.host() === "page"
+      this.post({
+        potok: 1,
+        id,
+        ok: true,
+        group_id: page ? linkedGroupId() : null,
+        entry: page ? linkedEntry() : null,
+      })
       return
     }
 
     if (method === "link_group") {
-      const result = this.host() === "page" ? linkGroup(params?.id) : {ok: false, error: "unavailable"}
+      const result =
+        this.host() === "page"
+          ? linkGroup(params?.id ?? null, params?.push === true)
+          : {ok: false, error: "unavailable"}
+
       this.post({potok: 1, id, ...result})
       return
     }
@@ -1935,14 +2023,14 @@ const registerCapacitorBackButton = () => {
 // over the page it went back to. LiveView sends `phx:navigate` with `pop`
 // only when the page changed (not for an anchor of the same page), before it
 // patches, while the old page is still connected.
+const closeOverlaysOnPop = () => {
+  Array.from(document.querySelectorAll("dialog[open]")).reverse().forEach(closeDialogAsEscape)
+  closeAppDrawer()
+}
+
 const registerHistoryClosesOverlays = () => {
   window.addEventListener("phx:navigate", ({detail}) => {
-    if (!detail?.pop) {
-      return
-    }
-
-    Array.from(document.querySelectorAll("dialog[open]")).reverse().forEach(closeDialogAsEscape)
-    closeAppDrawer()
+    if (detail?.pop) closeOverlaysOnPop()
   })
 }
 
@@ -2491,6 +2579,7 @@ window.addEventListener("phx:page-loading-stop", rememberProfilesReturn)
 registerCapacitorMagicLinks()
 registerCapacitorBackButton()
 registerHistoryClosesOverlays()
+registerAppHistory()
 registerCapacitorPushNotifications()
 registerCapacitorRoutePersistence()
 registerSystemBarsStyle()

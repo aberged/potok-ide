@@ -332,7 +332,8 @@ defmodule PotokIdeWeb.HelpGuides do
       {"pickEmoji", "pick_emoji"},
       {"shareGroup", "share_group"},
       {"linkGroup", "link_group"},
-      {"getLinkedGroup", "linked_group"}
+      {"getLinkedGroup", "linked_group"},
+      {"onLinkedGroupChange", nil}
     ],
     personal: [
       {"listPersonal", "list_personal"},
