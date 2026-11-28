@@ -743,7 +743,7 @@
       <.hg_text text={
         dgettext(
           "help_guides",
-          "All of these are methods of the object `window.potok`. Each becomes one message to the page's frame, and the server checks it anew. For a guest the server lets through the marked reads, `getDescription`, and what the public rules of a collection show to everyone. The page answers `linkGroup`, `getLinkedGroup`, `openLogin` and `pickEmoji` by itself, without the server. The old API (`insertGroupValue`, `getGroupDataValues`) still works for apps written before the frame."
+          "All of these are methods of the object `window.potok`. Each becomes one message to the page's frame, and the server checks it anew. For a guest the server lets through the marked reads, `getDescription`, what the public rules of a collection show to everyone, and a config that says it is public. The page answers `linkGroup`, `getLinkedGroup`, `openLogin` and `pickEmoji` by itself, without the server. `linkGroup` with `push` adds an entry to the browser's history: the page keeps its Back and Forward from LiveView and hands them to the app (`onLinkedGroupChange`), so a site's pages move like pages. The old API (`insertGroupValue`, `getGroupDataValues`) still works for apps written before the frame."
         )
       } />
     </p>

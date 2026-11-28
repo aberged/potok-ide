@@ -94,7 +94,7 @@ Grupu koju vidiš možeš da pratiš i kad nisi njen član. Tada ti stižu njena
 
 ### Aplikacije u grupi {:#aplikacije-ukratko}
 
-Opis grupe ne mora biti samo tekst. Može biti mala aplikacija, recimo forma, vest ili mapa, koja svoje podatke čuva u samoj grupi i poštuje njene dozvole. Nekoliko takvih aplikacija dobijaš gotovo kad praviš grupu.
+Opis grupe ne mora biti samo tekst. Može biti aplikacija, recimo forma, vest, mapa ili ceo sajt, koja svoje podatke čuva u samoj grupi i poštuje njene dozvole. Nekoliko takvih aplikacija dobijaš gotovo kad praviš grupu.
 
 ## Primeri organizacije {:#primeri}
 
@@ -265,6 +265,7 @@ Podgrupu praviš dugmetom + na kartici Podgrupe ili iz menija grupe. Prvo biraš
 - **Forma**: pitanja, odgovori i njihov rezime.
 - **Mapa**: podgrupe kao pinovi na mapi. Ne nudi se na početnoj strani, nego unutar grupe.
 - **Naručivanje**: komšije zajedno naručuju od proizvođača, u turama, a jedan od njih sve preuzme i podeli.
+- **Sajt**: [sajt](#sajt) sa menijima, stranicama i člancima po rubrikama, u temi koju biraš.
 - **Stranica**: tekst koji se prvi vidi, napravljen iz šablona.
 
 U drugom koraku upišeš naziv i biraš da li je grupa javna i da li nasleđuje članove: sve ili samo one sa ulogama koje izabereš. „Podesi sve ručno“ otvara pun obrazac. Nova grupa dobija sliku svoje vrste, koju menjaš u Uredi grupu.
@@ -570,6 +571,8 @@ Neke vrste grupa dobijaju gotovu aplikaciju:
 - **Forma** ima pitanja raznih vrsta, pravila (ko popunjava, jednom ili više puta, do kog roka, anonimno), rezime odgovora, kviz i prilaganje fajlova. U podešavanjima, „Kad stigne odgovor“, uključuješ proces za svaki odgovor: najavu u razgovoru, podgrupu za odgovor i odluku jedne uloge, sa podsetnikom. Ko ima tu ulogu, odlučuje pravo u pregledu odgovora. Za proces sa više koraka, [nacrtaj ga](#nacrtaj-proces) u Potoku.
 - **Glasanja** pokazuju sva glasanja grupe na jednom mestu.
 - **Mapa** pokazuje podgrupe kao pinove, područja i rute.
+- **Naručivanje** vodi ture zajedničke nabavke: ko šta naručuje i koliko, ambalažu, ko ide po robu i šta košta prevoz, koliko ko duguje i ko je preuzeo i platio.
+- **Sajt** je sajt grupe, sa menijima, rubrikama, člancima i stranicama: [opisan je ispod](#sajt).
 
 Grupa zadržava verziju aplikacije sa kojom je napravljena. Kad Potok dobije noviju, u Uredi grupu, Opis, piše „Potok ima noviju verziju aplikacije“, a dugme „Osveži na najnoviju“ menja samo njen kod: odgovori, porudžbine i ostali podaci ostaju. Feed tada osveži i FeedCreator u `.feed`. Aplikaciju koju Potok ne prepozna kao svoju ne dira.
 
@@ -580,6 +583,21 @@ Opis bilo koje grupe možeš da napišeš iz šablona: vest, slika, citat, doga�
 Ko piše HTML, može od opisa da napravi svoju aplikaciju (Uredi grupu, Opis, „Opis je aplikacija (API)“). Aplikaciju tada ne pišeš u polje, nego je otpremaš kao ZIP sa jednim HTML fajlom, ili kao sam HTML fajl, a postojeću preuzimaš kao ZIP. Fajl ne ide na server, u opis ide samo njen HTML. Isto važi i za alternativne opise. Takva aplikacija može da vodi i proces: kad stigne odgovor, objavi ga u razgovoru, otvori podgrupu za njega i čeka da neko sa ulogom odluči, a podseti ga kad kasni. U takav opis može da stane i sajt sa druge adrese, u okviru: sajt koji je za to napravljen prati temu i jezik koje biraš u Potoku, otvara se tamo gde je čitanje stalo, a adresa grupe vodi na to poglavlje. Aplikacija i sajt mogu da pamte nešto samo za tebe, recimo poslednju pročitanu stranicu; to ne vide ni urednici, a vidiš i brišeš u Podešavanjima naloga, u delu „Šta aplikacije pamte za tebe“. Šta aplikacija sme, a šta ne, opisano je u [mapi domena](/domain#domain-apps). Kako je aplikacija građena i kuda ide svaki njen poziv, crta strana [Arhitektura Potok aplikacije](/pomoc/arhitektura-aplikacije).
 
 ![Šabloni za opis grupe](opis-sablon)
+
+### Sajt {:#sajt}
+
+Grupa vrste Sajt otvara se kao pravi sajt: zaglavlje sa menijem, početna strana, rubrike sa člancima i stranice kao što su „O nama“ i „Kontakt“. Svaki članak i svaka stranica je podgrupa sajta, pa ima svoj razgovor za komentare, reakcije i karticu kad podeliš link. Kroz sajt se ide kao kroz svaki drugi, a Nazad vraća na prethodnu stranu sajta, i na telefonu. Sajt ima i pretragu po naslovu i tekstu članaka.
+
+Kad ga urednik prvi put otvori, bira naziv, temu i uloge urednika, a sajt sam napravi rubrike „Stranice“ i „Vesti“. Urednici su administratori i nosioci tih uloga, a uloga mora imati pravo „Uređivanje grupe“. Samo urednici dodaju u rubrike, i na vrhu sajta vide traku sa dugmićima **Kontrolna tabla**, **Novi članak**, **Uredi ovu stranicu** i **Prilagodi izgled**.
+
+- **Kontrolna tabla** pokazuje članke po rubrikama i stranice, svaki sa stanjem: nacrt, zakazano, objavljeno ili objavljeno za članove. Tu praviš i nove rubrike.
+- **Članak se piše blokovima**: pasus, naslov, lista, citat, slika, galerija, video, dugme, razdelnik, tabela, kolone, kod, istaknut okvir ili HTML. Blok dodaješ dugmetom + ili kucanjem / u praznom pasusu, i pomeraš ga gore i dole. Članak ima i naslovnu sliku i kratak opis za karticu.
+- **Nacrt** vide svi urednici i niko drugi. „Objavi“ ga otvara svima ili samo članovima grupe sajta, odmah ili u vreme koje zakažeš, najviše godinu dana unapred. „Vrati u nacrt“ skida članak sa sajta, „Premesti u rubriku“ ga seli u drugu rubriku, a komentare mu možeš i da sakriješ.
+- **Prilagodi izgled** menja sajt uz živ pregled: temu (Novine, Blog, Portal ili Vizitkarta), boje, fontove, zaglavlje, menije, blokove početne strane, bočnu traku i podnožje. Posetioci izmene vide tek kad dodirneš „Objavi izmene“. Svetlu ili tamnu temu sajt uzima od Potoka.
+
+Novi sajt je javan, pa ga vide svi prijavljeni. Da bi ga čitali i oni bez naloga, u Uredi grupu, Pristup i članstvo, uključi „Opis vidljiv i bez prijave“. Ako su članci napravljeni pre toga, kontrolna tabla to pokazuje i nudi „Primeni na sav sadržaj“. Sajt nema svoju adresu, nego adresu grupe, a pretraživači njegove strane ne prikazuju.
+
+![Sajt mesne zajednice, kako ga vidi posetilac](sajt) ![Članak, otvoren bez prijave](sajt-clanak) ![Kontrolna tabla: članci i njihova stanja](sajt-urednik) ![Članak napisan blokovima](sajt-blokovi) ![Prilagođavanje izgleda](sajt-izgled)
 
 ### Svoji šabloni {:#svoji-sabloni}
 

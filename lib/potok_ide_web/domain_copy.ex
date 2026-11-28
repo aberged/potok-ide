@@ -1758,7 +1758,7 @@ defmodule PotokIdeWeb.DomainCopy do
           text:
             dgettext(
               "domain_map",
-              "It can list the <Group>groups</Group> under one of its sub-groups, all of them or those of a chosen period, show their descriptions and take the viewer to their chat or their page. A link can open it on one of those groups. That is how a group becomes a news feed, with one story in each group. The groups an app keeps its files in stay out of such lists."
+              "It can list the <Group>groups</Group> under one of its sub-groups, found by name or by id, all of them or those of a chosen period, show their descriptions or only the text of their cards, open a single one wherever it stands, find those whose name or text holds a word, and take the viewer to their chat or their page. A link can open it on one of those groups, and its pages can be entries of the browser's history, so Back moves between them inside the app. That is how a group becomes a news feed, with one story in each group, or a site. The groups an app keeps its files in stay out of such lists."
             )
         },
         %{
@@ -1785,7 +1785,7 @@ defmodule PotokIdeWeb.DomainCopy do
           text:
             dgettext(
               "domain_map",
-              "For a viewer who may edit its group, an app can make <Group>groups</Group> right under it, change them and take them back, and put them on a map with a pin. A new one opens its chat if the app's group has. It can inherit the members of the app's group, all of them or only those with the roles the app picks. It can also make up to a hundred at once, all or none, each with a key of its own, so that the same list brought in again makes no duplicates: that is how the rows of an open dataset become groups on a map. That is how one app writes what another shows, and a feed gets its editors' desk."
+              "For a viewer who may edit its group, an app can make <Group>groups</Group> right under it, change them and take them back, and put them on a map with a pin. A new one opens its chat if the app's group has. It can inherit the members of the app's group, all of them or only those with the roles the app picks. It can also make up to a hundred at once, all or none, each with a key of its own, so that the same list brought in again makes no duplicates: that is how the rows of an open dataset become groups on a map. It can keep groups one level deeper too, under one of its sub-groups that only editors add to, move one from such a sub-group to another, refuse a save that started before someone else's, give its groups the app's group's guests and open chat again, and have a draft open by itself at a time its editor picked. That is how one app writes what another shows, a feed gets its editors' desk, and a site its sections and articles."
             )
         },
         %{
@@ -1835,11 +1835,20 @@ defmodule PotokIdeWeb.DomainCopy do
         },
         %{
           icon: "hero-window",
-          title: dgettext("domain_map", "Shows a site"),
+          title: dgettext("domain_map", "Shows a site from elsewhere"),
           text:
             dgettext(
               "domain_map",
               "A description can show a site from another address, in a frame inside its own. Potok tells that site the viewer's theme and language, so the site can follow them, and passes on only the calls the description lists for it. It remembers the page the reader got to, and a link to the group can open a chapter of the site. That is how a handbook published elsewhere reads as a part of the group."
+            )
+        },
+        %{
+          icon: "hero-window",
+          title: dgettext("domain_map", "Makes a site"),
+          text:
+            dgettext(
+              "domain_map",
+              "An app can be a whole site, as the Site preset's is: its menus, home page, theme and the roles of its editors are its config, which it can open to everyone who sees the app, guests too, while its secret part stays with its editors. Its sections are sub-groups only editors add to, its pages and articles are <Group>groups</Group> under them, with their own chat for comments, reactions and link cards, written in blocks whose HTML Potok cleans and lets say what each block is. A visitor moves between its pages as on any site, Back and Forward included."
             )
         },
         %{
@@ -2147,7 +2156,23 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "A new <Group>group</Group> can start from a preset: chat, folder, feed, polls, form, map, ordering or page. A preset sets what any group can have, so all of it can be changed later. The group also starts with its kind's icon as its picture, its own from then on. The group keeps only the preset's name: its avatar shows that kind while the group still fits it, and the list of sub-groups can be narrowed to one kind. A feed is two groups, one with the Feed app and one below it with FeedCreator, and each keeps its own copy of its app: a new version reaches an older group when someone who edits it refreshes the app in its description, Potok replacing only a copy it knows for one of its own builds, and the app's data stay. A group for polls, a form, a map and a group for ordering keep a copy of their app the same way, and a form gets its two groups for files only once it needs them. The root offers no map, as it has one of its own. Whoever edits a group can give it another kind later: the new kind brings its description, the page the group opens on, and its picture while the group still has the old kind's or none. An app that would be overwritten, or a text an app takes the place of, goes to an <GroupAltDescription>alternative description</GroupAltDescription> that only those who edit the group see, with everything its app kept, so the new app starts empty and the old one can come back as the default. A feed that becomes something else keeps the sub-group with its posts, and takes it back when it becomes a feed again. Only the root, direct conversations, threads and the groups an app keeps for itself have no kind to change."
+            "A new <Group>group</Group> can start from a preset: chat, folder, feed, polls, form, map, ordering, site or page. A preset sets what any group can have, so all of it can be changed later. The group also starts with its kind's icon as its picture, its own from then on. The group keeps only the preset's name: its avatar shows that kind while the group still fits it, and the list of sub-groups can be narrowed to one kind. A feed is two groups, one with the Feed app and one below it with FeedCreator, and each keeps its own copy of its app: a new version reaches an older group when someone who edits it refreshes the app in its description, Potok replacing only a copy it knows for one of its own builds, and the app's data stay. A group for polls, a form, a map, a group for ordering and a site keep a copy of their app the same way, a form gets its two groups for files only once it needs them, and a site makes its sections itself on its editors' first visit. The root offers no map, as it has one of its own. Whoever edits a group can give it another kind later: the new kind brings its description, the page the group opens on, and its picture while the group still has the old kind's or none. An app that would be overwritten, or a text an app takes the place of, goes to an <GroupAltDescription>alternative description</GroupAltDescription> that only those who edit the group see, with everything its app kept, so the new app starts empty and the old one can come back as the default. A feed that becomes something else keeps the sub-group with its posts, and takes it back when it becomes a feed again. Only the root, direct conversations, threads and the groups an app keeps for itself have no kind to change."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "A site keeps sections, and drafts its editors share"),
+        text:
+          dgettext(
+            "domain_map",
+            "A site's sections are <Group>groups</Group> right under the site's own, made so that only its editors add to them: in a <GroupManifest>manifest</GroupManifest> of the section's own, All members lose the permission to make sub-groups and every <GroupRole>role</GroupRole> that may edit the group gets it, so an editor who is no admin can still write there. A role added above later reaches a section only when an admin adds it there too. An article is a group under a section. As a draft it is private and inherits only the members who hold the editors' roles, so every editor sees it and nobody else; a group that is private and inherits only by roles counts as unpublished, so it gets its date of publication only when it opens to everyone it may reach, and loses it when it turns back. Its editor can move it to another section of the same site, and the history of both sections tells of it, naming the other one only to whoever sees it."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "A draft can open at a set time"),
+        text:
+          dgettext(
+            "domain_map",
+            "Whoever may edit a draft <Group>group</Group> can give it a time, up to a year ahead, and say whether it then turns public or takes all the members of the group above: a <ScheduledPublication>scheduled publication</ScheduledPublication>. At that time it opens as if its editor opened it then, in their name, so the history shows them, and one who may no longer edit it opens nothing and leaves the reason for the editors. A time that passed while nothing ran still opens it. Publishing it by hand, closing it again or giving it a new time replaces the old one, and a deleted account takes its schedules along."
           )
       },
       %{

@@ -88,7 +88,7 @@ You can follow a group you see even when you are not its member. Its notices the
 
 ### Apps in a group {:#aplikacije-ukratko}
 
-A group's description doesn't have to be just text. It can be a small app, say a form, news or a map, which keeps its data in the group itself and keeps to the group's permissions. You get a few such apps ready-made when you create a group.
+A group's description doesn't have to be just text. It can be an app, say a form, news, a map or a whole site, which keeps its data in the group itself and keeps to the group's permissions. You get a few such apps ready-made when you create a group.
 
 ## Examples of organizing {:#primeri}
 
@@ -259,6 +259,7 @@ You create a sub-group with the + button on the Sub-groups tab or from the group
 - **Form**: questions, answers and a summary of them.
 - **Map**: sub-groups as pins on a map. It is not offered on the home page, only inside a group.
 - **Ordering**: neighbours order together from a producer, in rounds, and one of them picks it all up and hands it out.
+- **Site**: a [site](#sajt) with menus, pages and articles in sections, in a theme you pick.
 - **Page**: a text people see first, made from a template.
 
 In the second step you enter the name and choose whether the group is public and whether it inherits members: all of them, or only those with the roles you choose. "Set everything up yourself" opens the full form. A new group starts out with its kind's picture, which you change in Edit group.
@@ -564,6 +565,8 @@ Some kinds of groups get a ready-made app:
 - **Form** has questions of many kinds, rules (who fills it in, once or more often, until when, anonymously), a summary of the answers, a quiz and attached files. In its settings, "When a response comes in", you switch on a process for every response: a post in the chat, a sub-group for the response and a decision by one role, with a reminder. Whoever holds that role decides right in the responses. For a process with more steps, [draw it](#nacrtaj-proces) in Potok.
 - **Polls** shows all of the group's polls in one place.
 - **Map** shows the sub-groups as pins, areas and routes.
+- **Ordering** keeps the rounds of a joint purchase: who orders what and how much, the packaging, who goes for the goods and what the trip costs, how much each one owes, and who picked up and paid.
+- **Site** is the group's site, with menus, sections, articles and pages: [described below](#sajt).
 
 A group keeps the version of its app it was made with. When Potok has a newer one, Edit group, Description, says "Potok has a newer version of the app", and "Refresh to the newest" replaces only its code: answers, orders and the rest of its data stay. A Feed then refreshes the FeedCreator in `.feed` too. An app Potok does not know for one of its own is left alone.
 
@@ -574,6 +577,21 @@ You can write any group's description from a template: news, photo, quote, event
 Whoever writes HTML can turn a description into an app of their own (Edit group, Description, "The description is an app (API)"). You then don't type the app into a field: you upload it as a ZIP with one HTML file, or as the HTML file itself, and download the current one as a ZIP. The file doesn't go to the server, only its HTML goes into the description. The same goes for alternative descriptions. Such an app can also run a process: when an answer comes in, it posts it in the chat, opens a sub-group for it and waits for someone with the role to decide, reminding them when they are late. Such a description can also hold a site from another address, in a frame: a site made for it follows the theme and the language you pick in Potok, opens where the reading stopped, and the group's address leads to that chapter. An app and a site can remember something for you alone, such as the last page you read; not even the editors see it, and you see and delete it in the account settings, under "What apps remember for you". What an app may do, and what it may not, is described in the [domain map](/domain#domain-apps). How an app is built and where each of its calls goes is drawn on the page [The architecture of a Potok app](/pomoc/arhitektura-aplikacije).
 
 ![Templates for a group's description](opis-sablon)
+
+### Site {:#sajt}
+
+A group of the kind Site opens as a real site: a header with a menu, a home page, sections with articles, and pages such as "About us" and "Contact". Every article and every page is a sub-group of the site, so it has its own chat for comments, reactions and a card when you share the link. You move through the site as through any other, and Back takes you to the site's previous page, on a phone too. The site can also be searched by the title and the text of its articles.
+
+When an editor opens it for the first time, they pick its name, its theme and the editors' roles, and the site makes the sections "Pages" and "News" by itself. Editors are the admins and the holders of those roles, and a role needs the "Edit group" permission. Only editors add to the sections, and at the top of the site they see a bar with the buttons **Dashboard**, **New article**, **Edit this page** and **Customize**.
+
+- **Dashboard** shows the articles by section and the pages, each with its state: draft, scheduled, published or published for members. You also make new sections there.
+- **An article is written in blocks**: paragraph, heading, list, quote, image, gallery, video, button, separator, table, columns, code, highlighted box or HTML. You add a block with the + button or by typing / in an empty paragraph, and move it up and down. An article also has a cover picture and a short description for its card.
+- **A draft** is seen by all the editors and nobody else. "Publish" opens it to everyone or only to the members of the site's group, now or at a time you schedule, up to a year ahead. "Back to draft" takes an article off the site, "Move to section" moves it to another section, and you can also hide its comments.
+- **Customize** changes the site with a live preview: its theme (Newspaper, Blog, Portal or Card), colours, fonts, header, menus, the blocks of the home page, the sidebar and the footer. Visitors see the changes only once you tap "Publish changes". The site takes the light or dark theme from Potok.
+
+A new site is public, so everyone who is signed in sees it. For people without an account to read it too, turn on "Description open to guests" in Edit group, Access and members. If articles were made before that, the dashboard shows it and offers "Apply to all content". A site has no address of its own, only its group's, and search engines do not list its pages.
+
+![The local community's site, as a visitor sees it](sajt) ![An article, opened without signing in](sajt-clanak) ![The dashboard: articles and their states](sajt-urednik) ![An article written in blocks](sajt-blokovi) ![Customizing the look](sajt-izgled)
 
 ### Templates of your own {:#svoji-sabloni}
 

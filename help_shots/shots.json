@@ -493,6 +493,35 @@
     "steps": [{ "pause": 2500 }]
   },
   {
+    "name": "sajt",
+    "as": "ana",
+    "url": "/groups/{groups.site}",
+    "steps": [{ "pause": 3500 }]
+  },
+  {
+    "name": "sajt-clanak",
+    "url": "/groups/{groups.site}?at={groups.site_article}",
+    "steps": [{ "pause": 3500 }]
+  },
+  {
+    "name": "sajt-urednik",
+    "as": "luka",
+    "url": "/groups/{groups.site}",
+    "steps": [{ "pause": 3000 }, { "frameClick": ["iframe[id$='-iframe']", "#sajt-dashboard"] }, { "pause": 2000 }]
+  },
+  {
+    "name": "sajt-blokovi",
+    "as": "luka",
+    "url": "/groups/{groups.site}?at={groups.site_article}",
+    "steps": [{ "pause": 3000 }, { "frameClick": ["iframe[id$='-iframe']", "#sajt-edit-this"] }, { "pause": 2000 }]
+  },
+  {
+    "name": "sajt-izgled",
+    "as": "luka",
+    "url": "/groups/{groups.site}",
+    "steps": [{ "pause": 3000 }, { "frameClick": ["iframe[id$='-iframe']", "#sajt-customize"] }, { "pause": 2000 }]
+  },
+  {
     "name": "opis-sablon",
     "as": "ana",
     "url": "/groups/{groups.mz}/edit_group",

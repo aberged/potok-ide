@@ -2,8 +2,8 @@ defmodule HelpShots.World do
   @moduledoc """
   The made-up world the help page's pictures show: twelve people, the three
   organizations of the help text's examples (a local community, a buying co-op
-  and a building) and the neighbourhood's news feed, with what they wrote
-  yesterday and today. Names, places and words are invented; the map is real.
+  and a building), the neighbourhood's news feed and the local community's
+  site, with what they wrote yesterday and today. Names, places and words are invented; the map is real.
 
   `build/1` returns what `shots.mjs` needs: ids by name and a signed log-in
   cookie for every person.
@@ -17,9 +17,11 @@ defmodule HelpShots.World do
   alias PotokIde.Polls
   alias PotokIde.Repo
   alias PotokIde.Social
+  alias PotokIde.Social.AppData
   alias PotokIde.Social.Group
   alias PotokIde.Social.GroupAreas
   alias PotokIde.Social.GroupRoutes
+  alias PotokIde.Social.ScheduledPublications
   alias PotokIde.Social.ScheduledValues
   alias PotokIde.Social.Value
   alias PotokIde.Storage
@@ -40,6 +42,7 @@ defmodule HelpShots.World do
 
     mz = local_community(p, root, files_dir)
     news = news(p, root)
+    site = site(p, root, files_dir)
     assembly_notice(p, mz)
     coop = coop(p, root)
     shared = shared_profile(people)
@@ -103,6 +106,8 @@ defmodule HelpShots.World do
             mz_requests: mz.requests,
             mz_request: mz.request,
             news: news,
+            site: site.root,
+            site_article: site.article,
             coop: coop.root,
             coop_orders: coop.orders,
             coop_chat: coop.chat,
@@ -165,7 +170,9 @@ defmodule HelpShots.World do
     end
 
     for table <- ~w(groups group_alt_descriptions polls group_events) do
-      Repo.query!("UPDATE #{table} SET inserted_at = inserted_at - interval '4 days' WHERE id IN (SELECT id FROM #{table})")
+      Repo.query!(
+        "UPDATE #{table} SET inserted_at = inserted_at - interval '4 days' WHERE id IN (SELECT id FROM #{table})"
+      )
     end
 
     Repo.query!(
@@ -177,7 +184,9 @@ defmodule HelpShots.World do
         "description" => mz.description
       })
 
-    Repo.query!("UPDATE group_changes SET at = at - interval '20 hours' WHERE at > now() - interval '1 hour'")
+    Repo.query!(
+      "UPDATE group_changes SET at = at - interval '20 hours' WHERE at > now() - interval '1 hour'"
+    )
 
     {:ok, rules} =
       Social.create_alt_description(ana, Repo.get!(Group, mz.id), %{
@@ -187,7 +196,11 @@ defmodule HelpShots.World do
 
     {:ok, _} = Social.delete_alt_description(ana, Repo.get!(Group, mz.id), rules)
 
-    now() |> DateTime.add(-2, :day) |> DateTime.to_naive() |> NaiveDateTime.to_iso8601() |> String.slice(0, 16)
+    now()
+    |> DateTime.add(-2, :day)
+    |> DateTime.to_naive()
+    |> NaiveDateTime.to_iso8601()
+    |> String.slice(0, 16)
   end
 
   defp now, do: DateTime.utc_now() |> DateTime.shift_zone!(@zone)
@@ -279,7 +292,9 @@ defmodule HelpShots.World do
       })
 
     {:ok, volunteer} = Social.create_group_role(ana, mz, %{"name" => "volonter"})
-    {:ok, _} = Social.set_role_request_rule(ana, mz, volunteer.key, %{"request_mode" => "approve"})
+
+    {:ok, _} =
+      Social.set_role_request_rule(ana, mz, volunteer.key, %{"request_mode" => "approve"})
 
     # A template of the community's own, which every group below it uses too.
     {:ok, _template} =
@@ -563,6 +578,384 @@ defmodule HelpShots.World do
     {:ok, _block} = Social.block_from_group(luka, news, p.("petar"))
 
     news
+  end
+
+  # The local community's site -----------------------------------------------
+
+  # A Site of its own, set up and written as the Sajt app does it: Luka edits
+  # it, Milica and Nikola are its members, and Ana only reads it, so it stays
+  # out of her home page. Guests read it too.
+  defp site(p, root, files_dir) do
+    luka = p.("luka")
+    site = preset(luka, root, "site", "Sajt MZ Topolik", public: true)
+    members(luka, site, ~w(milica nikola) |> Enum.map(p))
+    {:ok, site} = Social.update_group(luka, site, %{"description_for_guests" => true})
+
+    section = fn name ->
+      {:ok, section} =
+        Social.create_editors_only_group(luka, site, %{
+          "name" => name,
+          "is_public" => true,
+          "inherits_members" => true,
+          "description_for_guests" => true
+        })
+
+      section
+    end
+
+    pages = section.("Stranice")
+    news = section.("Vesti")
+
+    # Published at `at`, or a draft its editors share when there is none.
+    write = fn parent, name, kind, excerpt, blocks, opts ->
+      audience =
+        if opts[:at],
+          do: %{"is_public" => true, "inherit_role_keys" => []},
+          else: %{"is_public" => false, "inherit_role_keys" => ["admin"]}
+
+      attrs =
+        %{
+          "name" => name,
+          "description" => site_doc(kind, excerpt, blocks),
+          "description_format" => :html,
+          "inherits_members" => true,
+          "description_for_guests" => true
+        }
+        |> Map.merge(audience)
+        |> then(
+          &if opts[:picture], do: Map.put(&1, "group_picture_url", opts[:picture]), else: &1
+        )
+
+      {:ok, item} = Social.create_group(luka, parent, attrs)
+
+      if opts[:at],
+        do:
+          Repo.update_all(from(g in Group, where: g.id == ^item.id),
+            set: [published_at: opts[:at]]
+          )
+
+      item
+    end
+
+    para = &%{"type" => "paragraph", "text" => &1}
+
+    about =
+      write.(
+        pages,
+        "O nama",
+        "page",
+        "Ko smo i kako radimo.",
+        [
+          para.(
+            "Mesna zajednica Topolik okuplja komšije iz šest ulica između kanala i pruge. Savet mesne zajednice bira zbor građana, a sednice saveta su javne."
+          ),
+          para.(
+            "U Potoku imamo razgovor zbora, mapu prijava i kalendar događaja. Pridruži nam se i piši šta treba popraviti u kraju."
+          )
+        ],
+        at: ago(6, 12, 0)
+      )
+
+    contact =
+      write.(
+        pages,
+        "Kontakt",
+        "page",
+        "Kancelarija i radno vreme.",
+        [
+          para.("Kancelarija mesne zajednice je u Ulici lipa 2, u prizemlju Doma kulture."),
+          %{
+            "type" => "list",
+            "ordered" => false,
+            "items" => [
+              "Radnim danima od 17 do 19 časova",
+              "Subotom od 10 do 12 časova",
+              "Telefon: 021 555 012"
+            ]
+          }
+        ],
+        at: ago(6, 12, 5)
+      )
+
+    write.(
+      news,
+      "Akcija čišćenja obale kanala",
+      "article",
+      "Četrdeset komšija i pun kamion smeća.",
+      [
+        para.(
+          "U subotu je četrdeset komšija očistilo obalu kanala od mosta do pruge. Komunalno preduzeće je odvezlo pun kamion smeća."
+        ),
+        para.("Sledeća akcija je u proleće, kad se sade lipe uz stazu.")
+      ],
+      at: ago(3, 17, 0),
+      picture: site_picture(files_dir, "obala.jpg", "#9fc9e8", "#5d8f4e", "#4a7fa0")
+    )
+
+    park =
+      write.(
+        news,
+        "Park kod škole dobio nove klupe",
+        "article",
+        "Dvanaest klupa, česma i kante za otpatke.",
+        [
+          para.(
+            "Park kod osnovne škole od ove nedelje ima dvanaest novih klupa, česmu i kante za otpatke. Klupe su postavili članovi saveta sa komšijama, za dva vikenda."
+          ),
+          %{"type" => "heading", "level" => 2, "text" => "Šta sledi"},
+          %{
+            "type" => "list",
+            "ordered" => false,
+            "items" => [
+              "Sadnja lipa uz stazu, u martu",
+              "Rasveta oko igrališta",
+              "Tabla sa mapom parka"
+            ]
+          },
+          %{
+            "type" => "quote",
+            "text" => "Deca su klupe isprobala pre nego što smo završili.",
+            "cite" => "Luka, savet MZ"
+          },
+          %{
+            "type" => "callout",
+            "text" => "Imaš predlog za park? Napiši ga u komentarima ispod ovog članka."
+          }
+        ],
+        at: ago(1, 10, 0),
+        picture: site_picture(files_dir, "park.jpg", "#b9dcf5", "#7fb05a", "#8a6a45")
+      )
+
+    write.(
+      news,
+      "Zbor građana u četvrtak",
+      "article",
+      "Rasveta u Ulici lipa i plan radova za proleće.",
+      [
+        para.(
+          "Zbor građana je u četvrtak u 18 časova, u sali Doma kulture. Na dnevnom redu su rasveta u Ulici lipa i plan radova za proleće."
+        ),
+        para.("Ko ne može da dođe, može da pošalje pitanje unapred, u razgovoru zbora u Potoku.")
+      ],
+      at: ago(0, 8, 0),
+      picture: site_picture(files_dir, "zbor.jpg", "#f2c99a", "#c98f5b", "#7a5236")
+    )
+
+    # What the editors are still writing: a draft, and one that opens by
+    # itself in three days.
+    write.(
+      news,
+      "Plan radova za proleće",
+      "article",
+      "",
+      [
+        para.(
+          "Savet predlaže tri posla za proleće: lipe uz stazu, rasvetu oko igrališta i novu tablu sa mapom parka."
+        )
+      ],
+      []
+    )
+
+    feast =
+      write.(
+        news,
+        "Dan mesne zajednice",
+        "article",
+        "Program za ceo dan, za decu i odrasle.",
+        [
+          para.(
+            "Dan mesne zajednice slavimo u parku kod škole, od 10 časova: turnir u malom fudbalu, radionice za decu i koncert u 19 časova."
+          )
+        ],
+        []
+      )
+
+    publish_at =
+      next(3)
+      |> DateTime.new!(~T[10:00:00], @zone)
+      |> DateTime.shift_zone!("Etc/UTC")
+
+    {:ok, _scheduled} =
+      ScheduledPublications.schedule(luka, feast, publish_at, %{
+        is_public: true,
+        inherits_members: true
+      })
+
+    post(p.("milica"), park, "Konačno! Može li i jedna klupa u hladu, kod česme?", ago(1, 12, 20))
+    post(p.("nikola"), park, "Bio sam juče sa decom, sve je lepo urađeno.", ago(0, 7, 45))
+
+    target = fn
+      :home -> %{"type" => "home"}
+      %Group{id: id} -> %{"type" => if(id == news.id, do: "section", else: "item"), "id" => id}
+    end
+
+    menu = fn id, label, to ->
+      %{"id" => id, "label" => label, "target" => target.(to), "children" => []}
+    end
+
+    {:ok, _config} =
+      AppData.save_config(
+        luka,
+        site,
+        nil,
+        %{
+          "v" => 1,
+          "public" => true,
+          "site" => %{
+            "title" => "MZ Topolik",
+            "tagline" => "Mesna zajednica između kanala i pruge",
+            "logo" => "",
+            "footerText" => "Mesna zajednica Topolik, Ulica lipa 2"
+          },
+          "theme" => %{"id" => "portal"},
+          "sections" => [
+            %{"id" => pages.id, "kind" => "pages", "style" => "list", "perPage" => 20},
+            %{"id" => news.id, "kind" => "articles", "style" => "cards", "perPage" => 12}
+          ],
+          "menus" => %{
+            "main" => [
+              menu.("m1", "Početna", :home),
+              menu.("m2", "Vesti", news),
+              menu.("m3", "O nama", about),
+              menu.("m4", "Kontakt", contact)
+            ],
+            "footer" => []
+          },
+          "home" => [
+            %{
+              "id" => "h1",
+              "type" => "hero",
+              "title" => "Mesna zajednica Topolik",
+              "text" => "Vesti, zbor i sve što se dešava u kraju, na jednom mestu.",
+              "image" => "",
+              "buttons" => [%{"label" => "Vesti", "target" => target.(news)}]
+            },
+            %{
+              "id" => "h2",
+              "type" => "latest",
+              "title" => "Najnovije",
+              "section" => news.id,
+              "count" => 6,
+              "style" => "cards"
+            },
+            %{
+              "id" => "h3",
+              "type" => "tiles",
+              "title" => "Mesna zajednica",
+              "items" => [
+                %{
+                  "label" => "O nama",
+                  "text" => "Ko smo i kako radimo",
+                  "target" => target.(about)
+                },
+                %{
+                  "label" => "Kontakt",
+                  "text" => "Kancelarija i radno vreme",
+                  "target" => target.(contact)
+                }
+              ]
+            }
+          ],
+          "sidebar" => [],
+          "footer" => [
+            %{
+              "id" => "f1",
+              "type" => "about",
+              "title" => "MZ Topolik",
+              "text" => "Savet mesne zajednice bira zbor građana. Sednice saveta su javne."
+            }
+          ],
+          "editorRoles" => [],
+          "hiddenComments" => [],
+          "commentsOnPages" => false
+        },
+        nil
+      )
+
+    %{root: site, article: park}
+  end
+
+  # An article or a page as the Sajt app writes it (potok-sajt `encodeDoc`):
+  # its blocks in a comment, the text of its card, and the HTML they make,
+  # with the hash of that HTML, which tells the app nobody changed it by hand.
+  # Plain text only, so this HTML is the app's to the letter and its editor
+  # opens the blocks.
+  defp site_doc(kind, excerpt, blocks) do
+    blocks =
+      blocks |> Enum.with_index(1) |> Enum.map(fn {block, i} -> Map.put(block, "id", "b#{i}") end)
+
+    html = Enum.map_join(blocks, "\n", &site_html/1)
+
+    marker =
+      %{"v" => 1, "kind" => kind, "blocks" => blocks, "excerpt" => excerpt, "hash" => fnv(html)}
+      |> Jason.encode!()
+      |> String.replace("<", "\\u003c")
+      |> String.replace(">", "\\u003e")
+      |> String.replace("--", "-\\u002d")
+
+    card = if excerpt == "", do: hd(blocks)["text"], else: excerpt
+    ~s(<!--potok-site #{marker}-->\n<meta name="description" content="#{card}">#{html})
+  end
+
+  defp site_html(%{"type" => "paragraph", "text" => text}), do: "<p>#{text}</p>"
+
+  defp site_html(%{"type" => "heading", "level" => level, "text" => text}),
+    do: "<h#{level}>#{text}</h#{level}>"
+
+  defp site_html(%{"type" => "list", "items" => items}),
+    do: "<ul>" <> Enum.map_join(items, &"<li>#{&1}</li>") <> "</ul>"
+
+  defp site_html(%{"type" => "quote", "text" => text, "cite" => cite}),
+    do: "<blockquote><p>#{text}</p><p><small>— #{cite}</small></p></blockquote>"
+
+  defp site_html(%{"type" => "callout", "text" => text}),
+    do: ~s(<div data-potok-block="callout"><p>#{text}</p></div>)
+
+  # FNV-1a over the characters, as potok-sajt's `hashOf`.
+  defp fnv(text) do
+    text
+    |> String.trim()
+    |> String.to_charlist()
+    |> Enum.reduce(0x811C9DC5, fn char, hash ->
+      rem(Bitwise.bxor(hash, char) * 0x01000193, 0x100000000)
+    end)
+    |> Integer.to_string(16)
+    |> String.downcase()
+    |> String.pad_leading(8, "0")
+  end
+
+  # A stand-in photo for an article's cover, drawn by ImageMagick: a sky, a
+  # field and two round trees, as a data URL, the way a group keeps its
+  # picture.
+  defp site_picture(dir, name, sky, field, trunk) do
+    path = Path.join(dir, name)
+
+    unless File.exists?(path) do
+      {:ok, _} =
+        PotokIde.ImageMagick.run(
+          ["-size", "1200x750", "gradient:#{sky}-#ffffff", "-fill", field] ++
+            ["-draw", "polygon 0,470 320,430 720,455 1200,405 1200,750 0,750"] ++
+            [
+              "-fill",
+              trunk,
+              "-draw",
+              "rectangle 262,380 282,500",
+              "-draw",
+              "rectangle 902,350 922,470"
+            ] ++
+            [
+              "-fill",
+              "#3f7d3a",
+              "-draw",
+              "circle 272,330 272,230",
+              "-draw",
+              "circle 912,300 912,190"
+            ] ++
+            ~w(-blur 0x1.2 -quality 72) ++ [path]
+        )
+    end
+
+    "data:image/jpeg;base64," <> Base.encode64(File.read!(path))
   end
 
   # A buying co-op ------------------------------------------------------------
@@ -1216,7 +1609,10 @@ defmodule HelpShots.World do
     {:ok, _} = Social.request_group_access(p.("petar"), mz.root)
 
     volunteer =
-      Enum.find(PotokIde.Social.Access.effective_manifest(mz.root).roles, &(&1.name == "volonter"))
+      Enum.find(
+        PotokIde.Social.Access.effective_manifest(mz.root).roles,
+        &(&1.name == "volonter")
+      )
 
     {:ok, _} =
       PotokIde.Social.GroupRequests.request_access(p.("sara"), mz.root, %{

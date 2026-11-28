@@ -284,11 +284,6 @@ msgstr "i Administrator je dodela"
 msgid "Admin, House council, Tenant, Everyone"
 msgstr "Administrator, Kućni savet, Podstanar, Svi"
 
-#: lib/potok_ide_web/controllers/page_html/help_app_architecture.html.heex:744
-#, elixir-autogen, elixir-format
-msgid "All of these are methods of the object `window.potok`. Each becomes one message to the page's frame, and the server checks it anew. For a guest the server lets through the marked reads, `getDescription`, and what the public rules of a collection show to everyone. The page answers `linkGroup`, `getLinkedGroup`, `openLogin` and `pickEmoji` by itself, without the server. The old API (`insertGroupValue`, `getGroupDataValues`) still works for apps written before the frame."
-msgstr "Sve su to metode objekta `window.potok`. Svaka postaje jedna poruka okviru stranice, a server je proverava iznova. Za gosta server propušta označena čitanja, `getDescription` i ono što javna pravila kolekcije pokazuju svima. `linkGroup`, `getLinkedGroup`, `openLogin` i `pickEmoji` stranica rešava sama, bez servera. Stari API (`insertGroupValue`, `getGroupDataValues`) i dalje radi za aplikacije pisane pre okvira."
-
 #: lib/potok_ide_web/controllers/page_html/help_app_architecture.html.heex:147
 #, elixir-autogen, elixir-format
 msgid "Alternative description"
@@ -612,11 +607,6 @@ msgstr "Ne vidi Potokovu stranicu,"
 msgid "It does not see the drawings of processes, does not vote and does not change a poll."
 msgstr "Ne vidi crteže procesa, ne glasa i ne menja anketu."
 
-#: lib/potok_ide_web/controllers/page_html/help_processes_apps.html.heex:1020
-#, elixir-autogen, elixir-format
-msgid "It makes and changes groups only for a viewer who may edit, and only right below its own. The exception is a place on the map (`createPlace`): for that the permission to make sub-groups is enough."
-msgstr "Grupe pravi i menja samo za gledaoca koji sme da uređuje, i samo odmah ispod svoje. Izuzetak je mesto na mapi (`createPlace`): za njega je dovoljna dozvola za podgrupe."
-
 #: lib/potok_ide_web/controllers/page_html/help_processes_apps.html.heex:1045
 #, elixir-autogen, elixir-format
 msgid "It sends a push to a role only with the right to mention roles."
@@ -631,11 +621,6 @@ msgstr "Piše u svojoj grupi i u podgrupama koje je sam napravio, koliko mu tamo
 #, elixir-autogen, elixir-format
 msgid "It writes only into its own collections. It reads other apps' values only outside collections, and another app's collection never."
 msgstr "Upisuje samo u svoje kolekcije. Tuđe vrednosti čita samo van kolekcija, a tuđu kolekciju nikad."
-
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:805
-#, elixir-autogen, elixir-format
-msgid "Its maker becomes its first Admin. A new group has no manifest of its own and uses an ancestor's. The exceptions are `.feed` and an app's groups for files, which are made with a manifest of their own, and a sub-group a process makes: its Admins are the people the process names."
-msgstr "Tvorac postaje njen prvi Administrator. Nova grupa nema svoj manifest, nego koristi pretkov. Izuzeci su `.feed` i grupe za fajlove aplikacije, koje nastaju sa svojim manifestom, i podgrupa koju napravi proces: njeni Administratori su ljudi koje proces navede."
 
 #: lib/potok_ide_web/controllers/page_html/help_processes_apps.html.heex:212
 #, elixir-autogen, elixir-format
@@ -2608,3 +2593,18 @@ msgstr "Ko čita razgovor grupe, prijavljuje poruku koju je napisao neko drugi, 
 #, elixir-autogen, elixir-format
 msgid "<b>A link to a message</b> in a chat shows its author, text and first picture only to those who may read it: the members of its group, and everyone in an open chat, unless it announces an event that is not public. Those in the group a thread was opened in read the thread's messages too, but see their pictures only once they open the thread. The message is read anew for every reader and never copied: an edit shows, a deleted one leaves no card. The others see the card a guest would get, or only the link."
 msgstr "<b>Link ka poruci</b> u razgovoru pokazuje njenog autora, tekst i prvu sliku samo onima koji smeju da je čitaju: članovima njene grupe, i svima u otvorenom razgovoru, osim kad najavljuje događaj koji nije javan. Oni iz grupe u kojoj je nit otvorena čitaju i poruke niti, ali njihove slike vide tek kad otvore nit. Poruka se čita iznova za svakog čitaoca i nikad se ne kopira: izmena se vidi, a obrisana ne ostavlja karticu. Ostali vide karticu koju bi dobio gost, ili samo link."
+
+#: lib/potok_ide_web/controllers/page_html/help_app_architecture.html.heex:744
+#, elixir-autogen, elixir-format
+msgid "All of these are methods of the object `window.potok`. Each becomes one message to the page's frame, and the server checks it anew. For a guest the server lets through the marked reads, `getDescription`, what the public rules of a collection show to everyone, and a config that says it is public. The page answers `linkGroup`, `getLinkedGroup`, `openLogin` and `pickEmoji` by itself, without the server. `linkGroup` with `push` adds an entry to the browser's history: the page keeps its Back and Forward from LiveView and hands them to the app (`onLinkedGroupChange`), so a site's pages move like pages. The old API (`insertGroupValue`, `getGroupDataValues`) still works for apps written before the frame."
+msgstr "Sve su to metode objekta `window.potok`. Svaka postaje jedna poruka okviru stranice, a server je proverava iznova. Za gosta server propušta označena čitanja, `getDescription`, ono što javna pravila kolekcije pokazuju svima i podešavanja koja kažu da su javna. `linkGroup`, `getLinkedGroup`, `openLogin` i `pickEmoji` stranica rešava sama, bez servera. `linkGroup` sa `push` dodaje korak u istoriju pregledača: stranica njegove korake Nazad i Napred čuva od LiveView-a i predaje ih aplikaciji (`onLinkedGroupChange`), pa se strane sajta kreću kao strane. Stari API (`insertGroupValue`, `getGroupDataValues`) i dalje radi za aplikacije pisane pre okvira."
+
+#: lib/potok_ide_web/controllers/page_html/help_processes_apps.html.heex:1020
+#, elixir-autogen, elixir-format
+msgid "It makes and changes groups only for a viewer who may edit, and only right below its own or right below one of its own sub-groups (`under`), as a site keeps its articles in sections. The exception is a place on the map (`createPlace`): for that the permission to make sub-groups is enough."
+msgstr "Grupe pravi i menja samo za gledaoca koji sme da uređuje, i samo odmah ispod svoje ili odmah ispod neke svoje podgrupe (`under`), kao što sajt drži članke u rubrikama. Izuzetak je mesto na mapi (`createPlace`): za njega je dovoljna dozvola za podgrupe."
+
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:805
+#, elixir-autogen, elixir-format
+msgid "Its maker becomes its first Admin. A new group has no manifest of its own and uses an ancestor's. The exceptions are `.feed`, a site's sections (`editorsOnly`) and an app's groups for files, which are made with a manifest of their own, where All members lose the permission to make sub-groups and in a section every role that may edit gets it, and a sub-group a process makes: its Admins are the people the process names. A site's draft inherits only the editors' roles, so they all see it, and it counts as unpublished until it opens to everyone."
+msgstr "Tvorac postaje njen prvi Administrator. Nova grupa nema svoj manifest, nego koristi pretkov. Izuzeci su `.feed`, rubrike sajta (`editorsOnly`) i grupe za fajlove aplikacije, koje nastaju sa svojim manifestom, u kome Svi članovi gube dozvolu za podgrupe, a u rubrici je dobija svaka uloga koja sme da uređuje, i podgrupa koju napravi proces: njeni Administratori su ljudi koje proces navede. Nacrt na sajtu nasleđuje samo uloge urednika, pa ga svi oni vide, i računa se kao neobjavljen dok se ne otvori svima."
