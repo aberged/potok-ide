@@ -6558,6 +6558,15 @@ defmodule PotokIde.Social do
     end
   end
 
+  @doc "Which of `ids` are groups with a picture of their own, not their initials."
+  def group_ids_with_pictures([]), do: MapSet.new()
+
+  def group_ids_with_pictures(ids) when is_list(ids) do
+    from(g in Group, where: g.id in ^ids and not is_nil(g.group_picture_url), select: g.id)
+    |> Repo.all()
+    |> MapSet.new()
+  end
+
   @doc """
   The direct sub-groups of `group` the profile can see, but apps and those
   its apps keep files in: where an app keeps groups of its own, as a site's

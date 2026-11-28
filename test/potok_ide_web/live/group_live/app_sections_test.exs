@@ -278,6 +278,28 @@ defmodule PotokIdeWeb.GroupLive.AppSectionsTest do
                call(ctx.view, "get_subgroup", %{"id" => ctx.site.id})
     end
 
+    test "a card knows a picture of its own from initials, and the app the site's access", ctx do
+      assert %{ok: true, groups: [plain]} =
+               call(ctx.view, "list_subgroups", %{"id" => ctx.section.id})
+
+      refute plain.has_picture
+
+      assert %{ok: true} =
+               call(ctx.view, "update_child", %{
+                 "id" => ctx.article.id,
+                 "under" => ctx.section.id,
+                 "picture" => "data:image/png;base64,iVBORw0KGgo="
+               })
+
+      assert %{ok: true, groups: [pictured]} =
+               call(ctx.view, "list_subgroups", %{"id" => ctx.section.id, "brief" => true})
+
+      assert pictured.has_picture
+
+      assert %{ok: true, group: %{for_guests: false, public_chat: false}} =
+               call(ctx.view, "get_group")
+    end
+
     test "turning guests on afterwards reaches what is there already, at one call", ctx do
       refute ctx.article.for_guests
 

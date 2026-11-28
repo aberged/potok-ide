@@ -2429,7 +2429,11 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
       # Then any member can put a group here by hand, past the app.
       everyone_creates_subgroups: Access.everyone_can?(access, :create_subgroups),
       can_start_polls: Rules.can_create?(access, group),
-      signed_in: not is_nil(profile)
+      signed_in: not is_nil(profile),
+      # What the groups it makes get (`applyAccessToChildren`): its description
+      # goes to guests, and outsiders write in its chat.
+      for_guests: group.description_for_guests,
+      public_chat: group.has_public_chat
     }
   end
 
@@ -2469,6 +2473,8 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
       app_description: if(group.uses_api, do: PublicPreview.own_description(group)),
       uses_api: group.uses_api,
       picture_url: Avatars.group_avatar_url(group),
+      # Whether that is a picture of its own, not its initials: what a card shows.
+      has_picture: MapSet.member?(stats.pictures, group.id),
       is_public: group.is_public,
       inherits_members: group.inherits_members,
       creator_id: if(stats.profile, do: group.creator_id),
@@ -2489,6 +2495,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
 
     stats = %{
       brief?: brief?,
+      pictures: Social.group_ids_with_pictures(ids),
       profile: profile,
       comments: Social.group_comment_counts(ids),
       reactions: Social.group_reaction_summaries(ids, profile),
