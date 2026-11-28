@@ -17,7 +17,10 @@
 #   --swap MB           override the profile's swap (0 = none)
 #   --erl-flags "..."   extra VM flags for this run (e.g. "+sbwt none"), no rebuild needed
 #   --scale 1k|10k      which seeded database to use (potok_load_1k / potok_load_10k)
+#   --db NAME           use another database than the scale's (e.g. a copy kept on an older schema
+#                       for an A/B with an older image); it must hold the same seed
 #   --pool N            POOL_SIZE (default 10, as in production)
+#   --queue T,I         the pool's queue_target and queue_interval in ms (default: the app's)
 #   --reseed            drop and re-seed the scale's database first
 #   --scenario probe    no loadgen: what one value costs between the nodes (needs --profile cluster)
 #   anything else is passed to loadgen.exs (--think-min, --big-post-rate, ...)
@@ -31,7 +34,7 @@ export MSYS_NO_PATHCONV=1
 export COMPOSE_PROFILES=cluster
 
 profile=fly scale=1k scenario=mix users=1000 ramp=120 hold=300 pool=10 reseed=0
-cpus_override="" mem_override="" swap_override="" erl_extra=""
+cpus_override="" mem_override="" swap_override="" erl_extra="" db_override="" queue=""
 extra=()
 
 while [ $# -gt 0 ]; do
@@ -43,6 +46,8 @@ while [ $# -gt 0 ]; do
     --ramp) ramp="$2"; shift 2 ;;
     --hold) hold="$2"; shift 2 ;;
     --pool) pool="$2"; shift 2 ;;
+    --queue) queue="$2"; shift 2 ;;
+    --db) db_override="$2"; shift 2 ;;
     --cpus) cpus_override="$2"; shift 2 ;;
     --mem) mem_override="$2"; shift 2 ;;
     --swap) swap_override="$2"; shift 2 ;;
@@ -81,8 +86,10 @@ case "$scale" in
   10k) db=potok_load_10k seed_n=10000 ;;
   *) echo "unknown scale $scale" >&2; exit 1 ;;
 esac
+db=${db_override:-$db}
 
 export DB_NAME="$db" POOL_SIZE="$pool"
+export DB_QUEUE_TARGET_MS="${queue%%,*}" DB_QUEUE_INTERVAL_MS="${queue#*,}"
 run_id="$(date +%Y%m%d-%H%M%S)-${profile}-${scale}-${scenario}-${users}"
 out="results/$run_id"
 mkdir -p "$out"

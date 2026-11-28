@@ -21,6 +21,7 @@ Production is never touched.
 | `inspect_bin.exs` | Over `rpc` during a run: which processes hold the binary memory, and the ETS tables by size |
 | `inspect_ports.exs` | Over `rpc` during a run: memory and buffers of the TCP ports, and the binaries kept in `PotokIde.Cache` |
 | `probe_root_reload.exs` | Over `rpc` during a run: the CPU one new direct chat costs, as every open root page reloads (`group_updated` on root) |
+| `refresh_sessions.exs` | Over `rpc`: re-signs the remember-me cookies of `results/users_<n>.csv` with today's time, for a seed older than 14 days (see below) |
 
 ## Running
 
@@ -49,7 +50,9 @@ The run options:
   - `--cpus`, `--mem` and `--erl-flags "..."` change one run without a rebuild (e.g. `--erl-flags "+sbwt none"`).
 - **The laptop is faster than Fly.** The same shell loop took 1.2–1.6 s here (1 CPU) and 1.7 s on the prod machine (AMD EPYC), so CPU numbers from here are 1.1–1.4× too low for Fly.
 - **Scales.** `1k` and `10k` use separate databases. Each is seeded on first use. `--reseed` starts over.
-- **Loadgen options.** Anything else is passed to `loadgen.exs`: `--think-min`, `--think-max`, `--poster-share`, `--post-min`, `--post-max`, `--big-post-share`, `--big-post-rate`, `--storm-window`.
+- **`--queue T,I`.** The Repo pool's `queue_target` and `queue_interval` in ms for one run, without a rebuild (`DB_QUEUE_TARGET_MS`, `DB_QUEUE_INTERVAL_MS` in `config/runtime.exs`). Left out, the app's defaults hold; `--queue 50,1000` is Ecto's.
+- **Loadgen options.** Anything else is passed to `loadgen.exs`: `--think-min`, `--think-max`, `--poster-share`, `--post-min`, `--post-max`, `--big-post-share`, `--big-post-rate`, `--storm-window`, `--dump-joins`.
+- **`--dump-joins`.** Writes the first join reply of each page to `results/<run>/joins/` (`group_<id>.json`, `root.json`, ...), to see what a join sends: which part of the page, and which attributes, take the bytes.
 
 Scenarios:
 
@@ -144,3 +147,24 @@ docker tag potok_load_app_new potok_load_app && ./run.sh ...    # new, same opti
 
 `core.autocrlf=false` keeps the release scripts LF. Past the breaking point a run is chaotic (the
 first burst decides how it goes), so tests just below it tell more.
+
+An old build may not run on the schema a newer one migrated to. Keep a copy of the database from
+before the new build's first run and point the old build at it with `--db`:
+
+```sh
+docker compose exec -T db psql -U postgres -c "CREATE DATABASE potok_load_1k_old TEMPLATE potok_load_1k"
+docker tag potok_load_app_base potok_load_app && ./run.sh --db potok_load_1k_old ...
+```
+
+## A seed older than 14 days
+
+Seeded sessions expire like real ones (`AccountToken` 14 days, the remember-me cookie's `max_age`),
+and every user then fails with `err.auth_redirect`. Bring them back without reseeding: move the
+tokens' dates in each database that holds the seed, then re-sign the cookies with the app running:
+
+```sh
+docker compose exec -T db psql -U postgres -d potok_load_1k \
+  -c "UPDATE accounts_tokens SET inserted_at = now(), authenticated_at = now() WHERE context = 'session'"
+docker compose exec -T app /app/bin/potok_ide rpc \
+  'Code.eval_file("/load_test/refresh_sessions.exs"); LoadTest.RefreshSessions.run(1000)'
+```

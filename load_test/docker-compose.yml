@@ -13,6 +13,9 @@ x-app-env: &app-env
   PHX_HOST: localhost
   PORT: "8080"
   POOL_SIZE: ${POOL_SIZE:-10}
+  # The pool's patience (config/runtime.exs); empty keeps the app's defaults.
+  DB_QUEUE_TARGET_MS: ${DB_QUEUE_TARGET_MS:-}
+  DB_QUEUE_INTERVAL_MS: ${DB_QUEUE_INTERVAL_MS:-}
   MAILER_FROM_EMAIL: load@potok.test
   MAILGUN_API_KEY: load-test
   MAILGUN_DOMAIN: potok.test

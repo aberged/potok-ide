@@ -482,6 +482,7 @@ defmodule LoadGen.User do
       Metrics.count("join.ok.#{kind}")
       # Bytes, not µs: the summary's "ms" column then reads as KB.
       Metrics.hist(String.to_atom("join_bytes_" <> page_class(state)), byte_size(frame))
+      if state.cfg.dump_joins, do: dump_join(state, frame)
       debug(state, "joined #{kind} #{inspect(state.page)}")
       ids = Regex.scan(~r/"value-(\d+)"/, frame, capture: :all_but_first)
 
@@ -772,6 +773,20 @@ defmodule LoadGen.User do
   end
 
   defp app_calls(state), do: state
+
+  defp dump_join(state, frame) do
+    name =
+      case state.page do
+        :root -> "root"
+        {:group, id} -> "#{page_class(state)}_#{id}"
+        other -> other |> inspect() |> String.replace(~r/[^a-z0-9_]+/i, "_")
+      end
+
+    dir = Path.join(state.cfg.out, "joins")
+    File.mkdir_p!(dir)
+    path = Path.join(dir, name <> ".json")
+    unless File.exists?(path), do: File.write!(path, frame)
+  end
 
   defp page_class(%{page: :root}), do: "root"
 
@@ -1236,7 +1251,8 @@ defmodule LoadGen.Main do
           storm_window: :integer,
           seed: :integer,
           debug: :string,
-          avatars: :boolean
+          avatars: :boolean,
+          dump_joins: :boolean
         ]
       )
 
@@ -1271,6 +1287,8 @@ defmodule LoadGen.Main do
       seed: Keyword.get(opts, :seed, 1),
       # Comma-separated VU ids whose joins and errors are printed.
       avatars: Keyword.get(opts, :avatars, true),
+      # Writes the first join reply of each page to <out>/joins/, to see what a join sends.
+      dump_joins: Keyword.get(opts, :dump_joins, false),
       debug:
         opts
         |> Keyword.get(:debug, "")
