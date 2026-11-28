@@ -247,6 +247,11 @@ if config_env() == :prod do
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
+  env_integer = fn name, default ->
+    value = System.get_env(name)
+    if present?.(value), do: String.to_integer(String.trim(value)), else: default
+  end
+
   config :potok_ide, PotokIde.Repo,
     # ssl: true,
     url: database_url,
@@ -262,6 +267,16 @@ if config_env() == :prod do
     # (`rel/overlays/bin/migrate`).
     prepare: :unnamed,
     max_lifetime: 540_000..600_000,
+    # How long a query waits for a free connection before the pool gives up on
+    # it: once every wait of `queue_interval` is over `queue_target`, waits over
+    # twice the target fail. Ecto's 50 ms / 1 s suit a database that is the
+    # bottleneck. Here the shared CPU is: when it runs short, every query waits
+    # in the run queue, and failing at 100 ms turned a wave of 300 people
+    # entering one group within a minute into 240 500s and 480 crashed pages,
+    # whose retries did the same work again. With 1 s / 5 s all 300 got in,
+    # slower, with no errors (load_test on Fly's CPU baseline, 2026-11-28).
+    queue_target: env_integer.("DB_QUEUE_TARGET_MS", 1000),
+    queue_interval: env_integer.("DB_QUEUE_INTERVAL_MS", 5000),
     socket_options: maybe_ipv6
 
   # The secret key base is used to sign/encrypt cookies and other secrets.

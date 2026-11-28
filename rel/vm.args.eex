@@ -10,3 +10,12 @@
 +MHlmbcs 512
 +MBas aobf
 +MBlmbcs 512
+
+## A scheduler out of work spins a while before it sleeps, to pick up the next
+## piece sooner. On Fly's shared CPU that spinning is paid from the burst
+## balance like real work: on 4 shared vCPUs it was about half of the CPU at
+## 800 users, and without it the CPU fell from 0.53 to 0.31 of a core with the
+## same latencies (load_test, 2026-11-11).
++sbwt none
++sbwtdcpu none
++sbwtdio none
