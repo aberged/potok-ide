@@ -630,8 +630,16 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 label={gettext("Search messages")}
               />
 
-              <Layouts.drop_down_menu id="group-actions-menu" icon="hero-ellipsis-horizontal">
+              <%!-- Drawn when first opened: a page sends all of itself when it
+                   joins, and this menu was most of its header. --%>
+              <Layouts.drop_down_menu
+                id="group-actions-menu"
+                icon="hero-ellipsis-horizontal"
+                open_event={if(!@group_menu_open?, do: "group_menu_open")}
+              >
+                <GroupMenu.loading :if={!@group_menu_open?} id="group-actions-menu-loading" />
                 <GroupMenu.items
+                  :if={@group_menu_open?}
                   group={@group}
                   access={@access}
                   active_tab={@active_tab}
@@ -1132,6 +1140,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> AppHost.allow("page")
          |> assign(:template_list, nil)
          |> assign(:group_row_menu, nil)
+         |> assign(:group_menu_open?, false)
          |> GroupSidebar.init()
          |> assign(:muted_group_ids, MapSet.new())
          |> assign(:group_muted_until, nil)
@@ -2925,6 +2934,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
     else
       _invalid -> {:noreply, socket}
     end
+  end
+
+  # The open group's menu is drawn once its button is first pressed, and stays
+  # drawn while the page is open.
+  def handle_event("group_menu_open", _params, socket) do
+    {:noreply, assign(socket, :group_menu_open?, true)}
   end
 
   # Silences a group (the open one, or a row's) for a while, or lets it speak

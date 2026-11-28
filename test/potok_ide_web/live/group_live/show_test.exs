@@ -589,6 +589,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> live(~p"/groups/#{group.id}/members")
 
       lv
+      |> open_group_menu()
       |> element("#group-tab-invite-profile")
       |> render_click()
 
@@ -673,7 +674,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> log_in_account(owner_account)
         |> live(~p"/groups/#{group.id}/members")
 
-      lv |> element("#group-tab-invite-profile") |> render_click()
+      lv |> open_group_menu() |> element("#group-tab-invite-profile") |> render_click()
 
       lv
       |> form("#group-invite-form-0", %{"invite" => %{"identifier" => email}})
@@ -773,6 +774,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> live(~p"/groups/#{group.id}/members")
 
       lv
+      |> open_group_menu()
       |> element("#group-tab-invite-profile")
       |> render_click()
 
@@ -832,6 +834,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> live(~p"/groups/#{group.id}/members")
 
       lv
+      |> open_group_menu()
       |> element("#group-tab-invite-profile")
       |> render_click()
 
@@ -984,6 +987,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> live(~p"/groups/#{root_group.id}")
 
       lv
+      |> open_group_menu()
       |> element("#group-tab-sub-groups")
       |> render_click()
 
@@ -1256,7 +1260,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert has_element?(lv, "#group-tabs #group-files-summary")
       assert has_element?(lv, "#group-tabs #group-members-summary")
       refute has_element?(lv, "#group-subgroups-summary")
-      refute has_element?(lv, "#group-tab-sub-groups")
+      refute has_element?(open_group_menu(lv), "#group-tab-sub-groups")
     end
 
     test "the sections of a group lead to its tabs and the menu holds the rest", %{conn: conn} do
@@ -1282,6 +1286,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       end
 
       # The bar and the menu do not repeat each other.
+      open_group_menu(lv)
       refute has_element?(lv, "#group-actions-menu-container #group-tab-files")
       refute has_element?(lv, "#group-actions-menu-container #group-tab-members")
       assert has_element?(lv, "#group-actions-menu-container #group-tab-group-home")
@@ -1293,6 +1298,36 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       lv |> element("#group-members-invite") |> render_click()
       assert_patch(lv, ~p"/groups/#{group.id}/invite_profile")
       assert has_element?(lv, "#group-panel-invite-profile")
+    end
+
+    test "the menu is drawn when its button is first pressed, and stays", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "lazy-menu-owner",
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      group = create_child_group!(profile, "lazy-menu-group")
+      account = Accounts.get_account!(account.id)
+
+      {:ok, lv, _html} = conn |> log_in_account(account) |> live(~p"/groups/#{group.id}/values")
+
+      assert has_element?(lv, "#group-actions-menu-container #group-actions-menu-loading")
+      refute has_element?(lv, "#group-actions-menu-container #group-tab-group-home")
+
+      lv |> element("#group-actions-menu[phx-focus='group_menu_open']") |> render_focus()
+
+      assert has_element?(lv, "#group-actions-menu-container #group-tab-group-home")
+      refute has_element?(lv, "#group-actions-menu-loading")
+      # Opened once, it asks no more.
+      refute has_element?(lv, "#group-actions-menu[phx-focus]")
+
+      lv |> element("#group-members-summary") |> render_click()
+      assert has_element?(lv, "#group-actions-menu-container #group-tab-group-home")
     end
 
     test "the menu marks the tab on screen and no other", %{conn: conn} do
@@ -1314,7 +1349,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       # A tab of the bar is on screen: the menu has nothing to mark.
       refute has_element?(lv, "#group-actions-menu-container [aria-current]")
 
-      lv |> element("#group-tab-roles") |> render_click()
+      lv |> open_group_menu() |> element("#group-tab-roles") |> render_click()
       assert_patch(lv, ~p"/groups/#{group.id}/roles")
 
       assert has_element?(lv, ~s(#group-tab-roles[aria-current="true"]))
@@ -1628,6 +1663,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> live(~p"/groups/#{root_group.id}")
 
       root_lv
+      |> open_group_menu()
       |> element("#group-tab-sub-groups")
       |> render_click()
 
@@ -2031,7 +2067,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       group_picture_url = "data:image/png;base64," <> String.duplicate("a", 25_000)
 
-      assert has_element?(owner_lv, "#group-tab-edit-group")
+      assert has_element?(open_group_menu(owner_lv), "#group-tab-edit-group")
       assert has_element?(owner_lv, "#group-panel-edit-group")
       assert has_element?(owner_lv, "#group-edit-header h1", "Edit group")
       assert has_element?(owner_lv, "#group_group_picture_url-picker")
@@ -2072,7 +2108,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> log_in_account(viewer_account)
         |> live(~p"/groups/#{group.id}/edit_group")
 
-      refute has_element?(viewer_lv, "#group-tab-edit-group")
+      refute has_element?(open_group_menu(viewer_lv), "#group-tab-edit-group")
       refute has_element?(viewer_lv, "#group-panel-edit-group")
       refute has_element?(viewer_lv, "#group-edit-form")
       refute has_element?(viewer_lv, "#group-delete-data-values-button")

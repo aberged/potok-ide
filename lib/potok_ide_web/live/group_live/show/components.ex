@@ -2143,32 +2143,33 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       />
       <div :if={!@mine?} class="chat-image avatar group-data-continued/value:invisible">
         <%!-- It cuts the picture to a circle itself: daisyUI's `.avatar` does
-             that for a `div` only, and this is a button as a rule. --%>
-        <.dynamic_tag
-          tag_name={if @card?, do: "button", else: "div"}
-          id={@card? && "value-author-avatar-#{@value.id}"}
-          type={@card? && "button"}
-          phx-click={@card? && "open_profile_card"}
-          phx-value-id={@card? && @value.creator_id}
-          aria-label={@card? && Profile.display_name(@value.creator)}
+             that for a `div` only, and this is a button as a rule. Two
+             elements, not a `dynamic_tag`: that one sends all its attributes
+             again for every message when a page joins (load_test, 2026-11-28). --%>
+        <button
+          :if={@card?}
+          id={"value-author-avatar-#{@value.id}"}
+          type="button"
+          phx-click="open_profile_card"
+          phx-value-id={@value.creator_id}
+          aria-label={Profile.display_name(@value.creator)}
           class={[
             "relative flex size-8 items-center justify-center overflow-hidden rounded-full border border-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm sm:size-10",
-            !@avatar_url && "bg-base-300",
-            @card? &&
-              "cursor-pointer transition hover:ring-2 hover:ring-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            "cursor-pointer transition hover:ring-2 hover:ring-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+            !@avatar_url && "bg-base-300"
           ]}
         >
-          <img
-            :if={@avatar_url}
-            src={@avatar_url}
-            alt={@value.creator.username}
-            class="object-cover"
-          />
-          <.icon :if={!@avatar_url and @process?} name="hero-cog-6-tooth" class="size-4 sm:size-5" />
-          <span :if={!@avatar_url and !@process?}>
-            {profile_initials(initials_name(@value.creator))}
-          </span>
-        </.dynamic_tag>
+          <.value_author_face value={@value} avatar_url={@avatar_url} process?={@process?} />
+        </button>
+        <div
+          :if={!@card?}
+          class={[
+            "relative flex size-8 items-center justify-center overflow-hidden rounded-full border border-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm sm:size-10",
+            !@avatar_url && "bg-base-300"
+          ]}
+        >
+          <.value_author_face value={@value} avatar_url={@avatar_url} process?={@process?} />
+        </div>
         <span
           id={"value-creator-presence-#{@value.id}"}
           class={[
@@ -2651,6 +2652,22 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         />
       </div>
     </div>
+    """
+  end
+
+  attr :value, :map, required: true
+  attr :avatar_url, :string, default: nil
+  attr :process?, :boolean, default: false
+
+  # What the author's circle beside a message shows: the picture, a process's
+  # cog or the initials.
+  defp value_author_face(assigns) do
+    ~H"""
+    <img :if={@avatar_url} src={@avatar_url} alt={@value.creator.username} class="object-cover" />
+    <.icon :if={!@avatar_url and @process?} name="hero-cog-6-tooth" class="size-4 sm:size-5" />
+    <span :if={!@avatar_url and !@process?}>
+      {profile_initials(initials_name(@value.creator))}
+    </span>
     """
   end
 

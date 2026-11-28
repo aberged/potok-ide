@@ -225,6 +225,24 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
     """
   end
 
+  attr :id, :string, required: true
+
+  @doc """
+  Stands in the open group's menu until the page has drawn its rows, which it
+  does only once the menu is first opened.
+  """
+  def loading(assigns) do
+    ~H"""
+    <div id={@id} class="flex min-w-56 flex-col gap-0.5" aria-busy="true">
+      <span class="sr-only">{gettext("Loading…")}</span>
+      <div :for={_row <- 1..4} class="flex items-center gap-2.5 px-2.5 py-2">
+        <span class="size-7 shrink-0 animate-pulse rounded-lg bg-base-200" />
+        <span class="h-3 flex-1 animate-pulse rounded-full bg-base-200" />
+      </div>
+    </div>
+    """
+  end
+
   # A member may try to leave any group but the root, a direct conversation and
   # a thread; `Social.leave_refusal/2` tells the rest, as whether the viewer is
   # held through the parent takes a query.

@@ -311,7 +311,7 @@ defmodule PotokIdeWeb.GroupLive.NoticesTest do
   describe "the way there" do
     test "the group's menu leads there for any group that can be followed", ctx do
       view = open_group(ctx.conn, ctx.visitor_account, ctx.group)
-      assert has_element?(view, "#group-tab-notices")
+      assert has_element?(open_group_menu(view), "#group-tab-notices")
     end
 
     test "the bar has the section once the group sent a notice", ctx do
@@ -341,7 +341,7 @@ defmodule PotokIdeWeb.GroupLive.NoticesTest do
 
       assert has_element?(view, "#group-polls-summary")
       refute has_element?(view, "#group-notices-summary")
-      assert has_element?(view, "#group-tab-notices")
+      assert has_element?(open_group_menu(view), "#group-tab-notices")
     end
   end
 

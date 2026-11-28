@@ -136,7 +136,7 @@ defmodule PotokIdeWeb.GroupLive.GroupRowMenuTest do
     row = menu_ids(sub_groups(ctx) |> open_menu(ctx.child), "#group-row-menu", "group-row-")
 
     own_page = open(ctx, ctx.owner_account, ~p"/groups/#{ctx.child.id}/group_home")
-    own = menu_ids(own_page, "#group-actions-menu-container", "group-")
+    own = menu_ids(open_group_menu(own_page), "#group-actions-menu-container", "group-")
 
     sections = ~w(tab-values tab-files tab-calendar tab-subgroups tab-members)
 

@@ -280,8 +280,12 @@ defmodule PotokIdeWeb.Layouts do
                 aria-label="Potok"
                 class="group flex items-center gap-2.5 rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
               >
-                <.mark
+                <%!-- A picture, not `mark/1`: every page sends its menu again
+                     when it joins, and the drawn mark is 3 KB of it. --%>
+                <img
                   id="app-sidebar-mark"
+                  src={~p"/images/mark.svg"}
+                  alt=""
                   class="size-8 transition-transform duration-500 group-hover:-rotate-6"
                 />
                 <span class="font-brand text-xl font-bold text-base-content">potok</span>
@@ -493,6 +497,8 @@ defmodule PotokIdeWeb.Layouts do
   # A row of the menu: the icon on a tile of the mark's blue, and the page the
   # menu stands on in the mark's gradient. app.js marks that one with
   # `aria-current` (as a sticky JS command, so LiveView patches keep it).
+  # The look is `.sidebar-link` in app.css: classes given to `link/1` are sent
+  # again for every row whenever a page joins, ~0.9 KB a row in utilities.
   attr :icon, :string, required: true
   attr :tone, :string, default: "default", values: ~w(default danger)
   attr :rest, :global, include: ~w(navigate href method)
@@ -500,29 +506,9 @@ defmodule PotokIdeWeb.Layouts do
 
   defp sidebar_link(assigns) do
     ~H"""
-    <.link
-      class={[
-        "group flex items-center gap-3 rounded-2xl px-1.5 py-1 text-sm font-medium text-base-content/75",
-        "transition duration-200 active:scale-[0.98]",
-        "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary",
-        if(@tone == "danger",
-          do: "hover:bg-error/8 hover:text-error",
-          else: "hover:bg-primary/8 hover:text-base-content"
-        ),
-        "aria-[current=page]:bg-linear-135 aria-[current=page]:from-potok-blue aria-[current=page]:to-potok-deep",
-        "aria-[current=page]:text-white aria-[current=page]:shadow-lg aria-[current=page]:shadow-potok-deep/25"
-      ]}
-      {@rest}
-    >
-      <span class={[
-        "grid size-8 shrink-0 place-items-center rounded-xl transition duration-200 group-hover:scale-105",
-        if(@tone == "danger",
-          do: "bg-base-content/5 text-base-content/65 group-hover:bg-error/10 group-hover:text-error",
-          else: "bg-primary/10 text-primary"
-        ),
-        "group-aria-[current=page]:bg-white/20 group-aria-[current=page]:text-white"
-      ]}>
-        <.icon name={@icon} class="size-[1.125rem]" />
+    <.link class="sidebar-link" data-tone={@tone == "danger" && "danger"} {@rest}>
+      <span class="sidebar-link-tile">
+        <.icon name={@icon} class="size-4.5" />
       </span>
       <span class="min-w-0 truncate">{render_slot(@inner_block)}</span>
     </.link>
@@ -1061,6 +1047,11 @@ defmodule PotokIdeWeb.Layouts do
   attr :label, :string, default: nil
   attr :menu_class, :string, default: nil
 
+  attr :open_event, :string,
+    default: nil,
+    doc:
+      "pushed when the button takes the focus, which opens the menu: for a menu whose rows the page draws only once asked"
+
   def drop_down_menu(assigns) do
     ~H"""
     <div
@@ -1073,6 +1064,7 @@ defmodule PotokIdeWeb.Layouts do
         id={@id}
         type="button"
         tabindex="0"
+        phx-focus={@open_event}
         aria-label={@label || gettext("Actions")}
         class={[
           icon_button_class("secondary", "md"),

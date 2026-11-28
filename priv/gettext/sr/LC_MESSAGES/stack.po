@@ -123,8 +123,8 @@ msgstr "Ecto čuva bazu"
 
 #: lib/potok_ide_web/stack_copy.ex:310
 #, elixir-autogen, elixir-format
-msgid "Elaborate pages like the landing page and the domain map also have hand-written styles, in the same CSS file and with the same colors."
-msgstr "Složene strane, kao naslovna i mapa domena, imaju i ručno pisane stilove, u istom CSS fajlu i sa istim bojama."
+msgid "Elaborate pages like the landing page and the domain map also have hand-written styles, in the same CSS file and with the same colors. So do the buttons and the rows of the menu: a page sends the classes of each one again when it opens, and a named rule takes a few letters instead of a long row of classes."
+msgstr "Složene strane, kao naslovna i mapa domena, imaju i ručno pisane stilove, u istom CSS fajlu i sa istim bojama. Tako i dugmad i redovi menija: stranica pri otvaranju iznova šalje klase svakog od njih, a pravilo sa imenom staje u par slova umesto dugog niza klasa."
 
 #: lib/potok_ide_web/stack_copy.ex:134
 #, elixir-autogen, elixir-format
@@ -203,8 +203,8 @@ msgstr "Obične klase važe za uzak ekran, a `sm:` i `lg:` dodaju šta se menja 
 
 #: lib/potok_ide_web/stack_copy.ex:370
 #, elixir-autogen, elixir-format
-msgid "Potok does not use everything daisyUI offers. Buttons are written with Tailwind, and dialogs are native `<dialog>` elements, as they have to sit above everything on the page."
-msgstr "Potok ne koristi sve što daisyUI nudi. Dugmad su pisana Tailwind-om, a dijalozi su izvorni `<dialog>` elementi, jer moraju da stoje iznad svega na stranici."
+msgid "Potok does not use everything daisyUI offers. Buttons are its own, and dialogs are native `<dialog>` elements, as they have to sit above everything on the page."
+msgstr "Potok ne koristi sve što daisyUI nudi. Dugmad su njegova, a dijalozi su izvorni `<dialog>` elementi, jer moraju da stoje iznad svega na stranici."
 
 #: lib/potok_ide_web/stack_copy.ex:26
 #, elixir-autogen, elixir-format

@@ -83,7 +83,7 @@ defmodule PotokIdeWeb.GroupLive.RootMapTest do
     lv = live_map(ctx.viewer_account, ~p"/groups/#{ctx.root.id}")
 
     assert has_element?(lv, "#group-map-summary")
-    assert has_element?(lv, "#group-tab-map")
+    assert has_element?(open_group_menu(lv), "#group-tab-map")
 
     lv |> element("#group-map-summary") |> render_click()
     assert_patch(lv, ~p"/groups/#{ctx.root.id}/map")

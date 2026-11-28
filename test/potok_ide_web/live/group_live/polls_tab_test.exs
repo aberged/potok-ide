@@ -65,7 +65,7 @@ defmodule PotokIdeWeb.GroupLive.PollsTabTest do
     test "the group's menu leads there before that", ctx do
       {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.group.id}/values")
 
-      assert has_element?(lv, "#group-tab-polls")
+      assert has_element?(open_group_menu(lv), "#group-tab-polls")
       assert has_element?(overview(ctx.member_account, ctx.group), "#polls-empty")
     end
 

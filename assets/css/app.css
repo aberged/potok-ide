@@ -246,6 +246,324 @@
     radial-gradient(60% 50% at 100% 10%, color-mix(in oklab, var(--color-potok-blue) 12%, transparent), transparent 70%);
 }
 
+/* A row of the menu (`Layouts.sidebar_link/1`): the icon on a tile of the
+   mark's blue, and the page the menu stands on in the mark's gradient. Written
+   here and not as utilities on each row, as a page sends a row's classes again
+   for every row when it joins (load_test, 2026-11-28). */
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 1rem;
+  padding: 0.25rem 0.375rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+  color: color-mix(in oklab, var(--color-base-content) 75%, transparent);
+  transition-property: color, background-color, box-shadow, scale;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+}
+
+.sidebar-link:active {
+  scale: 0.98;
+}
+
+.sidebar-link:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.sidebar-link-tile {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.75rem;
+  background-color: color-mix(in oklab, var(--color-primary) 10%, transparent);
+  color: var(--color-primary);
+  transition-property: color, background-color, scale;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+}
+
+.sidebar-link[data-tone="danger"] .sidebar-link-tile {
+  background-color: color-mix(in oklab, var(--color-base-content) 5%, transparent);
+  color: color-mix(in oklab, var(--color-base-content) 65%, transparent);
+}
+
+@media (hover: hover) {
+  .sidebar-link:hover {
+    background-color: color-mix(in oklab, var(--color-primary) 8%, transparent);
+    color: var(--color-base-content);
+  }
+
+  .sidebar-link:hover .sidebar-link-tile {
+    scale: 1.05;
+  }
+
+  .sidebar-link[data-tone="danger"]:hover {
+    background-color: color-mix(in oklab, var(--color-error) 8%, transparent);
+    color: var(--color-error);
+  }
+
+  .sidebar-link[data-tone="danger"]:hover .sidebar-link-tile {
+    background-color: color-mix(in oklab, var(--color-error) 10%, transparent);
+    color: var(--color-error);
+  }
+}
+
+.sidebar-link[aria-current="page"] {
+  background-image: linear-gradient(135deg in oklab, var(--color-potok-blue), var(--color-potok-deep));
+  color: white;
+  box-shadow:
+    0 10px 15px -3px color-mix(in oklab, var(--color-potok-deep) 25%, transparent),
+    0 4px 6px -4px color-mix(in oklab, var(--color-potok-deep) 25%, transparent);
+}
+
+.sidebar-link[aria-current="page"] .sidebar-link-tile {
+  background-color: color-mix(in oklab, white 20%, transparent);
+  color: white;
+}
+
+/* The buttons of `CoreComponents.button/1` and `icon_button/1`: the same
+   rules their Tailwind classes made, under short names. A page sends a
+   button's classes again for every button when it joins, and the utilities
+   were ~430 bytes a button: 50 KB of a group's 180 (load_test, 2026-11-28).
+   In the utilities layer with daisyUI and Tailwind, each rule inside :where()
+   so it weighs nothing: any class a caller adds still wins, as it did. */
+@layer utilities {
+  :where(.ui-btn, .ui-icon-btn) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: calc(infinity * 1px);
+    cursor: pointer;
+    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, visibility, content-visibility, overlay, pointer-events;
+    --tw-ease: var(--ease-out);
+    transition-timing-function: var(--ease-out);
+    --tw-duration: 150ms;
+    transition-duration: 150ms;
+  }
+
+  :where(.ui-btn) {
+    gap: calc(var(--spacing) * 1.5);
+    white-space: nowrap;
+    --tw-font-weight: var(--font-weight-semibold);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  :where(.ui-icon-btn) {
+    flex-shrink: 0;
+  }
+
+  :where(.ui-btn-sm) {
+    height: calc(var(--spacing) * 8);
+    padding-inline: calc(var(--spacing) * 3.5);
+    font-size: var(--text-xs);
+    line-height: var(--tw-leading, var(--text-xs--line-height));
+  }
+
+  :where(.ui-btn-md) {
+    height: calc(var(--spacing) * 10);
+    padding-inline: calc(var(--spacing) * 5);
+    font-size: var(--text-sm);
+    line-height: var(--tw-leading, var(--text-sm--line-height));
+  }
+
+  :where(.ui-icon-btn-xs) {
+    width: calc(var(--spacing) * 6);
+    height: calc(var(--spacing) * 6);
+  }
+
+  :where(.ui-icon-btn-sm) {
+    width: calc(var(--spacing) * 8);
+    height: calc(var(--spacing) * 8);
+  }
+
+  :where(.ui-icon-btn-md) {
+    width: calc(var(--spacing) * 10);
+    height: calc(var(--spacing) * 10);
+  }
+
+  :where(.ui-icon-btn-lg) {
+    width: calc(var(--spacing) * 14);
+    height: calc(var(--spacing) * 14);
+  }
+
+  :where(.ui-btn-primary, .ui-icon-btn-primary) {
+    background-color: var(--color-primary);
+    color: var(--color-primary-content);
+    --tw-shadow: 0 1px 3px 0 var(--tw-shadow-color, rgb(0 0 0 / 0.1)), 0 1px 2px -1px var(--tw-shadow-color, rgb(0 0 0 / 0.1));
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    --tw-shadow-color: color-mix(in oklab, color-mix(in oklab, var(--color-primary) 30%, transparent) var(--tw-shadow-alpha), transparent);
+  }
+
+  :where(.ui-btn-secondary) {
+    border-style: var(--tw-border-style);
+    border-width: 1px;
+    border-color: var(--color-base-300);
+    background-color: var(--color-base-100);
+    color: var(--color-base-content);
+  }
+
+  :where(.ui-icon-btn-secondary) {
+    border-style: var(--tw-border-style);
+    border-width: 1px;
+    border-color: var(--color-base-300);
+    background-color: var(--color-base-100);
+    color: color-mix(in oklab, var(--color-base-content) 70%, transparent);
+    --tw-shadow: 0 1px 2px 0 var(--tw-shadow-color, rgb(0 0 0 / 0.05));
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+
+  :where(.ui-btn-ghost) {
+    color: color-mix(in oklab, var(--color-base-content) 70%, transparent);
+  }
+
+  :where(.ui-icon-btn-ghost, .ui-icon-btn-danger) {
+    color: color-mix(in oklab, var(--color-base-content) 65%, transparent);
+  }
+
+  :where(.ui-btn-soft) {
+    border-style: var(--tw-border-style);
+    border-width: 1px;
+    border-color: color-mix(in oklab, var(--color-primary) 30%, transparent);
+    background-color: color-mix(in oklab, var(--color-primary) 10%, transparent);
+    color: var(--color-primary);
+  }
+
+  :where(.ui-btn-success) {
+    border-style: var(--tw-border-style);
+    border-width: 1px;
+    border-color: color-mix(in oklab, var(--color-emerald-500) 40%, transparent);
+    background-color: color-mix(in oklab, var(--color-emerald-500) 10%, transparent);
+    color: var(--color-emerald-700);
+  }
+
+  :where(.ui-btn-warning) {
+    border-style: var(--tw-border-style);
+    border-width: 1px;
+    border-color: color-mix(in oklab, var(--color-amber-500) 30%, transparent);
+    background-color: color-mix(in oklab, var(--color-amber-500) 10%, transparent);
+    color: var(--color-amber-900);
+  }
+
+  :where(.ui-btn-danger) {
+    border-style: var(--tw-border-style);
+    border-width: 1px;
+    border-color: color-mix(in oklab, var(--color-error) 30%, transparent);
+    background-color: color-mix(in oklab, var(--color-error) 10%, transparent);
+    color: var(--color-error);
+  }
+
+  /* The `dark:` variant (see @custom-variant dark above). */
+  :where([data-theme="dark"] .ui-btn-success) {
+    color: var(--color-emerald-300);
+  }
+
+  :where([data-theme="dark"] .ui-btn-warning) {
+    color: var(--color-amber-200);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :where(:root:not([data-theme]) .ui-btn-success) {
+      color: var(--color-emerald-300);
+    }
+
+    :where(:root:not([data-theme]) .ui-btn-warning) {
+      color: var(--color-amber-200);
+    }
+  }
+
+  @media (hover: hover) {
+    :where(
+      .ui-btn-primary:not(:disabled):hover,
+      .ui-btn-secondary:not(:disabled):hover,
+      .ui-btn-soft:not(:disabled):hover,
+      .ui-btn-success:not(:disabled):hover,
+      .ui-btn-warning:not(:disabled):hover,
+      .ui-btn-danger:not(:disabled):hover,
+      .ui-icon-btn-primary:not(:disabled):hover,
+      .ui-icon-btn-secondary:not(:disabled):hover
+    ) {
+      --tw-translate-y: -1px;
+      translate: var(--tw-translate-x) var(--tw-translate-y);
+    }
+
+    :where(.ui-btn-primary:not(:disabled):hover, .ui-icon-btn-primary:not(:disabled):hover) {
+      --tw-shadow: 0 4px 6px -1px var(--tw-shadow-color, rgb(0 0 0 / 0.1)), 0 2px 4px -2px var(--tw-shadow-color, rgb(0 0 0 / 0.1));
+      box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    }
+
+    :where(.ui-btn-secondary:not(:disabled):hover) {
+      border-color: color-mix(in oklab, var(--color-base-content) 30%, transparent);
+      background-color: var(--color-base-200);
+    }
+
+    :where(.ui-icon-btn-secondary:not(:disabled):hover) {
+      border-color: color-mix(in oklab, var(--color-base-content) 30%, transparent);
+      color: var(--color-base-content);
+    }
+
+    :where(.ui-btn-ghost:not(:disabled):hover, .ui-icon-btn-ghost:not(:disabled):hover) {
+      background-color: color-mix(in oklab, var(--color-base-content) 10%, transparent);
+      color: var(--color-base-content);
+    }
+
+    :where(.ui-icon-btn-danger:not(:disabled):hover) {
+      background-color: color-mix(in oklab, var(--color-error) 10%, transparent);
+      color: var(--color-error);
+    }
+
+    :where(.ui-btn-soft:not(:disabled):hover) {
+      background-color: color-mix(in oklab, var(--color-primary) 15%, transparent);
+    }
+
+    :where(.ui-btn-success:not(:disabled):hover) {
+      background-color: color-mix(in oklab, var(--color-emerald-500) 15%, transparent);
+    }
+
+    :where(.ui-btn-warning:not(:disabled):hover) {
+      background-color: color-mix(in oklab, var(--color-amber-500) 15%, transparent);
+    }
+
+    :where(.ui-btn-danger:not(:disabled):hover) {
+      background-color: color-mix(in oklab, var(--color-error) 15%, transparent);
+    }
+  }
+
+  :where(.ui-btn:not(:disabled):active) {
+    scale: 0.97;
+  }
+
+  :where(.ui-icon-btn:not(:disabled):active) {
+    --tw-scale-x: 95%;
+    --tw-scale-y: 95%;
+    --tw-scale-z: 95%;
+    scale: var(--tw-scale-x) var(--tw-scale-y);
+  }
+
+  :where(.ui-btn:focus-visible, .ui-icon-btn:focus-visible) {
+    --tw-outline-style: none;
+    outline-style: none;
+    --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    --tw-ring-color: color-mix(in oklab, var(--color-primary) 40%, transparent);
+  }
+
+  :where(.ui-btn:disabled, .ui-icon-btn:disabled) {
+    cursor: not-allowed;
+    opacity: 50%;
+  }
+
+  :where(.phx-click-loading.ui-btn, .phx-click-loading .ui-btn, .phx-submit-loading.ui-btn, .phx-submit-loading .ui-btn),
+  :where(.phx-click-loading.ui-icon-btn, .phx-click-loading .ui-icon-btn, .phx-submit-loading.ui-icon-btn, .phx-submit-loading .ui-icon-btn) {
+    opacity: 70%;
+  }
+}
+
 :root {
   --app-system-safe-area-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
   --app-system-safe-area-right: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));

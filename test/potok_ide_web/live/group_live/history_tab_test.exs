@@ -71,6 +71,7 @@ defmodule PotokIdeWeb.GroupLive.HistoryTabTest do
     {:ok, _} = Social.delete_value(ctx.owner, message)
 
     {:ok, lv, _html} = open(ctx.member_account, ctx.group)
+    open_group_menu(lv)
     assert has_element?(lv, "#group-panel-history")
     assert has_element?(lv, "#group-tab-history")
     assert has_element?(lv, "#history-list", "#{ctx.owner.username} changes the description.")
@@ -87,6 +88,7 @@ defmodule PotokIdeWeb.GroupLive.HistoryTabTest do
   test "someone outside a public group has no history of it", ctx do
     describe!(ctx, "novi red")
     {:ok, lv, _html} = open(ctx.visitor_account, ctx.group)
+    open_group_menu(lv)
     refute has_element?(lv, "#group-panel-history")
     refute has_element?(lv, "#group-tab-history")
   end
@@ -293,7 +295,7 @@ defmodule PotokIdeWeb.GroupLive.HistoryTabTest do
     describe!(ctx, "novi red")
     {:ok, lv, _html} = open(ctx.member_account, ctx.group)
     assert has_element?(lv, "#history-list")
-    lv |> element("#group-tab-access") |> render_click()
+    lv |> open_group_menu() |> element("#group-tab-access") |> render_click()
     refute has_element?(lv, "#group-panel-history")
     # Events that come late change nothing.
     render_hook(lv, "history_filter", %{"filter" => "talk"})

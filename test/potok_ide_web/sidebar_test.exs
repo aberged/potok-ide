@@ -23,11 +23,19 @@ defmodule PotokIdeWeb.SidebarTest do
     test "shows the mark, the account and the parts of the app", %{conn: conn, account: account} do
       {:ok, view, _html} = live(conn, ~p"/profiles")
 
-      assert has_element?(view, "#app-sidebar-home-link #app-sidebar-mark")
+      assert has_element?(
+               view,
+               "#app-sidebar-home-link img#app-sidebar-mark[src^='/images/mark']"
+             )
+
       assert has_element?(view, "#app-sidebar-account", account.email)
       assert has_element?(view, "#app-sidebar [data-nav-link][href='/groups']")
       assert has_element?(view, "#app-sidebar [data-nav-link][href='/accounts/settings']")
-      assert has_element?(view, "#app-sidebar a[href='/accounts/log-out'][data-method='delete']")
+
+      assert has_element?(
+               view,
+               "#app-sidebar a.sidebar-link[href='/accounts/log-out'][data-method='delete'][data-tone='danger']"
+             )
     end
 
     test "the top bar holds the drop that falls while a page loads", %{conn: conn} do

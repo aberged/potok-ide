@@ -102,7 +102,7 @@ defmodule PotokIdeWeb.GroupLive.ProcessesTabTest do
   test "the group's menu leads to it where the group has an app", ctx do
     {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.group.id}/values")
 
-    lv |> element("#group-tab-processes") |> render_click()
+    lv |> open_group_menu() |> element("#group-tab-processes") |> render_click()
 
     assert_patch(lv, ~p"/groups/#{ctx.group.id}/processes")
     assert has_element?(lv, "#group-processes-empty")
@@ -121,11 +121,11 @@ defmodule PotokIdeWeb.GroupLive.ProcessesTabTest do
     {:ok, _accepted} = Social.accept_group_invitation(invitation, ctx.member)
 
     {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{plain.id}/processes")
-    assert has_element?(lv, "#group-tab-processes")
+    assert has_element?(open_group_menu(lv), "#group-tab-processes")
     assert has_element?(lv, "#processes-new")
 
     {:ok, member_lv, _html} = live_as(ctx.member_account, ~p"/groups/#{plain.id}/processes")
-    refute has_element?(member_lv, "#group-tab-processes")
+    refute has_element?(open_group_menu(member_lv), "#group-tab-processes")
     refute has_element?(member_lv, "#group-panel-processes")
   end
 

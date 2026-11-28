@@ -327,6 +327,7 @@ defmodule PotokIdeWeb.GroupLive.ProcessFormTest do
 
       {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.group.id}/values")
       {:ok, owner_lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/values")
+      open_group_menu(lv)
       refute has_element?(lv, "#group-waiting")
       refute has_element?(lv, "#group-tab-processes-waiting")
 

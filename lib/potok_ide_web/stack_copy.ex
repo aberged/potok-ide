@@ -309,7 +309,7 @@ defmodule PotokIdeWeb.StackCopy do
           text:
             dgettext(
               "stack",
-              "Elaborate pages like the landing page and the domain map also have hand-written styles, in the same CSS file and with the same colors."
+              "Elaborate pages like the landing page and the domain map also have hand-written styles, in the same CSS file and with the same colors. So do the buttons and the rows of the menu: a page sends the classes of each one again when it opens, and a named rule takes a few letters instead of a long row of classes."
             )
         }
       ]
@@ -369,7 +369,7 @@ defmodule PotokIdeWeb.StackCopy do
           text:
             dgettext(
               "stack",
-              "Potok does not use everything daisyUI offers. Buttons are written with Tailwind, and dialogs are native `<dialog>` elements, as they have to sit above everything on the page."
+              "Potok does not use everything daisyUI offers. Buttons are its own, and dialogs are native `<dialog>` elements, as they have to sit above everything on the page."
             )
         }
       ]

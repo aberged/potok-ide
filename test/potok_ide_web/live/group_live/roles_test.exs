@@ -126,7 +126,7 @@ defmodule PotokIdeWeb.GroupLive.RolesTest do
       {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{direct.id}/roles")
 
       refute has_element?(lv, "#group-panel-roles")
-      refute has_element?(lv, "#group-tab-roles")
+      refute has_element?(open_group_menu(lv), "#group-tab-roles")
     end
   end
 

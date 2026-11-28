@@ -97,4 +97,19 @@ defmodule PotokIdeWeb.ConnCase do
   defp maybe_set_token_authenticated_at(token, authenticated_at) do
     PotokIde.AccountsFixtures.override_token_authenticated_at(token, authenticated_at)
   end
+
+  @doc """
+  Opens the menu of the group a `GroupLive.Show` page has open, which the page
+  draws only once its button takes the focus. Returns the view. A menu already
+  drawn is left as it is.
+  """
+  def open_group_menu(view) do
+    if Phoenix.LiveViewTest.has_element?(view, "#group-actions-menu[phx-focus]") do
+      view
+      |> Phoenix.LiveViewTest.element("#group-actions-menu")
+      |> Phoenix.LiveViewTest.render_focus()
+    end
+
+    view
+  end
 end

@@ -104,9 +104,13 @@ defmodule PotokIdeWeb.CoreComponents do
     )
   end
 
-  # Shared by `button/1` and `icon_button/1`. Hover and press effects sit
-  # behind `not-disabled:` (not `enabled:`, which links never match).
-  @control_base "cursor-pointer transition duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50 phx-click-loading:opacity-70 phx-submit-loading:opacity-70"
+  # The looks of `button/1` and `icon_button/1` are the `ui-btn` and
+  # `ui-icon-btn` rules in app.css, not utilities: a page sends a button's
+  # classes again for every button when it joins, and the utilities were ~430
+  # bytes a button. Hover and press effects sit behind `:not(:disabled)` there
+  # (not `:enabled`, which links never match).
+  @button_variants ~w(primary secondary ghost soft success warning danger)
+  @icon_button_variants ~w(ghost danger secondary primary)
 
   @doc """
   Renders a button with navigation support.
@@ -165,45 +169,8 @@ defmodule PotokIdeWeb.CoreComponents do
   def button_class("landing", _size), do: "lp-button justify-center"
   def button_class("landing_quiet", _size), do: "lp-button-quiet"
 
-  def button_class(variant, size) do
-    [
-      "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full font-semibold not-disabled:active:scale-[0.97]",
-      @control_base,
-      button_size(size),
-      button_variant(variant)
-    ]
-  end
-
-  defp button_size("sm"), do: "h-8 px-3.5 text-xs"
-  defp button_size("md"), do: "h-10 px-5 text-sm"
-
-  defp button_variant("primary"),
-    do:
-      "bg-primary text-primary-content shadow-sm shadow-primary/30 not-disabled:hover:-translate-y-px not-disabled:hover:shadow-md"
-
-  defp button_variant("secondary"),
-    do:
-      "border border-base-300 bg-base-100 text-base-content not-disabled:hover:-translate-y-px not-disabled:hover:border-base-content/30 not-disabled:hover:bg-base-200"
-
-  defp button_variant("ghost"),
-    do:
-      "text-base-content/70 not-disabled:hover:bg-base-content/10 not-disabled:hover:text-base-content"
-
-  defp button_variant("soft"),
-    do:
-      "border border-primary/30 bg-primary/10 text-primary not-disabled:hover:-translate-y-px not-disabled:hover:bg-primary/15"
-
-  defp button_variant("success"),
-    do:
-      "border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 not-disabled:hover:-translate-y-px not-disabled:hover:bg-emerald-500/15 dark:text-emerald-300"
-
-  defp button_variant("warning"),
-    do:
-      "border border-amber-500/30 bg-amber-500/10 text-amber-900 not-disabled:hover:-translate-y-px not-disabled:hover:bg-amber-500/15 dark:text-amber-200"
-
-  defp button_variant("danger"),
-    do:
-      "border border-error/30 bg-error/10 text-error not-disabled:hover:-translate-y-px not-disabled:hover:bg-error/15"
+  def button_class(variant, size) when variant in @button_variants and size in ~w(sm md),
+    do: "ui-btn ui-btn-#{size} ui-btn-#{variant}"
 
   @doc """
   Renders a round button that shows only an icon, with navigation support.
@@ -252,38 +219,13 @@ defmodule PotokIdeWeb.CoreComponents do
   The classes of `icon_button/1`, for an element that cannot be one, like the
   `<label>` of a file input or of the drawer toggle.
   """
-  def icon_button_class(variant \\ "ghost", size \\ "sm") do
-    [
-      "inline-flex shrink-0 items-center justify-center rounded-full not-disabled:active:scale-95",
-      @control_base,
-      icon_button_size(size),
-      icon_button_variant(variant)
-    ]
-  end
-
-  defp icon_button_size("xs"), do: "size-6"
-  defp icon_button_size("sm"), do: "size-8"
-  defp icon_button_size("md"), do: "size-10"
-  defp icon_button_size("lg"), do: "size-14"
+  def icon_button_class(variant \\ "ghost", size \\ "sm")
+      when variant in @icon_button_variants and size in ~w(xs sm md lg),
+      do: "ui-icon-btn ui-icon-btn-#{size} ui-icon-btn-#{variant}"
 
   defp icon_button_icon_size("md"), do: "size-5"
   defp icon_button_icon_size("lg"), do: "size-6"
   defp icon_button_icon_size(_size), do: "size-4"
-
-  defp icon_button_variant("ghost"),
-    do:
-      "text-base-content/65 not-disabled:hover:bg-base-content/10 not-disabled:hover:text-base-content"
-
-  defp icon_button_variant("danger"),
-    do: "text-base-content/65 not-disabled:hover:bg-error/10 not-disabled:hover:text-error"
-
-  defp icon_button_variant("secondary"),
-    do:
-      "border border-base-300 bg-base-100 text-base-content/70 shadow-xs not-disabled:hover:-translate-y-px not-disabled:hover:border-base-content/30 not-disabled:hover:text-base-content"
-
-  defp icon_button_variant("primary"),
-    do:
-      "bg-primary text-primary-content shadow-sm shadow-primary/30 not-disabled:hover:-translate-y-px not-disabled:hover:shadow-md"
 
   @doc """
   Renders a row of a menu, such as `Layouts.drop_down_menu/1`: the icon on a

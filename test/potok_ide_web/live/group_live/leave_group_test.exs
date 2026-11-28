@@ -34,6 +34,7 @@ defmodule PotokIdeWeb.GroupLive.LeaveGroupTest do
 
   test "a member leaves a private group and lands on its parent", ctx do
     {:ok, lv, _html} = open(ctx.member_account, ctx.private)
+    open_group_menu(lv)
 
     assert has_element?(lv, "#group-leave[data-confirm]", "Leave the group")
 
@@ -65,6 +66,7 @@ defmodule PotokIdeWeb.GroupLive.LeaveGroupTest do
 
   test "the root offers no leaving", ctx do
     {:ok, lv, _html} = open(ctx.member_account, Social.get_root_group!())
+    open_group_menu(lv)
     refute has_element?(lv, "#group-leave")
   end
 end

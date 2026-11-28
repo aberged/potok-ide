@@ -26,6 +26,7 @@ defmodule PotokIdeWeb.GroupLive.GroupMuteTest do
 
   test "a member mutes the open group from its menu and turns it on again", ctx do
     {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.child.id}/values")
+    open_group_menu(lv)
 
     assert has_element?(lv, "#group-mute")
     refute has_element?(lv, "#group-muted-#{ctx.child.id}")
@@ -47,6 +48,7 @@ defmodule PotokIdeWeb.GroupLive.GroupMuteTest do
   test "until turned on, the menu says so", ctx do
     {:ok, _until} = Social.set_group_mute(ctx.member, ctx.child, "forever")
     {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.child.id}/values")
+    open_group_menu(lv)
 
     assert has_element?(lv, "#group-unmute")
     refute has_element?(lv, "#group-muted-until")
@@ -84,6 +86,7 @@ defmodule PotokIdeWeb.GroupLive.GroupMuteTest do
 
     {:ok, _until} = Social.set_group_mute(ctx.member, ctx.child, "hour")
     {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{thread.id}/values")
+    open_group_menu(lv)
 
     assert has_element?(lv, "#group-muted-#{thread.id}")
     refute has_element?(lv, "#group-mute")
@@ -100,6 +103,7 @@ defmodule PotokIdeWeb.GroupLive.GroupMuteTest do
 
     {stranger_account, _stranger} = account_with_profile!("mute-stranger")
     {:ok, lv, _html} = live_as(stranger_account, ~p"/groups/#{public.id}/group_home")
+    open_group_menu(lv)
 
     refute has_element?(lv, "#group-mute")
   end

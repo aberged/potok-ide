@@ -95,7 +95,7 @@ defmodule PotokIdeWeb.GroupLive.GroupCreateMenuTest do
     test "so does the menu of the open group", ctx do
       lv = sub_groups(ctx)
 
-      lv |> element("#group-tab-create-sub-group") |> render_click()
+      lv |> open_group_menu() |> element("#group-tab-create-sub-group") |> render_click()
 
       assert has_element?(lv, "dialog#group-create-menu", ctx.parent.name)
     end

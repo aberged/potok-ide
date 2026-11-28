@@ -111,6 +111,7 @@ defmodule PotokIdeWeb.GroupLive.ShareLinkTest do
       group = group_with_members!(owner, [], %{"is_public" => true})
 
       {:ok, lv, _html} = live_as(account, ~p"/groups/#{group.id}")
+      open_group_menu(lv)
 
       assert shared_link(lv, "#group-share-button") == url(~p"/groups/#{group.id}")
     end
@@ -126,6 +127,7 @@ defmodule PotokIdeWeb.GroupLive.ShareLinkTest do
 
       for group <- [private, thread, direct, Social.get_root_group!()] do
         {:ok, lv, _html} = live_as(account, ~p"/groups/#{group.id}")
+        open_group_menu(lv)
 
         refute has_element?(lv, "#group-share-button")
       end

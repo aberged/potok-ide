@@ -170,7 +170,7 @@ defmodule PotokIdeWeb.GroupLive.TagsTest do
       {:ok, member_lv, _html} = live_as(ctx.member_account, ~p"/groups/#{group.id}/values")
       {:ok, owner_lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{group.id}/values")
 
-      owner_lv |> element("#group-tags-button") |> render_click()
+      owner_lv |> open_group_menu() |> element("#group-tags-button") |> render_click()
       add_tag(owner_lv, "team", "public")
 
       tag = tag_named!(owner, "team")

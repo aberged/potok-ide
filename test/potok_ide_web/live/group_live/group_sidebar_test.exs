@@ -326,7 +326,7 @@ defmodule PotokIdeWeb.GroupLive.GroupSidebarTest do
       load(lv)
       refute has_element?(lv, "#group-sidebar-pinned")
 
-      lv |> element("#group-pin") |> render_click()
+      lv |> open_group_menu() |> element("#group-pin") |> render_click()
 
       assert render(lv) =~ "The group is pinned to your groups."
       assert has_element?(lv, "#group-sidebar-pin-#{entrance.id}", "side-entrance")
@@ -368,7 +368,7 @@ defmodule PotokIdeWeb.GroupLive.GroupSidebarTest do
       end
 
       {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.lift.id}/values")
-      lv |> element("#group-pin") |> render_click()
+      lv |> open_group_menu() |> element("#group-pin") |> render_click()
 
       assert render(lv) =~ "You can pin up to 20 groups."
       refute Social.group_pinned?(ctx.member, ctx.lift.id)

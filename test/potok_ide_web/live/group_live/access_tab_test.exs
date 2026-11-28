@@ -52,6 +52,7 @@ defmodule PotokIdeWeb.GroupLive.AccessTabTest do
 
   test "a member sees the whole overview, from the group's menu too", ctx do
     {:ok, lv, _html} = open(ctx.member_account, ctx.group)
+    open_group_menu(lv)
 
     assert has_element?(lv, "#group-panel-access")
     assert has_element?(lv, "#group-tab-access")
