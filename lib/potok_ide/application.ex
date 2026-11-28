@@ -43,6 +43,7 @@ defmodule PotokIde.Application do
         PotokIde.Polls.Scheduler,
         PotokIde.Processes.Scheduler,
         PotokIde.Social.ScheduledValues.Scheduler,
+        PotokIde.Social.ScheduledPublications.Scheduler,
         PotokIde.Social.AppFileSweeper,
         PotokIde.HostingCosts.Sampler,
         # Start to serve requests, typically the last entry

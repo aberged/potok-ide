@@ -201,6 +201,18 @@ const subgroupPage = options => ({
 // as a site keeps its articles in its sections; left out, the app's group.
 const underParam = options => (options?.under == null ? {} : {under: options.under})
 
+// When a draft opens by itself: `publishAt` (ISO 8601 with a zone, or null to
+// take the time away) and `publishAs` (`{isPublic, inheritsMembers}`, both
+// true by default). Left out, nothing changes.
+const publishParams = ({publishAt, publishAs} = {}) =>
+  publishAt === undefined
+    ? {}
+    : {
+        publish_at: publishAt,
+        publish_public: publishAs?.isPublic !== false,
+        publish_inherits: publishAs?.inheritsMembers !== false,
+      }
+
 // Calls whose answer depends on the viewer, who can take as long as they
 // like, or on a file on its way: they wait without a timeout.
 const WAITING_METHODS = new Set(["pick_emoji", "upload_file", "upload_image", "upload_media"])
@@ -890,6 +902,13 @@ const potok = {
   // without knowing where it stands. `{brief: true}` as in `listSubgroups`.
   getSubgroup: (id, options = {}) => call("get_subgroup", {id, brief: options.brief === true}),
 
+  // Groups one level under this group's direct sub-groups (or under `under`,
+  // a sub-group's id) whose name or text holds `q`, in any case, with or
+  // without diacritics, in either script: what a site's search box shows.
+  // Each comes as with `brief`; newest first, page with `beforeId`.
+  searchSubgroups: (q, options = {}) =>
+    call("search_subgroups", {q, ...subgroupPage(options), ...underParam(options)}),
+
   // Takes the viewer to this group's parent, a sub-group of it or a group
   // `listSubgroups` can return: to its chat, with `tab: "description"` to its
   // description, where a group that is an app runs, or with `tab: "settings"`
@@ -961,8 +980,14 @@ const potok = {
   // `editorsOnly: true` makes a group where only those who may edit it add
   // groups, as a site's section: members cannot put their own groups among
   // its articles.
-  createChild: ({editorsOnly, ...attrs} = {}) =>
-    call("create_child", {...childParams(attrs), ...(editorsOnly === true ? {editors_only: true} : {})}),
+  // A draft made with `publishAt` opens by itself then (`publish_at` in the
+  // reply; `publish_failure` when its editor could no longer publish it).
+  createChild: ({editorsOnly, publishAt, publishAs, ...attrs} = {}) =>
+    call("create_child", {
+      ...childParams(attrs),
+      ...publishParams({publishAt, publishAs}),
+      ...(editorsOnly === true ? {editors_only: true} : {}),
+    }),
 
   // Up to 100 children at once, all or none: `invalid_group` with the `index`
   // of the one that failed, and nothing saved. A child whose `key` (1 to 64
@@ -981,12 +1006,17 @@ const potok = {
   // else's gives `{ok: false, error: "conflict", group}` instead of writing
   // over it. Whether the group goes to guests and takes outsiders in its chat
   // follows this group each time (`for_guests`, `public_chat`).
-  updateChild: (id, attrs, options = {}) =>
+  updateChild: (id, {publishAt, publishAs, ...attrs} = {}, options = {}) =>
     call("update_child", {
       ...childParams(attrs),
+      ...publishParams({publishAt, publishAs}),
       id,
       ...(options.updatedAt == null ? {} : {updated_at: options.updatedAt}),
     }),
+
+  // Moves a group under one of this group's direct sub-groups (`under`) to
+  // another of them (`to`): a site's article to another section.
+  moveChild: (id, {under, to} = {}) => call("move_child", {id, under, to}),
 
   // Closes the group again, and its inherited members leave.
   withdrawChild: (id, options = {}) => call("withdraw_child", {id, ...underParam(options)}),

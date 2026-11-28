@@ -1637,13 +1637,7 @@ defmodule PotokIde.Social do
   `%{updated: count, skipped: count}`.
   """
   def align_children_access(%Profile{} = editor, %Group{} = group, flags) when is_map(flags) do
-    file_ids = app_file_group_ids(group)
-
-    section_ids =
-      visible_plain_groups(editor)
-      |> where([g], g.parent_id == ^group.id and not g.uses_api and g.id not in ^file_ids)
-      |> select([g], g.id)
-      |> Repo.all()
+    section_ids = visible_section_ids(group, editor)
 
     has_public_chat = Map.fetch!(flags, "has_public_chat")
     for_guests = Map.fetch!(flags, "description_for_guests")
@@ -1662,6 +1656,97 @@ defmodule PotokIde.Social do
         {:error, _reason} -> Map.update!(counts, :skipped, &(&1 + 1))
       end
     end)
+  end
+
+  @doc """
+  Moves `group` under `target`, a sibling of its parent: a site's article to
+  another of the site's sections (`AppApi`, `move_child`). Above the two
+  nothing changes, so only whom it inherits members and roles from does.
+  `editor` must edit the group and its parent, and may make groups in
+  `target` as `create_group/3` asks. Never an app, a thread, a conversation,
+  or a group whose roles by which it inherits `target` does not have.
+
+  History tells of it in both parents (`history_sub_group_moved`).
+  """
+  def move_to_sibling(%Profile{} = editor, %Group{} = group, %Group{} = target) do
+    source = group.parent_id && Repo.get(Group, group.parent_id)
+
+    cond do
+      is_nil(source) or source.is_root or group.uses_api or group.is_direct or
+          not is_nil(group.parent_value_id) ->
+        {:error, :not_permitted}
+
+      target.id == source.id ->
+        {:ok, group}
+
+      target.parent_id != source.parent_id or target.uses_api or target.is_direct or
+          not is_nil(target.parent_value_id) ->
+        {:error, :not_sibling}
+
+      not Access.can?(editor, group, :edit_group) or
+        not Access.can?(editor, source, :edit_group) or
+        not member_of_group?(editor, target) or
+          not Access.can?(editor, target, :create_subgroups) ->
+        {:error, :not_permitted}
+
+      true ->
+        move_group(editor, group, source, target)
+    end
+  end
+
+  defp move_group(editor, group, source, target) do
+    changeset =
+      group
+      |> Ecto.Changeset.change(parent_id: target.id)
+      |> validate_inheritance_parent(target.id)
+      |> validate_inherit_role_keys(target.id)
+
+    Multi.new()
+    |> Multi.update(:group, changeset)
+    |> Multi.run(:inheritance, fn repo, %{group: moved} ->
+      {:ok, MemberInheritance.sync(repo, moved.id)}
+    end)
+    |> History.transaction(actor: editor)
+    |> case do
+      {:ok, %{group: moved, inheritance: changes}} ->
+        # Groups that take their roles from above take them from elsewhere now.
+        broadcast_group_roles_updated(inherited_manifest_subtree(moved.id))
+        broadcast_child_group_changed(source.id, moved, :deleted)
+        broadcast_child_group_changed(target.id, moved, :created)
+        broadcast_inheritance_changes(changes)
+        broadcast_group_updated(moved)
+        {:ok, moved}
+
+      {:error, :group, %Ecto.Changeset{} = changeset, _changes} ->
+        {:error, changeset}
+
+      {:error, _step, reason, _changes} ->
+        {:error, reason}
+    end
+  end
+
+  # `group_id` and the groups below it that use the manifest it inherits; none
+  # when it has a manifest of its own.
+  defp inherited_manifest_subtree(group_id) do
+    %{rows: rows} =
+      Repo.query!(
+        """
+        WITH RECURSIVE sub AS (
+          SELECT g.id FROM groups g
+          WHERE g.id = $1
+            AND NOT EXISTS (SELECT 1 FROM group_manifests m WHERE m.group_id = g.id)
+          UNION ALL
+          SELECT child.id
+          FROM groups child
+          JOIN sub ON child.parent_id = sub.id
+          WHERE NOT EXISTS (SELECT 1 FROM group_manifests m WHERE m.group_id = child.id)
+        )
+        SELECT id FROM sub
+        """,
+        [group_id]
+      )
+
+    Enum.map(rows, fn [id] -> id end)
   end
 
   @doc """
@@ -6471,6 +6556,57 @@ defmodule PotokIde.Social do
         {Enum.reverse(Enum.take(newer, limit)) ++ [target | Enum.take(older, limit)],
          length(older) > limit, length(newer) > limit}
     end
+  end
+
+  @doc """
+  The direct sub-groups of `group` the profile can see, but apps and those
+  its apps keep files in: where an app keeps groups of its own, as a site's
+  sections.
+  """
+  def visible_section_ids(%Group{} = group, profile) when is_viewer(profile) do
+    file_ids = app_file_group_ids(group)
+
+    visible_plain_groups(profile)
+    |> where([g], g.parent_id == ^group.id and not g.uses_api and g.id not in ^file_ids)
+    |> select([g], g.id)
+    |> Repo.all()
+  end
+
+  @doc """
+  The groups right under `parent_ids` the profile can see whose name holds
+  `term` (a `NameSearch.term/1`), or whose text does where the profile may
+  read it: a guest only that of a group open to guests, nobody an app's
+  code. Comments and tags of HTML do not count, so a site's marker
+  (`<!--potok-site …-->`) finds nothing: the text is read folded, as
+  Postgres keeps it (`Group.text_folded`). The newest publication first and
+  paged as `list_visible_child_groups_newest_first/3` (`:limit`,
+  `:before_id`, `:except`). Returns `{groups, has_more?}`: what a site's
+  search box shows (`AppApi`, `search_subgroups`).
+  """
+  def search_visible_children(parent_ids, profile, term, opts)
+      when is_list(parent_ids) and is_viewer(profile) and is_binary(term) do
+    limit = Keyword.fetch!(opts, :limit)
+    readable = if profile, do: dynamic(true), else: dynamic([g], g.description_for_guests)
+
+    by_text =
+      dynamic(
+        [g],
+        ^readable and fragment("? LIKE '%' || potok_fold(?) || '%'", g.text_folded, ^term)
+      )
+
+    by_name = dynamic([g], fragment("? LIKE '%' || potok_fold(?) || '%'", g.name_folded, ^term))
+
+    rows =
+      visible_plain_groups(profile)
+      |> where([g], g.parent_id in ^parent_ids)
+      |> except_groups(opts[:except])
+      |> where(^dynamic([g], ^by_name or ^by_text))
+      |> order_by([g], desc: feed_time(g), desc: g.id)
+      |> limit(^(limit + 1))
+      |> before_group(opts[:before_id])
+      |> Repo.all()
+
+    {Enum.take(rows, limit), length(rows) > limit}
   end
 
   defp feed_groups(group, profile, opts) do

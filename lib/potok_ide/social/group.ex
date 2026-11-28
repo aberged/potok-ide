@@ -96,6 +96,8 @@ defmodule PotokIde.Social.Group do
     # width on a map (`GroupAreas`), and a route's length in metres, box and
     # width (`GroupRoutes`), so map queries need not read borders or lines.
     field :name_folded, :string, load_in_query: false, writable: :never
+    # The description as a search compares it, without tags; nil for an app.
+    field :text_folded, :string, load_in_query: false, writable: :never
     field :area_size, :float, load_in_query: false, writable: :never
     field :area_west, :float, load_in_query: false, writable: :never
     field :area_south, :float, load_in_query: false, writable: :never

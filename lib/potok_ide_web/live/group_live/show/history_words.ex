@@ -101,8 +101,34 @@ defmodule PotokIdeWeb.GroupLive.Show.HistoryWords do
   defp sentence(%GroupChange{subject_type: "group", cause: %{"via" => "refresh"}}, _names),
     do: gettext("%{actor} brings the group's app to the newest version.", actor: @mark)
 
+  defp sentence(%GroupChange{subject_type: "group", cause: %{"via" => "scheduled"}}, _names),
+    do: gettext("%{actor} publishes the group at the time they set for it.", actor: @mark)
+
   defp sentence(%GroupChange{subject_type: "group"} = row, _names),
     do: gettext("%{actor} changes %{what}.", actor: @mark, what: fields_words("group", row))
+
+  # Moved to another parent, told in both (`history_sub_group_moved`); the
+  # other one is named only to a reader who sees it.
+  defp sentence(%GroupChange{subject_type: "sub_group", op: :changed} = row, names) do
+    words = [actor: @mark, name: name(row, names)]
+    moved = row.moved || %{}
+
+    case {names[{"moved", moved["to"]}], names[{"moved", moved["from"]}]} do
+      {to, _from} when is_binary(to) ->
+        gettext("%{actor} moves the sub-group “%{name}” to “%{place}”.", [{:place, to} | words])
+
+      {_to, from} when is_binary(from) ->
+        gettext("%{actor} moves the sub-group “%{name}” here from “%{place}”.", [
+          {:place, from} | words
+        ])
+
+      _unseen when is_map_key(moved, "to") ->
+        gettext("%{actor} moves the sub-group “%{name}” elsewhere.", words)
+
+      _unseen ->
+        gettext("%{actor} moves the sub-group “%{name}” here.", words)
+    end
+  end
 
   defp sentence(%GroupChange{subject_type: "sub_group", op: op} = row, names) do
     words = [actor: @mark, name: name(row, names)]

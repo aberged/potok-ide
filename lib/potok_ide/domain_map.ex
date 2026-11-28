@@ -46,7 +46,8 @@ defmodule PotokIde.DomainMap do
        PotokIde.Social.GroupReaction,
        PotokIde.Social.GroupBlock,
        PotokIde.Social.GroupShortcut,
-       PotokIde.Social.PinnedGroup
+       PotokIde.Social.PinnedGroup,
+       PotokIde.Social.ScheduledPublication
      ]},
     {"content",
      [

@@ -232,6 +232,9 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("Group", "name_folded"),
     do: dgettext("domain_map", "name as a search reads it, in Latin and without diacritics")
 
+  defp own_field("Group", "text_folded"),
+    do: dgettext("domain_map", "description as a search reads it, without its markup")
+
   defp own_field("Group", "area_size"), do: dgettext("domain_map", "size of the area")
   defp own_field("Group", "area_west"), do: dgettext("domain_map", "western edge of the area")
   defp own_field("Group", "area_south"), do: dgettext("domain_map", "southern edge of the area")
@@ -369,6 +372,9 @@ defmodule PotokIdeWeb.DomainCopy do
 
   defp own_field("GroupChange", "closing?"),
     do: dgettext("domain_map", "whether a poll ended")
+
+  defp own_field("GroupChange", "moved"),
+    do: dgettext("domain_map", "where a moved sub-group went or came from")
 
   defp own_field("GroupChange", "purged_by_id"), do: dgettext("domain_map", "who emptied it")
 
@@ -568,6 +574,22 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("ValueReport", "dismissed_at"), do: dgettext("domain_map", "dismissed at")
   defp own_field("ValueReport", "dismissed_by_id"), do: dgettext("domain_map", "who dismissed it")
   defp own_field("GroupShortcut", "parent_id"), do: dgettext("domain_map", "group it stands in")
+
+  defp own_field("ScheduledPublication", "publish_at"),
+    do: dgettext("domain_map", "when it opens")
+
+  defp own_field("ScheduledPublication", "is_public"),
+    do: dgettext("domain_map", "public from then on")
+
+  defp own_field("ScheduledPublication", "inherits_members"),
+    do: dgettext("domain_map", "takes all members of the group above then")
+
+  defp own_field("ScheduledPublication", "failure"),
+    do: dgettext("domain_map", "why it did not open")
+
+  defp own_field("ScheduledPublication", "profile_id"),
+    do: dgettext("domain_map", "in whose name it opens")
+
   defp own_field("GroupShortcut", "target_id"), do: dgettext("domain_map", "group it opens")
   defp own_field("PinnedGroup", "profile_id"), do: dgettext("domain_map", "who pinned it")
 
@@ -801,6 +823,7 @@ defmodule PotokIdeWeb.DomainCopy do
   def entity_name("GroupReaction"), do: dgettext("domain_map", "Group reaction")
   def entity_name("GroupBlock"), do: dgettext("domain_map", "Block")
   def entity_name("GroupShortcut"), do: dgettext("domain_map", "Shortcut")
+  def entity_name("ScheduledPublication"), do: dgettext("domain_map", "Scheduled publication")
   def entity_name("PinnedGroup"), do: dgettext("domain_map", "Pinned group")
   def entity_name("GroupValueRead"), do: dgettext("domain_map", "Read marker")
   def entity_name("AppProcess"), do: dgettext("domain_map", "App process")
@@ -954,6 +977,13 @@ defmodule PotokIdeWeb.DomainCopy do
     dgettext(
       "domain_map",
       "A message someone reported to the admins of its group, with a reason and a note. The admins see it until one of them dismisses it or deletes the message, which takes the report along. A profile reports the same message only once, and the author never learns who reported it."
+    )
+  end
+
+  defp entity_description("ScheduledPublication", _edges) do
+    dgettext(
+      "domain_map",
+      "A draft group that opens by itself at a time its editor picked, as a site's article on a Monday morning: whether it turns public, and whether it takes all the members of the group above. At its time it opens as if its editor did it then, so one who may no longer edit it opens nothing, and the reason stays for the editors. Publishing it by hand or closing it again takes the time away."
     )
   end
 
@@ -1240,6 +1270,13 @@ defmodule PotokIdeWeb.DomainCopy do
     dgettext(
       "domain_map",
       "Only a group that inherits members, and is not a thread, picks roles to inherit them by."
+    )
+  end
+
+  def check_text("scheduled_publications_audience_check") do
+    dgettext(
+      "domain_map",
+      "A scheduled publication opens its group to someone: it turns public, or takes the members of the group above, or both."
     )
   end
 

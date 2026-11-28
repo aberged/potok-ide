@@ -71,6 +71,9 @@ config :potok_ide, PotokIde.Processes.Scheduler, enabled: false
 # Tests send scheduled messages by calling `ScheduledValues.run_due/1`.
 config :potok_ide, PotokIde.Social.ScheduledValues.Scheduler, enabled: false
 
+# Tests publish scheduled drafts by calling `ScheduledPublications.run_due/1`.
+config :potok_ide, PotokIde.Social.ScheduledPublications.Scheduler, enabled: false
+
 # The lateness of processes is a query, which a poller would run against the
 # sandbox while the suite starts; tests call `PotokIde.Metrics` themselves.
 config :potok_ide, PotokIdeWeb.Telemetry, process_lag: false

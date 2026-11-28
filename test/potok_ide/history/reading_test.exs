@@ -479,6 +479,64 @@ defmodule PotokIde.History.ReadingTest do
     end
   end
 
+  describe "a sub-group moved to another parent" do
+    test "is told of in both, each naming the other only to a reader who sees it", ctx do
+      section = fn name ->
+        {:ok, group} =
+          Social.create_group(ctx.owner, ctx.group, %{
+            "name" => name,
+            "description" => "",
+            "description_format" => :markdown,
+            "is_public" => true,
+            "inherits_members" => true
+          })
+
+        group
+      end
+
+      from = section.("Vesti")
+      to = section.("Sport")
+
+      {:ok, article} =
+        Social.create_group(ctx.owner, from, %{
+          "name" => "Utakmica",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => true,
+          "inherits_members" => true
+        })
+
+      {:ok, _moved} = Social.move_to_sibling(ctx.owner, article, to)
+
+      told = fn group ->
+        group = Repo.get!(Group, group.id)
+        reader = Reader.new(group, Access.for_profile(ctx.owner, group), ctx.owner)
+        entries = Feed.page(reader, filter: :all).entries
+
+        entry =
+          Enum.find(entries, fn
+            %{source: :change, row: %{subject_type: "sub_group", op: :changed}} -> true
+            _other -> false
+          end)
+
+        names = Feed.names(reader, entries)
+        {PotokIdeWeb.GroupLive.Show.HistoryWords.text(entry, names, nil), entry, names}
+      end
+
+      {left, entry, names} = told.(from)
+      assert left =~ "moves the sub-group “Utakmica” to “Sport”"
+      assert entry.row.actor_id == ctx.owner.id
+
+      {came, _entry, _names} = told.(to)
+      assert came =~ "moves the sub-group “Utakmica” here from “Vesti”"
+
+      unseen = Map.delete(names, {"moved", to.id})
+
+      assert PotokIdeWeb.GroupLive.Show.HistoryWords.text(entry, unseen, nil) =~
+               "moves the sub-group “Utakmica” elsewhere"
+    end
+  end
+
   describe "what a thing was" do
     test "is what it is with the changes since taken back, whatever they were", ctx do
       rename = fn attrs ->

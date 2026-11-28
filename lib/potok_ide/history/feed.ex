@@ -25,7 +25,9 @@ defmodule PotokIde.History.Feed do
     Group,
     GroupAltDescription,
     GroupTemplate,
-    Value
+    Profile,
+    Value,
+    Visibility
   }
 
   @page 30
@@ -112,7 +114,8 @@ defmodule PotokIde.History.Feed do
     end
   end
 
-  # Whether a change of a poll's end was its end or a new beginning.
+  # Whether a change of a poll's end was its end or a new beginning, and where
+  # a moved sub-group went or came from.
   defp told(query) do
     select_merge(query, [c], %{
       closing?:
@@ -120,6 +123,13 @@ defmodule PotokIde.History.Feed do
           "CASE WHEN ? = 'poll' AND 'closed_at' = ANY(?) THEN ? ->> 'closed_at' IS NULL END",
           c.subject_type,
           c.fields,
+          c.before
+        ),
+      moved:
+        fragment(
+          "CASE WHEN ? = 'sub_group' AND ? = 'changed' THEN ? - 'name' END",
+          c.subject_type,
+          c.op,
           c.before
         )
     })
@@ -240,6 +250,7 @@ defmodule PotokIde.History.Feed do
         named("event", Event, by_type, :title),
         named("poll", Poll, %{"poll" => polls}, :question),
         groups(reader, Map.get(by_type, "sub_group", []) ++ Map.get(by_type, "shortcut", [])),
+        moved(reader, rows),
         runs(causes(rows, "process")),
         messages(Map.get(by_type, "message", []) ++ Map.get(by_type, "reaction", []))
       ]
@@ -272,6 +283,31 @@ defmodule PotokIde.History.Feed do
     |> Enum.flat_map(fn {id, name} -> [{{"sub_group", id}, name}, {{"shortcut", id}, name}] end)
     |> Map.new()
   end
+
+  # Where a sub-group went or came from (`history_sub_group_moved`): the other
+  # group's name, only for a reader who sees it, as `{"moved", id}`.
+  defp moved(%Reader{viewer: %Profile{} = viewer}, rows) do
+    ids =
+      for %{subject_type: "sub_group", op: :changed, moved: moved} <- rows,
+          is_map(moved),
+          id <- [moved["to"], moved["from"]],
+          is_integer(id),
+          uniq: true,
+          do: id
+
+    if ids == [] do
+      %{}
+    else
+      from([group: g] in Visibility.plain_groups(viewer),
+        where: g.id in ^ids,
+        select: {g.id, g.name}
+      )
+      |> Repo.all()
+      |> Map.new(fn {id, name} -> {{"moved", id}, name} end)
+    end
+  end
+
+  defp moved(%Reader{}, _rows), do: %{}
 
   defp runs([]), do: %{}
 

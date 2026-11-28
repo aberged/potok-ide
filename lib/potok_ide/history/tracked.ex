@@ -22,7 +22,7 @@ defmodule PotokIde.History.Tracked do
       marked: ~w(group_picture_url),
       left_out:
         ~w(id is_root creator_id parent_id inserted_at updated_at parent_value_id is_direct
-           last_value_at name_folded area_size area_west area_south area_east area_north
+           last_value_at name_folded text_folded area_size area_west area_south area_east area_north
            area_span route_length route_west route_south route_east route_north route_span
            member_count)
     },

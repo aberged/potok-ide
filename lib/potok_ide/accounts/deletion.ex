@@ -27,8 +27,9 @@ defmodule PotokIde.Accounts.Deletion do
       (`PotokIde.Social.ValueReports`), the hidden
       values that ask an app for pushes, the personal memory of apps
       (`PotokIde.Social.AppProfileStore`), the messages it scheduled with
-      their files (`PotokIde.Social.ScheduledValues`), and the history of its
-      reactions (`PotokIde.History`);
+      their files (`PotokIde.Social.ScheduledValues`), the publications it
+      scheduled (`PotokIde.Social.ScheduledPublications`: the drafts stay
+      drafts), and the history of its reactions (`PotokIde.History`);
     * emptied: who added a tag, who blocked someone, who dismissed a report,
       who invited an account,
       the old versions of the records it wrote into apps;
@@ -56,7 +57,17 @@ defmodule PotokIde.Accounts.Deletion do
   alias PotokIde.History
   alias PotokIde.Repo
   alias PotokIde.Social
-  alias PotokIde.Social.{Access, AccountProfile, Group, GroupRole, Profile, ScheduledValues}
+
+  alias PotokIde.Social.{
+    Access,
+    AccountProfile,
+    Group,
+    GroupRole,
+    Profile,
+    ScheduledPublications,
+    ScheduledValues
+  }
+
   alias PotokIde.Storage
 
   # How long an account someone invited by email waits for its person before
@@ -287,6 +298,7 @@ defmodule PotokIde.Accounts.Deletion do
 
     tokens = Repo.all(from(t in AccountToken, where: t.account_id == ^account_id))
     storage_keys = ScheduledValues.forget_profiles(ids)
+    :ok = ScheduledPublications.forget_profiles(ids)
     touched = forget_profiles(ids)
 
     Repo.delete!(account)

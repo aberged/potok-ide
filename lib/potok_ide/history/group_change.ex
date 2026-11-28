@@ -42,6 +42,9 @@ defmodule PotokIde.History.GroupChange do
     field :purged_at, :utc_datetime
     # Of a change of a poll's end: whether it ended, or opened again (`Feed`).
     field :closing?, :boolean, virtual: true
+    # Of a sub-group moved to another parent: that one's id, as `%{"to" => id}`
+    # where it left and `%{"from" => id}` where it came (`Feed`).
+    field :moved, :map, virtual: true
 
     belongs_to :group, PotokIde.Social.Group
     belongs_to :actor, PotokIde.Social.Profile

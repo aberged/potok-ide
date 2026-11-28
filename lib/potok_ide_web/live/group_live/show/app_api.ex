@@ -84,7 +84,9 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     GroupPresets,
     GroupTemplate,
     GroupTemplates,
+    NameSearch,
     ProfileDetails,
+    ScheduledPublications,
     ValueAttachment,
     ValueRules
   }
@@ -120,9 +122,9 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   @max_subgroup_limit 50
 
   @signed_in_methods ~w(
-    list_subgroups get_subgroup open_group open_map get_group list_children get_child
-    create_child create_children update_child withdraw_child preview_description
-    apply_access_to_children
+    list_subgroups get_subgroup search_subgroups open_group open_map get_group list_children
+    get_child create_child create_children update_child withdraw_child move_child
+    preview_description apply_access_to_children
     list_templates render_template
     toggle_group_reaction share_group list_polls get_poll open_poll open_poll_form
     save_config update_value delete_value delete_values grade_value list_roles
@@ -136,7 +138,8 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   # What a guest may call of those: reads, with a guest's sight (`Social`
   # takes nil for the viewer there). The rest stays refused for a guest.
   @guest_methods ~w(
-    get_group list_subgroups get_subgroup open_group share_group show_group list_polls get_poll
+    get_group list_subgroups get_subgroup search_subgroups open_group share_group show_group
+    list_polls get_poll
     map_config list_places list_places_at place_shapes
   )
 
@@ -869,6 +872,30 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     end
   end
 
+  # Groups one level under the app's direct sub-groups (or under `under`) by a
+  # part of their name or text, as a site's search box: the cards only.
+  defp run("search_subgroups", params, socket) do
+    %{group: group, current_profile: profile} = socket.assigns
+
+    with term when is_binary(term) <- NameSearch.term(params["q"]),
+         {:ok, parent_ids} <- search_parents(params, socket),
+         :ok <- heavy_read(socket),
+         {:ok, page} <- subgroup_page(params) do
+      {groups, has_more?} =
+        Social.search_visible_children(
+          parent_ids,
+          profile,
+          term,
+          Keyword.put(page, :except, Social.app_file_group_ids(group))
+        )
+
+      {%{ok: true, groups: subgroup_payloads(groups, profile, true), has_more: has_more?}, socket}
+    else
+      nil -> {%{ok: true, groups: [], has_more: false}, socket}
+      {:error, reply} -> {reply, socket}
+    end
+  end
+
   # One group `listSubgroups` can return, or a direct sub-group, wherever it
   # lies: what an app opens from an address (`?at=`) without knowing under
   # which sub-group it stands. `parent_id` tells it.
@@ -1139,7 +1166,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     with :ok <- require_child_manager(socket),
          {:ok, parent} <- children_parent(params, socket),
          {:ok, reply} <- subgroups_reply(parent, profile, params) do
-      {reply, socket}
+      {Map.update!(reply, :groups, &with_publications/1), socket}
     else
       {:error, reply} -> {reply, socket}
     end
@@ -1160,9 +1187,11 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     with :ok <- require_child_manager(socket),
          {:ok, parent} <- children_parent(params, socket),
          {:ok, place} <- child_place(params),
+         {:ok, schedule} <- publication(params),
          {:ok, socket} <- take_write_token(socket) do
       profile
       |> insert_child(parent, new_child_attrs(params, place, group), params["editors_only"])
+      |> schedule_publication(profile, schedule)
       |> child_reply(socket)
     else
       {:error, reply} -> {reply, socket}
@@ -1208,6 +1237,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
          {:ok, child} <- fetch_editable_child(params, socket),
          :ok <- unchanged_since(child, params["updated_at"], profile),
          {:ok, place} <- child_place(params),
+         {:ok, schedule} <- publication(params),
          {:ok, socket} <- take_write_token(socket) do
       attrs =
         params
@@ -1216,6 +1246,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
         |> Map.merge(access_flags(group))
 
       Social.update_group(profile, child, attrs)
+      |> schedule_publication(profile, schedule)
       |> child_reply(socket)
     else
       {:error, reply} -> {reply, socket}
@@ -1246,6 +1277,24 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
          {:ok, child} <- fetch_editable_child(params, socket),
          {:ok, socket} <- take_write_token(socket) do
       Social.withdraw_group(profile, child)
+      |> schedule_publication(profile, :cancel)
+      |> child_reply(socket)
+    else
+      {:error, reply} -> {reply, socket}
+    end
+  end
+
+  # A group the app keeps under one of its direct sub-groups goes under
+  # another of them (`to`): a site's article to another section.
+  defp run("move_child", params, socket) do
+    profile = socket.assigns.current_profile
+
+    with :ok <- require_child_manager(socket),
+         {:ok, child} <- fetch_editable_child(params, socket),
+         {:ok, target} <- children_parent(%{"under" => params["to"]}, socket),
+         {:ok, socket} <- take_write_token(socket) do
+      profile
+      |> Social.move_to_sibling(child, target)
       |> child_reply(socket)
     else
       {:error, reply} -> {reply, socket}
@@ -1787,6 +1836,92 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
       _neither ->
         nil
     end
+  end
+
+  # When a draft opens by itself (`ScheduledPublications`): `publish_at` (ISO
+  # 8601 with a zone) and whom to (`publish_public`, `publish_inherits`, both
+  # by default); `publish_at: null` takes the time away. Checked before
+  # anything is saved.
+  defp publication(%{"publish_at" => nil}), do: {:ok, :cancel}
+
+  defp publication(%{"publish_at" => at} = params) when is_binary(at) do
+    now = DateTime.utc_now(:second)
+
+    audience = %{
+      is_public: params["publish_public"] != false,
+      inherits_members: params["publish_inherits"] != false
+    }
+
+    with {:ok, moment, _offset} <- DateTime.from_iso8601(at),
+         :gt <- DateTime.compare(moment, now),
+         true <- DateTime.diff(moment, now, :day) <= ScheduledPublications.max_days_ahead(),
+         true <- audience.is_public or audience.inherits_members do
+      {:ok, {:at, moment, audience}}
+    else
+      _invalid -> {:error, invalid_publication()}
+    end
+  end
+
+  defp publication(%{"publish_at" => _other}), do: {:error, invalid_publication()}
+  defp publication(_params), do: {:ok, :keep}
+
+  defp invalid_publication,
+    do: error("invalid_date", gettext("Pick a time ahead, within a year."))
+
+  # After the save: a group that is no draft any more has nothing to wait
+  # for, whatever was asked.
+  defp schedule_publication({:ok, %Group{} = child} = saved, profile, schedule) do
+    case schedule do
+      {:at, moment, audience} ->
+        if Group.draft?(child),
+          do:
+            {:ok, _scheduled} = ScheduledPublications.schedule(profile, child, moment, audience),
+          else: ScheduledPublications.cancel(child)
+
+      :cancel ->
+        ScheduledPublications.cancel(child)
+
+      :keep ->
+        unless Group.draft?(child), do: ScheduledPublications.cancel(child)
+    end
+
+    saved
+  end
+
+  defp schedule_publication(error, _profile, _schedule), do: error
+
+  # The time an editor's draft opens at, and why it did not when it failed.
+  defp with_publications(payloads) do
+    waiting = payloads |> Enum.map(& &1.id) |> ScheduledPublications.for_groups()
+    Enum.map(payloads, &Map.merge(&1, publication_payload(waiting[&1.id])))
+  end
+
+  defp publication_payload(nil), do: %{publish_at: nil, publish_failure: nil}
+
+  defp publication_payload(scheduled) do
+    %{
+      publish_at: scheduled.publish_at,
+      publish_failure: scheduled.failure && Atom.to_string(scheduled.failure)
+    }
+  end
+
+  # Where `search_subgroups` looks: one direct sub-group (`under`), or all of
+  # them but apps and the app's file groups.
+  defp search_parents(%{"under" => under}, socket) when not is_nil(under) do
+    %{group: group, current_profile: profile} = socket.assigns
+
+    with id when is_integer(id) <- non_negative_integer(under),
+         %Group{uses_api: false} = section <- Social.get_visible_child_group(group, profile, id),
+         false <- section.id in Social.app_file_group_ids(group) do
+      {:ok, [section.id]}
+    else
+      _not_found -> {:error, error("not_found", nil)}
+    end
+  end
+
+  defp search_parents(_params, socket) do
+    %{group: group, current_profile: profile} = socket.assigns
+    {:ok, Social.visible_section_ids(group, profile)}
   end
 
   defp insert_child(profile, parent, attrs, true),
@@ -2375,6 +2510,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
 
     [child]
     |> subgroup_payloads(profile)
+    |> with_publications()
     |> hd()
     |> Map.merge(%{
       description: if(can_edit?, do: child.description || ""),

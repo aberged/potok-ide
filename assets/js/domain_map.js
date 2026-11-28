@@ -50,7 +50,7 @@ const CORE = {
 const COLUMN = [26, 228, 430, 632, 834]
 const TABLES = {
   width: 1032,
-  height: 1198,
+  height: 1270,
   nodeWidth: 172,
   nodeHeight: 46,
   nodes: {
@@ -97,16 +97,18 @@ const TABLES = {
     GroupBlock: [COLUMN[2], 572],
     GroupShortcut: [COLUMN[2], 644],
     PinnedGroup: [COLUMN[1], 644],
-    Tag: [COLUMN[1], 740],
-    Tagging: [COLUMN[2], 740],
-    CostHour: [COLUMN[1], 836],
-    Invoice: [COLUMN[2], 836],
-    GroupRoleRequest: [COLUMN[1], 932],
-    GroupRequestDecision: [COLUMN[2], 932],
-    GroupAccessChange: [COLUMN[1], 1004],
-    GroupChange: [COLUMN[2], 1004],
+    // A draft's time to open, under the group it opens.
+    ScheduledPublication: [COLUMN[2], 716],
+    Tag: [COLUMN[1], 812],
+    Tagging: [COLUMN[2], 812],
+    CostHour: [COLUMN[1], 908],
+    Invoice: [COLUMN[2], 908],
+    GroupRoleRequest: [COLUMN[1], 1004],
+    GroupRequestDecision: [COLUMN[2], 1004],
+    GroupAccessChange: [COLUMN[1], 1076],
+    GroupChange: [COLUMN[2], 1076],
     // Reports wait for admins under Requests.
-    ValueReport: [COLUMN[2], 1076],
+    ValueReport: [COLUMN[2], 1148],
     ScheduledValue: [COLUMN[3], 716],
     RunEvent: [COLUMN[4], 716],
   },
@@ -114,14 +116,14 @@ const TABLES = {
     account: [16, 14, 192, 302],
     profiles: [218, 14, 192, 302],
     joining: [420, 14, 596, 158],
-    group: [218, 326, 394, 374],
+    group: [218, 326, 394, 446],
     content: [622, 326, 394, 446],
     calendar: [622, 782, 394, 158],
     polls: [622, 950, 394, 158],
     notices: [16, 446, 192, 230],
-    tags: [218, 710, 394, 86],
-    hosting: [218, 806, 394, 86],
-    requests: [218, 902, 394, 230],
+    tags: [218, 782, 394, 86],
+    hosting: [218, 878, 394, 86],
+    requests: [218, 974, 394, 230],
   },
 }
 
@@ -130,6 +132,9 @@ const ROUTES = {
   "GroupAccountInvitation>Account": {from: "l", to: "r", control: [0, 64]},
   "GroupInvitation>Profile": {from: "l", to: "r", control: [0, 63]},
   "GroupManifest>Group": {from: "r", to: "r", bulge: 26},
+  // Outside the shortcuts' line to the group, up the gap to its profile.
+  "ScheduledPublication>Group": {from: "r", to: "r", bulge: 58},
+  "ScheduledPublication>Profile": {from: "l", to: "r"},
   "Event>Value": {from: "l", to: "l", bulge: 24},
   // Up the same gap, inside the event's line, and across it to the group.
   "ScheduledValue>Value": {from: "l", to: "l", bulge: 14},
@@ -154,7 +159,7 @@ const ROUTES = {
   // Up the left of the group's column to the profile, up the gap to the group.
   "PinnedGroup>Profile": {from: "l", to: "l", bulge: 32},
   "PinnedGroup>Group": {from: "r", to: "l"},
-  "Tagging>ValueAttachment": {d: "M602 750C618 728 612 561 652 561H790C812 561 818 546 818 516V406C818 396 824 392 834 391"},
+  "Tagging>ValueAttachment": {d: "M602 822C618 800 612 561 652 561H790C812 561 818 546 818 516V406C818 396 824 392 834 391"},
   // Up the gap between the columns, then under the value, over its reactions.
   "ValueProcess>Value": {d: "M834 512C828 512 826 508 826 500V418C826 413 822 410 816 410H796C791 410 788 407 788 402"},
 }
