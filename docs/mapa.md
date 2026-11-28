@@ -22,10 +22,10 @@ Najkraći put je preset: **Kreiraj podgrupu** pa **Mapa**. Koren ga ne nudi, jer
 
 Ručno: u `potok-mapa` pokreni `npm run build`, u **Uredi grupu** uključi **Opis je aplikacija (API)**, pa na kartici **Opis** klikni **Otpremi ZIP** i izaberi `dist/potok-build.html` (ili ZIP sa njim).
 
-Mesto dobija grupa na dva načina:
+Mesto dobija grupa na tri načina:
 
 - u svojim podešavanjima, na kartici **Lokacija**: dodir ili prevlačenje pina na mapi, ili koordinate, i izbor pina. To sme ko sme da uređuje tu grupu.
-- sa mape, dugmetom **Dodaj mesto**: krstić u sredini, naziv i vrsta. Nastaje podgrupa kao iz menija „Kreiraj podgrupu“, sa istim podrazumevanim podešavanjima. To sme član mape koji sme da pravi podgrupe, najviše 20 mesta na sat.
+- sa mape, dugmetom **Dodaj mesto**: krstić u sredini, naziv i pin. Pinovi su u delovima kao na kartici **Lokacija**, ali je „Prijave i bezbednost“ na vrhu, a nijedan nije unapred izabran. Vrsta se ne bira: nastaje Chat podgrupa sa tim pinom (`createPlace` sa `kind: "chat"` i `pin`), kao iz menija „Kreiraj podgrupu“, sa istim podrazumevanim podešavanjima. To sme član mape koji sme da pravi podgrupe, najviše 20 mesta na sat.
 - iz druge aplikacije u istoj grupi, pozivima `createChild`/`updateChild` sa `lat`, `lng` i `pin`, ili `createChildren` za do 100 odjednom. Tako aplikacija za uvoz (`potok-saobracajke`) od redova otvorenih podataka pravi mesta.
 
 ## Zapisi
