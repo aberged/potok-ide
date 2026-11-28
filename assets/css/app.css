@@ -194,14 +194,6 @@
   }
 }
 
-/* A guest's page on a phone, upright or on its side (`Layouts.guest` with a
-   `phone_bar`): one bar of the page's own instead of the landing's header. */
-@custom-variant compact {
-  @media (width < 40rem), (height < 30rem) {
-    @slot;
-  }
-}
-
 /* Devices with a mouse: the same test as Enter sending a message in the
    chat. Touch keyboards have emoji of their own, so the composer's emoji
    button stands only here. */
@@ -1610,21 +1602,20 @@
     color: #ffffff;
   }
 
-  /* An app on a guest's page: as tall as the screen leaves it, never a sliver. */
+  /* An app on a guest's page: the screen under the bar, edge to edge. */
   .lp-app-box {
     display: flex;
+    flex: 1 1 0%;
     flex-direction: column;
-    height: calc(100dvh - 13rem);
-    min-height: 30rem;
+    min-height: 0;
     overflow: hidden;
-    border: 1px solid var(--lp-line);
-    border-radius: 1.5rem;
     background: var(--color-base-100);
   }
 
-  /* The menu of a guest's bar on a phone (`public_group_page`): a sheet from
-     the bottom. It is a popover, so it opens in the top layer, over an app's
-     frame, and closes at a tap beside it, with no script on the page. */
+  /* The menu of a guest's bar (`public_group_page`): a sheet from the bottom
+     on a phone, a panel under the button on a wider screen. It is a popover,
+     so it opens in the top layer, over an app's frame, and closes at a tap
+     beside it, with no script on the page. */
   .lp-sheet {
     inset: auto 0 0 0;
     width: 100%;
@@ -1652,6 +1643,40 @@
   .lp-sheet::backdrop {
     background: rgb(0 0 0 / 0.35);
     backdrop-filter: blur(2px);
+  }
+
+  /* A popover's backdrop takes no clicks, and a tap inside an app's frame
+     never reaches the page, so the open menu would stay over the app. While
+     it is open the frame lets taps through to the page, which closes it. */
+  .landing:has(.lp-sheet:popover-open) iframe {
+    pointer-events: none;
+  }
+
+  /* Not a phone, upright or on its side: the bar always stands at the top,
+     so the panel hangs right under its menu button. */
+  @media (width >= 40rem) and (height >= 30rem) {
+    .lp-sheet {
+      inset: calc(var(--app-safe-area-top) + 3.75rem) calc(var(--app-safe-area-right) + 0.75rem) auto auto;
+      width: 22rem;
+      max-height: calc(100dvh - var(--app-safe-area-top) - 5rem);
+      border-bottom: 1px solid var(--lp-line);
+      border-radius: 1.25rem;
+      padding-bottom: 0.75rem;
+      box-shadow: 0 24px 48px -24px rgb(0 0 0 / 0.35);
+      transition: opacity 160ms ease, transform 160ms ease;
+    }
+
+    @starting-style {
+      .lp-sheet:popover-open {
+        opacity: 0;
+        transform: translateY(-0.5rem);
+      }
+    }
+
+    .lp-sheet::backdrop {
+      background: transparent;
+      backdrop-filter: none;
+    }
   }
 
   /* A row of that menu, a link or a line of text with its icon. */

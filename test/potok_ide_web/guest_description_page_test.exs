@@ -62,20 +62,21 @@ defmodule PotokIdeWeb.GuestDescriptionPageTest do
     refute found?(document, "#guest-description script")
     refute document |> LazyHTML.query("main script") |> Enum.any?()
     refute found?(document, "#public-group")
-    assert found?(document, "#guest-group-login[href='/accounts/log-in']")
+    assert found?(document, "#guest-bar-login[href='/accounts/log-in']")
     assert found?(document, "#guest-join-login")
     assert found?(document, "#guest-join-invitation-note")
+    # The text ends on the footer, as the landing does.
+    assert found?(document, "#guest-footer")
     # The text alone needs no live connection.
     refute found?(document, "[data-phx-session]")
   end
 
-  test "gives a phone one bar of the group, with the rest in its menu", %{
-    conn: conn,
-    group: group
-  } do
+  test "gives the group one bar, with the rest in its menu", %{conn: conn, group: group} do
     document = conn |> get(~p"/groups/#{group.id}") |> document()
 
-    assert text(document, "#guest-bar-name") =~ "Mesna zajednica"
+    # The bar stands instead of the landing's header, on a phone and a desktop alike.
+    refute found?(document, "#guest-header")
+    assert text(document, "h1#guest-bar-name") =~ "Mesna zajednica"
     assert found?(document, "#guest-bar-login[href='/accounts/log-in']")
     assert found?(document, "#guest-menu-button[popovertarget='guest-menu']")
     assert found?(document, "#guest-menu[popover] #guest-menu-about[href='/']")
@@ -302,10 +303,13 @@ defmodule PotokIdeWeb.GuestDescriptionPageTest do
       document = ctx.conn |> get(~p"/groups/#{app.id}?#{[at: ctx.story.id]}") |> document()
 
       assert found?(document, "#guest-app")
-      # On a phone the app takes the screen and the word about passwords moves to the menu.
+      # The app takes the screen, and the rest of the page is in the bar's menu.
       assert found?(document, "#guest[data-fill]")
       assert found?(document, "#guest-menu #guest-menu-app-note")
       assert found?(document, "#guest-bar-login .hero-shield-check-mini")
+      refute found?(document, "#guest-footer")
+      refute found?(document, "#guest-join")
+      refute found?(document, "#guest-join-invitation-note")
       assert og(document, "title") == "Most"
       assert og(document, "site_name") == "Vesti · Potok"
     end

@@ -592,10 +592,10 @@ defmodule PotokIdeWeb.Layouts do
   menu it has the landing page's own header and footer, and since the body
   never scrolls, the page is its own scroll area.
 
-  On a phone (`compact:`) a page may put a bar of its own in place of the
-  header (`phone_bar`), which stays at the top, and with `fill` its content
-  takes the rest of the screen and scrolls itself, with no footer under it:
-  an app in a public group's description.
+  A page may put a bar of its own in place of the header (`bar`), which
+  stays at the top, and with `fill` its content takes the rest of the screen
+  and scrolls itself, with no footer under it: an app in a public group's
+  description.
 
   ## Examples
 
@@ -624,40 +624,38 @@ defmodule PotokIdeWeb.Layouts do
   attr :fill, :boolean,
     default: false,
     doc:
-      "on a phone with a `phone_bar`, the content takes the screen under the bar and scrolls itself, with no footer"
+      "with a `bar`, the content takes the screen under the bar and scrolls itself, with no footer"
 
   slot :inner_block, required: true
   slot :header_action, doc: "a link at the right end of the header"
 
-  slot :phone_bar,
+  slot :bar,
     doc:
-      "on a phone, a bar of the page's own instead of the header: it stays at the top and takes the safe area there"
+      "a bar of the page's own instead of the header: it stays at the top and takes the safe area there"
 
   def guest(assigns) do
-    assigns = assign(assigns, :fill, assigns.fill and assigns.phone_bar != [])
+    assigns = assign(assigns, :fill, assigns.fill and assigns.bar != [])
 
     ~H"""
     <div
       id="guest"
       data-fill={@fill && "true"}
       class={[
-        "landing h-dvh overflow-y-auto overscroll-contain bg-base-100 text-base-content",
-        @fill && "compact:overflow-hidden"
+        "landing h-dvh overscroll-contain bg-base-100 text-base-content",
+        if(@fill, do: "overflow-hidden", else: "overflow-y-auto")
       ]}
     >
       <div class={[
-        "relative isolate flex min-h-full flex-col overflow-x-clip pt-(--app-safe-area-top) pr-(--app-safe-area-right) pb-(--app-safe-area-bottom) pl-(--app-safe-area-left)",
-        @phone_bar != [] && "compact:pt-0",
-        @fill && "compact:h-full compact:overflow-y-clip"
+        "relative isolate flex min-h-full flex-col overflow-x-clip pr-(--app-safe-area-right) pb-(--app-safe-area-bottom) pl-(--app-safe-area-left)",
+        @bar == [] && "pt-(--app-safe-area-top)",
+        @fill && "h-full overflow-y-clip"
       ]}>
         <div class="lp-glow absolute inset-x-0 top-0 -z-10 h-[42rem]" aria-hidden="true"></div>
 
         <header
+          :if={@bar == []}
           id="guest-header"
-          class={[
-            "mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-5 py-5 sm:px-8",
-            @phone_bar != [] && "compact:hidden"
-          ]}
+          class="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-5 py-5 sm:px-8"
         >
           <a href={~p"/"} class="group flex items-center gap-2.5" aria-label="Potok">
             <.mark
@@ -690,25 +688,22 @@ defmodule PotokIdeWeb.Layouts do
         <%!-- The safe area above is the bar's, so the page does not show
          through it once the bar sticks. --%>
         <div
-          :if={@phone_bar != []}
+          :if={@bar != []}
           id="guest-bar"
-          class="sticky top-0 z-20 hidden shrink-0 border-b border-base-content/8 bg-base-100/85 pt-(--app-safe-area-top) backdrop-blur compact:block"
+          class="sticky top-0 z-20 shrink-0 border-b border-base-content/8 bg-base-100/85 pt-(--app-safe-area-top) backdrop-blur"
         >
-          {render_slot(@phone_bar)}
+          {render_slot(@bar)}
         </div>
 
         <main class={[
           "flex-1",
           @centered && "flex flex-col items-center justify-center px-5 py-10 sm:py-16",
-          @fill && "compact:flex compact:min-h-0 compact:flex-col"
+          @fill && "flex min-h-0 flex-col"
         ]}>
           {render_slot(@inner_block)}
         </main>
 
-        <footer
-          id="guest-footer"
-          class={["border-t border-base-content/8", @fill && "compact:hidden"]}
-        >
+        <footer :if={!@fill} id="guest-footer" class="border-t border-base-content/8">
           <div class="mx-auto flex max-w-5xl flex-col gap-6 px-5 py-10 sm:px-8 md:flex-row md:items-center md:justify-between">
             <div>
               <div class="flex items-center gap-2">
