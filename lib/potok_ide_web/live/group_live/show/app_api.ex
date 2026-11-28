@@ -1166,7 +1166,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     with :ok <- require_child_manager(socket),
          {:ok, parent} <- children_parent(params, socket),
          {:ok, reply} <- subgroups_reply(parent, profile, params) do
-      {Map.update!(reply, :groups, &with_publications/1), socket}
+      {Map.update!(reply, :groups, &(&1 |> with_publications() |> with_role_keys())), socket}
     else
       {:error, reply} -> {reply, socket}
     end
@@ -1894,6 +1894,14 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   defp with_publications(payloads) do
     waiting = payloads |> Enum.map(& &1.id) |> ScheduledPublications.for_groups()
     Enum.map(payloads, &Map.merge(&1, publication_payload(waiting[&1.id])))
+  end
+
+  # The roles each group inherits by, for its editors: a group that inherits
+  # only some roles is a draft its editors share (`Group.draft?/1`), which a
+  # list must tell from one open to all members.
+  defp with_role_keys(payloads) do
+    keys = payloads |> Enum.map(& &1.id) |> Social.inherit_role_keys()
+    Enum.map(payloads, &Map.put(&1, :inherit_role_keys, Map.get(keys, &1.id, [])))
   end
 
   defp publication_payload(nil), do: %{publish_at: nil, publish_failure: nil}

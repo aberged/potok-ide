@@ -335,6 +335,12 @@ defmodule PotokIdeWeb.GroupLive.AppSectionsTest do
 
       assert draft.published_at == nil
 
+      # The editors' list tells it from a group open to all members.
+      assert %{ok: true, groups: [listed]} =
+               call(editor_view, "list_children", %{"under" => section.id})
+
+      assert listed.inherit_role_keys == [ctx.role.key]
+
       second_view = open_app(build_conn(), ctx.second_account, ctx.site)
       assert %{ok: true, group: _seen} = call(second_view, "get_subgroup", %{"id" => draft.id})
 

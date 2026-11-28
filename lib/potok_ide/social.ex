@@ -6567,6 +6567,15 @@ defmodule PotokIde.Social do
     |> MapSet.new()
   end
 
+  @doc "The roles each of `ids` inherits members by, by id (`inherit_role_keys`)."
+  def inherit_role_keys([]), do: %{}
+
+  def inherit_role_keys(ids) when is_list(ids) do
+    from(g in Group, where: g.id in ^ids, select: {g.id, g.inherit_role_keys})
+    |> Repo.all()
+    |> Map.new()
+  end
+
   @doc """
   The direct sub-groups of `group` the profile can see, but apps and those
   its apps keep files in: where an app keeps groups of its own, as a site's
