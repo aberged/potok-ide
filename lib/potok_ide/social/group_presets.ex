@@ -7,8 +7,8 @@ defmodule PotokIde.Social.GroupPresets do
   which shows while the group still fits it (`shown/1`).
   `Social.create_group/3` stays the way to set everything by hand.
 
-  The apps of a feed, of a group for polls, of a form, of a map and of ordering
-  are files in `priv/apps`, copied by `mix potok.sync_apps`. Each group keeps its own copy in
+  The apps of a feed, of a group for polls, of a form, of a map, of ordering
+  and of a site are files in `priv/apps`, copied by `mix potok.sync_apps`. Each group keeps its own copy in
   its description, as with a pasted app; a new build reaches an older group
   when an editor refreshes it (`Social.refresh_app/3`, `AppBuilds`).
 
@@ -20,10 +20,10 @@ defmodule PotokIde.Social.GroupPresets do
   alias PotokIde.Social.Group
 
   # The form's key is not "form", whose element id the menu's own form has.
-  @keys ~w(chat folder feed polls questionnaire map orders page)
+  @keys ~w(chat folder feed polls questionnaire map orders site page)
 
   # The presets whose group opens on an app.
-  @apps ~w(feed polls questionnaire map orders)a
+  @apps ~w(feed polls questionnaire map orders site)a
 
   @key_atoms Enum.map(@keys, &String.to_atom/1)
 
@@ -73,12 +73,13 @@ defmodule PotokIde.Social.GroupPresets do
   end
 
   @doc """
-  What the viewer starts from for what is theirs to pick. Only a feed is
-  public, and not under a closed group, which it would show to everyone.
+  What the viewer starts from for what is theirs to pick. Only a feed and a
+  site are public, and not under a closed group, which they would show to
+  everyone. A site goes to guests only once its editors turn that on.
   """
   def defaults(preset, %Group{} = parent) when preset in @keys do
     %{
-      "is_public" => preset == "feed" and (parent.is_root or parent.is_public),
+      "is_public" => preset in ["feed", "site"] and (parent.is_root or parent.is_public),
       "inherits_members" => not parent.is_root,
       "inherit_role_keys" => []
     }
@@ -317,6 +318,18 @@ defmodule PotokIde.Social.GroupPresets do
   defp kind_attrs_of("orders") do
     %{
       "description" => app("narucivanje.html"),
+      "description_format" => :html,
+      "uses_api" => true,
+      "home_page" => :description
+    }
+  end
+
+  # The Sajt app keeps the site's look, menus and sections in its config, which
+  # it saves as public on its editors' first visit, and makes its sections
+  # itself (`createChild` with `editorsOnly`): its articles are groups under them.
+  defp kind_attrs_of("site") do
+    %{
+      "description" => app("sajt.html"),
       "description_format" => :html,
       "uses_api" => true,
       "home_page" => :description

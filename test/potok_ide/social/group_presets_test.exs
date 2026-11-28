@@ -14,6 +14,7 @@ defmodule PotokIde.Social.GroupPresetsTest do
   @forms_build "priv/apps/forme.html"
   @map_build "priv/apps/mapa.html"
   @orders_build "priv/apps/narucivanje.html"
+  @site_build "priv/apps/sajt.html"
 
   setup do
     {_account, owner} = account_with_profile!("preset-owner")
@@ -116,6 +117,28 @@ defmodule PotokIde.Social.GroupPresetsTest do
       refute group.is_public
       assert GroupPresets.shown(group) == :orders
       assert Social.list_child_groups(group) == []
+    end
+
+    test "a site opens on its app, public under a public parent, and makes its sections later",
+         ctx do
+      assert GroupPresets.defaults("site", ctx.parent)["is_public"]
+
+      assert {:ok, %{group: group, feed: nil}} =
+               create(ctx, "site", GroupPresets.defaults("site", ctx.parent))
+
+      assert group.uses_api
+      assert group.preset == :site
+      assert group.home_page == :description
+      assert group.description_format == :html
+      assert group.description == File.read!(@site_build)
+      assert group.description =~ ~s(<meta name="potok-app" content="potok-sajt">)
+      assert group.is_public
+      refute group.description_for_guests
+      assert GroupPresets.shown(group) == :site
+      assert Social.list_child_groups(group) == []
+
+      closed = group_with_members!(ctx.owner, [], %{"is_public" => false})
+      refute GroupPresets.defaults("site", closed)["is_public"]
     end
 
     test "takes from the viewer only what is theirs to pick", ctx do
@@ -299,13 +322,15 @@ defmodule PotokIde.Social.GroupPresetsTest do
   end
 
   describe "who starts from what" do
-    test "only a feed is public", ctx do
-      for preset <- GroupPresets.keys() -- ["feed"] do
+    test "only a feed and a site are public", ctx do
+      for preset <- GroupPresets.keys() -- ["feed", "site"] do
         refute GroupPresets.defaults(preset, ctx.parent)["is_public"]
       end
 
-      assert GroupPresets.defaults("feed", ctx.parent)["is_public"]
-      assert GroupPresets.defaults("feed", ctx.root)["is_public"]
+      for preset <- ["feed", "site"] do
+        assert GroupPresets.defaults(preset, ctx.parent)["is_public"]
+        assert GroupPresets.defaults(preset, ctx.root)["is_public"]
+      end
     end
 
     test "a feed under a closed group stays closed", ctx do
@@ -354,6 +379,15 @@ defmodule PotokIde.Social.GroupPresetsTest do
 
       assert {:ok, %{group: %Group{preset: :orders} = group}} =
                create(ctx, "orders", %{"name" => "Zajednička nabavka"}, ctx.root)
+
+      refute group.inherits_members
+    end
+
+    test "a site in the root too", ctx do
+      assert "site" in GroupPresets.keys_for(ctx.root)
+
+      assert {:ok, %{group: %Group{preset: :site} = group}} =
+               create(ctx, "site", %{"name" => "Sajt MZ"}, ctx.root)
 
       refute group.inherits_members
     end

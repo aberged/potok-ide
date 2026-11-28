@@ -24,7 +24,8 @@ defmodule PotokIde.Social.AppBuilds do
     "potok-glasanje" => "glasanje.html",
     "potok-forme" => "forme.html",
     "potok-mapa" => "mapa.html",
-    "potok-mleko" => "narucivanje.html"
+    "potok-mleko" => "narucivanje.html",
+    "potok-sajt" => "sajt.html"
   }
 
   # The preset each app comes with; FeedCreator comes with a feed's `.feed`.
@@ -33,7 +34,8 @@ defmodule PotokIde.Social.AppBuilds do
     "potok-glasanje" => "polls",
     "potok-forme" => "questionnaire",
     "potok-mapa" => "map",
-    "potok-mleko" => "orders"
+    "potok-mleko" => "orders",
+    "potok-sajt" => "site"
   }
 
   @apps Map.keys(@files)

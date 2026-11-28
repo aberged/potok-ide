@@ -1,7 +1,8 @@
 defmodule Mix.Tasks.Potok.SyncApps do
   @moduledoc """
   Copies the builds of the apps that presets come with into `priv/apps`: those
-  of a Feed group, of a group for polls, of a form, of a map and of ordering.
+  of a Feed group, of a group for polls, of a form, of a map, of ordering and
+  of a site.
 
   `PotokIde.Social.GroupPresets` reads them from there. The apps are projects
   of their own, next to this one, and the deploy does not reach them, so their
@@ -24,7 +25,8 @@ defmodule Mix.Tasks.Potok.SyncApps do
     {"../potok-glasanje/dist/potok-build.html", "priv/apps/glasanje.html"},
     {"../potok-forme/dist/potok-build.html", "priv/apps/forme.html"},
     {"../potok-mapa/dist/potok-build.html", "priv/apps/mapa.html"},
-    {"../potok-mleko/dist/potok-build.html", "priv/apps/narucivanje.html"}
+    {"../potok-mleko/dist/potok-build.html", "priv/apps/narucivanje.html"},
+    {"../potok-sajt/dist/potok-build.html", "priv/apps/sajt.html"}
   ]
 
   @impl Mix.Task

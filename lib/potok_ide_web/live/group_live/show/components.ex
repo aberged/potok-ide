@@ -1594,7 +1594,11 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   """
   def description_workspace(assigns) do
     app? = assigns.uses_api in [true, "true"]
-    templates? = assigns.templates and not app?
+    # An article or a page of a site is written in the site's block editor,
+    # which keeps its blocks in a first-line comment: a template here would
+    # write over them.
+    site? = String.starts_with?(to_string(assigns.description_field.value), "<!--potok-site ")
+    templates? = assigns.templates and not app? and not site?
 
     decoded =
       if templates?,
@@ -1604,6 +1608,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     assigns =
       assigns
       |> assign(:app?, app?)
+      |> assign(:site?, site?)
       |> assign(:templates?, templates?)
       |> assign(:decoded, decoded)
       |> assign(:post, with({:post, post} <- decoded, do: post, else: (_other -> nil)))
@@ -1633,6 +1638,15 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         class="mt-4 text-sm text-base-content/65"
       >
         {gettext("Templates are for written descriptions. This description is an app.")}
+      </p>
+      <p
+        :if={@templates and @site? and !@app?}
+        id={"#{@id_prefix}-site-written"}
+        class="mt-4 rounded-2xl border border-base-300 bg-base-200/50 px-4 py-3 text-sm"
+      >
+        {gettext(
+          "This text was written on a site, in its editor, so templates are not offered for it. Change it on the site: a change made here stays, but the site then opens the text as HTML."
+        )}
       </p>
 
       <.app_archive

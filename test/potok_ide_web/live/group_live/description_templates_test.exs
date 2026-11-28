@@ -224,6 +224,23 @@ defmodule PotokIdeWeb.GroupLive.DescriptionTemplatesTest do
       assert has_element?(lv, "#group-description-template-app")
     end
 
+    test "offers no template for a site's article, and says to change it on the site", ctx do
+      group =
+        group!(ctx.owner, "tpl-site-article", %{
+          "description" =>
+            ~s(<!--potok-site {"v":1,"kind":"article","blocks":[],"hash":"x"}-->\n<p>Tekst.</p>),
+          "description_format" => :html
+        })
+
+      lv = open(ctx, group)
+
+      assert has_element?(lv, "#group-description-site-written")
+      refute has_element?(lv, "#group-description-template-change")
+
+      lv = open(ctx)
+      refute has_element?(lv, "#group-description-site-written")
+    end
+
     test "edits a list row by row", ctx do
       lv = open(ctx)
       fields = %{"title" => "Vikend", "items" => ["prva"]}

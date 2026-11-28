@@ -10,7 +10,7 @@ icons=../../deps/heroicons/optimized/24/solid
 blue='#0a5bc4'
 
 for pair in chat:chat-bubble-left-right folder:folder feed:newspaper polls:chart-bar \
-  questionnaire:clipboard-document-list map:map orders:shopping-bag page:document-text; do
+  questionnaire:clipboard-document-list map:map orders:shopping-bag site:window page:document-text; do
   key=${pair%%:*}
   icon=${pair#*:}
   paths=$(tr '\n' ' ' < "$icons/$icon.svg" | sed -e 's/<svg[^>]*>//' -e 's#</svg>##')
