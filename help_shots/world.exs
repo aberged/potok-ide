@@ -23,6 +23,7 @@ defmodule HelpShots.World do
   alias PotokIde.Social.GroupRoutes
   alias PotokIde.Social.ScheduledPublications
   alias PotokIde.Social.ScheduledValues
+  alias PotokIde.Social.SiteDoc
   alias PotokIde.Social.Value
   alias PotokIde.Storage
   alias PotokIde.Tags
@@ -616,7 +617,7 @@ defmodule HelpShots.World do
       attrs =
         %{
           "name" => name,
-          "description" => site_doc(kind, excerpt, blocks),
+          "description" => SiteDoc.encode(kind, excerpt, blocks),
           "description_format" => :html,
           "inherits_members" => true,
           "description_for_guests" => true
@@ -873,55 +874,6 @@ defmodule HelpShots.World do
       )
 
     %{root: site, article: park}
-  end
-
-  # An article or a page as the Sajt app writes it (potok-sajt `encodeDoc`):
-  # its blocks in a comment, the text of its card, and the HTML they make,
-  # with the hash of that HTML, which tells the app nobody changed it by hand.
-  # Plain text only, so this HTML is the app's to the letter and its editor
-  # opens the blocks.
-  defp site_doc(kind, excerpt, blocks) do
-    blocks =
-      blocks |> Enum.with_index(1) |> Enum.map(fn {block, i} -> Map.put(block, "id", "b#{i}") end)
-
-    html = Enum.map_join(blocks, "\n", &site_html/1)
-
-    marker =
-      %{"v" => 1, "kind" => kind, "blocks" => blocks, "excerpt" => excerpt, "hash" => fnv(html)}
-      |> Jason.encode!()
-      |> String.replace("<", "\\u003c")
-      |> String.replace(">", "\\u003e")
-      |> String.replace("--", "-\\u002d")
-
-    card = if excerpt == "", do: hd(blocks)["text"], else: excerpt
-    ~s(<!--potok-site #{marker}-->\n<meta name="description" content="#{card}">#{html})
-  end
-
-  defp site_html(%{"type" => "paragraph", "text" => text}), do: "<p>#{text}</p>"
-
-  defp site_html(%{"type" => "heading", "level" => level, "text" => text}),
-    do: "<h#{level}>#{text}</h#{level}>"
-
-  defp site_html(%{"type" => "list", "items" => items}),
-    do: "<ul>" <> Enum.map_join(items, &"<li>#{&1}</li>") <> "</ul>"
-
-  defp site_html(%{"type" => "quote", "text" => text, "cite" => cite}),
-    do: "<blockquote><p>#{text}</p><p><small>— #{cite}</small></p></blockquote>"
-
-  defp site_html(%{"type" => "callout", "text" => text}),
-    do: ~s(<div data-potok-block="callout"><p>#{text}</p></div>)
-
-  # FNV-1a over the characters, as potok-sajt's `hashOf`.
-  defp fnv(text) do
-    text
-    |> String.trim()
-    |> String.to_charlist()
-    |> Enum.reduce(0x811C9DC5, fn char, hash ->
-      rem(Bitwise.bxor(hash, char) * 0x01000193, 0x100000000)
-    end)
-    |> Integer.to_string(16)
-    |> String.downcase()
-    |> String.pad_leading(8, "0")
   end
 
   # A stand-in photo for an article's cover, drawn by ImageMagick: a sky, a
