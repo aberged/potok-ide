@@ -48,6 +48,20 @@ defmodule PotokIdeWeb.RichContentScrubberTest do
              ~S|<video preload="metadata"></video>|
   end
 
+  test "keeps what a block of a site's article is, on its own tags only" do
+    for {tag, kinds} <- RichContentScrubber.blocks(), kind <- kinds do
+      html = ~s|<#{tag} data-potok-block="#{kind}">x</#{tag}>|
+      assert scrub(html) == html
+    end
+
+    assert scrub(~S|<div data-potok-block="fixed inset-0">x</div>|) == "<div>x</div>"
+    assert scrub(~S|<p data-potok-block="columns">x</p>|) == "<p>x</p>"
+    assert scrub(~S|<span data-potok-block="button">x</span>|) == "<span>x</span>"
+
+    assert scrub(~S|<div data-potok-block="callout" style="color: #ff0000">x</div>|) ==
+             ~S|<div data-potok-block="callout" style="color: #ff0000">x</div>|
+  end
+
   test "keeps a gallery's look and no other data attribute" do
     for look <- PotokIdeWeb.Galleries.looks() do
       assert scrub(~s|<div data-potok-gallery="#{look}"><div>x</div></div>|) ==

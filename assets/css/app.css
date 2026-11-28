@@ -693,6 +693,103 @@
   margin-bottom: 0.4em;
 }
 
+/* Blocks of a site's article (`data-potok-block`, Sajt's block editor). The
+   stored HTML only says what each block is, as no class survives the
+   scrubber; a site's theme gives them its own look, and these rules keep an
+   article readable on its group's page and in any app frame. */
+.rich-content :where([data-potok-block="button"], [data-potok-block="buttons"]) > a {
+  background: var(--color-primary);
+  border-radius: 999px;
+  color: var(--color-primary-content);
+  display: inline-block;
+  font-weight: 600;
+  padding: 0.55em 1.25em;
+  text-decoration: none;
+  transition: filter 150ms ease;
+}
+
+.rich-content :where([data-potok-block="button"], [data-potok-block="buttons"]) > a:hover {
+  filter: brightness(1.08);
+}
+
+.rich-content [data-potok-block="buttons"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.rich-content [data-potok-block="columns"] {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+}
+
+.rich-content [data-potok-block="column"] > :first-child {
+  margin-top: 0;
+}
+
+.rich-content [data-potok-block="callout"] {
+  background: var(--rich-content-tint);
+  border-radius: 0.875rem;
+  padding: 0.9rem 1.1rem;
+}
+
+.rich-content [data-potok-block="cover"] {
+  border-radius: 0.875rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.rich-content [data-potok-block="cover"] img {
+  border-radius: 0;
+  display: block;
+  max-height: 28rem;
+  object-fit: cover;
+  width: 100%;
+}
+
+.rich-content [data-potok-block="cover"] > :where(figcaption, p, h2, h3) {
+  background: linear-gradient(transparent, rgb(0 0 0 / 0.65));
+  bottom: 0;
+  color: #fff;
+  font-size: 1.25em;
+  font-weight: 700;
+  left: 0;
+  margin: 0;
+  padding: 2.5rem 1.1rem 1rem;
+  position: absolute;
+  right: 0;
+}
+
+.rich-content :where([data-potok-block="wide"], [data-potok-block="full"]) img {
+  display: block;
+  width: 100%;
+}
+
+.rich-content [data-potok-block="left"],
+.rich-content [data-potok-block="right"] {
+  max-width: 45%;
+}
+
+.rich-content [data-potok-block="left"] {
+  float: left;
+  margin: 0.25em 1.25em 0.75em 0;
+}
+
+.rich-content [data-potok-block="right"] {
+  float: right;
+  margin: 0.25em 0 0.75em 1.25em;
+}
+
+@media (max-width: 40rem) {
+  .rich-content [data-potok-block="left"],
+  .rich-content [data-potok-block="right"] {
+    float: none;
+    margin: 0;
+    max-width: 100%;
+  }
+}
+
 /* Galleries (`PotokIdeWeb.Galleries`): pictures in a strip that snaps one at
    a time, moved by a swipe, a trackpad, the arrow keys once the strip has the
    focus, or two buttons. The stored HTML holds only the pictures and
